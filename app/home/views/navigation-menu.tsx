@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cn } from '@utils/tailwind';
-import { Button, NavigationMenu, NavigationMenuItem } from '@components/ui';
+import { Button, NavigationMenu, NavigationMenuItem, ThemeToggle } from '@components/ui';
 import { UserAvatar } from '@components/views';
 import { Icon } from '@components/icons';
 
@@ -26,12 +26,15 @@ export const HomeNavigationMenu = ({ className, links, user, withSignIn = false 
             </NavigationMenuItem>
         ))}
       </NavigationMenu>
-      {withSignIn ? user ? <UserAvatar className='ml-auto' user={user} /> : <Link href={'/auth/sign-in'} className='ml-auto'>
-        <Button variant={'ghost'} size={'sm'}>
-          <Icon type={'User'} className="size-4 text-primary" />
-          Sign in
-        </Button>
-      </Link> : null}
+      <div className='flex justify-end items-center gap-2 ml-auto'>
+        <ThemeToggle />
+        {withSignIn ? user ? <UserAvatar className='ml-auto' user={user} /> : <Link href={'/auth/sign-in'} className='ml-auto'>
+          <Button variant={'ghost'} size={'sm'}>
+            <Icon type={'User'} className="size-4 text-primary" />
+            Sign in
+          </Button>
+        </Link> : null}
+      </div>
     </div>
   );
 };

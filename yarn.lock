@@ -5836,7 +5836,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next-themes@npm:0.4.6":
+"next-themes@npm:^0.4.6":
   version: 0.4.6
   resolution: "next-themes@npm:0.4.6"
   peerDependencies:
@@ -6971,7 +6971,7 @@ __metadata:
     eslint-config-next: "npm:15.4.4"
     lucide-react: "npm:0.525.0"
     next: "npm:15.4.4"
-    next-themes: "npm:0.4.6"
+    next-themes: "npm:^0.4.6"
     react: "npm:19.1.0"
     react-day-picker: "npm:9.8.0"
     react-dom: "npm:19.1.0"

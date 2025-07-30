@@ -19,3 +19,4 @@ export * from './aspect-ratio';
 export * from './logo';
 export * from './details';
 export * from './drawer';
+export * from './theme-toggle';

@@ -16,7 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   AvatarImage,
-  AvatarFallback
+  AvatarFallback,
 } from '@components/ui';
 import Link from 'next/link';
 import { useState } from 'react';
