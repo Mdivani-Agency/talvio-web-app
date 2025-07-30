@@ -1,0 +1,21 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - corepack enable
+        - yarn set version 4.3.1
+    build:
+      commands:
+        - yarn install
+        - echo "NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL" >> .env
+        - echo "NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL" >> .env
+        - echo "NEXT_PUBLIC_AUTH_BASE_URL=$NEXT_PUBLIC_AUTH_BASE_URL" >> .env
+        - yarn build
+  artifacts:
+      baseDirectory: .next
+      files:
+      - '**/*'
+  cache:
+      paths:
+      - node_modules/**/*
