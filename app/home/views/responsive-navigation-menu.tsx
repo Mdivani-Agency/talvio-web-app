@@ -7,7 +7,7 @@ export const ResponsiveNavigationMenu = () => {
   const { data } = authClient.useSession();
 
   return (
-    <div>
+    <div className="flex w-full">
       <HomeNavigationMenu
         user={data?.user}
         withActions={true}
