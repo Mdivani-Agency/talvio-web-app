@@ -20,3 +20,4 @@ export * from './logo';
 export * from './details';
 export * from './drawer';
 export * from './theme-toggle';
+export * from './separator';

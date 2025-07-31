@@ -7,10 +7,10 @@ export const ResponsiveNavigationMenu = () => {
   const { data } = authClient.useSession();
 
   return (
-    <div className="w-full">
+    <div>
       <HomeNavigationMenu
         user={data?.user}
-        withSignIn={true}
+        withActions={true}
         className="hidden md:flex w-full"
         links={[
           { name: 'Workflow', href: '#workflow' },
@@ -18,7 +18,7 @@ export const ResponsiveNavigationMenu = () => {
           { name: 'Price', href: '#plans' },
           { name: 'FAQ', href: '#faq' },
         ]} />
-      <BurgerMenu user={data?.user} />
+      <BurgerMenu className="ml-auto" user={data?.user} />
     </div>
   )
 }

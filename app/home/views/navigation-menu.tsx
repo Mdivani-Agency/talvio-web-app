@@ -12,11 +12,11 @@ type NavigationMenuProps = {
     email: string;
     image?: string | null;
   }
-  withSignIn?: boolean;
+  withActions?: boolean;
   links: { name: string; href: string }[];
 };
 
-export const HomeNavigationMenu = ({ className, links, user, withSignIn = false }: NavigationMenuProps) => {
+export const HomeNavigationMenu = ({ className, links, user, withActions = false }: NavigationMenuProps) => {
   return (
     <div className={cn('flex w-full', className)}>
       <NavigationMenu className={cn('flex items-center justify-center md:ml-auto gap-6 2xl:gap-10')}>
@@ -26,15 +26,17 @@ export const HomeNavigationMenu = ({ className, links, user, withSignIn = false 
             </NavigationMenuItem>
         ))}
       </NavigationMenu>
-      <div className='flex justify-end items-center gap-2 ml-auto'>
-        <ThemeToggle />
-        {withSignIn ? user ? <UserAvatar className='ml-auto' user={user} /> : <Link href={'/auth/sign-in'} className='ml-auto'>
-          <Button variant={'ghost'} size={'sm'}>
-            <Icon type={'User'} className="size-4 text-primary" />
-            Sign in
-          </Button>
-        </Link> : null}
-      </div>
+      {withActions && (
+        <div className='flex justify-end items-center gap-2 ml-auto'>
+          <ThemeToggle />
+          {user ? <UserAvatar user={user} /> : <Link href={'/auth/sign-in'}>
+            <Button variant={'ghost'} size={'sm'}>
+              <Icon type={'User'} className="size-4 text-primary" />
+              Sign in
+              </Button>
+            </Link>}
+        </div>
+      )}
     </div>
   );
 };

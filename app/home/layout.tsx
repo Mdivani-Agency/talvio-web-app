@@ -13,7 +13,6 @@ export default function LandingPage({ children }: { children: React.ReactNode })
       {children}
       <Footer>
         <HomeNavigationMenu
-          className=""
           links={[
             { name: 'Workflow', href: '#workflow' },
             { name: 'Benefits', href: '#benefits' },
