@@ -141,7 +141,7 @@
   --accent-foreground: #FEFEFE;
   --destructive: #FF1F1F;
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --input: #404040;
   --ring: rgb(135, 136, 140);
   --chart-1: #686ae2 ;
   --chart-2: #b9baf2;

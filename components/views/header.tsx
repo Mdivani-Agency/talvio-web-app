@@ -16,7 +16,7 @@ export const Header = ({
   onLogoClick,
 }: PropsWithChildren<HeaderProps>) => {
   return (
-    <header className={cn('absolute z-10 flex w-full items-center justify-between shadow-sm py-2 px-4 lg:py-1.5 lg:px-6', className)}>
+    <header className={cn('absolute z-10 flex w-full items-center justify-between shadow-sm py-2 px-4 lg:py-2.5 lg:px-6', className)}>
       <Logo size={size} onLogoClick={onLogoClick} />
       {children}
     </header>
