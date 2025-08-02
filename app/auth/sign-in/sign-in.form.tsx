@@ -24,10 +24,10 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
       <form className="flex flex-col gap-4">
         <FormItem>
           <FormControl>
-            <Input {...form.register('email')} placeholder="Your email" />
+            <Input {...form.register('email')} placeholder="Email" />
           </FormControl>
         </FormItem>
-        <Button type="button" onClick={form.handleSubmit(onSubmit)}>Passwordless sign in</Button>
+        <Button type="button" onClick={form.handleSubmit(onSubmit)}>With Email</Button>
       </form>
     </Form>
   )
