@@ -21,3 +21,7 @@ export * from './details';
 export * from './drawer';
 export * from './theme-toggle';
 export * from './separator';
+export * from './multi-input';
+export * from './tag-list';
+export * from './pill';
+export * from './badge'

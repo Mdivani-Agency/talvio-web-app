@@ -3,9 +3,12 @@
 import { accountSchema } from "@lib/schema/account.schema";
 import { ProfileForm } from "./forms/profile.form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@components/ui";
+import { ContactsForm } from "./forms/contacts.form";
+import { HighlightsForm } from "./forms/highlights.form";
+import { Highlights } from "@lib/types";
 
 export const AccountForm = () => {
   const form = useForm<z.infer<typeof accountSchema>>({
@@ -39,6 +42,8 @@ export const AccountForm = () => {
   return (
     <form className="space-y-8 py-8" onSubmit={handleSubmit}>
       <ProfileForm form={form} />
+      <ContactsForm form={form} />
+      <HighlightsForm form={form as unknown as UseFormReturn<Highlights>} />
       <div className="flex justify-end gap-2">
         <Button className="w-64" onClick={handleSubmit} type="button">Continue</Button>
       </div>

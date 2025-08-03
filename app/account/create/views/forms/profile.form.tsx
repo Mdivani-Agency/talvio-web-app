@@ -1,5 +1,5 @@
 import { UseFormReturn } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, Input, Textarea } from "@components/ui";
+import { Form, FormControl, FormField, FormItem, FormLabel, Input, Label, Textarea } from "@components/ui";
 import { cn } from "@lib/utils";
 import { Profile } from "@lib/types";
 
@@ -11,7 +11,8 @@ type ProfileFormProps = {
 export const ProfileForm = ({ className, form }: ProfileFormProps) => {
   return (
     <Form {...form}>
-      <div className={cn("space-y-8", className)}>
+      <div className={cn("space-y-6", className)}>
+        <Label size="lg">Personal Details</Label>
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="profile.firstName" render={({ field }) => (
             <FormItem>
@@ -39,50 +40,12 @@ export const ProfileForm = ({ className, form }: ProfileFormProps) => {
 
         <FormField control={form.control} name="profile.tagline" render={({ field }) => (
           <FormItem>
+            <FormLabel size="sm" variant="muted">Summary</FormLabel>
             <FormControl>
-              <Textarea {...field} placeholder="Summary" />
+              <Textarea {...field} placeholder="Write a brief summary" />
             </FormControl>
           </FormItem>
         )} />
-
-        <FormField control={form.control} name="profile.email" render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Input {...field} placeholder="Email" />
-            </FormControl>
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="profile.phone" render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Input {...field} placeholder="Phone" />
-            </FormControl>
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="profile.website" render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Input {...field} placeholder="Website" />
-            </FormControl>
-          </FormItem>
-        )} />
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField control={form.control} name="profile.city" render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input {...field} placeholder="City" />
-              </FormControl>
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="profile.country" render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input {...field} placeholder="Country" />
-              </FormControl>
-              </FormItem>
-            )} />
-        </div>
       </div>
     </Form>
   );
