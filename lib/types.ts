@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { accountSchema, formEducationSchema, experienceSchema, languageSchema, linkSchema, profileSchema, skillSchema, toolSchema } from "./schema/account.schema";
+import { LanguageProficiency } from "./schema/enums";
 
 export type Skill = z.infer<typeof skillSchema>;
 export type Tool = z.infer<typeof toolSchema>;
@@ -11,3 +12,6 @@ export type Experience = z.infer<typeof experienceSchema>;
 export type Education = z.infer<typeof formEducationSchema>;
 export type Profile = z.infer<typeof profileSchema>;
 export type Account = z.infer<typeof accountSchema>;
+
+// Enums
+export type LanguageProficiency = z.infer<typeof LanguageProficiency>;

@@ -2,7 +2,7 @@ import * as React from "react"
 
 import { cn } from "@utils/tailwind"
 
-interface InputProps extends React.ComponentProps<"input"> {
+export interface InputProps extends React.ComponentProps<"input"> {
   error?: string;
 }
 

@@ -24,4 +24,5 @@ export * from './separator';
 export * from './multi-input';
 export * from './tag-list';
 export * from './pill';
-export * from './badge'
+export * from './badge';
+export * from './auto-complete-input';
