@@ -4189,6 +4189,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"country-state-city@npm:^3.2.1":
+  version: 3.2.1
+  resolution: "country-state-city@npm:3.2.1"
+  checksum: 10c0/2545a000c207345514de31c20ed8a331bba9796f36ab1e6e4019ebb319bca37894180e4ade40eef9d7f2443aa60045ec3f317bfdb3f4c7b99b9c711e4688d8cb
+  languageName: node
+  linkType: hard
+
 "cross-spawn@npm:^7.0.6":
   version: 7.0.6
   resolution: "cross-spawn@npm:7.0.6"
@@ -7195,6 +7202,7 @@ __metadata:
     class-variance-authority: "npm:0.7.1"
     clsx: "npm:2.1.1"
     cmdk: "npm:^1.1.1"
+    country-state-city: "npm:^3.2.1"
     date-fns: "npm:4.1.0"
     eslint: "npm:9"
     eslint-config-next: "npm:15.4.4"

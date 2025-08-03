@@ -87,7 +87,7 @@ export function AutocompleteInput<T extends string>({
                 <Icon
                   type="ChevronDown"
                   className={cn(
-                    'h-5 w-5 text-neutral-800 transition-transform duration-200',
+                    'size-4 opacity-50 transition-transform duration-200',
                     'group-data-[open]:-scale-100',
                   )}
                   aria-hidden="true"
@@ -97,28 +97,28 @@ export function AutocompleteInput<T extends string>({
           </div>
           <ComboboxOptions
             className={cn(
-              'absolute z-10 max-h-60 w-full overflow-auto text-md rounded-sm bg-white py-1 shadow-md ring-black ring-opacity-5 focus:outline-none',
+              'absolute z-10 max-h-60 w-full overflow-auto text-md rounded-sm bg-muted py-1 shadow-md ring-black ring-opacity-5 focus:outline-none',
               dropdownPosition === 'bottom' ? 'mt-3' : 'mb-3 bottom-full',
-              'dark:bg-neutral-500 dark:ring-white dark:ring-opacity-10',
+              'dark:ring-white dark:ring-opacity-10',
             )}
           >
             {filteredOptions.length === 0 && query !== '' ? (
-              <div className="relative cursor-default select-none py-2 px-4 text-neutral-800">Nothing found.</div>
+              <div className="relative cursor-default select-none py-2 px-4 text-muted-foreground">Nothing found.</div>
             ) : (
               filteredOptions.map((opt, index) => (
                 <ComboboxOption
                   key={`${index}_${opt}`}
                   className={({ active }) =>
-                    cn('relative cursor-pointer select-none text-secondary-900 py-2 px-4', active && 'bg-accent-300')
+                    cn('relative cursor-pointer select-none text-foreground py-2 px-4', active && 'bg-muted/50')
                   }
                   value={opt}
                 >
                   {({ selected }) => (
                     <>
-                      <span className={cn('block truncate', selected && 'font-semibold')}>{opt}</span>
+                      <span className={cn('block truncate', selected && 'font-semibold hover:bg-muted/50')}>{opt}</span>
                       {selected && (
                         <span className="absolute inset-y-0 right-0 flex items-center pr-4">
-                          <Icon type="Done" className="h-5 w-5 text-secondary-900" aria-hidden="true" />
+                          <Icon type="Done" className="h-5 w-5 text-secondary" aria-hidden="true" />
                         </span>
                       )}
                     </>

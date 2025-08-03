@@ -1,5 +1,6 @@
 import { UseFormReturn } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, Input, Label, Textarea } from "@components/ui";
+import { City, Country } from 'country-state-city';
+import { AutocompleteInput, Form, FormControl, FormField, FormItem, Input, Label } from "@components/ui";
 import { cn } from "@lib/utils";
 import { Profile } from "@lib/types";
 
@@ -43,14 +44,14 @@ export const ContactsForm = ({ className, form }: ContactsFormProps) => {
             <FormField control={form.control} name="profile.city" render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input {...field} placeholder="City" />
+                  <AutocompleteInput selected={field.value} placeholder="City" options={City.getAllCities().map((city) => city.name)} onSelect={field.onChange} onChange={field.onChange} />
                 </FormControl>
               </FormItem>
             )} />
             <FormField control={form.control} name="profile.country" render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input {...field} placeholder="Country" />
+                  <AutocompleteInput selected={field.value} placeholder="Country" options={Country.getAllCountries().map((country) => country.name)} onSelect={field.onChange} onChange={field.onChange} />
                 </FormControl>
                 </FormItem>
               )} />
