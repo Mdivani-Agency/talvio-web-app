@@ -1,0 +1,74 @@
+'use client';
+import { useCallback, useState } from 'react';
+import { useFieldArray, UseFormReturn } from 'react-hook-form';
+import { ExperienceForm } from './forms/experience.form';
+import { Account, Experience } from '@lib/types';
+import { OrderedList } from './ordered-list';
+import { ExperienceList } from './experience-list';
+import { ConfirmModal } from '@components/modals';
+import { Label } from '@components/ui';
+
+type ExperienceViewProps = {
+  className?: string;
+  form: UseFormReturn<Account>;
+};
+
+export const ExperienceView = ({
+  className,
+  form,
+}: ExperienceViewProps) => {
+  const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
+  const { control } = form;
+
+  const { fields, append, remove, update } = useFieldArray({
+    control,
+    name: 'experience',
+  });
+
+  const handleAddExperience = useCallback((experience: Experience) => {
+    append(experience);
+  }, [append]);
+
+  const handleUpdateExperience = useCallback(
+    (index: number, experience: Experience) => {
+      update(index, experience);
+    },
+    [update],
+  );
+
+  const handleRemoveExperience = useCallback(
+    (index: number) => {
+      remove(index);
+    },
+    [remove],
+  );
+
+  return (
+    <section className={className}>
+      <Label size="lg" className="mb-6">Experience</Label>
+      <ExperienceForm
+        action="add"
+        onSubmit={handleAddExperience}
+      />
+      <OrderedList fields={fields} label="Experience">
+        {({ items, onReorder }) => (
+          <ExperienceList
+            items={items}
+            onReorder={onReorder}
+            handleUpdateExperience={handleUpdateExperience}
+            handleRemoveExperience={setRemoveItemIndex}
+          />
+        )}
+      </OrderedList>
+      <ConfirmModal
+        isOpen={typeof removeItemIndex === 'number'}
+        title="Remove Experience"
+        description="Please confirm you want to remove this item."
+        icon={'TrashBin'}
+        className="text-error"
+        onClose={() => setRemoveItemIndex(null)}
+        onConfirm={() => typeof removeItemIndex === 'number' && handleRemoveExperience(removeItemIndex)}
+      />
+    </section>
+  );
+};

@@ -7,10 +7,11 @@ type ModalProps = {
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
   title: string;
+  description?: string;
   className?: string;
 };
 
-export const Modal = ({ open, onOpenChange, children, title, className }: ModalProps) => {
+export const Modal = ({ open, onOpenChange, children, title, description, className }: ModalProps) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   return !isMobile ? (
@@ -19,7 +20,7 @@ export const Modal = ({ open, onOpenChange, children, title, className }: ModalP
         <DialogHeader className="my-2">
           <DialogTitle className="text-lg font-semibold text-center">
             <h3 className="text-lg font-semibold text-center">{title}</h3>
-            <p className="text-sm text-muted-foreground">Drag and drop items below to reorder them by priority</p>
+            {description && <p className="text-sm text-muted-foreground">{description}</p>}
           </DialogTitle>
         </DialogHeader>
         {children}

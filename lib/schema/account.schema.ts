@@ -32,11 +32,12 @@ export const profileSchema = baseProfileSchema.partial({
 const baseExperienceSchema = z.object({
   company: z.string(),
   jobTitle: z.string(),
-  startDate: z.string().datetime(),
+  startDate: z.iso.datetime(),
   employmentType: employmentTypeEnum,
   locationType: locationTypeEnum,
-  endDate: z.string().datetime(),
-  isPresent: z.string().datetime(),
+  endDate: z.iso.datetime(),
+  isPresent: z.iso.datetime(),
+  additionalDetails: z.string(),
   achievements: z.array(z.string()),
   responsibilities: z.array(z.string()),
   keyContributions: z.array(z.string()),
@@ -47,6 +48,7 @@ export const experienceSchema = baseExperienceSchema.partial({
   locationType: true,
   endDate: true,
   isPresent: true,
+  additionalDetails: true,
   achievements: true,
   responsibilities: true,
   keyContributions: true,
@@ -55,34 +57,30 @@ export const experienceSchema = baseExperienceSchema.partial({
 const educationSchema = z.object({
   name: z.string(),
   degreeType: DegreeTypeEnum,
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-  isPresent: z.string().datetime(),
+  startDate: z.iso.datetime(),
+  endDate: z.iso.datetime(),
+  isPresent: z.iso.datetime(),
+  additionalDetails: z.string(),
 });
 
 export const formEducationSchema = z.object({
   ...educationSchema.partial({
     isPresent: true,
     endDate: true,
+    additionalDetails: true,
   }).shape,
 });
 
 const recommendationSchema = z.object({
   name: z.string(),
   url: z.string(),
-});
-
-export const formRecommendationSchema = z.object({
-  ...recommendationSchema.shape,
+  additionalDetails: z.string(),
 });
 
 const projectSchema = z.object({
   name: z.string(),
   url: z.string(),
-});
-
-export const formProjectSchema = z.object({
-  ...projectSchema.partial({ url: true }).shape,
+  additionalDetails: z.string(),
 });
 
 export const linkSchema = z.object({
@@ -114,8 +112,8 @@ export const accountSchema = z.object({
     }),
   experience: z.array(experienceSchema).optional(),
   education: z.array(formEducationSchema).optional(),
-  recommendations: z.array(formRecommendationSchema).optional(),
-  projects: z.array(formProjectSchema.partial({ url: true })).optional(),
+  recommendations: z.array(recommendationSchema).optional(),
+  projects: z.array(projectSchema.partial({ url: true })).optional(),
   skills: z.array(skillSchema).optional(),
   tools: z.array(toolSchema).optional(),
   links: z.array(linkSchema).optional(),

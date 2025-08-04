@@ -4,3 +4,4 @@ export * from "./user-avatar";
 export * from "./footer";
 export * from "./loading-page";
 export * from "./error-view";
+export * from "./sortable-list";

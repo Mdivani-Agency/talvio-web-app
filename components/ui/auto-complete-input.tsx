@@ -97,28 +97,27 @@ export function AutocompleteInput<T extends string>({
           </div>
           <ComboboxOptions
             className={cn(
-              'absolute z-10 max-h-60 w-full overflow-auto text-md rounded-sm bg-muted py-1 shadow-md ring-black ring-opacity-5 focus:outline-none',
+              'absolute z-10 max-h-60 w-full overflow-auto text-md rounded-md bg-popover text-popover-foreground py-1 border shadow-md focus:outline-none focus-visible:border-ring focus-visible:ring-ring/50',
               dropdownPosition === 'bottom' ? 'mt-3' : 'mb-3 bottom-full',
-              'dark:ring-white dark:ring-opacity-10',
             )}
           >
             {filteredOptions.length === 0 && query !== '' ? (
-              <div className="relative cursor-default select-none py-2 px-4 text-muted-foreground">Nothing found.</div>
+              <div className="relative cursor-default select-none py-2 px-4">Nothing found.</div>
             ) : (
               filteredOptions.map((opt, index) => (
                 <ComboboxOption
                   key={`${index}_${opt}`}
                   className={({ active }) =>
-                    cn('relative cursor-pointer select-none text-foreground py-2 px-4', active && 'bg-muted/50')
+                    cn('relative cursor-pointer select-none py-2 px-4', active && 'bg-popover/80')
                   }
                   value={opt}
                 >
                   {({ selected }) => (
                     <>
-                      <span className={cn('block truncate', selected && 'font-semibold hover:bg-muted/50')}>{opt}</span>
+                      <span className={cn('block truncate', selected && 'font-semibold hover:bg-popover/80')}>{opt}</span>
                       {selected && (
                         <span className="absolute inset-y-0 right-0 flex items-center pr-4">
-                          <Icon type="Done" className="h-5 w-5 text-secondary" aria-hidden="true" />
+                          <Icon type="Done" className="size-4 text-primary" aria-hidden="true" />
                         </span>
                       )}
                     </>

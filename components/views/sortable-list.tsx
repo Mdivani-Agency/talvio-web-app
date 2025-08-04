@@ -103,7 +103,7 @@ export const SortableList = <T extends DraggableItem>({
             onDragOver={(e) => canDrag && handleDragOver(e, item)}
             onDrop={(e) => canDrag && handleDrop(e, item)}
             className={cn(
-              'flex items-center gap-2 p-3 bg-input rounded-sm shadow-sm transition-all transform',
+              'flex items-center gap-2 p-3 bg-card rounded-md shadow-sm transition-all transform',
               isDraggedOver && 'border-secondary scale-[1.02]',
               !disabled && canDrag && 'cursor-grab active:cursor-grabbing',
               disabled && 'opacity-50 cursor-not-allowed',
