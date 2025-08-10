@@ -26,7 +26,10 @@ type EducationFieldsProps = {
 export const EducationForm = ({ className, defaultValues = DEFAULT_VALUES, action, onSubmit }: EducationFieldsProps) => {
   const form = useForm<EducationFormValues>({
     resolver: zodResolver(educationFormValuesSchema),
-    defaultValues,
+    defaultValues: {
+      ...DEFAULT_VALUES,
+      ...defaultValues,
+    },
   });
 
   const handleSubmit = form.handleSubmit((data) => {

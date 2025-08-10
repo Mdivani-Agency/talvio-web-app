@@ -1,9 +1,15 @@
 import * as React from "react"
 
 import { cn } from "@utils/tailwind"
+import { ErrorBadge } from "./error-badge";
 
-function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+interface TextareaProps extends React.ComponentProps<"textarea"> {
+  error?: string;
+}
+
+function Textarea({ className, error, ...props }: TextareaProps) {
   return (
+    <div className="relative w-full">
     <textarea
       data-slot="textarea"
       className={cn(
@@ -14,6 +20,8 @@ function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
       )}
       {...props}
     />
+    {error && <ErrorBadge error={error} className="absolute top-3 right-3" />}
+    </div>
   )
 }
 

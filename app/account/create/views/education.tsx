@@ -6,7 +6,7 @@ import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
 import { Label } from '@components/ui';
 import { EducationForm } from './forms/education.form';
-import { EducationList } from './education-list';
+import { FormList } from './form-list';
 
 type EducationViewProps = {
   className?: string;
@@ -52,11 +52,19 @@ export const EducationView = ({
       />
       <OrderedList fields={fields} label="Education">
         {({ items, onReorder }) => (
-          <EducationList
+          <FormList
             items={items}
+            labelKey="name"
+            renderForm={(item, onSubmit) => (
+              <EducationForm
+                action="edit"
+                onSubmit={onSubmit}
+                defaultValues={item}
+              />
+            )}
             onReorder={onReorder}
-            handleUpdateEducation={handleUpdateEducation}
-            handleRemoveEducation={setRemoveItemIndex}
+            handleUpdateForm={handleUpdateEducation}
+            handleRemoveForm={setRemoveItemIndex}
           />
         )}
       </OrderedList>

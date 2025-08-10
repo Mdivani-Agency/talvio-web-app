@@ -30,7 +30,10 @@ type ExperienceFieldsProps = {
 export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, action, onSubmit }: ExperienceFieldsProps) => {
   const form = useForm<ExperienceFormValues>({
     resolver: zodResolver(experienceFormValuesSchema),
-    defaultValues,
+    defaultValues: {
+      ...DEFAULT_VALUES,
+      ...defaultValues,
+    },
   });
 
   const handleSubmit = form.handleSubmit((data) => {

@@ -30,3 +30,5 @@ export * from './collapsible';
 export * from './date-picker';
 export * from './experience-range-picker';
 export * from './error-badge';
+export * from './multi-input-list';
+export * from './info-badge';

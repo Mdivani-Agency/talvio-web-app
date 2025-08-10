@@ -1,5 +1,5 @@
 import { UseFormReturn } from "react-hook-form";
-import { Form, FormControl, Input, FormField, FormItem, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker } from "@components/ui";
+import { Form, FormControl, Input, FormField, FormItem, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker, MultiListInput, ErrorBadge, InfoBadge } from "@components/ui";
 import { cn } from "@lib/utils";
 import { employmentTypeEnum, locationTypeEnum } from "@lib/schema/enums";
 import { z } from "zod";
@@ -26,6 +26,8 @@ type ExperienceFieldsProps = {
 };
 
 export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => {
+  const bulletPointErrors = form.formState.errors.achievements?.message || form.formState.errors.responsibilities?.message || form.formState.errors.keyContributions?.message;
+
   return (
       <Form {...form}>
         <form className={cn("space-y-6", className)}>
@@ -99,34 +101,35 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
           )} />
         </div>
 
+        <MultiListInput
+          label='Bullet Points'
+          badge={bulletPointErrors ? <ErrorBadge error={bulletPointErrors} /> : <InfoBadge info="Please try to add at list one item for each category" />}
+          items={{
+            achievements: {
+              label: 'Achievements',
+              items: form.watch('achievements'),
+              onAdd: (item) => form.setValue('achievements', [...form.watch('achievements'), item]),
+              onRemove: (index) => form.setValue('achievements', form.watch('achievements').filter((_, i) => i !== index)),
+            },
+            responsibilities: {
+              label: 'Responsibilities',
+              items: form.watch('responsibilities'),
+              onAdd: (item) => form.setValue('responsibilities', [...form.watch('responsibilities'), item]),
+              onRemove: (index) => form.setValue('responsibilities', form.watch('responsibilities').filter((_, i) => i !== index)),
+            },
+            keyContributions: {
+              label: 'Key Contributions',
+              items: form.watch('keyContributions'),
+              onAdd: (item) => form.setValue('keyContributions', [...form.watch('keyContributions'), item]),
+              onRemove: (index) => form.setValue('keyContributions', form.watch('keyContributions').filter((_, i) => i !== index)),
+            },
+          }}
+        />
+
         <FormField control={form.control} name="additionalDetails" render={({ field }) => (
           <FormItem>
             <FormControl>
-              <Textarea {...field} placeholder="Additional Details" />
-            </FormControl>
-          </FormItem>
-        )} />
-
-        <FormField control={form.control} name="achievements" render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Input {...field} placeholder="Achievements" error={form.formState.errors.achievements?.message} />
-            </FormControl>
-          </FormItem>
-        )} />
-
-        <FormField control={form.control} name="responsibilities" render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Input {...field} placeholder="Responsibilities" error={form.formState.errors.responsibilities?.message} />
-            </FormControl>
-          </FormItem>
-        )} />
-
-        <FormField control={form.control} name="keyContributions" render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Input {...field} placeholder="Key Contributions" error={form.formState.errors.keyContributions?.message} />
+              <Textarea {...field} placeholder="Additional Context (if necessary)" error={form.formState.errors.additionalDetails?.message} />
             </FormControl>
           </FormItem>
         )} />

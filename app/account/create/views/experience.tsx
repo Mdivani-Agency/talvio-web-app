@@ -4,9 +4,9 @@ import { useFieldArray, UseFormReturn } from 'react-hook-form';
 import { ExperienceForm } from './forms/experience.form';
 import { Account, Experience } from '@lib/types';
 import { OrderedList } from './ordered-list';
-import { ExperienceList } from './experience-list';
 import { ConfirmModal } from '@components/modals';
 import { Label } from '@components/ui';
+import { FormList } from './form-list';
 
 type ExperienceViewProps = {
   className?: string;
@@ -52,11 +52,19 @@ export const ExperienceView = ({
       />
       <OrderedList fields={fields} label="Experience">
         {({ items, onReorder }) => (
-          <ExperienceList
+          <FormList
             items={items}
+            labelKey="company"
+            renderForm={(item, onSubmit) => (
+              <ExperienceForm
+                action="edit"
+                onSubmit={onSubmit}
+                defaultValues={item}
+              />
+            )}
             onReorder={onReorder}
-            handleUpdateExperience={handleUpdateExperience}
-            handleRemoveExperience={setRemoveItemIndex}
+            handleUpdateForm={handleUpdateExperience}
+            handleRemoveForm={setRemoveItemIndex}
           />
         )}
       </OrderedList>
