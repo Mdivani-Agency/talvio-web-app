@@ -1,12 +1,28 @@
 import { UseFormReturn } from "react-hook-form";
 import { Form, FormControl, Input, FormField, FormItem, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker } from "@components/ui";
 import { cn } from "@lib/utils";
-import { Experience } from "@lib/types";
 import { employmentTypeEnum, locationTypeEnum } from "@lib/schema/enums";
+import { z } from "zod";
+
+export type ExperienceFormValues = z.infer<typeof experienceFormValuesSchema>;
+
+export const experienceFormValuesSchema = z.object({
+  company: z.string().min(1, { message: 'Company is required' }),
+  jobTitle: z.string().min(1, { message: 'Job title is required' }),
+  startDate: z.iso.datetime().or(z.literal('')),
+  endDate: z.iso.datetime().or(z.literal('')).optional(),
+  isPresent: z.iso.datetime().or(z.literal('')).optional(),
+  employmentType: employmentTypeEnum.or(z.literal('')),
+  locationType: locationTypeEnum.or(z.literal('')),
+  additionalDetails: z.string(),
+  achievements: z.array(z.string()),
+  responsibilities: z.array(z.string()),
+  keyContributions: z.array(z.string()),
+});
 
 type ExperienceFieldsProps = {
   className?: string;
-  form: UseFormReturn<Experience>;
+  form: UseFormReturn<ExperienceFormValues>;
 };
 
 export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => {
@@ -51,8 +67,8 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
           <FormField control={form.control} name='employmentType' render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Select {...field}>
-                  <SelectTrigger>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger error={form.formState.errors.employmentType?.message}>
                     <SelectValue placeholder="Select Employment Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -68,8 +84,8 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
           <FormField control={form.control} name="locationType" render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Select {...field}>
-                  <SelectTrigger>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger error={form.formState.errors.locationType?.message}>
                     <SelectValue placeholder="Select Location Type" />
                   </SelectTrigger>
                   <SelectContent>

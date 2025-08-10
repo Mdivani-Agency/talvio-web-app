@@ -32,8 +32,8 @@ export const EducationForm = ({ className, defaultValues = DEFAULT_VALUES, actio
   const handleSubmit = form.handleSubmit((data) => {
     const { success, data: parsedData, error } = educationFormSchema.safeParse({
       ...data,
-      isPresent: data.isPresent ? new Date().toISOString() : undefined,
-      endDate: data.endDate ? new Date().toISOString() : undefined,
+      isPresent: data.isPresent ?? undefined,
+      endDate: data.endDate ?? undefined,
     });
 
     if (success) {
