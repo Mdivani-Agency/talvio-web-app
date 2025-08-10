@@ -35,6 +35,11 @@ interface DatePickerProps {
   maxDate?: string;
 }
 
+const emptyDate = {
+  getMonth: () => '',
+  getFullYear: () => '',
+}
+
 export function DatePicker({
   value,
   onChange,
@@ -48,7 +53,7 @@ export function DatePicker({
   // Parse string props to Date objects
   const minDateObj = useMemo(() => (minDate ? new Date(minDate) : undefined), [minDate]);
   const maxDateObj = useMemo(() => (maxDate ? new Date(maxDate) : undefined), [maxDate]);
-  const selectedDate = useMemo(() => (value ? new Date(value) : undefined), [value]);
+  const selectedDate = useMemo(() => (value ? new Date(value) : emptyDate), [value]);
   const [dropdownPosition, setDropdownPosition] = useState<'top' | 'bottom'>('bottom');
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -101,7 +106,7 @@ export function DatePicker({
   };
 
   const handleMonthChange = (month: number) => {
-    const newDate = new Date(selectedDate || new Date());
+    const newDate = new Date(selectedDate instanceof Date ? selectedDate : new Date());
     newDate.setMonth(month);
 
     // Validate against min/max dates
@@ -118,7 +123,7 @@ export function DatePicker({
   };
 
   const handleYearChange = (year: number) => {
-    const newDate = new Date(selectedDate || new Date());
+    const newDate = new Date(selectedDate instanceof Date ? selectedDate : new Date());
     newDate.setFullYear(year);
 
     // Validate against min/max dates
@@ -183,7 +188,7 @@ export function DatePicker({
               {MONTHS.map((month) => {
                 const isDisabled = isMonthDisabled(
                   month.value,
-                  selectedDate?.getFullYear() || new Date().getFullYear(),
+                  selectedDate instanceof Date ? selectedDate.getFullYear() : new Date().getFullYear(),
                 );
                 return (
                   <ListboxOption

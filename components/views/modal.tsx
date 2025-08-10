@@ -19,7 +19,7 @@ export const Modal = ({ open, onOpenChange, children, title, description, classN
       <DialogContent className={cn('p-6', className)}>
         <DialogHeader className="my-2">
           <DialogTitle className="text-lg font-semibold text-center">
-            <h3 className="text-lg font-semibold text-center">{title}</h3>
+            <span className="text-lg font-semibold text-center">{title}</span>
             {description && <p className="text-sm text-muted-foreground">{description}</p>}
           </DialogTitle>
         </DialogHeader>

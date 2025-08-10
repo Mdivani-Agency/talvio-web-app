@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { accountSchema, formEducationSchema, experienceSchema, languageSchema, linkSchema, profileSchema, skillSchema, toolSchema } from "./schema/account.schema";
+import { accountSchema, educationFormSchema, experienceSchema, languageSchema, linkSchema, profileSchema, skillSchema, toolSchema } from "./schema/account.schema";
 import { LanguageProficiency } from "./schema/enums";
 
 export type AllowEmptyStringForEnum<T> = T extends string ? T | '' : T;
@@ -29,7 +29,7 @@ export type Language = z.infer<typeof languageSchema>;
 export type SkillFields = { skills?: Skill[]; tools?: Tool[]; };
 export type Highlights = { languages?: Language[]; links?: Link[]; } & SkillFields;
 export type Experience = z.infer<typeof experienceSchema>;
-export type Education = z.infer<typeof formEducationSchema>;
+export type Education = z.infer<typeof educationFormSchema>;
 export type Profile = z.infer<typeof profileSchema>;
 export type Account = z.infer<typeof accountSchema>;
 

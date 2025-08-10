@@ -7,6 +7,7 @@ import MemoCheck from './svg/memo-circle-check.svg';
 import Done from './svg/done.svg';
 import Calendar from './svg/calendar.svg';
 import ChevronDown from './svg/chevron-down.svg';
+import ChevronUp from './svg/chevron-up.svg';
 import ErrorOutline from './svg/error-outline.svg';
 import Edit from './svg/edit.svg';
 import Vector from './svg/vector.svg';
@@ -67,6 +68,7 @@ const IconMap = {
   Done,
   Calendar,
   ChevronDown,
+  ChevronUp,
   ErrorOutline,
   Edit,
   Vector,

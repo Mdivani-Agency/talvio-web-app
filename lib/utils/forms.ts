@@ -1,8 +1,19 @@
+import { z } from "zod";
+import { ZodError } from "zod";
+
 export function parseValidationErrors(errors: Record<string, string[]>) {
   return Object.keys(errors).reduce(
     (accumulator, key) => ({ ...accumulator, [key]: { message: errors[key]?.[0] } }),
     {},
   );
+}
+
+export function getErrorMessage<T extends Record<string, unknown>>(error?: ZodError<T>) {
+  if (error) {
+    return z.prettifyError(error);
+  }
+
+  return 'Unknown error';
 }
 
 export function getHostname(url: string) {

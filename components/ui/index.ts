@@ -29,3 +29,4 @@ export * from './auto-complete-input';
 export * from './collapsible';
 export * from './date-picker';
 export * from './experience-range-picker';
+export * from './error-badge';
