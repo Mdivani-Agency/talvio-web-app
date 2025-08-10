@@ -46,8 +46,6 @@ export const AccountForm = ({ values }: AccountFormProps) => {
     console.log(data);
   });
 
-  console.log('form values', values);
-
   return (
     <div className="space-y-8 py-8">
       <ProfileForm form={form} />
