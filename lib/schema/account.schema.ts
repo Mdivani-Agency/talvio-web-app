@@ -71,13 +71,13 @@ export const educationFormSchema = z.object({
   }).shape,
 });
 
-const recommendationSchema = z.object({
+export const recommendationSchema = z.object({
   name: z.string(),
   url: z.string(),
   additionalDetails: z.string(),
 });
 
-const projectSchema = z.object({
+export const projectSchema = z.object({
   name: z.string(),
   url: z.string(),
   additionalDetails: z.string(),

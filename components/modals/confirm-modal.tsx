@@ -1,6 +1,6 @@
 import { cn } from '@lib/utils';
 import { Button } from '@components/ui';
-import { Icon, IconType } from '@components/icons';
+import { IconType } from '@components/icons';
 import { Modal } from '@components/views/modal';
 
 type ConfirmModalProps = {
@@ -17,7 +17,6 @@ export const ConfirmModal = ({
   isOpen,
   title,
   description,
-  icon,
   className,
   onClose,
   onConfirm,

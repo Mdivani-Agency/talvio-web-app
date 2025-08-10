@@ -24,7 +24,7 @@ type MultiInputState<T extends string> = Record<T, { value: string }>;
 const ListItem = ({ item, onRemove }: { item: string; onRemove: () => void }) => {
   return (
     <div
-      className={'relative p-2.5 px-3 pr-6 w-auto bg-card text-sm text-left text-card-foreground rounded-md font-medium'}
+      className={'relative p-2.5 px-3 pr-6 w-auto bg-accent text-sm text-left text-accent-foreground rounded-md font-medium'}
     >
       {item}
       <Button

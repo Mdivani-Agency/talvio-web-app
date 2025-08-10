@@ -1,6 +1,18 @@
 import { z } from "zod";
-import { accountSchema, educationFormSchema, experienceSchema, languageSchema, linkSchema, profileSchema, projectFormSchema, skillSchema, toolSchema } from "./schema/account.schema";
+import {
+  accountSchema,
+  educationFormSchema,
+  experienceSchema,
+  languageSchema,
+  linkSchema,
+  profileSchema,
+  projectFormSchema,
+  skillSchema,
+  toolSchema,
+  recommendationSchema
+} from "./schema/account.schema";
 import { LanguageProficiency } from "./schema/enums";
+import { parsedAccountSchema } from "./schema/parsed.schema";
 
 export type AllowEmptyStringForEnum<T> = T extends string ? T | '' : T;
 export type RequiredWithEmptyEnums<T> = {
@@ -31,8 +43,12 @@ export type Highlights = { languages?: Language[]; links?: Link[]; } & SkillFiel
 export type Experience = z.infer<typeof experienceSchema>;
 export type Education = z.infer<typeof educationFormSchema>;
 export type Project = z.infer<typeof projectFormSchema>;
+export type Recommendation = z.infer<typeof recommendationSchema>;
 export type Profile = z.infer<typeof profileSchema>;
 export type Account = z.infer<typeof accountSchema>;
+
+// Parsed types
+export type ParsedAccount = z.infer<typeof parsedAccountSchema>;
 
 // Enums
 export type LanguageProficiency = z.infer<typeof LanguageProficiency>;

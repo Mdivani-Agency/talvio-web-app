@@ -1,5 +1,5 @@
 import { UseFormReturn } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, Input, Label, Textarea } from "@components/ui";
+import { Form, FormControl, FormField, FormItem, FormLabel, Input, Textarea } from "@components/ui";
 import { cn } from "@lib/utils";
 import { Profile } from "@lib/types";
 
@@ -12,7 +12,6 @@ export const ProfileForm = ({ className, form }: ProfileFormProps) => {
   return (
     <Form {...form}>
       <div className={cn("space-y-6", className)}>
-        <Label size="lg">Personal Details</Label>
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="profile.firstName" render={({ field }) => (
             <FormItem>

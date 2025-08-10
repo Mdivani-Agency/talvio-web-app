@@ -4,17 +4,20 @@ import { accountSchema } from "@lib/schema/account.schema";
 import { ProfileForm } from "./forms/profile.form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "@components/ui";
 import { ContactsForm } from "./forms/contacts.form";
 import { HighlightsForm } from "./forms/highlights.form";
-import { Highlights } from "@lib/types";
+import { Account, Highlights } from "@lib/types";
 import { ExperienceView } from "./experience";
 import { EducationView } from "./education";
 import { ProjectsView } from "./projects";
 
-export const AccountForm = () => {
-  const form = useForm<z.infer<typeof accountSchema>>({
+interface AccountFormProps {
+  values?: Account
+}
+
+export const AccountForm = ({ values }: AccountFormProps) => {
+  const form = useForm<Account>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       profile: {
@@ -36,11 +39,14 @@ export const AccountForm = () => {
       skills: [],
       tools: [],
     },
+    values,
   });
 
   const handleSubmit = form.handleSubmit((data) => {
     console.log(data);
   });
+
+  console.log('form values', values);
 
   return (
     <div className="space-y-8 py-8">
