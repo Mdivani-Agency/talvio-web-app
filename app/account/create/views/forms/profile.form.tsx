@@ -17,14 +17,14 @@ export const ProfileForm = ({ className, form }: ProfileFormProps) => {
           <FormField control={form.control} name="profile.firstName" render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input {...field} placeholder="First Name" />
+                <Input {...field} placeholder="First Name" error={form.formState.errors.profile?.firstName?.message} />
               </FormControl>
             </FormItem>
           )} />
           <FormField control={form.control} name="profile.lastName" render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input {...field} placeholder="Last Name" />
+                <Input {...field} placeholder="Last Name" error={form.formState.errors.profile?.lastName?.message} />
               </FormControl>
             </FormItem>
           )} />
@@ -33,7 +33,7 @@ export const ProfileForm = ({ className, form }: ProfileFormProps) => {
         <FormField control={form.control} name="profile.role" render={({ field }) => (
           <FormItem>
             <FormControl>
-              <Input {...field} placeholder="Role" />
+              <Input {...field} placeholder="Role" error={form.formState.errors.profile?.role?.message} />
             </FormControl>
           </FormItem>
         )} />
@@ -42,7 +42,7 @@ export const ProfileForm = ({ className, form }: ProfileFormProps) => {
           <FormItem>
             <FormLabel size="sm" variant="muted">Summary</FormLabel>
             <FormControl>
-              <Textarea {...field} placeholder="Write a brief summary" />
+              <Textarea {...field} placeholder="Write a brief summary" error={form.formState.errors.profile?.tagline?.message} />
             </FormControl>
           </FormItem>
         )} />

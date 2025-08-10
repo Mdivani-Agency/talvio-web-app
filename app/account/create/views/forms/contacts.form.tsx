@@ -18,14 +18,14 @@ export const ContactsForm = ({ className, form }: ContactsFormProps) => {
           <FormField control={form.control} name="profile.email" render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input {...field} placeholder="Email" />
+                <Input {...field} placeholder="Email" error={form.formState.errors.profile?.email?.message} />
               </FormControl>
             </FormItem>
           )} />
           <FormField control={form.control} name="profile.phone" render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input {...field} placeholder="Phone" />
+                <Input {...field} placeholder="Phone" error={form.formState.errors.profile?.phone?.message} />
               </FormControl>
             </FormItem>
           )} />
@@ -33,7 +33,7 @@ export const ContactsForm = ({ className, form }: ContactsFormProps) => {
         <FormField control={form.control} name="profile.website" render={({ field }) => (
           <FormItem>
             <FormControl>
-              <Input {...field} placeholder="Personal Website (optional)" />
+              <Input {...field} placeholder="Personal Website (optional)" error={form.formState.errors.profile?.website?.message} />
             </FormControl>
           </FormItem>
         )} />
@@ -44,14 +44,28 @@ export const ContactsForm = ({ className, form }: ContactsFormProps) => {
             <FormField control={form.control} name="profile.city" render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <AutocompleteInput selected={field.value} placeholder="City" options={City.getAllCities().map((city) => city.name)} onSelect={field.onChange} onChange={field.onChange} />
+                  <AutocompleteInput
+                    selected={field.value}
+                    placeholder="City"
+                    options={City.getAllCities().map((city) => city.name)}
+                    onSelect={field.onChange}
+                    onChange={field.onChange}
+                    error={form.formState.errors.profile?.city?.message}
+                  />
                 </FormControl>
               </FormItem>
             )} />
             <FormField control={form.control} name="profile.country" render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <AutocompleteInput selected={field.value} placeholder="Country" options={Country.getAllCountries().map((country) => country.name)} onSelect={field.onChange} onChange={field.onChange} />
+                  <AutocompleteInput
+                    selected={field.value}
+                    placeholder="Country"
+                    options={Country.getAllCountries().map((country) => country.name)}
+                    onSelect={field.onChange}
+                    onChange={field.onChange}
+                    error={form.formState.errors.profile?.country?.message}
+                  />
                 </FormControl>
                 </FormItem>
               )} />
