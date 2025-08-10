@@ -11,6 +11,7 @@ import { HighlightsForm } from "./forms/highlights.form";
 import { Highlights } from "@lib/types";
 import { ExperienceView } from "./experience";
 import { EducationView } from "./education";
+import { ProjectsView } from "./projects";
 
 export const AccountForm = () => {
   const form = useForm<z.infer<typeof accountSchema>>({
@@ -48,6 +49,7 @@ export const AccountForm = () => {
       <HighlightsForm form={form as unknown as UseFormReturn<Highlights>} />
       <ExperienceView form={form} />
       <EducationView form={form} />
+      <ProjectsView form={form} />
       <div className="flex justify-end gap-2">
         <Button className="w-64" onClick={handleSubmit} type="button">Continue</Button>
       </div>

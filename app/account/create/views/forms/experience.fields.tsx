@@ -50,6 +50,9 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
         </div>
 
         <ExperienceRangePicker
+          startDateError={form.formState.errors.startDate?.message}
+          endDateError={form.formState.errors.endDate?.message}
+          isPresentError={form.formState.errors.isPresent?.message}
           range={{
             startDate: form.watch('startDate'),
             endDate: form.watch('endDate'),

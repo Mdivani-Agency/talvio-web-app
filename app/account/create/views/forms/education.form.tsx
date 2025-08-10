@@ -64,7 +64,7 @@ export const EducationForm = ({ className, defaultValues = DEFAULT_VALUES, actio
     <div className={cn("space-y-6", className)}>
       <EducationFields form={form} />
       <div className="flex justify-end gap-2">
-        <Button type="button" className="w-36" variant={'secondary'} onClick={handleSubmit}>{action === 'add' ? 'Add' : 'Save'}</Button>
+        <Button type="button" className="w-36" variant={'secondary'} size={'icon'} onClick={handleSubmit}>{action === 'add' ? 'Add' : 'Save'}</Button>
       </div>
     </div>
   );

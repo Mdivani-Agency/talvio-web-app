@@ -63,15 +63,6 @@ const educationSchema = z.object({
   additionalDetails: z.string(),
 });
 
-export const educationFormValuesSchema = z.object({
-  name: z.string().min(1, { message: 'Name is required' }),
-  degreeType: DegreeTypeEnum.or(z.literal('')).refine((val) => val !== '', { message: 'Degree type is required' }),
-  startDate: z.iso.datetime().or(z.literal('')),
-  endDate: z.iso.datetime().or(z.literal('')).optional(),
-  isPresent: z.iso.datetime().or(z.literal('')).optional(),
-  additionalDetails: z.string(),
-});
-
 export const educationFormSchema = z.object({
   ...educationSchema.partial({
     isPresent: true,
@@ -90,6 +81,10 @@ const projectSchema = z.object({
   name: z.string(),
   url: z.string(),
   additionalDetails: z.string(),
+});
+
+export const projectFormSchema = projectSchema.partial({
+  url: true,
 });
 
 export const linkSchema = z.object({
@@ -122,7 +117,7 @@ export const accountSchema = z.object({
   experience: z.array(experienceSchema).optional(),
   education: z.array(educationFormSchema).optional(),
   recommendations: z.array(recommendationSchema).optional(),
-  projects: z.array(projectSchema.partial({ url: true })).optional(),
+  projects: z.array(projectFormSchema).optional(),
   skills: z.array(skillSchema).optional(),
   tools: z.array(toolSchema).optional(),
   links: z.array(linkSchema).optional(),

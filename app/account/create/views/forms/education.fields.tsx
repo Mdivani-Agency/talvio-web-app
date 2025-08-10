@@ -72,7 +72,7 @@ export const EducationFields = ({ className, form }: EducationFieldsProps) => {
           <FormField control={form.control} name="additionalDetails" render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Textarea {...field} placeholder="Additional Details" />
+                <Textarea {...field} placeholder="Additional Details" error={form.formState.errors.additionalDetails?.message} />
               </FormControl>
             </FormItem>
           )} />
