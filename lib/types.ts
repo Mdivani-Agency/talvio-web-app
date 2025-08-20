@@ -15,6 +15,15 @@ import { LanguageProficiency } from "./schema/enums";
 import { parsedAccountSchema } from "./schema/parsed.schema";
 import { questionSchema } from "./clients/openai.client";
 
+export type User = {
+  id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type AllowEmptyStringForEnum<T> = T extends string ? T | '' : T;
 export type RequiredWithEmptyEnums<T> = {
   [K in keyof T]-?: T[K] extends object ? RequiredWithEmptyEnums<T[K]> : AllowEmptyStringForEnum<T[K]>;

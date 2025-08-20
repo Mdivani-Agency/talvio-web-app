@@ -5,9 +5,13 @@ import { Loading } from "@components/views";
 import { getAccount } from "@lib/clients/account.client";
 import { useQuery } from "@tanstack/react-query";
 import { redirect, useRouter } from "next/navigation";
+import { Dashboard } from "./dashboard";
+import ErrorPage from "@app/auth/error/page";
+import { useUserSession } from "@lib/providers/session-provider";
 
 export default function AccountPage() {
   const router = useRouter();
+  const { session } = useUserSession();
   const { state, userId, send } = useAccountContext();
 
   const { isLoading, data: account } = useQuery({
@@ -36,5 +40,9 @@ export default function AccountPage() {
     return redirect('/account/create');
   }
 
-  return <div>Welcome {account?.profile.firstName}</div>;
+  if (account && session?.user) {
+    return <Dashboard account={account} sessionUser={session?.user} />;
+  }
+
+  return <ErrorPage />;
 }

@@ -32,6 +32,10 @@ export function getErrorMessage<T extends Record<string, unknown>>(error?: ZodEr
   return 'Unknown error';
 }
 
+export const formatUrl = (url: string) => {
+  return url.replace('http://', '').replace('https://', '').replace('www.', '');
+};
+
 export function getHostname(url: string) {
   // Create a URL object
   const parsedUrl = new URL(url);

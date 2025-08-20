@@ -1,18 +1,12 @@
 'use client';
 import { Loading } from '@components/views';
 import { authClient } from '@lib/auth.client';
+import { User } from '@lib/types';
 import { redirect } from 'next/navigation';
 import { createContext, useContext } from 'react';
 
 type Session = {
-  user: {
-    id: string;
-    email: string;
-    name?: string | null;
-    image?: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-  };
+  user: User;
   session: {
     id: string;
     expiresAt: Date;
