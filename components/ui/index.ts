@@ -1,4 +1,5 @@
 export * from "./avatar";
+export * from "./animated-transition";
 export * from "./button";
 export * from "./calendar";
 export * from "./card";

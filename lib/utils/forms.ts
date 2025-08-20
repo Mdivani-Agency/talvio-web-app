@@ -1,4 +1,4 @@
-import { Account, Education, Experience, Language, Link, ParsedAccount, Project, Recommendation, Skill, Tool } from "@lib/types";
+import { AccountDto, Education, Experience, Language, Link, ParsedAccount, Project, Recommendation, Skill, Tool } from "@lib/types";
 import { AutoParseableTextFormat } from "openai/lib/parser.mjs";
 import { z } from "zod";
 import { ZodError } from "zod";
@@ -73,7 +73,7 @@ export const transformToPartial = <T>(data: T): Partial<T> => {
   return result;
 };
 
-export const transformFromParsedToAccount = (parsed: ParsedAccount): Account => {
+export const transformFromParsedToAccount = (parsed: ParsedAccount): AccountDto => {
   return {
     profile: {
       email: parsed.profile?.email || '',
@@ -89,9 +89,9 @@ export const transformFromParsedToAccount = (parsed: ParsedAccount): Account => 
         return [...accumulator, {
           company: experience.company,
           jobTitle: experience.jobTitle,
-          startDate: experience.startDate,
-          endDate: experience.endDate || undefined,
-          isPresent: experience.isPresent || undefined,
+          startDate: new Date(experience.startDate).toISOString(),
+          endDate: experience.endDate ? new Date(experience.endDate).toISOString() : undefined,
+          isPresent: experience.isPresent ? new Date(experience.isPresent).toISOString() : undefined,
           employmentType: experience.employmentType || undefined,
           locationType: experience.locationType || undefined,
           additionalDetails: experience.additionalDetails || undefined,
@@ -108,9 +108,9 @@ export const transformFromParsedToAccount = (parsed: ParsedAccount): Account => 
         return [...accumulator, {
           name: education.name,
           degreeType: education.degreeType,
-          startDate: education.startDate,
-          endDate: education.endDate || undefined,
-          isPresent: education.isPresent || undefined,
+          startDate: new Date(education.startDate).toISOString(),
+          endDate: education.endDate ? new Date(education.endDate).toISOString() : undefined,
+          isPresent: education.isPresent ? new Date(education.isPresent).toISOString() : undefined,
           additionalDetails: education.additionalDetails || undefined,
         }];
       } else {

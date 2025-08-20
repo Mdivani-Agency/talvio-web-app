@@ -13,6 +13,7 @@ import {
 } from "./schema/account.schema";
 import { LanguageProficiency } from "./schema/enums";
 import { parsedAccountSchema } from "./schema/parsed.schema";
+import { questionSchema } from "./clients/openai.client";
 
 export type AllowEmptyStringForEnum<T> = T extends string ? T | '' : T;
 export type RequiredWithEmptyEnums<T> = {
@@ -34,6 +35,10 @@ type Paths<T> = T extends Primitive
 
 export type FlattenedPaths<T> = Paths<T> extends string ? Paths<T> : never;
 
+export type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+};
+
 export type Skill = z.infer<typeof skillSchema>;
 export type Tool = z.infer<typeof toolSchema>;
 export type Link = z.infer<typeof linkSchema>;
@@ -45,10 +50,17 @@ export type Education = z.infer<typeof educationFormSchema>;
 export type Project = z.infer<typeof projectFormSchema>;
 export type Recommendation = z.infer<typeof recommendationSchema>;
 export type Profile = z.infer<typeof profileSchema>;
-export type Account = z.infer<typeof accountSchema>;
+export type AccountDto = z.infer<typeof accountSchema>;
+export type Account = AccountDto & {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 // Parsed types
 export type ParsedAccount = z.infer<typeof parsedAccountSchema>;
 
 // Enums
 export type LanguageProficiency = z.infer<typeof LanguageProficiency>;
+
+export type FeedbackQuestions = z.infer<typeof questionSchema>;

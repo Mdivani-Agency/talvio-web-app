@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { useFieldArray, UseFormReturn } from 'react-hook-form';
 import { ExperienceForm } from './forms/experience.form';
-import { Account, Experience } from '@lib/types';
+import { AccountDto, Experience } from '@lib/types';
 import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
 import { Label } from '@components/ui';
@@ -10,7 +10,7 @@ import { FormList } from './form-list';
 
 type ExperienceViewProps = {
   className?: string;
-  form: UseFormReturn<Account>;
+  form: UseFormReturn<AccountDto>;
 };
 
 export const ExperienceView = ({

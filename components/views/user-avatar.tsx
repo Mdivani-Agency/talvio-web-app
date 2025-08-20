@@ -53,7 +53,7 @@ export function UserAvatar({ className, user }: UserAvatarProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent className='w-36' align='end' sideOffset={10}>
           <DropdownMenuItem asChild>
-            <Link href={`/account/${user?.id}`}>
+            <Link href={`/account`}>
               <Icon type="User" className="size-4 text-primary" />
               Profile
             </Link>

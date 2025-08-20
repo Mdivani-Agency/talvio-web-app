@@ -106,14 +106,7 @@ export const languageSchema = z.object({
 });
 
 export const accountSchema = z.object({
-  profile: profileSchema
-    .partial({
-      tagline: true,
-      phone: true,
-      website: true,
-      city: true,
-      country: true,
-    }),
+  profile: profileSchema,
   experience: z.array(experienceSchema).optional(),
   education: z.array(educationFormSchema).optional(),
   recommendations: z.array(recommendationSchema).optional(),

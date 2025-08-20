@@ -7,43 +7,75 @@ import { useForm, UseFormReturn } from "react-hook-form";
 import { Button } from "@components/ui";
 import { ContactsForm } from "./forms/contacts.form";
 import { HighlightsForm } from "./forms/highlights.form";
-import { Account, Highlights } from "@lib/types";
+import { AccountDto, Highlights } from "@lib/types";
 import { ExperienceView } from "./experience";
 import { EducationView } from "./education";
 import { ProjectsView } from "./projects";
+import { useAccountContext } from "@app/account/providers/state-provider";
+import { toast } from "sonner";
 
 interface AccountFormProps {
-  values?: Account
+  onSubmit: (data: AccountDto) => void;
 }
 
-export const AccountForm = ({ values }: AccountFormProps) => {
-  const form = useForm<Account>({
+export const AccountForm = ({ onSubmit }: AccountFormProps) => {
+  const { state, send } = useAccountContext();
+  const values = state.context.accountDto || state.context.partialDto || {};
+
+  console.log("default values", values);
+  const form = useForm<AccountDto>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       profile: {
-        firstName: '',
-        lastName: '',
-        role: '',
-        email: '',
-        phone: '',
-        website: '',
-        tagline: '',
-        city: '',
-        country: '',
-        seniority: 'entry',
+        firstName: values.profile?.firstName || '',
+        lastName: values.profile?.lastName || '',
+        role: values.profile?.role || '',
+        email: values.profile?.email || '',
+        phone: values.profile?.phone || '',
+        website: values.profile?.website || '',
+        tagline: values.profile?.tagline || '',
+        city: values.profile?.city || '',
+        country: values.profile?.country || '',
+        seniority: values.profile?.seniority || 'entry',
       },
-      languages: [],
-      links: [],
-      experience: [],
-      education: [],
-      skills: [],
-      tools: [],
+      languages: values.languages || [],
+      links: values.links || [],
+      experience: values.experience || [],
+      education: values.education || [],
+      skills: values.skills || [],
+      tools: values.tools || [],
+      projects: values.projects || [],
     },
-    values,
   });
 
   const handleSubmit = form.handleSubmit((data) => {
-    console.log(data);
+    onSubmit(data);
+  }, (error) => {
+    console.error(error);
+    toast.error('Failed to create account', {
+      description: error.profile?.firstName?.message ||
+        error.profile?.lastName?.message ||
+        error.profile?.role?.message ||
+        error.profile?.email?.message ||
+        error.profile?.phone?.message ||
+        error.profile?.website?.message ||
+        error.profile?.tagline?.message ||
+        error.profile?.city?.message ||
+        error.profile?.country?.message ||
+        error.profile?.seniority?.message ||
+        error.experience?.message ||
+        error.education?.message ||
+        error.skills?.message ||
+        error.tools?.message ||
+        error.projects?.message ||
+        error.links?.message ||
+        error.languages?.message ||
+        error.recommendations?.message,
+    });
+  });
+
+  form.watch((data) => {
+    send({ type: 'SET_PARTIAL_DTO', value: data as Partial<AccountDto> });
   });
 
   return (
@@ -55,7 +87,9 @@ export const AccountForm = ({ values }: AccountFormProps) => {
       <EducationView form={form} />
       <ProjectsView form={form} />
       <div className="flex justify-end gap-2">
-        <Button className="w-64" onClick={handleSubmit} type="button">Continue</Button>
+        <Button className="w-64" onClick={handleSubmit} type="button">
+          Continue
+        </Button>
       </div>
     </div>
   );

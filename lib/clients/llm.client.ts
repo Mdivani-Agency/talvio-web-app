@@ -1,6 +1,5 @@
-import { FeedbackQuestions } from '@lib/clients/openai.client';
 import { transformToPartial } from '@lib/utils';
-import { Account, ParsedAccount } from '@lib/types';
+import { Account, AccountDto, FeedbackQuestions, ParsedAccount } from '@lib/types';
 
 export const fetchQuestions = async (resume: string) => {
   const res = await fetch('/api/resume/qa', {
@@ -10,6 +9,7 @@ export const fetchQuestions = async (resume: string) => {
   });
   if (!res.ok) throw new Error('Failed to fetch questions');
   const data = await res.json();
+  console.log('questions', data);
   return data.questions as FeedbackQuestions;
 };
 
@@ -48,5 +48,5 @@ export const fetchTailoredAccount = async (account: string, questions: string[],
   });
   if (!res.ok) throw new Error('Failed to tailor account');
   const data = await res.json();
-  return transformToPartial(data.account as ParsedAccount);
+  return transformToPartial(data.account as ParsedAccount) as AccountDto;
 };

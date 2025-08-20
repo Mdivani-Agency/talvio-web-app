@@ -37,7 +37,6 @@ export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, acti
   });
 
   const handleSubmit = form.handleSubmit((data) => {
-    console.log('data', data);
     const { success, data: parsedData, error } = experienceSchema.safeParse({
       ...data,
       isPresent: data.isPresent ?? undefined,

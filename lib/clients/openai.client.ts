@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { parsedAccountSchema } from '@lib/schema/parsed.schema';
-import { ParsedAccount } from '@lib/types';
+import { FeedbackQuestions, ParsedAccount } from '@lib/types';
 import { jsonSchema } from '@lib/utils/forms';
 
 const apiKey = process.env.OPENAI_API_KEY || 'TEST_KEY';
@@ -11,18 +11,16 @@ const openai = new OpenAI({
   apiKey,
 });
 
-const questionSchema = z.array(
+export const questionSchema = z.array(
   z.object({
     question: z.string(),
     example: z.string().nullable(),
   }),
 );
 
-const questionResponseSchema = z.object({
+export const questionResponseSchema = z.object({
   questions: questionSchema,
 });
-
-export type FeedbackQuestions = z.infer<typeof questionSchema>;
 
 export const parseResume = async (resume: string, qaPairs: string) => {
   const completion = await openai.chat.completions.create({
@@ -44,7 +42,8 @@ export const textToStructuredResume = async (text: string) => {
           role: 'system',
           content: `
             You are a resume parser. Your task is to extract the information and format text. Do not include explanations, only formatted data.
-            **Important:** Do not hallucinate values, if the field is missing set it to null, add dates in ISO8601 format, if date is missing set it to null. isPresent field is also a date string set it to current date if end date is missing.
+            **Important:** Dates should be in ISO8601 format. example: 2025-01-01T00:00:00.000Z
+            **Important:** Do not hallucinate values, if the field is missing set it to null, if date is missing set it to null. isPresent field is also a date string set it to current date if end date is missing.
             `,
         },
         {
@@ -78,12 +77,12 @@ export const getResumeQuestions = async (resume: string): Promise<FeedbackQuesti
       },
     ],
     text: {
-      format: zodTextFormat(questionResponseSchema, 'questions'),
+      format: jsonSchema('data', questionResponseSchema),
     },
   });
 
-  if (completion.output_parsed) {
-    return completion.output_parsed.questions;
+  if (completion.output_text) {
+    return JSON.parse(completion.output_text).questions as FeedbackQuestions;
   }
 
   return [];
@@ -98,54 +97,6 @@ export const tailorAccount = async (account: string, qaPairs: string): Promise<P
         content: getAccountImprovementPrompt(),
       },
       {
-        role: 'assistant',
-        content: `**Example of desired output (structure only):**
-{
-  "bio": "Passionate about building scalable and efficient systems",
-  "seniority": "Senior",
-  "experience": [
-    {
-      "company": "Talvio",
-      "jobTitle": "Senior Software Engineer",
-      "employmentType": "contract",
-      "location": "Hybrid",
-      "achievements": ["Led migration project reducing downtime by 30%", "Developed scalable microservices"],
-      "responsibilities": ["Designing backend architecture", "Mentoring junior developers"],
-      "keyContributions": ["Introduced CI/CD pipelines"],
-      "startDate": "2023-02-01T08:53:06.286Z",
-      "endDate": "2024-04-27T08:00:00.000Z"
-    }
-  ],
-  "education": [
-    {
-      "name": "University of California, Los Angeles",
-      "degreeType": "BSc in Computer Science",
-      "description": ${tiptapFormat[1]},
-      "startDate": "2015-09-01T08:53:06.286Z",
-      "endDate": "2019-06-15T08:00:00.000Z"
-    }
-  ],
-  "projects": [
-    {
-      "name": "Real-time Dashboard",
-      "url": "https://www.dashboard.com",
-      "description": ${tiptapFormat[0]}
-  ],
-  "skills": [
-    { "name": "React" },
-    { "name": "Node.js" }
-  ],
-  "tools": [
-    { "name": "Figma" },
-    { "name": "Postman" }
-  ],
-  "languages": [
-    { "language": "English", "proficiency": "native" },
-    { "language": "French", "proficiency": "intermediate" }
-  ]
-}`,
-      },
-      {
         role: 'user',
         content: `### Input:
 User Responses: ${qaPairs}
@@ -153,12 +104,12 @@ Original Account Data: ${account}`,
       },
     ],
     text: {
-      format: zodTextFormat(parsedAccountSchema, 'account'),
+      format: jsonSchema('account', parsedAccountSchema),
     },
   });
 
-  if (completion.output_parsed) {
-    return completion.output_parsed;
+  if (completion.output_text) {
+    return JSON.parse(completion.output_text) as ParsedAccount;
   }
 
   return null;
@@ -190,18 +141,16 @@ function getResumeQuestionsPrompt() {
 
 function getAccountImprovementPrompt() {
   return `
-You are a highly skilled resume editor and enhancer. Your task is to analyze the existing resume data and the user's recent responses to generate a comprehensive, polished account JSON object.
+You are a expert resume editor and enhancer. Your task is to analyze the existing resume data and the user's recent responses to previously asked questions to generate a comprehensive, polished account JSON object.
 
 **Goals:**
 - Fill in gaps, clarify, and enrich sections like experience, education, projects, skills, tools, languages, etc.
 - Ensure each section only includes entries with complete essential fields.
 - Use existing bullet points and descriptions; enhance them where appropriate.
-- write short bio for the account, between 100 and 200 words.
+- write short summary for the account, between 200 and 300 characters.
 - Determine user seniority ('entry', 'mid', 'senior') based on experience; default to "entry" if missing.
 - For all links, prepend https:// if missing.
-- Use tiptap format for description fields in education and projects.
-- Format the output as a JSON object.
-- add dates in ISO8601 format.
+- add dates in ISO8601 format, example: 2025-01-01T00:00:00.000Z
 
 **Important:**
 - For experience, include all achievements, responsibilities and key contributions, enhancing or tailor existing ones, do not ignore them.
