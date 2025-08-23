@@ -4,13 +4,15 @@ import { Button } from '@components/ui';
 import { useTemplates } from '@hooks/use-templates';
 import { Template } from '@pdf-tlv/resume';
 import { TemplateKey } from '@lib/types';
+import { cn } from '@lib/utils';
 
 interface TemplatesProps {
   initialLevel: 'entry' | 'mid' | 'senior';
+  templatesContainerClassName?: string;
   onSelect: (template: Template, key: TemplateKey) => void;
 }
 
-export default function Templates({ initialLevel, onSelect }: TemplatesProps) {
+export default function Templates({ initialLevel, onSelect, templatesContainerClassName }: TemplatesProps) {
   const [level, setLevel] = useState<'entry' | 'mid' | 'senior'>(initialLevel);
 
   const templates = useTemplates({
@@ -48,7 +50,7 @@ export default function Templates({ initialLevel, onSelect }: TemplatesProps) {
           Senior Level
         </Button>
       </div>
-      <div className="grid grid-cols-2 gap-2 w-full px-2 mt-4">{templates}</div>
+      <div className={cn("grid grid-cols-2 gap-2 w-full px-2 mt-4", templatesContainerClassName)}>{templates}</div>
     </section>
   );
 }

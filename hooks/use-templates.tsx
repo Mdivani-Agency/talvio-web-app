@@ -26,7 +26,7 @@ export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplatePara
   };
 
   if (!templates) {
-    return <Loading message="Loading resume templates..." />;
+    return <Loading className='top-0 left-0 h-screen w-screen absolute bg-background'  message="Loading resume templates..." />;
   }
 
   return templates[level].map(({ template, name, imageUrl, key }) => (

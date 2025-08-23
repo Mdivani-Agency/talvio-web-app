@@ -5,8 +5,12 @@ import { useUserSession } from '@lib/providers';
 import { useQuery } from '@tanstack/react-query';
 import { DEFAULT_ACCOUNT_DTO } from '@app/account/create/views/account.form';
 import { ResumePreviewPage } from './resume-page';
+import { useSearchParams } from 'next/navigation';
+import { TemplateKey } from '@lib/types';
 
 export default function ResumePage() {
+  const searchParams = useSearchParams();
+  const template = searchParams.get('template') as TemplateKey;
   const { session } = useUserSession();
 
   const userId = session?.user.id;
@@ -26,7 +30,7 @@ export default function ResumePage() {
       resume={{
         resume: account || DEFAULT_ACCOUNT_DTO,
         name: 'resume',
-        template: 'entry-level-ember',
+        template: template || 'entry-level-ember',
         id: '1',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
