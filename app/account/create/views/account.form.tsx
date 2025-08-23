@@ -14,6 +14,27 @@ import { ProjectsView } from "./projects";
 import { useAccountContext } from "@app/account/providers/state-provider";
 import { toast } from "sonner";
 
+export const DEFAULT_ACCOUNT_DTO: AccountDto = {
+  profile: {
+    firstName: '',
+    lastName: '',
+    role: '',
+    email: '',
+    phone: '',
+    website: '',
+    tagline: '',
+    city: '',
+    country: '',
+    seniority: 'entry',
+  },
+  languages: [],
+  links: [],
+  experience: [],
+  education: [],
+  skills: [],
+  tools: [],
+};
+
 interface AccountFormProps {
   onSubmit: (data: AccountDto) => void;
 }
@@ -27,24 +48,24 @@ export const AccountForm = ({ onSubmit }: AccountFormProps) => {
     resolver: zodResolver(accountSchema),
     defaultValues: {
       profile: {
-        firstName: values.profile?.firstName || '',
-        lastName: values.profile?.lastName || '',
-        role: values.profile?.role || '',
-        email: values.profile?.email || '',
-        phone: values.profile?.phone || '',
-        website: values.profile?.website || '',
-        tagline: values.profile?.tagline || '',
-        city: values.profile?.city || '',
-        country: values.profile?.country || '',
-        seniority: values.profile?.seniority || 'entry',
+        firstName: values.profile?.firstName || DEFAULT_ACCOUNT_DTO.profile.firstName,
+        lastName: values.profile?.lastName || DEFAULT_ACCOUNT_DTO.profile.lastName,
+        role: values.profile?.role || DEFAULT_ACCOUNT_DTO.profile.role,
+        email: values.profile?.email || DEFAULT_ACCOUNT_DTO.profile.email,
+        phone: values.profile?.phone || DEFAULT_ACCOUNT_DTO.profile.phone,
+        website: values.profile?.website || DEFAULT_ACCOUNT_DTO.profile.website,
+        tagline: values.profile?.tagline || DEFAULT_ACCOUNT_DTO.profile.tagline,
+        city: values.profile?.city || DEFAULT_ACCOUNT_DTO.profile.city,
+        country: values.profile?.country || DEFAULT_ACCOUNT_DTO.profile.country,
+        seniority: values.profile?.seniority || DEFAULT_ACCOUNT_DTO.profile.seniority,
       },
-      languages: values.languages || [],
-      links: values.links || [],
-      experience: values.experience || [],
-      education: values.education || [],
-      skills: values.skills || [],
-      tools: values.tools || [],
-      projects: values.projects || [],
+      languages: values.languages || DEFAULT_ACCOUNT_DTO.languages,
+      links: values.links || DEFAULT_ACCOUNT_DTO.links,
+      experience: values.experience || DEFAULT_ACCOUNT_DTO.experience,
+      education: values.education || DEFAULT_ACCOUNT_DTO.education,
+      skills: values.skills || DEFAULT_ACCOUNT_DTO.skills,
+      tools: values.tools || DEFAULT_ACCOUNT_DTO.tools,
+      projects: values.projects || DEFAULT_ACCOUNT_DTO.projects,
     },
   });
 

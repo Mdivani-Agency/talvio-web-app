@@ -182,3 +182,30 @@ details > summary.list-none::-webkit-details-marker,
 details > summary.list-none::marker {
   display: none;
 }
+
+.a4-container-w {
+  width: 100%;
+  max-width: 210mm;
+}
+
+.a4-container {
+  height: 98%;
+  max-height: 297mm;
+  aspect-ratio: 210 / 297;
+  background: var(--background);
+  display: block;
+}
+
+.a4-preview {
+  height: 297mm;
+  aspect-ratio: 210 / 297;
+  background: var(--background);
+  display: block;
+}
+
+.a4-preview-mobile {
+  width: 100%;
+  aspect-ratio: 210 / 297;
+  background: var(--background);
+  display: block;
+}

@@ -34,3 +34,5 @@ export * from './error-badge';
 export * from './multi-input-list';
 export * from './info-badge';
 export * from './display-url';
+export * from './color-palette-selector';
+export * from './image-carousel';

@@ -122,16 +122,17 @@ export type IconType = keyof typeof IconMap;
 export type IconProp = {
   type: IconType;
   className?: string;
+  color?: string;
   width?: number;
   height?: number;
   onClick?: () => void;
 };
 
-export const Icon = ({ onClick, className, type = 'Add', ...props }: IconProp) => {
+export const Icon = ({ onClick, className, type = 'Add', color, ...props }: IconProp) => {
   const IconSVG = IconMap[type];
   if (!IconSVG) {
     throw new Error('Select Correct Icon Type');
   }
 
-  return <IconSVG onClick={onClick} className={cn('inline-block', className)} {...props} />;
+  return <IconSVG onClick={onClick} className={cn('inline-block', className)} style={{ color }} {...props} />;
 };

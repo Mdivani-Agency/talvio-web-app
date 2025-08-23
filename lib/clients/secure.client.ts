@@ -1,4 +1,4 @@
-export const secureFetch = async (url: string, options: RequestInit, token?: string) => {
+export const secureFetch = async (url: string, options: RequestInit = {}, token?: string) => {
   const accessToken = token || localStorage.getItem("bearer_token");
 
   if (!accessToken) {
