@@ -12,7 +12,7 @@ import { RESUME_COLORS_MAP } from '@lib/utils';
 
 export default function ResumePage() {
   const searchParams = useSearchParams();
-  const template = searchParams.get('template') as TemplateKey;
+  const templatekey = searchParams.get('template') as TemplateKey;
   const { session } = useUserSession();
   const { send } = useResumeContext();
 
@@ -29,13 +29,13 @@ export default function ResumePage() {
         send({ type: 'INITIALIZE' });
 
         const account = await getAccount(userId);
-        console.log('account', account);
+
         send({
           type: 'FETCHING_RESUME_FAILURE',
           value: {
             resume: account || DEFAULT_ACCOUNT_DTO,
             name: `${account.profile.firstName} ${account.profile.lastName}`,
-            template: template || 'entry-level-ember',
+            template: templatekey,
             color: RESUME_COLORS_MAP.black,
             fontSize: 'md',
           },
@@ -49,7 +49,7 @@ export default function ResumePage() {
           value: {
             resume: account || DEFAULT_ACCOUNT_DTO,
             name: `my resume`,
-            template: template || 'entry-level-ember',
+            template: templatekey,
             color: RESUME_COLORS_MAP.black,
             fontSize: 'md',
           },

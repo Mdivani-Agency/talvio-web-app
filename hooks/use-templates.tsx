@@ -2,14 +2,12 @@
 import Image from 'next/image';
 import { Template } from '@pdf-tlv/resume';
 import { listResumeTemplates } from '@lib/clients/resume.client';
-import { TemplateKey, TemplateItem } from '@lib/types';
+import { TemplateKey } from '@lib/types';
 import { useQuery } from '@tanstack/react-query';
 import { Loading } from '@components/views';
 
-type TemplateName = TemplateItem['name'];
-
 type TemplateParams = {
-  selectedTemplate: TemplateName;
+  selectedTemplate?: TemplateKey;
   level: 'entry' | 'mid' | 'senior';
   onSelect: (template: Template, key: TemplateKey) => void;
 };
@@ -46,7 +44,7 @@ export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplatePara
     <div key={`${level} ${name}`} className={'w-full mx-2'} onClick={() => handleTemplateClick(template, key)}>
       <div
         className={`relative w-full aspect-[210/297] shadow-md ${
-          selectedTemplate === name ? 'border-2 border-blue-500' : ''
+          selectedTemplate === key ? 'border-2 border-blue-500' : ''
         }`}
       >
         <Image src={imageUrl} fill alt={`${level} ${name}`} />

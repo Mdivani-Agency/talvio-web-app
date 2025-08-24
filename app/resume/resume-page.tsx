@@ -9,6 +9,9 @@ import { Preview } from './views/resume-preview';
 import Templates from './views/templates';
 import { useResumeContext } from './providers/state-provider';
 import { Template } from '@pdf-tlv/resume';
+import TemplatesView from './views/templates-view';
+import { listResumeTemplates } from '@lib/clients/resume.client';
+import { useQuery } from '@tanstack/react-query';
 
 type ResumePreviewPageProps = {
   level: 'entry' | 'mid' | 'senior';
@@ -20,6 +23,28 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
   const { state, send } = useResumeContext();
 
   const resume = state.context.resumeDto;
+
+  const { data: templates } = useQuery({
+    queryKey: ['templates'],
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const templates = await listResumeTemplates();
+      const template = [
+        ...templates.entry,
+        ...templates.mid,
+        ...templates.senior,
+      ].find(({ key }) => key === resume.template);
+
+      if (template) {
+        send({
+          type: 'SET_TEMPLATE',
+          value: template.template,
+        });
+      }
+
+      return templates;
+    },
+  });
 
   const handleStateUpdate = useCallback((state: Partial<{ color: string; template: Template; key: TemplateKey; data: ResumeDto['resume'] }>) => {
     if (!resume) return;
@@ -47,14 +72,16 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
 
   const components = useMemo(() => {
     return [
-      <Templates
+      <TemplatesView
         key="templates"
+        templates={templates}
         initialLevel={level}
-        onSelect={(template, key) => handleStateUpdate({ template, key })}
+        selectedTemplate={resume.template}
+        onChange={(template, key) => handleStateUpdate({ template, key })}
       />,
       <EditResumeView key="form" className="h-screen pt-16" onSubmit={(dto) => handleStateUpdate({ data: dto })} defaultValues={resume.resume} />,
     ];
-  }, [level, resume?.resume, handleStateUpdate]);
+  }, [level, resume?.resume, resume?.template, handleStateUpdate, templates]);
 
   return (
     <section className="grid grid-cols-5">

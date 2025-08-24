@@ -1,25 +1,15 @@
 'use client';
-import { useState } from 'react';
+import { PropsWithChildren } from 'react';
 import { Button } from '@components/ui';
-import { useTemplates } from '@hooks/use-templates';
-import { Template } from '@pdf-tlv/resume';
-import { TemplateKey } from '@lib/types';
 import { cn } from '@lib/utils';
 
 interface TemplatesProps {
-  initialLevel: 'entry' | 'mid' | 'senior';
+  level: 'entry' | 'mid' | 'senior';
   templatesContainerClassName?: string;
-  onSelect: (template: Template, key: TemplateKey) => void;
+  onChangeLevel: (level: 'entry' | 'mid' | 'senior') => void;
 }
 
-export default function Templates({ initialLevel, onSelect, templatesContainerClassName }: TemplatesProps) {
-  const [level, setLevel] = useState<'entry' | 'mid' | 'senior'>(initialLevel);
-
-  const templates = useTemplates({
-    selectedTemplate: 'Modern',
-    level,
-    onSelect: (template, key) => onSelect(template, key),
-  });
+export default function TemplatesSelector({ level, templatesContainerClassName, children, onChangeLevel }: PropsWithChildren<TemplatesProps>) {
 
   return (
     <section className="text-center text-secondary-900 gap-4 h-screen overflow-y-auto px-4 py-4 pt-16 col-span-2">
@@ -31,26 +21,26 @@ export default function Templates({ initialLevel, onSelect, templatesContainerCl
         <Button
           className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'entry' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
-          onClick={() => setLevel('entry')}
+          onClick={() => onChangeLevel('entry')}
         >
           Entry Level
         </Button>
         <Button
           className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'mid' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
-          onClick={() => setLevel('mid')}
+          onClick={() => onChangeLevel('mid')}
         >
           Mid Level
         </Button>
         <Button
           className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'senior' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
-          onClick={() => setLevel('senior')}
+          onClick={() => onChangeLevel('senior')}
         >
           Senior Level
         </Button>
       </div>
-      <div className={cn("grid grid-cols-2 gap-2 w-full px-2 mt-4", templatesContainerClassName)}>{templates}</div>
+      <div className={cn("grid grid-cols-2 gap-2 w-full px-2 mt-4", templatesContainerClassName)}>{children}</div>
     </section>
   );
 }
