@@ -41,7 +41,7 @@ export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplatePara
   }
 
   return templates[level].map(({ template, name, imageUrl, key }) => (
-    <div key={`${level} ${name}`} className={'w-full mx-2'} onClick={() => handleTemplateClick(template, key)}>
+    <div key={`${level} ${name}`} className={'w-full mx-2 hover:cursor-pointer hover:ring-2 hover:ring-secondary'} onClick={() => handleTemplateClick(template, key)}>
       <div
         className={`relative w-full aspect-[210/297] shadow-md ${
           selectedTemplate === key ? 'border-2 border-blue-500' : ''

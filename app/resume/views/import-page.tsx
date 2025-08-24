@@ -5,8 +5,11 @@ import { useResumeContext } from "../providers/state-provider";
 import { toast } from "sonner";
 import { Loading } from "@components/views";
 import Image from "next/image";
+import { useUserSession } from "@lib/providers";
+import { redirect } from "next/navigation";
 
 export default function ImportResumePage() {
+  const { session, isPending: isAuthenticating } = useUserSession();
   const { send, state } = useResumeContext();
   const { resumeDto } = state.context;
 
@@ -26,6 +29,14 @@ export default function ImportResumePage() {
       toast.error(error.message);
     },
   });
+
+  if (isAuthenticating) {
+    return <Loading message="Authenticating..." />;
+  }
+
+  if (!session) {
+    return redirect('/auth/sign-in?callbackURL=/resume');
+  }
 
   return (
     <section className="grid grid-cols-5 h-screen">

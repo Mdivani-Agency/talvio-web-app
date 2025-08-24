@@ -27,7 +27,7 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
             <Input {...form.register('email')} placeholder="Email" />
           </FormControl>
         </FormItem>
-        <Button type="button" onClick={form.handleSubmit(onSubmit)}>With Email</Button>
+        <Button loading={form.formState.isSubmitting} type="button" onClick={form.handleSubmit(onSubmit)}>With Email</Button>
       </form>
     </Form>
   )

@@ -2,19 +2,21 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, Separator } from "@components/ui";
 import { SignInForm } from "./sign-in.form";
 import { authClient } from "@lib/auth.client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "@components/icons";
 
-const callbackURL = `${process.env.NEXT_PUBLIC_BASE_URL}/account`;
-const magicLinkCallbackURL = `${process.env.NEXT_PUBLIC_BASE_URL}/account`;
 const magicLinkRedirectURL = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-request`;
 const magicLinkErrorURL = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/error`;
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = searchParams.get('callbackURL') || '/account';
+
+  const callbackURL = `${process.env.NEXT_PUBLIC_BASE_URL}${pathname}`;
 
   const handleEmailSignIn = async ({ email }: { email: string }) => {
-    await authClient.signIn.magicLink({ email, callbackURL: magicLinkCallbackURL, newUserCallbackURL: `${magicLinkCallbackURL}/new`, errorCallbackURL: magicLinkErrorURL });
+    await authClient.signIn.magicLink({ email, callbackURL, errorCallbackURL: magicLinkErrorURL });
     router.push(magicLinkRedirectURL);
   }
 
