@@ -1,17 +1,16 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Template } from '@pdf-tlv/resume';
 
 import { usePdfImage } from '@hooks/use-pdf-image';
 import { resumeService } from '@lib/services/resume.service';
-import { RESUME_COLORS_MAP, cn, debounce } from '@lib/utils';
+import { cn, debounce } from '@lib/utils';
 import { ResumeDto, ResumeForm } from '@lib/types';
 import { ResumeActionBar } from './resume-actions';
 import { ResumeImageCarousel } from './resume-image-carousel';
+import { useResumeContext } from '../providers/state-provider';
+import { accountToResume } from '@lib/utils';
 
 interface PreviewProps {
-  data: ResumeForm;
-  template?: Template;
   action?: React.ReactNode;
   className?: string;
   onDownload: (args: { name: string; color: string; fontSize: string }) => Promise<{ url: string }>;
@@ -21,12 +20,12 @@ export type RenderPreviewParams = Omit<ResumeDto, 'template' | 'resume'> & {
   resume: ResumeForm;
 }
 
-export function Preview({ template, data, className, action }: PreviewProps) {
+export function Preview({ className, action }: PreviewProps) {
   const { images, renderPDF } = usePdfImage();
-  const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg'>('md');
-  const [color, setColor] = useState<string>(
-    RESUME_COLORS_MAP[template as unknown as keyof typeof RESUME_COLORS_MAP] || RESUME_COLORS_MAP.black,
-  );
+  const { state, send } = useResumeContext();
+  const { resumeDto, template } = state.context;
+  const { resume, color, fontSize } = resumeDto
+
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const goToNext = () => {
@@ -60,8 +59,8 @@ export function Preview({ template, data, className, action }: PreviewProps) {
   );
 
   useEffect(() => {
-    debouncedFetchPdf({ resume: data, color, fontSize, name: 'resume' });
-  }, [data, template, color, fontSize, debouncedFetchPdf]);
+    debouncedFetchPdf({ resume: accountToResume(resume), color, fontSize, name: 'resume' });
+  }, [resume, template, color, fontSize, debouncedFetchPdf]);
 
   return (
     <section className={cn('h-full flex', className)}>
@@ -71,13 +70,13 @@ export function Preview({ template, data, className, action }: PreviewProps) {
           className="absolute bottom-10 left-0 right-0 z-30"
           color={color}
           action={action}
-          setColor={setColor}
+          setColor={(color) => send({ type: 'CHANGE_RESUME', value: { ...resumeDto, color } })}
           imageCount={images.length}
           currentIndex={currentIndex}
           goToPrevious={goToPrevious}
           goToNext={goToNext}
           fontSize={fontSize}
-          onFontSizeChange={setFontSize}
+          onFontSizeChange={(fontSize) => send({ type: 'CHANGE_RESUME', value: { ...resumeDto, fontSize } })}
           handleDownload={() => {}}
           handlePreviewOpen={() => {}}
         />

@@ -41,7 +41,7 @@ export const ProfileForm = ({ className, form }: ProfileFormProps) => {
           <FormItem>
             <FormLabel size="sm" variant="muted">Summary</FormLabel>
             <FormControl>
-              <Textarea {...field} placeholder="Write a brief summary" error={form.formState.errors.profile?.tagline?.message} />
+              <Textarea size={'lg'} {...field} placeholder="Write a brief summary" error={form.formState.errors.profile?.tagline?.message} />
             </FormControl>
           </FormItem>
         )} />

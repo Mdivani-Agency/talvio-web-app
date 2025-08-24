@@ -17,8 +17,21 @@ type TemplateParams = {
 export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplateParams) => {
   const { data: templates } = useQuery({
     queryKey: ['templates'],
-    queryFn: () => listResumeTemplates(),
     refetchOnWindowFocus: false,
+    queryFn: () => listResumeTemplates(),
+    select: (data) => {
+      const template = [
+        ...data.entry,
+        ...data.mid,
+        ...data.senior,
+      ].find(({ key }) => key === selectedTemplate);
+
+      if (template) {
+        onSelect(template.template, template.key);
+      }
+
+      return data;
+    },
   });
 
   const handleTemplateClick = (template: Template, key: TemplateKey) => {

@@ -1,10 +1,10 @@
-import { AccountDto, ResumeForm } from '@lib/types';
+import { AccountDto } from '@lib/types';
 import { ResumeFormView } from '../form/resume.form';
 
 type EditResumeProps = {
   className?: string;
   defaultValues: AccountDto;
-  onSubmit: (data: ResumeForm) => void;
+  onSubmit: (data: AccountDto) => void;
 };
 
 export const EditResumeView = ({ className, defaultValues, onSubmit }: EditResumeProps) => {

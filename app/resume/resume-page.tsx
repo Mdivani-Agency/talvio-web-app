@@ -1,32 +1,49 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { AnimatedTransition, Button, Tooltip, TooltipContent, TooltipTrigger } from '@components/ui';
-import { Template } from '@pdf-tlv/resume';
-import { Resume, TemplateKey } from '@lib/types';
-import { RESUME_COLORS_MAP, accountToResume } from '@lib/utils';
+import { ResumeDto, TemplateKey } from '@lib/types';
 import { Icon } from '@components/icons';
 
 import { EditResumeView } from './views/edit-resume-view';
 import { Preview } from './views/resume-preview';
 import Templates from './views/templates';
+import { useResumeContext } from './providers/state-provider';
+import { Template } from '@pdf-tlv/resume';
 
 type ResumePreviewPageProps = {
   level: 'entry' | 'mid' | 'senior';
   initialMode?: 'edit' | 'template';
-  resume: Resume;
 };
 
-export function ResumePreviewPage({ resume, initialMode = 'edit', level }: ResumePreviewPageProps) {
+export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreviewPageProps) {
   const [current, setCurrent] = useState(initialMode === 'edit' ? 1 : 0);
+  const { state, send } = useResumeContext();
 
-  const [state, setState] = useState<{ color: string; template?: Template; key: TemplateKey }>({
-    color: RESUME_COLORS_MAP.black,
-    key: 'senior-level-modern',
-  });
+  const resume = state.context.resumeDto;
 
-  const handleStateUpdate = (state: Partial<{ color: string; template: Template; key: TemplateKey }>) => {
-    setState((prev) => ({ ...prev, ...state }));
-  };
+  const handleStateUpdate = useCallback((state: Partial<{ color: string; template: Template; key: TemplateKey; data: ResumeDto['resume'] }>) => {
+    if (!resume) return;
+
+    const { color, template, key, data } = state;
+    send({
+      type: 'CHANGE_RESUME',
+      value: {
+        ...resume,
+        resume: data || resume.resume,
+        color: color || resume.color,
+        template: key || resume.template,
+        fontSize: resume.fontSize,
+        name: resume.resume.profile.firstName + ' ' + resume.resume.profile.lastName || 'my resume',
+      },
+    });
+
+    if (template) {
+      send({
+        type: 'SET_TEMPLATE',
+        value: template,
+      });
+    }
+  }, [resume, send]);
 
   const components = useMemo(() => {
     return [
@@ -35,9 +52,9 @@ export function ResumePreviewPage({ resume, initialMode = 'edit', level }: Resum
         initialLevel={level}
         onSelect={(template, key) => handleStateUpdate({ template, key })}
       />,
-      <EditResumeView key="form" className="h-screen pt-16" onSubmit={() => {}} defaultValues={resume.resume} />,
+      <EditResumeView key="form" className="h-screen pt-16" onSubmit={(dto) => handleStateUpdate({ data: dto })} defaultValues={resume.resume} />,
     ];
-  }, [level, resume.resume]);
+  }, [level, resume?.resume, handleStateUpdate]);
 
   return (
     <section className="grid grid-cols-5">
@@ -46,8 +63,6 @@ export function ResumePreviewPage({ resume, initialMode = 'edit', level }: Resum
       </AnimatedTransition>
       <Preview
         className="pt-16 col-span-3"
-        template={state.template}
-        data={accountToResume(resume.resume)}
         onDownload={() => Promise.resolve({ url: '' })}
         action={
           <Button

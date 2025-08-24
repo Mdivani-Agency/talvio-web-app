@@ -20,7 +20,7 @@ export const ExperienceView = ({
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const { control } = form;
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove, update, replace } = useFieldArray({
     control,
     name: 'experience',
   });
@@ -62,7 +62,11 @@ export const ExperienceView = ({
                 defaultValues={item}
               />
             )}
-            onReorder={onReorder}
+            onReorder={(items) => {
+              console.log('reordering items', items);
+              replace(items);
+              onReorder(items);
+            }}
             handleUpdateForm={handleUpdateExperience}
             handleRemoveForm={setRemoveItemIndex}
           />

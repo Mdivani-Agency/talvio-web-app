@@ -7,17 +7,57 @@ import { DEFAULT_ACCOUNT_DTO } from '@app/account/create/views/account.form';
 import { ResumePreviewPage } from './resume-page';
 import { useSearchParams } from 'next/navigation';
 import { TemplateKey } from '@lib/types';
+import { useResumeContext } from './providers/state-provider';
+import { RESUME_COLORS_MAP } from '@lib/utils';
 
 export default function ResumePage() {
   const searchParams = useSearchParams();
   const template = searchParams.get('template') as TemplateKey;
   const { session } = useUserSession();
+  const { send } = useResumeContext();
 
   const userId = session?.user.id;
 
   const { data: account, isPending } = useQuery({
     queryKey: ['account', userId],
-    queryFn: () => userId ? getAccount(userId) : undefined,
+    queryFn: async () => {
+      try {
+        if (!userId) {
+        throw new Error('User not found');
+        }
+
+        send({ type: 'INITIALIZE' });
+
+        const account = await getAccount(userId);
+        console.log('account', account);
+        send({
+          type: 'FETCHING_RESUME_FAILURE',
+          value: {
+            resume: account || DEFAULT_ACCOUNT_DTO,
+            name: `${account.profile.firstName} ${account.profile.lastName}`,
+            template: template || 'entry-level-ember',
+            color: RESUME_COLORS_MAP.black,
+            fontSize: 'md',
+          },
+        });
+
+        return account;
+      } catch (error) {
+        console.error('Error fetching account', error);
+        send({
+          type: 'FETCHING_RESUME_FAILURE',
+          value: {
+            resume: account || DEFAULT_ACCOUNT_DTO,
+            name: `my resume`,
+            template: template || 'entry-level-ember',
+            color: RESUME_COLORS_MAP.black,
+            fontSize: 'md',
+          },
+        });
+
+        return null;
+      }
+    },
     enabled: !!userId,
   });
 
@@ -27,17 +67,7 @@ export default function ResumePage() {
 
   return (
     <ResumePreviewPage
-      resume={{
-        resume: account || DEFAULT_ACCOUNT_DTO,
-        name: 'resume',
-        template: template || 'entry-level-ember',
-        id: '1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        color: 'black',
-        fontSize: 'md',
-      }}
-      level={account?.profile.seniority ?? 'entry'}
+      level={account?.profile.seniority ?? 'senior'}
     />
   );
 }

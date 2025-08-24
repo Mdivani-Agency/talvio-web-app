@@ -31,7 +31,7 @@ const Root = ({ children, className, withActionButtons = true }: TabNavigationPr
   return (
     <div className={cn('relative lg:flex justify-start overflow-y-auto lg:overflow-y-hidden', className)}>
       <Tabs className={'pt-12'} tabs={tabContentItems} currentTab={currentTab} setCurrentTab={setCurrentTab} />
-      <div className={'lg:flex flex-col w-full h-full'}>
+      <div className={'lg:flex flex-col w-full h-full pb-12'}>
         <div className={'px-4 pt-6 w-full lg:h-full lg:overflow-y-auto lg:p-4 lg:pl-20'}>{currentTabContent}</div>
         {withActionButtons && (
           <div

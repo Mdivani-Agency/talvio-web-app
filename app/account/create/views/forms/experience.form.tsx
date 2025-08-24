@@ -39,8 +39,9 @@ export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, acti
   const handleSubmit = form.handleSubmit((data) => {
     const { success, data: parsedData, error } = experienceSchema.safeParse({
       ...data,
-      isPresent: data.isPresent ?? undefined,
-      endDate: data.endDate ?? undefined,
+      startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+      isPresent: data.isPresent ? new Date().toISOString() : undefined,
+      endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
       employmentType: data.employmentType || undefined,
       locationType: data.locationType || undefined,
       additionalDetails: data.additionalDetails || undefined,
