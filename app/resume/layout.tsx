@@ -7,7 +7,7 @@ export default async function ResumeLayout({ children, params }: { children: Rea
 
   return (
     <div className="font-(family-var(--font-montserrat))">
-      <SessionProvider fallbackURL={'/auth/sign-in'}>
+      <SessionProvider>
         <ResumeProvider resumeId={resumeId}>
           <Header className="bg-popover" />
           {children}

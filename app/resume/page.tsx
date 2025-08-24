@@ -9,31 +9,41 @@ import { useSearchParams } from 'next/navigation';
 import { TemplateKey } from '@lib/types';
 import { useResumeContext } from './providers/state-provider';
 import { RESUME_COLORS_MAP } from '@lib/utils';
+import OptionsView from './views/options-view';
+import ImportResumePage from './views/import-page';
 
 export default function ResumePage() {
   const searchParams = useSearchParams();
   const templatekey = searchParams.get('template') as TemplateKey;
-  const { session } = useUserSession();
-  const { send } = useResumeContext();
+  const { session, isPending: isAuthenticating } = useUserSession();
+  const { send, state } = useResumeContext();
 
   const userId = session?.user.id;
 
-  const { data: account, isPending } = useQuery({
+  const { data: account, isLoading } = useQuery({
     queryKey: ['account', userId],
     queryFn: async () => {
       try {
         if (!userId) {
-        throw new Error('User not found');
+          send({
+            type: 'FETCHING_RESUME_FAILURE',
+            value: {
+              resume: DEFAULT_ACCOUNT_DTO,
+              name: `${DEFAULT_ACCOUNT_DTO.profile.firstName} ${DEFAULT_ACCOUNT_DTO.profile.lastName}`,
+              template: templatekey,
+              color: RESUME_COLORS_MAP.black,
+              fontSize: 'md',
+            },
+          });
+          return null;
         }
-
-        send({ type: 'INITIALIZE' });
 
         const account = await getAccount(userId);
 
         send({
           type: 'FETCHING_RESUME_FAILURE',
           value: {
-            resume: account || DEFAULT_ACCOUNT_DTO,
+            resume: account,
             name: `${account.profile.firstName} ${account.profile.lastName}`,
             template: templatekey,
             color: RESUME_COLORS_MAP.black,
@@ -47,22 +57,29 @@ export default function ResumePage() {
         send({
           type: 'FETCHING_RESUME_FAILURE',
           value: {
-            resume: account || DEFAULT_ACCOUNT_DTO,
+            resume: DEFAULT_ACCOUNT_DTO,
             name: `my resume`,
             template: templatekey,
             color: RESUME_COLORS_MAP.black,
             fontSize: 'md',
           },
         });
-
         return null;
       }
     },
-    enabled: !!userId,
+    enabled: !isAuthenticating,
   });
 
-  if (!account && isPending) {
+  if (isAuthenticating || isLoading) {
     return <Loading message="Preparing resume..." />;
+  }
+
+  if (state.matches('options')) {
+    return <OptionsView />;
+  }
+
+  if (state.matches('importResume')) {
+    return <ImportResumePage />;
   }
 
   return (

@@ -4,7 +4,6 @@ import { parseResume } from '@lib/clients/llm.client';
 import { ParsedAccount } from '@lib/types';
 
 type Events = {
-  onTextExtracted: (text: string) => void;
   onResumeParsed: (parsedResume: ParsedAccount) => void;
   onError: (error: Error) => void;
 };

@@ -19,9 +19,6 @@ export default function AccountFormPage() {
       const transformed = transformFromParsedToAccount(parsedResume);
       send({ type: 'SET_PARTIAL_DTO', value: transformed });
     },
-    onTextExtracted: (text) => {
-      send({ type: 'SET_RESUME_TEXT', value: text });
-    },
     onError: (error) => {
       toast.error(error.message);
     },

@@ -26,6 +26,17 @@ export const resumeState = setup({
   },
   states: {
     fetchingResume: {},
+    options: {},
+    importResume: {
+      on: {
+        UPLOAD_RESUME: {
+          target: 'newResume',
+          actions: assign({
+            resumeDto: ({ event }) => event.value,
+          }),
+        },
+      },
+    },
     newResume: {
       initial: 'resumePreview',
       states: {
@@ -67,10 +78,16 @@ export const resumeState = setup({
       }),
     },
     FETCHING_RESUME_FAILURE: {
-      target: '.newResume',
+      target: '.options',
       actions: assign({
         resumeDto: ({ event }) => event.value,
       }),
+    },
+    SELECT_MANUAL_INPUT: {
+      target: '.newResume',
+    },
+    SELECT_IMPORT_RESUME: {
+      target: '.importResume',
     },
     CHANGE_RESUME: {
       actions: assign({

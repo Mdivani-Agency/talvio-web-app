@@ -6,7 +6,6 @@ import { Icon } from '@components/icons';
 
 import { EditResumeView } from './views/edit-resume-view';
 import { Preview } from './views/resume-preview';
-import Templates from './views/templates';
 import { useResumeContext } from './providers/state-provider';
 import { Template } from '@pdf-tlv/resume';
 import TemplatesView from './views/templates-view';

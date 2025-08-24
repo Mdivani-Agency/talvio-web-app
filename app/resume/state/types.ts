@@ -3,6 +3,9 @@ import { Template } from '@pdf-tlv/resume';
 
 export type ResumeState =
   | 'fetchingResume'
+  | 'options'
+  | 'importResume'
+  | 'uploadResume'
   | 'newResume'
   | 'existingResume'
   | {
@@ -23,6 +26,12 @@ export type ResumeEvents =
       type: 'INITIALIZE';
     }
   | {
+      type: 'SELECT_MANUAL_INPUT';
+    }
+  | {
+      type: 'SELECT_IMPORT_RESUME';
+    }
+  | {
       type: 'FETCHING_RESUME';
     }
   | {
@@ -31,6 +40,10 @@ export type ResumeEvents =
     }
   | {
       type: 'FETCHING_RESUME_FAILURE';
+      value: ResumeDto;
+    }
+  | {
+      type: 'UPLOAD_RESUME';
       value: ResumeDto;
     }
   | {
@@ -53,7 +66,10 @@ export type ResumeEvents =
 export type MetaKey =
   | 'resumeState'
   | 'resumeState.fetchingResume'
+  | 'resumeState.options'
+  | 'resumeState.importResume'
+  | 'resumeState.uploadResume'
   | 'resumeState.newResume'
   | 'resumeState.existingResume'
-  | 'resumeState.existingResume.updateResume'
+  | 'resumeState.importResume.updateResume'
   | 'resumeState.newResume.resumePreview'

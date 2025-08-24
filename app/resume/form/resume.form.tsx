@@ -1,5 +1,5 @@
 import { TabNavigation } from '@components/views/tabs';
-import { getErrorMessage, hasError } from '@lib/utils';
+import { hasError } from '@lib/utils';
 import { AccountDto, Highlights } from '@lib/types';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { ProfileForm } from '@app/account/create/views/forms/profile.form';
@@ -11,7 +11,6 @@ import { ContactsForm } from '@app/account/create/views/forms/contacts.form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { accountSchema } from '@lib/schema/account.schema';
 import { useEffect } from 'react';
-import { toast } from 'sonner';
 
 type ResumeFormProps = {
   defaultValues: AccountDto;
@@ -29,13 +28,7 @@ export const ResumeFormView = ({ onSubmit, defaultValues }: ResumeFormProps) => 
     const unsubscribe = subscribe({
       formState: { values: true },
       callback: ({ values }) => {
-        const { success, data: parsedData, error } = accountSchema.safeParse(values);
-        if (success) {
-          onSubmit(parsedData);
-        }
-        if (error) {
-          toast.error(getErrorMessage(error));
-        }
+        onSubmit(values);
       },
     });
     return () => {

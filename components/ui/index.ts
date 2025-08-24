@@ -36,3 +36,4 @@ export * from './info-badge';
 export * from './display-url';
 export * from './color-palette-selector';
 export * from './image-carousel';
+export * from './upload-file';
