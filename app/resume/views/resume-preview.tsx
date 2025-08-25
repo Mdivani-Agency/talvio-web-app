@@ -9,6 +9,7 @@ import { ResumeActionBar } from './resume-actions';
 import { ResumeImageCarousel } from './resume-image-carousel';
 import { useResumeContext } from '../providers/state-provider';
 import { accountToResume } from '@lib/utils';
+import { FullSizeResumeModal } from '@components/modals';
 
 interface PreviewProps {
   action?: React.ReactNode;
@@ -21,6 +22,7 @@ export type RenderPreviewParams = Omit<ResumeDto, 'template' | 'resume'> & {
 }
 
 export function Preview({ className, action }: PreviewProps) {
+  const [isFullSizeResumeModalOpen, setIsFullSizeResumeModalOpen] = useState(false);
   const { images, renderPDF } = usePdfImage();
   const { state, send } = useResumeContext();
   const { resumeDto, template } = state.context;
@@ -78,9 +80,17 @@ export function Preview({ className, action }: PreviewProps) {
           fontSize={fontSize}
           onFontSizeChange={(fontSize) => send({ type: 'CHANGE_RESUME', value: { ...resumeDto, fontSize } })}
           handleDownload={() => {}}
-          handlePreviewOpen={() => {}}
+          handlePreviewOpen={() => setIsFullSizeResumeModalOpen(true)}
         />
       </section>
+      <FullSizeResumeModal
+        isOpen={isFullSizeResumeModalOpen}
+        urls={images}
+        color={color}
+        setColor={(color) => send({ type: 'CHANGE_RESUME', value: { ...resumeDto, color } })}
+        onClose={() => setIsFullSizeResumeModalOpen(false)}
+        onDownload={() => {}}
+      />
     </section>
   );
 }

@@ -1,5 +1,6 @@
+'use client';
 import { Icon } from '@components/icons';
-import { Button, ColorPaletteSelector, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui';
+import { Button, ColorPaletteSelector, Select, SelectContent, SelectItem, SelectTrigger } from '@components/ui';
 import { cn } from '@lib/utils/tailwind';
 
 type ResumeActionBarProps = {
