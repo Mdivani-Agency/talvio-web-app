@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export const Sidebar = () => {
   return (
-    <aside className={'flex flex-col gap-4 h-screen p-4 border-r border-input min-w-64 2xl:min-w-96'}>
+    <aside className={'flex flex-col gap-4 h-screen p-4 border-r border-input min-w-64 2xl:min-w-84'}>
       <div className="flex justify-center px-8">
         <Logo size={'medium'} />
       </div>
@@ -13,7 +13,7 @@ export const Sidebar = () => {
           <li>
             <Link
               className={
-                'flex items-center gap-2 p-4 rounded-md text-primary bg-accent hover:bg-accent/80 transition-colors'
+                'flex items-center gap-2 p-4 rounded-md text-primary bg-card hover:bg-card/80 transition-colors cursor-pointer'
               }
               href="/account"
             >
@@ -24,7 +24,7 @@ export const Sidebar = () => {
           <li>
             <Link
               className={
-                'flex items-center gap-2 p-4 rounded-md text-primary hover:bg-accent/80 transition-colors'
+                'flex items-center gap-2 p-4 rounded-md text-primary hover:bg-card/80 transition-colors cursor-pointer'
               }
               href="/account/resume"
             >
@@ -39,7 +39,7 @@ export const Sidebar = () => {
         <h2 className={'text-sm text-primary font-medium mb-3.5'}>Get Premium Features</h2>
         <p className={'text-xs text-primary mb-4'}>Unlock pro resume features and stand out</p>
         <Link href="/account/upgrade">
-          <Button className={'text-sm mx-auto w-48 2xl:w-64'} size={'sm'}>
+          <Button className={'text-sm mx-auto w-full'} size={'sm'}>
             Upgrade Now
           </Button>
         </Link>

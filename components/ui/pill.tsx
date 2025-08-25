@@ -23,7 +23,7 @@ export const Pill = forwardRef<HTMLDivElement, PropsWithChildren<PillProps>>(fun
     <div
       ref={ref}
       className={cn(
-        'flex whitespace-nowrap items-center gap-2 rounded-sm bg-input px-2 py-1 text-xs font-semibold text-secondary',
+        'flex whitespace-nowrap items-center gap-2 rounded-sm bg-popover px-2 py-1 text-xs font-semibold text-secondary',
         className,
       )}
     >

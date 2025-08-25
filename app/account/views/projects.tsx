@@ -30,7 +30,7 @@ export const ProjectsSection = ({ projects }: ProjectsSectionProps) => {
                 {url && (
                   <div className={'flex flex-col items-end'}>
                     <a href={url} target="_blank" rel="noopener noreferrer">
-                      <Icon type={'Share'} className={'size-8'} />
+                      <Icon type={'Share'} className={'size-4 cursor-pointer'} />
                     </a>
                   </div>
                 )}
