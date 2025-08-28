@@ -1,8 +1,14 @@
+'use client';
+
 import { Button, Logo } from '@components/ui';
 import { Icon } from '@components/icons';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@lib/utils';
 
 export const Sidebar = () => {
+  const pathname = usePathname();
+
   return (
     <aside className={'flex flex-col gap-4 h-screen p-4 border-r border-input min-w-64 2xl:min-w-84'}>
       <div className="flex justify-center px-8">
@@ -13,7 +19,7 @@ export const Sidebar = () => {
           <li>
             <Link
               className={
-                'flex items-center gap-2 p-4 rounded-md text-primary bg-card hover:bg-card/80 transition-colors cursor-pointer'
+                cn('flex items-center gap-2 p-4 rounded-md text-primary hover:bg-card/80 transition-colors cursor-pointer', pathname === '/account' && 'bg-card')
               }
               href="/account"
             >
@@ -24,9 +30,9 @@ export const Sidebar = () => {
           <li>
             <Link
               className={
-                'flex items-center gap-2 p-4 rounded-md text-primary hover:bg-card/80 transition-colors cursor-pointer'
+                cn('flex items-center gap-2 p-4 rounded-md text-primary hover:bg-card/80 transition-colors cursor-pointer', pathname === '/account/documents' && 'bg-card')
               }
-              href="/account/resume"
+              href="/account/documents"
             >
               <Icon className={'size-6'} type={'Document'} />
               <span className={'text-sm font-medium'}>Documents</span>

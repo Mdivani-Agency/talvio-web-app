@@ -1,16 +1,15 @@
 'use client';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import Templates from '../resume/views/templates';
 import { useTemplates } from '@hooks/use-templates';
 import { useState } from 'react';
 
 export default function TemplatesPage() {
-  const router = useRouter();
   const [level, setLevel] = useState<'entry' | 'mid' | 'senior'>('senior');
 
   const templates = useTemplates({
     level,
-    onSelect: (_, key) => router.push(`/resume?template=${key}`),
+    onSelect: (_, key) => redirect(`/resume?template=${key}`),
   });
 
   return (

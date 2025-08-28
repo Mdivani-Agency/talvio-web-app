@@ -24,7 +24,7 @@ export const Tabs = React.memo(function Tabs({ tabs, currentTab, setCurrentTab, 
   return (
     <div
       className={cn(
-        'w-full lg:h-full lg:absolute bg-popover group px-2 shadow-sm lg:w-16 overflow-x-hidden transition-width duration-300',
+        'w-full lg:h-full lg:absolute bg-accent group px-2 shadow-sm lg:w-16 overflow-x-hidden transition-width duration-300 z-20',
         className,
       )}
     >

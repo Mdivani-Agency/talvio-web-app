@@ -1,13 +1,8 @@
 import { Resume, ResumeDto, TemplateList } from '@lib/types';
 import { secureFetch } from './secure.client';
+import { accountToResume, resumeToAccount } from '@lib/utils';
 
 const RESUME_API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/resume`;
-
-type GetResumeParams = {
-  userId: string;
-  resumeId?: string;
-  type?: string;
-};
 
 type CreateResumeParams = {
   userId: string;
@@ -15,23 +10,29 @@ type CreateResumeParams = {
   body: ResumeDto;
 };
 
-export const getResume = async ({ userId, resumeId, type }: GetResumeParams) => {
-  const url = new URL(`${RESUME_API_URL}/${userId}`);
-  if (resumeId) url.searchParams.set('resumeId', resumeId);
-  if (type) url.searchParams.set('type', type);
+export const getResume = async (resumeId: string) => {
+  const url = new URL(`${RESUME_API_URL}/${resumeId}`);
 
   const response = await secureFetch(url.toString(), {
     method: 'GET',
   });
-  return response.json() as Promise<Resume>;
+
+  const data = await response.json();
+
+
+  return {
+    ...data,
+    resume: resumeToAccount(data.metadata),
+  } as Resume;
 };
 
 export const createResume = async ({ userId, type, body }: CreateResumeParams) => {
-  const url = new URL(`${RESUME_API_URL}/${userId}`);
+  const url = new URL(`${RESUME_API_URL}/user/${userId}`);
   url.searchParams.set('type', type);
+  const { resume, ...rest } = body;
   const response = await secureFetch(url.toString(), {
     method: 'POST',
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...rest, metadata: accountToResume(resume) }),
   });
 
   if (!response.ok) {

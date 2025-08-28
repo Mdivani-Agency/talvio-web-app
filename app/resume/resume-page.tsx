@@ -9,8 +9,11 @@ import { Preview } from './views/resume-preview';
 import { useResumeContext } from './providers/state-provider';
 import { Template } from '@pdf-tlv/resume';
 import TemplatesView from './views/templates-view';
-import { listResumeTemplates } from '@lib/clients/resume.client';
-import { useQuery } from '@tanstack/react-query';
+import { createResume, listResumeTemplates } from '@lib/clients/resume.client';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useUserSession } from '@lib/providers';
+import { redirect } from 'next/navigation';
+import { toast } from 'sonner';
 
 type ResumePreviewPageProps = {
   level: 'entry' | 'mid' | 'senior';
@@ -18,6 +21,7 @@ type ResumePreviewPageProps = {
 };
 
 export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreviewPageProps) {
+  const { session } = useUserSession();
   const [current, setCurrent] = useState(initialMode === 'edit' ? 1 : 0);
   const { state, send } = useResumeContext();
 
@@ -42,6 +46,24 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
       }
 
       return templates;
+    },
+  });
+
+  const { mutateAsync: createResumeMutation } = useMutation({
+    mutationFn: async () => {
+      const body = state.context.resumeDto;
+
+      if (!session) {
+        return redirect('/auth/sign-in?callbackUrl=/resume');
+      }
+
+      try {
+        const data = await createResume({ userId: session.user.id, type: 'GENERAL', body });
+        return data;
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to create resume');
+      }
     },
   });
 
@@ -84,12 +106,12 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
 
   return (
     <section className="grid grid-cols-5">
-      <AnimatedTransition direction="left" className="col-span-2 border-r border-border" current={current}>
+      <AnimatedTransition direction="left" className="col-span-2 border-r border-input" current={current}>
         {components[current]}
       </AnimatedTransition>
       <Preview
         className="pt-16 col-span-3"
-        onDownload={() => Promise.resolve({ url: '' })}
+        onDownload={createResumeMutation}
         action={
           <Button
             variant="ghost"
