@@ -4,19 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePdfImage } from '@hooks/use-pdf-image';
 import { resumeService } from '@lib/services/resume.service';
 import { cn, debounce } from '@lib/utils';
-import { ResumeDto, ResumeForm } from '@lib/types';
+import { Resume, ResumeDto, ResumeForm } from '@lib/types';
 import { ResumeActionBar } from './resume-actions';
 import { ResumeImageCarousel } from './resume-image-carousel';
 import { useResumeContext } from '../providers/state-provider';
-import { accountToResume } from '@lib/utils';
+import { accountToResume, resumeToAccount } from '@lib/utils';
 import { DownloadResumeModal, FullSizeResumeModal } from '@components/modals';
-import { useUserSession } from '@lib/providers';
 import { toast } from 'sonner';
 
 interface PreviewProps {
   action?: React.ReactNode;
   className?: string;
-  onDownload: () => Promise<{ resumeUrl: string } | undefined>;
+  onDownload: () => Promise<Resume | undefined>;
 }
 
 export type RenderPreviewParams = Omit<ResumeDto, 'template' | 'resume'> & {
@@ -30,7 +29,7 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
   const { images, renderPDF } = usePdfImage();
   const { state, send } = useResumeContext();
   const { resumeDto, template } = state.context;
-  const { resume, color, fontSize } = resumeDto
+  const { resume, color, fontSize, template: templateKey } = resumeDto
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -45,11 +44,13 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
     try {
     setIsGenerating(true);
     const res = await onDownload();
-    if (res?.resumeUrl) {
+
+    const { media, name } = res || {};
+    if (media && name) {
         const link = document.createElement('a');
-        link.href = res.resumeUrl;
-        link.download = resumeDto.name;
-        link.target = '_blank';
+        link.href = media.url;
+        link.setAttribute('download', `${name}.pdf`);
+        link.setAttribute('target', '_blank');
         link.click();
         link.remove();
       }
@@ -76,7 +77,8 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
     const blob = new Blob([response], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     renderPDF(url);
-  }, [template, renderPDF]);
+    send({ type: 'CHANGE_RESUME', value: { ...dto, resume: resumeToAccount(resume), template: templateKey } });
+  }, [template, templateKey, send, renderPDF]);
 
   const debouncedFetchPdf = useMemo(
     () =>

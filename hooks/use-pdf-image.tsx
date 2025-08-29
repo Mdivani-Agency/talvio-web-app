@@ -6,22 +6,18 @@ import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
-export const usePdfImage = () => {
-  const [images, setImages] = useState<string[]>([]);
+export const pdfUrlToImage = async (pdfUrl: string, pages?: number) => {
+  const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+  const numPages = pages && pages < pdf.numPages ? pages : pdf.numPages;
+  const imagePromises = [];
 
-  const renderPDF = useCallback(async (pdfUrl: string) => {
-    // Load the PDF document
-    const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
-    const numPages = pdf.numPages;
-    const imagePromises = [];
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    imagePromises.push(renderPageToImage(pdf, pageNum));
+  }
 
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      imagePromises.push(renderPageToImage(pdf, pageNum));
-    }
-
-    const images = await Promise.all(imagePromises);
-    setImages(images);
-  }, []);
+  const images = await Promise.all(imagePromises);
+  return images;
+}
 
   const renderPageToImage = async (pdf: PDFDocumentProxy, pageNum: number) => {
     const page = await pdf.getPage(pageNum);
@@ -42,6 +38,14 @@ export const usePdfImage = () => {
     // Convert the canvas to an image and return the data URL
     return canvas.toDataURL('image/png');
   };
+
+export const usePdfImage = () => {
+  const [images, setImages] = useState<string[]>([]);
+
+  const renderPDF = useCallback(async (pdfUrl: string) => {
+    const images = await pdfUrlToImage(pdfUrl);
+    setImages(images);
+  }, []);
 
   return {
     images,

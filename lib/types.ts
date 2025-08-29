@@ -85,8 +85,12 @@ export type TemplateItem = {
 export type TemplateList = Record<'entry' | 'mid' | 'senior', Array<TemplateItem>>;
 export type ResumeDto = z.infer<typeof resumeSchema>;
 export type ResumeForm = z.infer<typeof resumeFormSchema>;
-export type Resume = ResumeDto & {
-  resumeUrl?: string;
+export type Resume = Omit<ResumeDto, 'resume'> & {
+  media?: {
+    url: string;
+    key: string;
+  };
+  metadata: ResumeForm;
   id: string;
   createdAt: string;
   updatedAt: string;

@@ -17,3 +17,13 @@ export const getDocuments = async (userId: string) => {
   });
   return response.json() as Promise<{ items: MediaItem[], nextToken?: string }>;
 };
+
+export const fetchPdfFile = async (publicUrl: string) => {
+  const response = await fetch(publicUrl, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/pdf',
+    }
+  });
+  return response.blob();
+};

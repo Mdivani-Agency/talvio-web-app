@@ -39,7 +39,7 @@ export const createResume = async ({ userId, type, body }: CreateResumeParams) =
     throw new Error('Failed to create resume');
   }
 
-  return response.json() as Promise<{ resumeUrl: string }>;
+  return response.json() as Promise<Resume>;
 };
 
 export const listResumeTemplates = async () => {
