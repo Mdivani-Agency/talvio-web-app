@@ -1,4 +1,4 @@
-import { Resume, ResumeDto, TemplateList } from '@lib/types';
+import { PreviewDto, Resume, TemplateList } from '@lib/types';
 import { secureFetch } from './secure.client';
 import { accountToResume, resumeToAccount } from '@lib/utils';
 
@@ -7,7 +7,7 @@ const RESUME_API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/resume`;
 type CreateResumeParams = {
   userId: string;
   type: 'GENERAL' | 'JOB_SPECIFIC';
-  body: ResumeDto;
+  body: PreviewDto;
 };
 
 export const getResume = async (resumeId: string) => {

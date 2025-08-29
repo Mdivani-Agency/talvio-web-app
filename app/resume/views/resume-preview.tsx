@@ -19,7 +19,7 @@ interface PreviewProps {
 }
 
 export type RenderPreviewParams = Omit<ResumeDto, 'template' | 'resume'> & {
-  resume: ResumeForm;
+  metadata: ResumeForm;
 }
 
 export function Preview({ className, action, onDownload }: PreviewProps) {
@@ -67,9 +67,9 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
   const renderPreview = useCallback(async (dto: RenderPreviewParams) => {
     if (!template) return;
 
-    const { resume, color, fontSize } = dto;
+    const { metadata, color, fontSize } = dto;
 
-    const response = await resumeService.generate(resume, template, {
+    const response = await resumeService.generate(metadata, template, {
       color,
       fontSize,
       isPreview: true,
@@ -77,7 +77,7 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
     const blob = new Blob([response], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     renderPDF(url);
-    send({ type: 'CHANGE_RESUME', value: { ...dto, resume: resumeToAccount(resume), template: templateKey } });
+    send({ type: 'CHANGE_RESUME', value: { ...dto, resume: resumeToAccount(metadata), template: templateKey } });
   }, [template, templateKey, send, renderPDF]);
 
   const debouncedFetchPdf = useMemo(
@@ -89,7 +89,7 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
   );
 
   useEffect(() => {
-    debouncedFetchPdf({ resume: accountToResume(resume), color, fontSize, name: 'resume' });
+    debouncedFetchPdf({ metadata: accountToResume(resume), color, fontSize, name: 'resume' });
   }, [resume, template, color, fontSize, debouncedFetchPdf]);
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useMemo, useState } from 'react';
 import { AnimatedTransition, Button, Tooltip, TooltipContent, TooltipTrigger } from '@components/ui';
-import { ResumeDto, TemplateKey } from '@lib/types';
+import { PreviewDto, TemplateKey } from '@lib/types';
 import { Icon } from '@components/icons';
 
 import { EditResumeView } from './views/edit-resume-view';
@@ -67,7 +67,7 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
     },
   });
 
-  const handleStateUpdate = useCallback((state: Partial<{ color: string; template: Template; key: TemplateKey; data: ResumeDto['resume'] }>) => {
+  const handleStateUpdate = useCallback((state: Partial<{ color: string; template: Template; key: TemplateKey; data: PreviewDto['resume'] }>) => {
     if (!resume) return;
 
     const { color, template, key, data } = state;

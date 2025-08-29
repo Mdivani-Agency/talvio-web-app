@@ -85,16 +85,19 @@ export type TemplateItem = {
 export type TemplateList = Record<'entry' | 'mid' | 'senior', Array<TemplateItem>>;
 export type ResumeDto = z.infer<typeof resumeSchema>;
 export type ResumeForm = z.infer<typeof resumeFormSchema>;
-export type Resume = Omit<ResumeDto, 'resume'> & {
+export type Resume = ResumeDto & {
   media?: {
     url: string;
     key: string;
   };
-  metadata: ResumeForm;
   id: string;
   createdAt: string;
   updatedAt: string;
 };
+
+export type PreviewDto = Omit<ResumeDto, 'metadata'> & {
+  resume: AccountDto;
+}
 
 // Parsed types
 export type ParsedAccount = z.infer<typeof parsedAccountSchema>;
