@@ -1,6 +1,17 @@
 import { type ClassValue, clsx } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
+export const RESUME_COLORS_MAP = {
+  mint: '#015408',
+  ember: '#670000',
+  black: '#1B1B1B',
+  talvio: '#005BA2',
+  grayLight: '#7A7A7A',
+  brown: '#763900',
+  red: '#983805',
+  yellow: '#BA8E23',
+};
+
 const customMerge = extendTailwindMerge({
   extend: {
     classGroups: {

@@ -1,4 +1,3 @@
-import { Header, StickyHeader } from "@components/views";
 import { Benefits, Faq, Hero, NavSection, Plans, Workflow } from "./views";
 import { Cta } from "./views/cta";
 

@@ -36,22 +36,27 @@ const buttonVariants = cva(
   }
 )
 
+type ButtonProps = React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+    loading?: boolean
+  }
+
 function Button({
   className,
   variant,
   size,
   asChild = false,
+  loading = false,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
+}: ButtonProps) {
   const Comp = asChild ? Slot : "button"
 
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, className }), loading && 'cursor-not-allowed')}
+      disabled={loading || props.disabled}
       {...props}
     />
   )

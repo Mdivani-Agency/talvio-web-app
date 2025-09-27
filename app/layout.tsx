@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import { Toaster } from "sonner";
+import { QueryProvider, ThemeProvider } from "@lib/providers";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -18,11 +20,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${montserrat.variable} antialiased dark`}
+        className={`${montserrat.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='system'
+          enableSystem
+          disableTransitionOnChange
+        >
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme inline {
   --color-background: var(--background);
@@ -111,7 +111,7 @@
   --accent-foreground: #404040;
   --destructive: #FF1F1F;
   --border: #F8F8F8;
-  --input: #F5F5F5;
+  --input: #DFDFDF;
   --ring: rgb(135, 136, 140);
   --chart-1: #1D20D4;
   --chart-2: #B9BAF2;
@@ -141,7 +141,7 @@
   --accent-foreground: #FEFEFE;
   --destructive: #FF1F1F;
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --input: #404040;
   --ring: rgb(135, 136, 140);
   --chart-1: #686ae2 ;
   --chart-2: #b9baf2;
@@ -163,6 +163,10 @@ html {
   scroll-behavior: smooth;
 }
 
+body {
+  font-family: var(--font-montserrat);
+}
+
 details p {
   opacity: 0;
   transition:
@@ -181,4 +185,31 @@ details[open] p {
 details > summary.list-none::-webkit-details-marker,
 details > summary.list-none::marker {
   display: none;
+}
+
+.a4-container-w {
+  width: 100%;
+  max-width: 210mm;
+}
+
+.a4-container {
+  height: 98%;
+  max-height: 297mm;
+  aspect-ratio: 210 / 297;
+  background: var(--background);
+  display: block;
+}
+
+.a4-preview {
+  height: 297mm;
+  aspect-ratio: 210 / 297;
+  background: var(--background);
+  display: block;
+}
+
+.a4-preview-mobile {
+  width: 100%;
+  aspect-ratio: 210 / 297;
+  background: var(--background);
+  display: block;
 }

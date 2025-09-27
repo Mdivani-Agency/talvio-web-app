@@ -8,8 +8,12 @@ export const authClient = createAuthClient({
         onSuccess: (ctx) => {
             const authToken = ctx.response.headers.get("set-auth-token") // get the token from the response headers
 
-            if(authToken && typeof window !== 'undefined'){
-              localStorage.setItem("bearer_token", authToken);
+            if(authToken){
+              document.cookie = `bearer_token=${authToken}; path=/;sameSite=strict`;
+
+              if(typeof window !== 'undefined'){
+                localStorage.setItem("bearer_token", authToken);
+              }
             }
         }
     },

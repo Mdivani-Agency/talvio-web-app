@@ -1,18 +1,12 @@
 'use client';
 import { Loading } from '@components/views';
 import { authClient } from '@lib/auth.client';
+import { User } from '@lib/types';
 import { redirect } from 'next/navigation';
-import { createContext } from 'react';
+import { createContext, useContext } from 'react';
 
 type Session = {
-  user: {
-    id: string;
-    email: string;
-    name?: string | null;
-    image?: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-  };
+  user: User;
   session: {
     id: string;
     expiresAt: Date;
@@ -42,4 +36,14 @@ export const SessionProvider = ({ children, fallbackURL }: SessionProviderProps)
   }
 
   return <SessionContext.Provider value={{ session, isPending }}>{children}</SessionContext.Provider>;
+};
+
+export const useUserSession = () => {
+  const sessionContext = useContext(SessionContext);
+
+  if (!sessionContext) {
+    throw new Error('useUserSession must be used within a SessionProvider');
+  }
+
+  return sessionContext;
 };

@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
 import {
   Controller,
@@ -14,7 +13,7 @@ import {
 } from "react-hook-form"
 
 import { cn } from "@utils/tailwind"
-import { Label } from "@components/ui/label"
+import { Label, LabelProps } from "@components/ui/label"
 
 const Form = FormProvider
 
@@ -90,7 +89,7 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
 function FormLabel({
   className,
   ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+}: LabelProps) {
   const { error, formItemId } = useFormField()
 
   return (
