@@ -13,7 +13,6 @@ type StickyHeaderProps = {
 export const StickyHeader = ({
   children,
   className,
-  displayActions = true,
   size = 'medium',
 }: PropsWithChildren<StickyHeaderProps>) => {
   const [show, setShow] = useState(false);
@@ -40,7 +39,6 @@ export const StickyHeader = ({
   return (
     <Header
       size={size}
-      displayActions={displayActions}
       className={cn(
         'sticky top-0 z-20 backdrop-blur-2xs -translate-y-[100%] transition-transform duration-300 ease-in-out',
         show && 'translate-y-0',
