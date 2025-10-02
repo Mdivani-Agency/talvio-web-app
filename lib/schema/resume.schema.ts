@@ -7,7 +7,7 @@ import {
   TemplateKeyEnum,
 } from './enums';
 import { MarkType } from '@lib/types';
-import { accountSchema, languageSchema, linkSchema, skillSchema, toolSchema } from './account.schema';
+import {languageSchema, linkSchema, skillSchema, toolSchema } from './account.schema';
 
 export const markValueSchema: z.ZodType<MarkType> = z.object({
   attrs: z.record(z.string(), z.any()).optional(),
@@ -125,7 +125,7 @@ export const resumeFormSchema = z.object({
 });
 
 export const resumeSchema = z.object({
-  resume: accountSchema,
+  metadata: resumeFormSchema,
   name: z.string(),
   template: TemplateKeyEnum,
   color: z.string(),

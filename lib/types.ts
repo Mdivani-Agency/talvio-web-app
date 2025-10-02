@@ -22,6 +22,7 @@ export type User = {
   email: string;
   name?: string | null;
   image?: string | null;
+  credits?: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -86,11 +87,18 @@ export type TemplateList = Record<'entry' | 'mid' | 'senior', Array<TemplateItem
 export type ResumeDto = z.infer<typeof resumeSchema>;
 export type ResumeForm = z.infer<typeof resumeFormSchema>;
 export type Resume = ResumeDto & {
-  resumeUrl?: string;
+  media?: {
+    url: string;
+    key: string;
+  };
   id: string;
   createdAt: string;
   updatedAt: string;
 };
+
+export type PreviewDto = Omit<ResumeDto, 'metadata'> & {
+  resume: AccountDto;
+}
 
 // Parsed types
 export type ParsedAccount = z.infer<typeof parsedAccountSchema>;

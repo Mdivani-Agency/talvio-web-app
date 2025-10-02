@@ -110,19 +110,19 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
           items={{
             achievements: {
               label: 'Achievements',
-              items: form.watch('achievements'),
+              items: form.watch('achievements') || [],
               onAdd: (item) => form.setValue('achievements', [...form.watch('achievements'), item]),
               onRemove: (index) => form.setValue('achievements', form.watch('achievements').filter((_, i) => i !== index)),
             },
             responsibilities: {
               label: 'Responsibilities',
-              items: form.watch('responsibilities'),
+              items: form.watch('responsibilities') || [],
               onAdd: (item) => form.setValue('responsibilities', [...form.watch('responsibilities'), item]),
               onRemove: (index) => form.setValue('responsibilities', form.watch('responsibilities').filter((_, i) => i !== index)),
             },
             keyContributions: {
               label: 'Key Contributions',
-              items: form.watch('keyContributions'),
+              items: form.watch('keyContributions') || [],
               onAdd: (item) => form.setValue('keyContributions', [...form.watch('keyContributions'), item]),
               onRemove: (index) => form.setValue('keyContributions', form.watch('keyContributions').filter((_, i) => i !== index)),
             },

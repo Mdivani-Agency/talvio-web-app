@@ -3,7 +3,6 @@ import { cn } from '@utils/tailwind';
 import { Logo } from '@components/ui';
 
 type HeaderProps = {
-  displayActions?: boolean;
   className?: string;
   size?: 'small' | 'medium' | 'large';
   onLogoClick?: () => void;

@@ -1,4 +1,4 @@
-import { Resume, ResumeDto } from '@lib/types';
+import { PreviewDto, Resume } from '@lib/types';
 import { Template } from '@pdf-tlv/resume';
 
 export type ResumeState =
@@ -17,7 +17,7 @@ export type ResumeState =
 
 export type ResumeContext = {
   resumeId: string | null;
-  resumeDto: ResumeDto;
+  resumeDto: PreviewDto;
   template: Template | null;
 };
 
@@ -40,11 +40,11 @@ export type ResumeEvents =
     }
   | {
       type: 'FETCHING_RESUME_FAILURE';
-      value: ResumeDto;
+      value: PreviewDto;
     }
   | {
       type: 'UPLOAD_RESUME';
-      value: ResumeDto;
+      value: PreviewDto;
     }
   | {
       type: 'FETCHING_RESUME_SUCCESS';
@@ -52,7 +52,7 @@ export type ResumeEvents =
     }
   | {
       type: 'CHANGE_RESUME';
-      value: ResumeDto;
+      value: PreviewDto;
     }
   | {
       type: 'CREATE_RESUME';
@@ -60,7 +60,7 @@ export type ResumeEvents =
     }
   | {
     type: 'UPDATE_RESUME';
-    value: Resume;
+    value: PreviewDto;
   }
 
 export type MetaKey =

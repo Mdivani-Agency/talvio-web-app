@@ -41,13 +41,13 @@ export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, acti
       ...data,
       startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
       isPresent: data.isPresent ? new Date().toISOString() : undefined,
-      endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
+      endDate: !data.isPresent && data.endDate ? new Date(data.endDate).toISOString() : undefined,
       employmentType: data.employmentType || undefined,
       locationType: data.locationType || undefined,
-      additionalDetails: data.additionalDetails || undefined,
-      achievements: data.achievements.length > 0 ? data.achievements : undefined,
-      responsibilities: data.responsibilities.length > 0 ? data.responsibilities : undefined,
-      keyContributions: data.keyContributions.length > 0 ? data.keyContributions : undefined,
+      additionalDetails: data.additionalDetails || '',
+      achievements: data.achievements.length > 0 ? data.achievements : [],
+      responsibilities: data.responsibilities.length > 0 ? data.responsibilities : [],
+      keyContributions: data.keyContributions.length > 0 ? data.keyContributions : [],
     });
 
     if (success) {

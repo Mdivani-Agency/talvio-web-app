@@ -1,7 +1,13 @@
 import { assign, setup } from 'xstate';
 import { ResumeContext, ResumeEvents, MetaKey } from './types';
 import { DEFAULT_ACCOUNT_DTO } from '@app/account/create/views/account.form';
-import { RESUME_COLORS_MAP } from '@lib/utils';
+import { RESUME_COLORS_MAP, resumeToAccount } from '@lib/utils';
+import { Resume } from '@lib/types';
+
+const buildPreviewDto = (value: Resume) => {
+  const { metadata, ...resume } = value;
+  return { ...resume, resume: resumeToAccount(metadata) };
+};
 
 export const resumeState = setup({
   types: {
@@ -45,7 +51,7 @@ export const resumeState = setup({
             CREATE_RESUME: {
               target: 'downloadResume',
               actions: assign({
-                resumeDto: ({ event }) => event.value,
+                resumeDto: ({ event }) => buildPreviewDto(event.value),
                 resumeId: ({ event }) => event.value.id,
               }),
             },
@@ -74,7 +80,7 @@ export const resumeState = setup({
       target: '.existingResume',
       actions: assign({
         resumeId: ({ event }) => event.value.id,
-        resumeDto: ({ event }) => event.value,
+        resumeDto: ({ event }) => buildPreviewDto(event.value),
       }),
     },
     FETCHING_RESUME_FAILURE: {
