@@ -55,8 +55,8 @@ export default function DocumentsPage() {
                   {document.name}.{document.type.split('/')[1]}
                 </a>
               </Label>
-              <Link href={`/resume/${document.key}`}>
-                <Icon type={'Edit'} className="size-4" />
+              <Link target="_blank" href={document.publicUrl}>
+                <Icon type={'Download'} className="size-4" />
               </Link>
             </CardFooter>
           </Card>

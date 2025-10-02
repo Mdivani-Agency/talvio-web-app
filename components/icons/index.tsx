@@ -50,6 +50,7 @@ import Email from './svg/email.svg';
 import Share from './svg/share.svg';
 import Web from './svg/web.svg';
 import Spark from './svg/spark.svg';
+import CreditCard from './svg/credit-card.svg';
 
 import Google from './colored/google.svg';
 import Logo from './colored/logo.svg';
@@ -115,6 +116,7 @@ const IconMap = {
   Share,
   Web,
   Spark,
+  CreditCard,
 };
 
 export type IconType = keyof typeof IconMap;

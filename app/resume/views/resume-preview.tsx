@@ -5,8 +5,8 @@ import { usePdfImage } from '@hooks/use-pdf-image';
 import { resumeService } from '@lib/services/resume.service';
 import { cn, debounce } from '@lib/utils';
 import { Resume, ResumeDto, ResumeForm } from '@lib/types';
-import { ResumeActionBar } from './resume-actions';
-import { ResumeImageCarousel } from './resume-image-carousel';
+import { ResumeActionBar } from '../components/resume-actions';
+import { ResumeImageCarousel } from '../components/resume-image-carousel';
 import { useResumeContext } from '../providers/state-provider';
 import { accountToResume, resumeToAccount } from '@lib/utils';
 import { DownloadResumeModal, FullSizeResumeModal } from '@components/modals';
@@ -74,7 +74,7 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
       fontSize,
       isPreview: true,
     });
-    const blob = new Blob([response], { type: 'application/pdf' });
+    const blob = new Blob([response as unknown as BlobPart], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     renderPDF(url);
     send({ type: 'CHANGE_RESUME', value: { ...dto, resume: resumeToAccount(metadata), template: templateKey } });

@@ -1,5 +1,7 @@
 import { AccountDto, ResumeForm } from "@lib/types";
 import { JSONContent, generateText } from "@tiptap/react";
+import { StarterKit } from "@tiptap/starter-kit";
+import { BulletList } from "@tiptap/extension-bullet-list";
 
 export const transformArrToJsonBullets = (arr: { text: string; key: string }[]): JSONContent => {
   return {
@@ -102,6 +104,7 @@ export const accountToResume = ({
 };
 
 export const resumeToAccount = (resume: ResumeForm): AccountDto => {
+  console.log('resume.experience', resume.experience);
   return {
     profile: {
       firstName: resume.profile.firstName,
@@ -123,18 +126,18 @@ export const resumeToAccount = (resume: ResumeForm): AccountDto => {
       keyContributions: experience.description?.content?.filter((item) => item.marks?.some((mark) => mark.type === 'keyContributions'))?.map((item) => item.text || '') || [],
       achievements: experience.description?.content?.filter((item) => item.marks?.some((mark) => mark.type === 'achievements'))?.map((item) => item.text || '') || [],
       responsibilities: experience.description?.content?.filter((item) => item.marks?.some((mark) => mark.type === 'responsibilities'))?.map((item) => item.text || '') || [],
-      description: experience.description ? generateText(experience.description, []) : '',
+      // description: experience.description ? generateText(experience.description, [StarterKit, BulletList]) : '',
     })),
     education: resume.education,
     recommendations: resume.recommendations?.map((recommendation) => ({
       name: recommendation.name,
       url: recommendation.url,
-      additionalDetails: recommendation.description ? generateText(recommendation.description, []) : '',
+      additionalDetails: recommendation.description ? generateText(recommendation.description, [StarterKit, BulletList]) : '',
     })),
     projects: resume.projects?.map((project) => ({
       name: project.name,
       url: project.url,
-      additionalDetails: project.description ? generateText(project.description, []) : '',
+      additionalDetails: project.description ? generateText(project.description, [StarterKit, BulletList]) : '',
     })),
   };
 }
