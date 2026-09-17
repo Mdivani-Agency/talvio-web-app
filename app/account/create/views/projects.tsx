@@ -20,7 +20,7 @@ export const ProjectsView = ({
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const { control } = form;
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray<AccountDto, 'projects'>({
     control,
     name: 'projects',
   });
@@ -50,7 +50,7 @@ export const ProjectsView = ({
         action="add"
         onSubmit={handleAddProject}
       />
-      <OrderedList fields={fields} label="Projects">
+      <OrderedList<AccountDto, 'projects'> fields={fields} label="Projects">
         {({ items, onReorder }) => (
           <FormList
             items={items}

@@ -20,7 +20,7 @@ export const ExperienceView = ({
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const { control } = form;
 
-  const { fields, append, remove, update, replace } = useFieldArray({
+  const { fields, append, remove, update, replace } = useFieldArray<AccountDto, 'experience'>({
     control,
     name: 'experience',
   });
@@ -50,7 +50,7 @@ export const ExperienceView = ({
         action="add"
         onSubmit={handleAddExperience}
       />
-      <OrderedList fields={fields} label="Experience">
+      <OrderedList<AccountDto, 'experience'> fields={fields} label="Experience">
         {({ items, onReorder }) => (
           <FormList
             items={items}

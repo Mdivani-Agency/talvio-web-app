@@ -13,7 +13,7 @@ export const educationFormValuesSchema = z.object({
   additionalDetails: z.string(),
 });
 
-export type EducationFormValues = z.infer<typeof educationFormValuesSchema>;
+export type EducationFormValues = z.input<typeof educationFormValuesSchema>;
 
 type EducationFieldsProps = {
   className?: string;

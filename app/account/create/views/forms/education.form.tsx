@@ -5,6 +5,7 @@ import { Education } from "@lib/types";
 import { educationFormSchema } from "@lib/schema/account.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { z } from "zod";
 import { EducationFields, EducationFormValues, educationFormValuesSchema } from "./education.fields";
 
 const DEFAULT_VALUES: EducationFormValues = {
@@ -24,7 +25,7 @@ type EducationFieldsProps = {
 };
 
 export const EducationForm = ({ className, defaultValues = DEFAULT_VALUES, action, onSubmit }: EducationFieldsProps) => {
-  const form = useForm<EducationFormValues>({
+  const form = useForm<EducationFormValues, unknown, z.output<typeof educationFormValuesSchema>>({
     resolver: zodResolver(educationFormValuesSchema),
     defaultValues: {
       ...DEFAULT_VALUES,

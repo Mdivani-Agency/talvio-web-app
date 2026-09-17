@@ -14,8 +14,8 @@ export function jsonSchema(
     type: "json_schema",
     strict: true,
     $brand: "auto-parseable-response-format",
-    $parseRaw: (x) => x.match(/```json([\s\S]*?)```/)?.[1]?.trim(),
-  } as AutoParseableTextFormat<z.infer<typeof schema>>;
+    $parseRaw: (x: string) => x.match(/```json([\s\S]*?)```/)?.[1]?.trim(),
+  } as unknown as AutoParseableTextFormat<z.infer<typeof schema>>;
 }
 
 export function parseValidationErrors(errors: Record<string, string[]>) {

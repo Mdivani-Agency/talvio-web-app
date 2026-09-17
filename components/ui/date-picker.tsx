@@ -144,7 +144,11 @@ export function DatePicker({
 
   return (
     <div className={cn('flex gap-2', className)}>
-      <Listbox value={selectedDate?.getMonth()} onChange={handleMonthChange} disabled={disabled}>
+      <Listbox
+        value={typeof selectedMonthValue === 'number' ? selectedMonthValue : null}
+        onChange={(month) => typeof month === 'number' && handleMonthChange(month)}
+        disabled={disabled}
+      >
         <div className="relative flex-1" ref={containerRef}>
           <ListboxButton
             className={cn(
@@ -221,7 +225,11 @@ export function DatePicker({
         </div>
       </Listbox>
 
-      <Listbox value={selectedDate?.getFullYear()} onChange={handleYearChange} disabled={disabled}>
+      <Listbox
+        value={typeof selectedYearValue === 'number' ? selectedYearValue : null}
+        onChange={(year) => typeof year === 'number' && handleYearChange(year)}
+        disabled={disabled}
+      >
         <div className="relative flex-1">
           <ListboxButton
             className={cn(

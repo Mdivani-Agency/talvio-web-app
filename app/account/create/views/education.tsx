@@ -20,7 +20,7 @@ export const EducationView = ({
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const { control } = form;
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray<AccountDto, 'education'>({
     control,
     name: 'education',
   });
@@ -50,7 +50,7 @@ export const EducationView = ({
         action="add"
         onSubmit={handleAddEducation}
       />
-      <OrderedList fields={fields} label="Education">
+      <OrderedList<AccountDto, 'education'> fields={fields} label="Education">
         {({ items, onReorder }) => (
           <FormList
             items={items}
