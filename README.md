@@ -15,9 +15,12 @@ The app listens on [http://localhost:3002](http://localhost:3002).
 
 ```bash
 yarn lint
+yarn typecheck
 yarn build
 yarn start
 ```
+
+Pull requests and pushes to `main` / `development` run the same lint, typecheck, and `yarn build` steps in GitHub Actions. The workflow uses Node 22 and Yarn 4 via Corepack, with public `NEXT_PUBLIC_*` stubs only — no production secrets.
 
 ## Environment variables
 
