@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ArrayPath, FieldArrayWithId } from 'react-hook-form';
 import { Collapsible } from '@components/ui';
 import { useSortableList } from '@hooks/use-sortable-list';
 import { cn } from '@lib/utils';
@@ -34,20 +33,16 @@ const OrderedListLabel = ({
   );
 };
 
-type OrderedListProps<T extends Record<string, unknown>, field extends ArrayPath<T>> = {
-  fields: Array<FieldArrayWithId<T, field, 'id'>>;
+type OrderedListProps<T extends { id: string }> = {
+  fields: T[];
   label?: string;
   children: (props: {
-    items: Array<FieldArrayWithId<T, field, 'id'>>;
-    onReorder: (items: Array<FieldArrayWithId<T, field, 'id'>>) => void;
+    items: T[];
+    onReorder: (items: T[]) => void;
   }) => React.ReactNode;
 };
 
-export const OrderedList = <T extends Record<string, unknown>, field extends ArrayPath<T>>({
-  fields,
-  label,
-  children,
-}: OrderedListProps<T, field>) => {
+export const OrderedList = <T extends { id: string }>({ fields, label, children }: OrderedListProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const { items, handleReorder, setItems } = useSortableList(fields);

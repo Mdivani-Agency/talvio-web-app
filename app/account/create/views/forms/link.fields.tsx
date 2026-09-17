@@ -1,29 +1,21 @@
 'use client';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
 
 import { ManageSortableItems } from '@components/views/manage-sortable-items';
 import { Link } from '@lib/types';
 import { useState } from 'react';
 import { linkSchema } from '@lib/schema/account.schema';
 import { getHostname } from '@lib/utils';
+import type { AppForm } from '@lib/forms/use-form';
+import { useFormArray } from '@lib/forms/use-form-array';
 
 interface LinksFormFieldProps {
-  form: UseFormReturn<{ links?: Link[] }>;
+  form: AppForm;
 }
 
 export const LinksFormField = ({ form }: LinksFormFieldProps) => {
-  const {
-    control,
-    formState: { errors },
-    setError,
-  } = form;
-
   const [currentOption, setCurrentOption] = useState('');
-
-  const { fields, append, remove, replace } = useFieldArray({
-    control,
-    name: 'links',
-  });
+  const [errorMessage, setErrorMessage] = useState<string>();
+  const { fields, append, remove, replace } = useFormArray<Link>(form, 'links');
 
   const addLink = async (link: string) => {
     const type = getHostname(link);
@@ -32,19 +24,12 @@ export const LinksFormField = ({ form }: LinksFormFieldProps) => {
     if (link && success) {
       append({ value: link, type });
       setCurrentOption('');
+      setErrorMessage(undefined);
     }
 
     if (error) {
-      setError(`links.0`, { message: error.message });
+      setErrorMessage(error.message);
     }
-  };
-
-  const removeLink = (index: number) => {
-    remove(index);
-  };
-
-  const handleSave = (links: Link[]) => {
-    replace(links);
   };
 
   return (
@@ -55,15 +40,18 @@ export const LinksFormField = ({ form }: LinksFormFieldProps) => {
       }))}
       modalLabel={`Manage Personal Links`}
       placeholder={`Other Personal Links (optional)`}
-      errorsMessage={errors.links?.[0]?.value?.message}
+      errorsMessage={errorMessage}
       currentOption={currentOption}
       setCurrentOption={setCurrentOption}
       addItem={addLink}
-      removeItem={removeLink}
-      handleSave={(items) => handleSave(items.map((item) => ({
-        value: item.name,
-        type: 'link',
-      })))
+      removeItem={remove}
+      handleSave={(items) =>
+        replace(
+          items.map((item) => ({
+            value: item.name,
+            type: 'link',
+          })),
+        )
       }
     />
   );

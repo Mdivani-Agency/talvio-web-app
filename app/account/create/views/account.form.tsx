@@ -1,18 +1,18 @@
 'use client';
 
-import { accountSchema } from "@lib/schema/account.schema";
-import { ProfileForm } from "./forms/profile.form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, UseFormReturn } from "react-hook-form";
-import { Button } from "@components/ui";
-import { ContactsForm } from "./forms/contacts.form";
-import { HighlightsForm } from "./forms/highlights.form";
-import { AccountDto, Highlights } from "@lib/types";
-import { ExperienceView } from "./experience";
-import { EducationView } from "./education";
-import { ProjectsView } from "./projects";
-import { useAccountContext } from "@app/account/providers/state-provider";
-import { toast } from "sonner";
+import { accountSchema } from '@lib/schema/account.schema';
+import { ProfileForm } from './forms/profile.form';
+import { Button } from '@components/ui';
+import { ContactsForm } from './forms/contacts.form';
+import { HighlightsForm } from './forms/highlights.form';
+import { AccountDto } from '@lib/types';
+import { ExperienceView } from './experience';
+import { EducationView } from './education';
+import { ProjectsView } from './projects';
+import { useAccountContext } from '@app/account/providers/state-provider';
+import { toast } from 'sonner';
+import { useAppForm } from '@lib/forms/use-form';
+import { firstFormError } from '@lib/forms/errors';
 
 export const DEFAULT_ACCOUNT_DTO: AccountDto = {
   profile: {
@@ -43,9 +43,7 @@ export const AccountForm = ({ onSubmit }: AccountFormProps) => {
   const { state, send } = useAccountContext();
   const values = state.context.accountDto || state.context.partialDto || {};
 
-  console.log("default values", values);
-  const form = useForm<AccountDto>({
-    resolver: zodResolver(accountSchema),
+  const form = useAppForm<AccountDto>({
     defaultValues: {
       profile: {
         firstName: values.profile?.firstName || DEFAULT_ACCOUNT_DTO.profile.firstName,
@@ -67,48 +65,33 @@ export const AccountForm = ({ onSubmit }: AccountFormProps) => {
       tools: values.tools || DEFAULT_ACCOUNT_DTO.tools,
       projects: values.projects || DEFAULT_ACCOUNT_DTO.projects,
     },
+    schema: accountSchema,
+    validateOn: 'submit',
+    onSubmit,
+    onValuesChange: (data) => {
+      send({ type: 'SET_PARTIAL_DTO', value: data });
+    },
   });
 
-  const handleSubmit = form.handleSubmit((data) => {
-    onSubmit(data);
-  }, (error) => {
-    console.error(error);
-    toast.error('Failed to create account', {
-      description: error.profile?.firstName?.message ||
-        error.profile?.lastName?.message ||
-        error.profile?.role?.message ||
-        error.profile?.email?.message ||
-        error.profile?.phone?.message ||
-        error.profile?.website?.message ||
-        error.profile?.tagline?.message ||
-        error.profile?.city?.message ||
-        error.profile?.country?.message ||
-        error.profile?.seniority?.message ||
-        error.experience?.message ||
-        error.education?.message ||
-        error.skills?.message ||
-        error.tools?.message ||
-        error.projects?.message ||
-        error.links?.message ||
-        error.languages?.message ||
-        error.recommendations?.message,
-    });
-  });
-
-  form.watch((data) => {
-    send({ type: 'SET_PARTIAL_DTO', value: data as Partial<AccountDto> });
-  });
+  const handleSubmit = async () => {
+    await form.handleSubmit();
+    if (!form.state.isValid) {
+      toast.error('Failed to create account', {
+        description: firstFormError(form),
+      });
+    }
+  };
 
   return (
     <div className="space-y-8 py-8">
       <ProfileForm form={form} />
       <ContactsForm form={form} />
-      <HighlightsForm form={form as unknown as UseFormReturn<Highlights>} />
+      <HighlightsForm form={form} />
       <ExperienceView form={form} />
       <EducationView form={form} />
       <ProjectsView form={form} />
       <div className="flex justify-end gap-2">
-        <Button className="w-64" onClick={handleSubmit} type="button">
+        <Button className="w-64" onClick={() => void handleSubmit()} type="button">
           Continue
         </Button>
       </div>

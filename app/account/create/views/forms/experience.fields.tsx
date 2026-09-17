@@ -1,10 +1,10 @@
-import { UseFormReturn } from "react-hook-form";
-import { Form, FormControl, Input, FormField, FormItem, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker, MultiListInput, ErrorBadge, InfoBadge } from "@components/ui";
-import { cn } from "@lib/utils";
-import { employmentTypeEnum, locationTypeEnum } from "@lib/schema/enums";
-import { z } from "zod";
-
-export type ExperienceFormValues = z.infer<typeof experienceFormValuesSchema>;
+import { Form, FormControl, Input, FormField, FormItem, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker, MultiListInput, ErrorBadge, InfoBadge } from '@components/ui';
+import { cn } from '@lib/utils';
+import { employmentTypeEnum, locationTypeEnum } from '@lib/schema/enums';
+import { z } from 'zod';
+import { useStore } from '@tanstack/react-form';
+import type { AppForm } from '@lib/forms/use-form';
+import { fieldErrorMessage } from '@lib/forms/errors';
 
 export const experienceFormValuesSchema = z.object({
   company: z.string().min(1, { message: 'Company is required' }),
@@ -20,123 +20,166 @@ export const experienceFormValuesSchema = z.object({
   keyContributions: z.array(z.string()),
 });
 
+export type ExperienceFormValues = z.input<typeof experienceFormValuesSchema>;
+
 type ExperienceFieldsProps = {
   className?: string;
-  form: UseFormReturn<ExperienceFormValues>;
+  form: AppForm;
 };
 
 export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => {
-  const bulletPointErrors = form.formState.errors.achievements?.message || form.formState.errors.responsibilities?.message || form.formState.errors.keyContributions?.message;
+  const startDate = useStore(form.store, (state) => String(state.values.startDate ?? ''));
+  const endDate = useStore(form.store, (state) => String(state.values.endDate ?? ''));
+  const isPresent = useStore(form.store, (state) => String(state.values.isPresent ?? ''));
+  const achievements = useStore(form.store, (state) => (state.values.achievements as string[] | undefined) ?? []);
+  const responsibilities = useStore(form.store, (state) => (state.values.responsibilities as string[] | undefined) ?? []);
+  const keyContributions = useStore(form.store, (state) => (state.values.keyContributions as string[] | undefined) ?? []);
+  const achievementsError = useStore(form.store, (state) => fieldErrorMessage(state.fieldMeta.achievements?.errors ?? []));
+  const responsibilitiesError = useStore(form.store, (state) => fieldErrorMessage(state.fieldMeta.responsibilities?.errors ?? []));
+  const keyContributionsError = useStore(form.store, (state) => fieldErrorMessage(state.fieldMeta.keyContributions?.errors ?? []));
+  const bulletPointErrors = achievementsError || responsibilitiesError || keyContributionsError;
 
   return (
-      <Form {...form}>
-        <form className={cn("space-y-6", className)}>
-        <div className="grid grid-cols-2 gap-2">
-          <FormField control={form.control} name="company" render={({ field }) => (
+    <Form className={cn('space-y-6', className)}>
+      <div className="grid grid-cols-2 gap-2">
+        <FormField form={form} name="company">
+          {(field) => (
             <FormItem>
               <FormControl>
-                <Input {...field} placeholder="Company" error={form.formState.errors.company?.message} />
+                <Input
+                  name={field.name}
+                  value={String(field.state.value ?? '')}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  placeholder="Company"
+                  error={fieldErrorMessage(field.state.meta.errors)}
+                />
               </FormControl>
             </FormItem>
-          )} />
+          )}
+        </FormField>
 
-          <FormField control={form.control} name="jobTitle" render={({ field }) => (
+        <FormField form={form} name="jobTitle">
+          {(field) => (
             <FormItem>
               <FormControl>
-                <Input {...field} placeholder="Job Title" error={form.formState.errors.jobTitle?.message} />
+                <Input
+                  name={field.name}
+                  value={String(field.state.value ?? '')}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  placeholder="Job Title"
+                  error={fieldErrorMessage(field.state.meta.errors)}
+                />
               </FormControl>
             </FormItem>
-          )} />
-        </div>
+          )}
+        </FormField>
+      </div>
 
-        <ExperienceRangePicker
-          startDateError={form.formState.errors.startDate?.message}
-          endDateError={form.formState.errors.endDate?.message}
-          isPresentError={form.formState.errors.isPresent?.message}
-          range={{
-            startDate: form.watch('startDate'),
-            endDate: form.watch('endDate'),
-            isPresent: form.watch('isPresent') ? true : false,
-          }}
-          onChange={(range) => {
-            if (range.field === 'isPresent') {
-              form.setValue('isPresent', range.value ? new Date().toISOString() : undefined);
-            } else {
-              form.setValue(range.field, range.value);
-            }
-          }}
-        />
+      <ExperienceRangePicker
+        range={{
+          startDate,
+          endDate,
+          isPresent: Boolean(isPresent),
+        }}
+        onChange={(range) => {
+          if (range.field === 'isPresent') {
+            form.setFieldValue('isPresent', range.value ? new Date().toISOString() : undefined);
+          } else {
+            form.setFieldValue(range.field, range.value);
+          }
+        }}
+      />
 
-        <Label size="sm" variant="muted">Additional Details</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <FormField control={form.control} name='employmentType' render={({ field }) => (
+      <Label size="sm" variant="muted">
+        Additional Details
+      </Label>
+      <div className="grid grid-cols-2 gap-2">
+        <FormField form={form} name="employmentType">
+          {(field) => (
             <FormItem>
               <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger error={form.formState.errors.employmentType?.message}>
+                <Select value={String(field.state.value ?? '')} onValueChange={(value) => field.handleChange(value)}>
+                  <SelectTrigger error={fieldErrorMessage(field.state.meta.errors)}>
                     <SelectValue placeholder="Select Employment Type" />
                   </SelectTrigger>
                   <SelectContent>
                     {employmentTypeEnum.options.map((value) => (
-                      <SelectItem key={value} value={value}>{value}</SelectItem>
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </FormControl>
             </FormItem>
-          )} />
+          )}
+        </FormField>
 
-          <FormField control={form.control} name="locationType" render={({ field }) => (
+        <FormField form={form} name="locationType">
+          {(field) => (
             <FormItem>
               <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger error={form.formState.errors.locationType?.message}>
+                <Select value={String(field.state.value ?? '')} onValueChange={(value) => field.handleChange(value)}>
+                  <SelectTrigger error={fieldErrorMessage(field.state.meta.errors)}>
                     <SelectValue placeholder="Select Location Type" />
                   </SelectTrigger>
                   <SelectContent>
                     {locationTypeEnum.options.map((value) => (
-                      <SelectItem key={value} value={value}>{value}</SelectItem>
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </FormControl>
             </FormItem>
-          )} />
-        </div>
+          )}
+        </FormField>
+      </div>
 
-        <MultiListInput
-          label='Bullet Points'
-          badge={bulletPointErrors ? <ErrorBadge error={bulletPointErrors} /> : <InfoBadge info="Please try to add at list one item for each category" />}
-          items={{
-            achievements: {
-              label: 'Achievements',
-              items: form.watch('achievements') || [],
-              onAdd: (item) => form.setValue('achievements', [...form.watch('achievements'), item]),
-              onRemove: (index) => form.setValue('achievements', form.watch('achievements').filter((_, i) => i !== index)),
-            },
-            responsibilities: {
-              label: 'Responsibilities',
-              items: form.watch('responsibilities') || [],
-              onAdd: (item) => form.setValue('responsibilities', [...form.watch('responsibilities'), item]),
-              onRemove: (index) => form.setValue('responsibilities', form.watch('responsibilities').filter((_, i) => i !== index)),
-            },
-            keyContributions: {
-              label: 'Key Contributions',
-              items: form.watch('keyContributions') || [],
-              onAdd: (item) => form.setValue('keyContributions', [...form.watch('keyContributions'), item]),
-              onRemove: (index) => form.setValue('keyContributions', form.watch('keyContributions').filter((_, i) => i !== index)),
-            },
-          }}
-        />
+      <MultiListInput
+        label="Bullet Points"
+        badge={bulletPointErrors ? <ErrorBadge error={bulletPointErrors} /> : <InfoBadge info="Please try to add at list one item for each category" />}
+        items={{
+          achievements: {
+            label: 'Achievements',
+            items: achievements,
+            onAdd: (item) => form.setFieldValue('achievements', [...achievements, item]),
+            onRemove: (index) => form.setFieldValue('achievements', achievements.filter((_, i) => i !== index)),
+          },
+          responsibilities: {
+            label: 'Responsibilities',
+            items: responsibilities,
+            onAdd: (item) => form.setFieldValue('responsibilities', [...responsibilities, item]),
+            onRemove: (index) => form.setFieldValue('responsibilities', responsibilities.filter((_, i) => i !== index)),
+          },
+          keyContributions: {
+            label: 'Key Contributions',
+            items: keyContributions,
+            onAdd: (item) => form.setFieldValue('keyContributions', [...keyContributions, item]),
+            onRemove: (index) => form.setFieldValue('keyContributions', keyContributions.filter((_, i) => i !== index)),
+          },
+        }}
+      />
 
-        <FormField control={form.control} name="additionalDetails" render={({ field }) => (
+      <FormField form={form} name="additionalDetails">
+        {(field) => (
           <FormItem>
             <FormControl>
-              <Textarea {...field} placeholder="Additional Context (if necessary)" error={form.formState.errors.additionalDetails?.message} />
+              <Textarea
+                name={field.name}
+                value={String(field.state.value ?? '')}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                placeholder="Additional Context (if necessary)"
+                error={fieldErrorMessage(field.state.meta.errors)}
+              />
             </FormControl>
           </FormItem>
-        )} />
-        </form>
-      </Form>
+        )}
+      </FormField>
+    </Form>
   );
 };

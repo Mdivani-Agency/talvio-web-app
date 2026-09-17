@@ -1,5 +1,4 @@
 import { Account, AccountDto, FeedbackQuestions } from '@lib/types';
-import { FieldErrors } from 'react-hook-form';
 
 export type AccountState =
   | 'fetchingAccount'
@@ -17,7 +16,7 @@ export type AccountContext = {
   partialDto: Partial<AccountDto> | null;
   questions: FeedbackQuestions | null;
   answers: string[] | null;
-  parsingError: FieldErrors<AccountDto> | null;
+  parsingError: Record<string, unknown> | null;
 };
 
 export type AccountEvents =

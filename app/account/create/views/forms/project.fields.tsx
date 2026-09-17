@@ -1,7 +1,8 @@
-import { UseFormReturn } from "react-hook-form";
-import { Form, FormControl, Input, FormField, FormItem, Textarea } from "@components/ui";
-import { cn } from "@lib/utils";
-import { z } from "zod";
+import { Form, FormControl, Input, FormField, FormItem, Textarea } from '@components/ui';
+import { cn } from '@lib/utils';
+import { z } from 'zod';
+import type { AppForm } from '@lib/forms/use-form';
+import { fieldErrorMessage } from '@lib/forms/errors';
 
 export const projectFormValuesSchema = z.object({
   name: z.string().min(1, { message: 'Name is required' }),
@@ -9,41 +10,66 @@ export const projectFormValuesSchema = z.object({
   additionalDetails: z.string().min(150, { message: 'Additional details must be at least 150 characters long' }),
 });
 
-export type ProjectFormValues = z.infer<typeof projectFormValuesSchema>;
+export type ProjectFormValues = z.input<typeof projectFormValuesSchema>;
 
 type ProjectFieldsProps = {
   className?: string;
-  form: UseFormReturn<ProjectFormValues>;
+  form: AppForm;
 };
 
 export const ProjectFields = ({ className, form }: ProjectFieldsProps) => {
   return (
-      <Form {...form}>
-        <form className={cn("space-y-6", className)}>
-          <FormField control={form.control} name="name" render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input {...field} placeholder="Project Name" error={form.formState.errors.name?.message} />
-              </FormControl>
-            </FormItem>
-          )} />
+    <Form className={cn('space-y-6', className)}>
+      <FormField form={form} name="name">
+        {(field) => (
+          <FormItem>
+            <FormControl>
+              <Input
+                name={field.name}
+                value={String(field.state.value ?? '')}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                placeholder="Project Name"
+                error={fieldErrorMessage(field.state.meta.errors)}
+              />
+            </FormControl>
+          </FormItem>
+        )}
+      </FormField>
 
-          <FormField control={form.control} name="url" render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input {...field} placeholder="Project URL" error={form.formState.errors.url?.message} />
-              </FormControl>
-            </FormItem>
-          )} />
+      <FormField form={form} name="url">
+        {(field) => (
+          <FormItem>
+            <FormControl>
+              <Input
+                name={field.name}
+                value={String(field.state.value ?? '')}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                placeholder="Project URL"
+                error={fieldErrorMessage(field.state.meta.errors)}
+              />
+            </FormControl>
+          </FormItem>
+        )}
+      </FormField>
 
-          <FormField control={form.control} name="additionalDetails" render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Textarea {...field} placeholder="Additional Details" error={form.formState.errors.additionalDetails?.message} />
-              </FormControl>
-            </FormItem>
-          )} />
-        </form>
-      </Form>
+      <FormField form={form} name="additionalDetails">
+        {(field) => (
+          <FormItem>
+            <FormControl>
+              <Textarea
+                name={field.name}
+                value={String(field.state.value ?? '')}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                placeholder="Additional Details"
+                error={fieldErrorMessage(field.state.meta.errors)}
+              />
+            </FormControl>
+          </FormItem>
+        )}
+      </FormField>
+    </Form>
   );
 };

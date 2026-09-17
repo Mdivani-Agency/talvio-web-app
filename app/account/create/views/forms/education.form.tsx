@@ -1,20 +1,19 @@
-import { useForm } from "react-hook-form";
-import { Button } from "@components/ui";
-import { cn, getErrorMessage } from "@lib/utils";
-import { Education } from "@lib/types";
-import { educationFormSchema } from "@lib/schema/account.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { z } from "zod";
-import { EducationFields, EducationFormValues, educationFormValuesSchema } from "./education.fields";
+import { Button } from '@components/ui';
+import { cn, getErrorMessage } from '@lib/utils';
+import { Education } from '@lib/types';
+import { educationFormSchema } from '@lib/schema/account.schema';
+import { toast } from 'sonner';
+import { EducationFields, EducationFormValues, educationFormValuesSchema } from './education.fields';
+import { useAppForm } from '@lib/forms/use-form';
+import { firstFormError } from '@lib/forms/errors';
 
 const DEFAULT_VALUES: EducationFormValues = {
-  name: "",
-  degreeType: "",
-  startDate: "",
-  endDate: "",
-  isPresent: "",
-  additionalDetails: "",
+  name: '',
+  degreeType: '',
+  startDate: '',
+  endDate: '',
+  isPresent: '',
+  additionalDetails: '',
 };
 
 type EducationFieldsProps = {
@@ -25,47 +24,46 @@ type EducationFieldsProps = {
 };
 
 export const EducationForm = ({ className, defaultValues = DEFAULT_VALUES, action, onSubmit }: EducationFieldsProps) => {
-  const form = useForm<EducationFormValues, unknown, z.output<typeof educationFormValuesSchema>>({
-    resolver: zodResolver(educationFormValuesSchema),
+  const form = useAppForm<EducationFormValues>({
     defaultValues: {
       ...DEFAULT_VALUES,
       ...defaultValues,
     },
+    schema: educationFormValuesSchema,
   });
 
-  const handleSubmit = form.handleSubmit((data) => {
+  const handleSubmit = async () => {
+    await form.validateAllFields('submit');
+    await form.validate('submit');
+
+    if (!form.state.isValid) {
+      toast.error(firstFormError(form));
+      return;
+    }
+
     const { success, data: parsedData, error } = educationFormSchema.safeParse({
-      ...data,
-      isPresent: data.isPresent ?? undefined,
-      endDate: data.endDate ?? undefined,
+      ...form.state.values,
+      isPresent: form.state.values.isPresent || undefined,
+      endDate: form.state.values.endDate || undefined,
     });
 
     if (success) {
       onSubmit(parsedData);
-      form.reset();
+      form.reset(DEFAULT_VALUES);
     }
 
     if (error) {
       toast.error(getErrorMessage(error));
     }
-  }, (errors) => {
-    console.log(errors);
-    toast.error(
-      errors.root?.message ||
-      errors.name?.message ||
-      errors.degreeType?.message ||
-      errors.startDate?.message ||
-      errors.endDate?.message ||
-      errors.isPresent?.message ||
-      errors.additionalDetails?.message
-    );
-  });
+  };
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       <EducationFields form={form} />
       <div className="flex justify-end gap-2">
-        <Button type="button" className="w-36" variant={'secondary'} size={'icon'} onClick={handleSubmit}>{action === 'add' ? 'Add' : 'Save'}</Button>
+        <Button type="button" className="w-36" variant={'secondary'} size={'icon'} onClick={() => void handleSubmit()}>
+          {action === 'add' ? 'Add' : 'Save'}
+        </Button>
       </div>
     </div>
   );

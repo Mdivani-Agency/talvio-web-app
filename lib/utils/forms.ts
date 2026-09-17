@@ -1,8 +1,10 @@
 import { AccountDto, Education, Experience, Language, Link, ParsedAccount, Project, Recommendation, Skill, Tool } from "@lib/types";
 import { AutoParseableTextFormat } from "openai/lib/parser.mjs";
-import { FieldErrors, FieldValues } from "react-hook-form";
 import { z } from "zod";
 import { ZodError } from "zod";
+import { hasFieldError } from '@lib/forms/errors';
+
+export { hasFieldError as hasError };
 
 export function jsonSchema(
   name: string,
@@ -51,12 +53,6 @@ export function getHostname(url: string) {
 
   return domainName;
 }
-
-export const hasError = <T extends FieldValues>(errors: FieldErrors<T>, key: keyof T) => {
-  if (!errors || !errors[key]) return false;
-
-  return !!(errors?.[key]?.message || Object.keys(errors[key]).length);
-};
 
 export const transformToPartial = <T>(data: T): Partial<T> => {
   if (typeof data !== 'object') {

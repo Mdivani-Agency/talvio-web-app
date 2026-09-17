@@ -1,16 +1,15 @@
 import { TabNavigation } from '@components/views/tabs';
-import { hasError } from '@lib/utils';
-import { AccountDto, Highlights } from '@lib/types';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { AccountDto } from '@lib/types';
 import { ProfileForm } from '@app/account/create/views/forms/profile.form';
 import { HighlightsForm } from '@app/account/create/views/forms/highlights.form';
 import { ExperienceView } from '@app/account/create/views/experience';
 import { EducationView } from '@app/account/create/views/education';
 import { ProjectsView } from '@app/account/create/views/projects';
 import { ContactsForm } from '@app/account/create/views/forms/contacts.form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { accountSchema } from '@lib/schema/account.schema';
-import { useEffect } from 'react';
+import { useAppForm } from '@lib/forms/use-form';
+import { hasFieldError } from '@lib/forms/errors';
+import { useStore } from '@tanstack/react-form';
 
 type ResumeFormProps = {
   defaultValues: AccountDto;
@@ -18,32 +17,30 @@ type ResumeFormProps = {
 };
 
 export const ResumeFormView = ({ onSubmit, defaultValues }: ResumeFormProps) => {
-  const form = useForm<AccountDto>({
-    resolver: zodResolver(accountSchema),
+  const form = useAppForm<AccountDto>({
     defaultValues,
+    schema: accountSchema,
+    validateOn: 'submit',
+    onValuesChange: onSubmit,
   });
-  const { trigger, formState: { errors }, subscribe } = form;
 
-  useEffect(() => {
-    const unsubscribe = subscribe({
-      formState: { values: true },
-      callback: ({ values }) => {
-        onSubmit(values);
-      },
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, [subscribe, onSubmit]);
+  const errorMap = useStore(form.store, (state) => state.errorMap);
+  const profileHasError = Boolean(errorMap) && hasFieldError(form, 'profile');
+  const skillsHasError = hasFieldError(form, 'skills') || hasFieldError(form, 'languages');
+  const experienceHasError = hasFieldError(form, 'experience');
+  const educationHasError = hasFieldError(form, 'education');
+  const projectsHasError = hasFieldError(form, 'projects');
 
   return (
     <TabNavigation className={'w-full h-full'} withActionButtons={true}>
       <TabNavigation.TabContent
         title={'Personal Details'}
         icon={'User'}
-        error={errors.profile?.message}
-        validate={() => trigger('profile')}
-        hasError={hasError(errors, 'profile')}
+        validate={async () => {
+          const errors = await Promise.resolve(form.validateField('profile', 'submit'));
+          return errors.length === 0;
+        }}
+        hasError={profileHasError}
       >
         <section className="mt-8">
           <ProfileForm form={form} />
@@ -52,9 +49,11 @@ export const ResumeFormView = ({ onSubmit, defaultValues }: ResumeFormProps) => 
       <TabNavigation.TabContent
         title={'Contact Information'}
         icon={'Mail'}
-        error={errors.profile?.message}
-        validate={() => trigger('profile')}
-        hasError={hasError(errors, 'profile')}
+        validate={async () => {
+          const errors = await Promise.resolve(form.validateField('profile', 'submit'));
+          return errors.length === 0;
+        }}
+        hasError={profileHasError}
       >
         <section className="mt-8">
           <ContactsForm form={form} />
@@ -63,20 +62,24 @@ export const ResumeFormView = ({ onSubmit, defaultValues }: ResumeFormProps) => 
       <TabNavigation.TabContent
         title={'Highlights'}
         icon={'Text'}
-        validate={() => trigger('skills')}
-        error={errors.skills?.message || errors.languages?.message}
-        hasError={hasError(errors, 'skills') || hasError(errors, 'languages')}
+        validate={async () => {
+          const errors = await Promise.resolve(form.validateField('skills', 'submit'));
+          return errors.length === 0;
+        }}
+        hasError={skillsHasError}
       >
         <section className="mt-8 w-full">
-          <HighlightsForm form={form as unknown as UseFormReturn<Highlights>} />
+          <HighlightsForm form={form} />
         </section>
       </TabNavigation.TabContent>
       <TabNavigation.TabContent
         title={'Experience'}
         icon={'SuitCase'}
-        error={errors.experience?.message}
-        validate={() => trigger('experience')}
-        hasError={hasError(errors, 'experience')}
+        validate={async () => {
+          const errors = await Promise.resolve(form.validateField('experience', 'submit'));
+          return errors.length === 0;
+        }}
+        hasError={experienceHasError}
       >
         <section className="mt-8 w-full">
           <ExperienceView form={form} />
@@ -85,9 +88,11 @@ export const ResumeFormView = ({ onSubmit, defaultValues }: ResumeFormProps) => 
       <TabNavigation.TabContent
         title={'Education'}
         icon={'Graduate'}
-        error={errors.education?.message}
-        validate={() => trigger('education')}
-        hasError={hasError(errors, 'education')}
+        validate={async () => {
+          const errors = await Promise.resolve(form.validateField('education', 'submit'));
+          return errors.length === 0;
+        }}
+        hasError={educationHasError}
       >
         <section className="mt-8 w-full">
           <EducationView form={form} />
@@ -96,9 +101,11 @@ export const ResumeFormView = ({ onSubmit, defaultValues }: ResumeFormProps) => 
       <TabNavigation.TabContent
         title={'Personal Projects'}
         icon={'Project'}
-        error={errors.projects?.message}
-        validate={() => trigger('projects')}
-        hasError={hasError(errors, 'projects')}
+        validate={async () => {
+          const errors = await Promise.resolve(form.validateField('projects', 'submit'));
+          return errors.length === 0;
+        }}
+        hasError={projectsHasError}
       >
         <section className="mt-8 w-full">
           <ProjectsView form={form} />

@@ -1,29 +1,21 @@
 'use client';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
 
 import { ManageSortableItems } from '@components/views/manage-sortable-items';
-import { Highlights, Skill, SkillFields } from '@lib/types';
+import { Skill } from '@lib/types';
 import { useState } from 'react';
 import { skillSchema } from '@lib/schema/account.schema';
+import type { AppForm } from '@lib/forms/use-form';
+import { useFormArray } from '@lib/forms/use-form-array';
 
 interface SkillsFormFieldProps {
-  form: UseFormReturn<SkillFields>;
-  name: keyof SkillFields;
+  form: AppForm;
+  name: 'skills' | 'tools';
 }
 
 export const SkillsFormField = ({ form, name }: SkillsFormFieldProps) => {
-  const {
-    control,
-    formState: { errors },
-    setError,
-  } = form;
-
   const [currentOption, setCurrentOption] = useState('');
-
-  const { fields, append, remove, replace } = useFieldArray({
-    control,
-    name,
-  });
+  const [errorMessage, setErrorMessage] = useState<string>();
+  const { fields, append, remove, replace } = useFormArray<Skill>(form, name);
 
   const addSkill = async (skill: string) => {
     const { error, success } = skillSchema.safeParse({ name: skill });
@@ -31,32 +23,25 @@ export const SkillsFormField = ({ form, name }: SkillsFormFieldProps) => {
     if (skill && success) {
       append({ name: skill });
       setCurrentOption('');
+      setErrorMessage(undefined);
     }
 
     if (error) {
-      setError(`${name}.0`, { message: error.message });
+      setErrorMessage(error.message);
     }
-  };
-
-  const removeSkill = (index: number) => {
-    remove(index);
-  };
-
-  const handleSave = (skills: Skill[]) => {
-    replace(skills);
   };
 
   return (
     <ManageSortableItems
-      items={fields}
+      items={fields.map((field) => ({ id: field.id, name: field.name }))}
       modalLabel={`Manage ${name}`}
       placeholder={`Add ${name}`}
-      errorsMessage={errors.skills?.[0]?.name?.message}
+      errorsMessage={errorMessage}
       currentOption={currentOption}
       setCurrentOption={setCurrentOption}
       addItem={addSkill}
-      removeItem={removeSkill}
-      handleSave={handleSave}
+      removeItem={remove}
+      handleSave={(skills) => replace(skills.map(({ name: skillName }) => ({ name: skillName })))}
     />
   );
 };

@@ -1,33 +1,29 @@
 'use client';
 import { useCallback, useState } from 'react';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
-import { AccountDto, Project } from '@lib/types';
+import { Project } from '@lib/types';
 import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
 import { Label } from '@components/ui';
 import { ProjectForm } from './forms/project.form';
 import { FormList } from './form-list';
+import type { AppForm } from '@lib/forms/use-form';
+import { useFormArray } from '@lib/forms/use-form-array';
 
 type ProjectsViewProps = {
   className?: string;
-  form: UseFormReturn<AccountDto>;
+  form: AppForm;
 };
 
-export const ProjectsView = ({
-  className,
-  form,
-}: ProjectsViewProps) => {
+export const ProjectsView = ({ className, form }: ProjectsViewProps) => {
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
-  const { control } = form;
+  const { fields, append, remove, update } = useFormArray<Project>(form, 'projects');
 
-  const { fields, append, remove, update } = useFieldArray<AccountDto, 'projects'>({
-    control,
-    name: 'projects',
-  });
-
-  const handleAddProject = useCallback((project: Project) => {
-    append(project);
-  }, [append]);
+  const handleAddProject = useCallback(
+    (project: Project) => {
+      append(project);
+    },
+    [append],
+  );
 
   const handleUpdateProject = useCallback(
     (index: number, project: Project) => {
@@ -45,24 +41,20 @@ export const ProjectsView = ({
 
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">Projects</Label>
-      <ProjectForm
-        action="add"
-        onSubmit={handleAddProject}
-      />
-      <OrderedList<AccountDto, 'projects'> fields={fields} label="Projects">
+      <Label size="lg" className="mb-6">
+        Projects
+      </Label>
+      <ProjectForm action="add" onSubmit={handleAddProject} />
+      <OrderedList fields={fields} label="Projects">
         {({ items, onReorder }) => (
           <FormList
             items={items}
             labelKey="name"
-            renderForm={(item, onSubmit) => (
-              <ProjectForm
-                action="edit"
-                onSubmit={onSubmit}
-                defaultValues={item}
-              />
-            )}
-            onReorder={onReorder}
+            renderForm={(item, onSubmit) => <ProjectForm action="edit" onSubmit={onSubmit} defaultValues={item} />}
+            onReorder={(nextItems) => {
+              form.setFieldValue('projects', nextItems);
+              onReorder(nextItems);
+            }}
             handleUpdateForm={handleUpdateProject}
             handleRemoveForm={setRemoveItemIndex}
           />

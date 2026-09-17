@@ -1,33 +1,29 @@
 'use client';
 import { useCallback, useState } from 'react';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
-import { AccountDto, Education } from '@lib/types';
+import { Education } from '@lib/types';
 import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
 import { Label } from '@components/ui';
 import { EducationForm } from './forms/education.form';
 import { FormList } from './form-list';
+import type { AppForm } from '@lib/forms/use-form';
+import { useFormArray } from '@lib/forms/use-form-array';
 
 type EducationViewProps = {
   className?: string;
-  form: UseFormReturn<AccountDto>;
+  form: AppForm;
 };
 
-export const EducationView = ({
-  className,
-  form,
-}: EducationViewProps) => {
+export const EducationView = ({ className, form }: EducationViewProps) => {
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
-  const { control } = form;
+  const { fields, append, remove, update } = useFormArray<Education>(form, 'education');
 
-  const { fields, append, remove, update } = useFieldArray<AccountDto, 'education'>({
-    control,
-    name: 'education',
-  });
-
-  const handleAddEducation = useCallback((education: Education) => {
-    append(education);
-  }, [append]);
+  const handleAddEducation = useCallback(
+    (education: Education) => {
+      append(education);
+    },
+    [append],
+  );
 
   const handleUpdateEducation = useCallback(
     (index: number, education: Education) => {
@@ -45,24 +41,20 @@ export const EducationView = ({
 
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">Education</Label>
-      <EducationForm
-        action="add"
-        onSubmit={handleAddEducation}
-      />
-      <OrderedList<AccountDto, 'education'> fields={fields} label="Education">
+      <Label size="lg" className="mb-6">
+        Education
+      </Label>
+      <EducationForm action="add" onSubmit={handleAddEducation} />
+      <OrderedList fields={fields} label="Education">
         {({ items, onReorder }) => (
           <FormList
             items={items}
             labelKey="name"
-            renderForm={(item, onSubmit) => (
-              <EducationForm
-                action="edit"
-                onSubmit={onSubmit}
-                defaultValues={item}
-              />
-            )}
-            onReorder={onReorder}
+            renderForm={(item, onSubmit) => <EducationForm action="edit" onSubmit={onSubmit} defaultValues={item} />}
+            onReorder={(nextItems) => {
+              form.setFieldValue('education', nextItems);
+              onReorder(nextItems);
+            }}
             handleUpdateForm={handleUpdateEducation}
             handleRemoveForm={setRemoveItemIndex}
           />
