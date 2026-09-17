@@ -102,7 +102,7 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
       />,
       <EditResumeView key="form" className="h-screen pt-16" onSubmit={(dto) => handleStateUpdate({ data: dto })} defaultValues={resume.resume} />,
     ];
-  }, [level, resume?.resume, resume?.template, handleStateUpdate, templates]);
+  }, [level, resume.resume, resume.template, handleStateUpdate, templates]);
 
   return (
     <section className="grid grid-cols-5">

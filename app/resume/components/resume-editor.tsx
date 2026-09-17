@@ -28,7 +28,7 @@ export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange
       />,
       <EditResumeView key="form" className="h-screen pt-16" onSubmit={(dto) => onChange({ data: accountToResume(dto) })} defaultValues={resumeToAccount(resume.metadata)} />,
     ];
-  }, [level, resume?.metadata, resume?.template, onChange, templates]);
+  }, [level, resume.metadata, resume.template, onChange, templates]);
 
   return (
       <AnimatedTransition direction="left" className={cn("col-span-2 border-r border-input", className)} current={mode === 'edit' ? 0 : 1}>

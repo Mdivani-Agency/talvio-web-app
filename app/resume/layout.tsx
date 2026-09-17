@@ -2,13 +2,11 @@ import { Header } from "@components/views";
 import { SessionProvider } from "@lib/providers";
 import { ResumeProvider } from "./providers/state-provider";
 
-export default async function ResumeLayout({ children, params }: { children: React.ReactNode, params: { resumeId: string } }) {
-  const { resumeId = 'new_resume' } = await params;
-
+export default async function ResumeLayout({ children }: LayoutProps<'/resume'>) {
   return (
     <div className="font-(family-var(--font-montserrat))">
       <SessionProvider>
-        <ResumeProvider resumeId={resumeId}>
+        <ResumeProvider>
           <Header className="bg-popover" />
           {children}
         </ResumeProvider>

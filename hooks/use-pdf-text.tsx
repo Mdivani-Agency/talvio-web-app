@@ -7,6 +7,14 @@ import { useCallback, useState } from 'react';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
+const extractText = async (pdf: PDFDocumentProxy, pageNum: number) => {
+  const page = await pdf.getPage(pageNum);
+  const textContent = await page.getTextContent({ disableNormalization: true });
+
+  // @ts-expect-error TODO: add type declaration later
+  return textContent.items.map((item) => item.str).join(',');
+};
+
 export const usePdfText = () => {
   const [parsing, setParsing] = useState(false);
   const [text, setText] = useState<string>('');
@@ -32,14 +40,6 @@ export const usePdfText = () => {
       setParsing(false);
     }
   }, []);
-
-  const extractText = async (pdf: PDFDocumentProxy, pageNum: number) => {
-    const page = await pdf.getPage(pageNum);
-    const textContent = await page.getTextContent({ disableNormalization: true });
-
-    // @ts-expect-error TODO: add type declaration later
-    return textContent.items.map((item) => item.str).join(',');
-  };
 
   return { parsePdf, text, parsing };
 };
