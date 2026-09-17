@@ -1,0 +1,22 @@
+---
+description: When working with lists
+alwaysApply: true
+---
+
+Use paginated-list from @/components
+Always server side unless prompted otherwise
+
+use Server side filters when applicable
+
+Use Following variables for pagination
+  $first: Int
+  $last: Int
+  $offset: Int
+  $after: Cursor
+  $before: Cursor
+
+Default limit is 10
+
+For list Items use CardListItem or CollapsibleCardListItem components.
+
+refer to operational/smcr/reasonable-steps for pagination example on journal entries.

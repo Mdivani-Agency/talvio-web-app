@@ -1,0 +1,113 @@
+---
+description: When Working on sql files always read this document first.
+alwaysApply: false
+---
+\MIGRATIONS
+==========
+
+Location: supabase/migrations/<timestamp>_<feature_name>.sql
+
+***Important***
+- Never run migration commands, ask user to perform them if necessary.
+- Refer to md files in docs for database structure, table definitions, triggers and rls rules before starting exploring migrations.
+- Always ask to update Docs files relevant to db/migration changes you make.
+
+Naming
+- Use snake_case descriptive names. One migration per feature/concern.
+- Timestamp format: YYYYMMDDHHMMSS
+
+Structure order inside a migration file
+1. Drop obsolete objects (triggers, functions, tables) if replacing them
+2. ALTER TABLE / CREATE TABLE
+3. Data API grants (see "Data API exposure" below) — required for PostgREST / pg_graphql access
+4. Data backfill (UPDATE ... SET ...)
+5. Indexes
+6. Helper functions (SECURITY DEFINER where RLS bypass is needed)
+7. RLS policies (DROP POLICY IF EXISTS before CREATE POLICY)
+8. Triggers
+9. RPCs exposed to pg_graphql (SECURITY DEFINER, GRANT EXECUTE TO authenticated)
+10. Seed / backfill for new lookup tables
+11. Tables with updated_at field should have set_updated_at trigger.
+12. Tables with deleted_at or similar (end_date) should have DELETE operations disabled.
+13. when finished with sql changes, ask to run migrations/codegen before proceeding to ui changes.
+
+Data API exposure (Supabase PostgREST / pg_graphql)
+- New tables in `public` are NOT exposed to the Data API by default on projects with
+  "Automatically expose new tables" disabled (default from May 2026).
+- Without explicit GRANTs, tables are invisible to `/rest/v1/` and `/graphql/v1` even
+  when RLS policies exist — Postgres rejects access at the role layer before RLS runs.
+- **When creating a new table, always ask the user:** "Should this table be reachable
+  via the Data API (GraphQL / supabase-js)?" Do not assume yes or no.
+- If yes, add GRANTs in the same migration immediately after CREATE TABLE (before or
+  alongside RLS — grants and RLS are separate layers). Pick a tier from docs/data-api-grants.md:
+    -- Reference read-only (authenticated):
+    GRANT SELECT ON public.<table> TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;
+    -- Standard domain (soft-delete; no client DELETE):
+    GRANT SELECT ON public.<table> TO anon;
+    GRANT SELECT, INSERT, UPDATE ON public.<table> TO authenticated;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;
+    -- Junction / admin (full CRUD):
+    GRANT SELECT ON public.<table> TO anon;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO authenticated, service_role;
+    -- Append-only audit (SELECT only — writes via SECURITY DEFINER triggers/RPCs):
+    GRANT SELECT ON public.<table> TO anon, authenticated, service_role;
+- Audit tables (`*_history`, `audit_log`, `confidential_entry_access_log`, etc.) must
+  use SELECT-only grants on all roles when populated by triggers/RPCs — never grant
+  INSERT/UPDATE/DELETE to authenticated/service_role on the Data API.
+- For views exposed via pg_graphql, grant SELECT only (no INSERT/UPDATE/DELETE).
+- For tables that must stay server-side only, omit GRANTs and note that in the migration comment.
+- Grants are co-located with RLS: add them in the matching per-domain `*_rls.sql` file
+  (e.g. `20260101002500_evidence_rls.sql`), alongside that table's `CREATE POLICY` statements.
+- The migrations are a hand-authored, phase-ordered chain of 38 files
+  (`20260101000100_generic_triggers.sql` … `20260101004300_confidentiality_seed.sql`).
+  There is no generator script — edit files in place. See `docs/supabase-schema.md` for the
+  full chain table.
+- **Dependency order (each object only depends on earlier ones):**
+  generic_triggers → identity → platform → audit_logs → domain resource DDL
+  (assessments, actions, evidence, smcr, journal, broker, pap) → confidentiality (engine tables)
+  → access_control (module helpers) → confidential_entry_helpers (resolvers + dispatcher)
+  → domain RPCs → per-domain `*_rls.sql` (RLS + Data API grants) → seeds.
+  Put a new table's DDL in its domain resource file, its RPCs in the domain `*_rpcs.sql`,
+  and its policies + grants in the domain `*_rls.sql`.
+- Full conventions: `docs/data-api-grants.md`.
+
+RLS rules
+- RLS Policy for write operations should be disabled by default unless instructed otherwise by user.
+- Always pair DROP POLICY IF EXISTS + CREATE POLICY so reruns are safe.
+- SECURITY DEFINER functions must SET search_path = public.
+- RPCs that return void should RETURNS void; pg_graphql exposes them as Opaque.
+- RPCs returning a scalar UUID are exposed as UUID by pg_graphql — return text if you need GraphQL String.
+- BigFloat parameters must be passed as strings from the client, not JS numbers.
+
+pg_graphql exposure gotchas
+- Functions with DEFAULT parameters on all args after the first required one are fine.
+- Do NOT return custom composite types or anonymous TABLE(...) — use SETOF <real_table> or a scalar.
+- ENUM return types break introspection — return text and cast internally.
+- Only add a `local_name`/`foreign_name` comment on a FK constraint when there are
+  2+ relations between the SAME pair of tables (ambiguous default names) — e.g. two
+  FKs from `consumer_duty_assessments` to `profiles` (`assessed_by`, `approved_by`).
+  For a single FK between two tables, leave the comment off entirely: pg_graphql's
+  default names are already correct and match what query files expect without
+  any comment:
+    - forward "to-one" field (on the table WITH the FK column): named after the
+      referenced table, e.g. `pap_steps` on `pap_step_approvals`.
+    - reverse "to-many" field (on the REFERENCED table): `<local_table>Collection`,
+      e.g. `pap_step_approvalsCollection` on `pap_steps`.
+  When you DO need the comment (2+ relations case), remember which key does what:
+    - `foreign_name` renames the FORWARD field (on the table with the FK).
+    - `local_name` renames the REVERSE Collection field (on the referenced table).
+  Getting this backwards (or adding the comment when only one relation exists)
+  silently renames a field the app already queries under its default name, and
+  codegen fails with "Cannot query field ... on type ...". Example (two relations
+  from `consumer_duty_assessments` to `profiles`, comment required on both):
+```
+COMMENT ON CONSTRAINT consumer_duty_assessments_assessed_by_fkey ON public.consumer_duty_assessments
+  IS E'@graphql({"foreign_name": "assessor", "local_name": "assessed_by"})';
+
+COMMENT ON CONSTRAINT consumer_duty_assessments_approved_by_fkey ON public.consumer_duty_assessments
+  IS E'@graphql({"foreign_name": "approver", "local_name": "approved_by"})';
+```
+- A new/renamed column must be included in the query's field selection before it
+  can be used in that same query's `orderBy` argument — add it to the selection
+  set alongside adding it to `orderBy`.

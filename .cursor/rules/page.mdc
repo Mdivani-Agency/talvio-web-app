@@ -1,0 +1,33 @@
+---
+description: When creating or updating page
+alwaysApply: false
+---
+
+Structure
+- layout.tsx       — AccessLayer + DrawerProvider (must be 'use client' if wrapping a client provider)
+- page.tsx         — Server component: Client Component + Suspense fallback skeleton, use <SuspenseBoundry> Custom Component.
+- <module>-page.tsx — Client component: PageContainer filters, data fetch, list render, top-level action button
+
+layout.tsx
+- Wrap with <AccessLayer permission="<module>" accessType="read">.
+- Wrap with the module's DrawerProvider so all children share drawer context.
+- Must be 'use client' when it imports a client provider.
+
+page.tsx (server)
+- Add New Item, view history, change log and similar actions go to PageContainer actions prop.
+- Wrap client component in custom SuspenseBoundry component.
+
+<module>-page.tsx (client)
+- Use <PageContainer title subtitle icon actions breadcrumbs> from @/components/containers/page.
+- useFilters<FiltersType>() for URL-persisted filter state.
+- Top-level action button (e.g. "New Assessment") gated with <ProtectedButton permission accessType>.
+- Renders filter bar + list component.
+- Handles loading skeleton inline (isFetching check).
+
+Access gating
+- Page-level: AccessLayer in layout.tsx.
+- Button-level: ProtectedButton with permission + accessType props.
+- Conditional render of edit/add CTAs: check access['write_<module>'] from useUserModuleAccessContext().
+
+Tests
+- Pure helpers extracted from a page ship with a co-located `*.test.ts`. Component/hook tests use `*.test.tsx` in the jsdom project.

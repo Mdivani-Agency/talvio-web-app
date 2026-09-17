@@ -1,0 +1,98 @@
+---
+description: When working on mutations or queries
+alwaysApply: false
+---
+
+MUTATIONS
+=========
+
+Files
+- <feature>.graphql         — GraphQL mutation definitions
+- use-<mutation-name>.ts    — one hook per logical mutation group
+
+GraphQL mutation rules
+- Call RPCs directly (e.g. transactional_generate_assessment_instance(...) — the
+  canonical "create assessment" path; routes by subject kind and is gated by
+  request_maturity_assessment for principle subjects / request_product_assessment
+  for product/firm subjects).
+- BigFloat args must be typed as BigFloat in the .graphql file — they arrive as strings from JS.
+- Soft-delete uses updateCollection with set: { deleted_at: $deletedAt } and a filter on id.
+
+Data API / GraphQL prerequisites
+- Before calling insertInto*Collection, update*Collection, or deleteFrom*Collection,
+  verify authenticated has the required privilege (INSERT/UPDATE/DELETE) in
+  the table's domain *_rls.sql migration (grants co-located with RLS). See docs/data-api-grants.md.
+- Many domain tables grant authenticated SELECT, INSERT, UPDATE only (no DELETE);
+  use soft-delete RPCs or updateCollection with deleted_at instead of deleteFrom*.
+- Audit tables (*_history, audit_log, confidential_entry_access_log) grant SELECT only
+  on all roles — never use insert/update/delete collection mutations from the client.
+  Writes go through SECURITY DEFINER triggers/RPCs (no table INSERT grant required).
+- RPC mutations also need GRANT EXECUTE ON FUNCTION … TO authenticated in the
+  migration — table grants alone are not enough for transactional_* RPCs.
+- If codegen fails or runtime returns 42501 "permission denied for table", check
+  grants before RLS policies.
+
+Hook pattern
+- Use useMutation + useQueryClient from @tanstack/react-query.
+- Call getGraphqlSdk() inside mutationFn (async, gets fresh auth token).
+- On success, invalidate all related query keys (list, history, detail).
+- Return { id: string } from mutationFn so submitWrapper is compatible.
+  For void RPCs, return { id: '' } as a dummy.
+
+submitWrapper (app/actions/action.utils.ts)
+- Wraps fn, handles success toast and parseGraphqlError for error toasts automatically.
+- Signature: submitWrapper({ fn, onSuccess?, successMessage?, errorMessage? })
+- Returns true after fn() resolves, false after a caught error. Do not return from finally.
+- Always use this instead of manual try/catch + toast in components.
+- fn must return Promise<{ id: string }> — use dummy { id: '' } for void mutations.
+
+Tests
+- New mutation helpers ship with a co-located test (`foo.ts` → `foo.test.ts`).
+
+QUERIES
+=======
+
+Location: app/<segment>/<module>/query/
+
+Files
+- <feature>.graphql     — GraphQL query/fragment definitions
+- use-<feature>.ts      — React Query hook wrapping the SDK call
+- types.ts              — Domain types (not generated types)
+
+GraphQL fragments
+- Define a fragment per core entity (e.g. Resume) for list views.
+- For detail/drawer views that need nested data, write a separate query (e.g. assessmentById)
+  rather than bloating the list fragment.
+- Use existing fragments from other modules when available (e.g. ListResume from resume.graphql).
+
+Hook pattern
+- Use useGraphqlQuery(['query-key'], async (sdk) => { ... }) from @/lib/query/base-query.
+- Unwrap collection edges inline; return typed domain objects, not raw generated types. use unwrapCollection utility function for this.
+  with enabled: !!id to avoid fetching when no ID is set.
+
+Data API / GraphQL prerequisites
+- Before adding or changing a .graphql query, confirm the underlying table/view has
+  GRANT SELECT for authenticated in the table's domain *_rls.sql migration
+  (grants are co-located with RLS). See docs/data-api-grants.md.
+- Without GRANT SELECT, pg_graphql will not expose the collection — codegen fails with
+  "Cannot query field …Collection".
+- Junction tables: prefer root-level *Collection(filter: { … }) queries when nested
+  fields are absent (see pap-consumer-duty.graphql vs pap-fair-value.graphql).
+- Grants allow access at the role layer; RLS still filters rows. A query can be
+  granted but return empty if no SELECT policy matches.
+
+types.ts rules
+- Define domain types here (Assessment, PrincipleWithAssessment, etc.).
+- Import EvidenceLibraryListItem from @/app/evidence/query/types when mapping evidence
+  so EvidenceItem component works without extra mapping.
+- Map nested evidence with mapListEvidence from @/app/evidence/query/utils (expects the
+  ListEvidence GraphQL fragment shape).
+- Utility functions live here alongside types.
+
+Tests
+- Place the test file next to the source: `foo.ts` → `foo.test.ts`.
+- Pure mappers and helpers use Vitest (`describe` / `it` / `expect`) and run in the `node` project.
+- Query hooks that need RTL use `foo.test.tsx` so they run in the `dom` (jsdom) project.
+- Render hooks with `renderHook` from `@/test/utils/render` (wraps `QueryClientProvider`).
+- Mock GraphQL with `vi.mock('@/lib/graphql-client')` and `mockGraphqlSdk` from `@/test/mocks/graphql-client`.
+- New query mappers and selectors must ship with a co-located test (`foo.ts` → `foo.test.ts`).

@@ -1,0 +1,14 @@
+---
+description: Linear workflow for this repository
+alwaysApply: true
+---
+
+# Linear Workflow
+
+- This repository is associated with the Linear workspace: `Talvio`.
+- When creating or updating Linear issues for this repository, use that project.
+- Preserve the existing team, project, labels, priority, and workflow conventions.
+- Before creating a new issue, search Linear for duplicates.
+- Include a concise title, relevant context, acceptance criteria, and implementation notes.
+- Do not create or modify Linear issues unless explicitly requested by the user, but update status if your work results in status change of the issue.
+- If the project name is ambiguous or unavailable, ask before creating an issue.

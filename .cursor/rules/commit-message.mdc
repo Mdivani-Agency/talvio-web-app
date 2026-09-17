@@ -1,0 +1,104 @@
+---
+description: Commit message conventions for all agents
+alwaysApply: true
+---
+
+# Commit Message Format
+
+All commit messages must follow the Conventional Commits format:
+
+<type>(<scope>): <description>
+
+## Allowed Types
+
+- feat: Add new functionality
+- fix: Fix a bug
+- refactor: Change code structure without changing behavior
+- perf: Improve performance
+- docs: Change documentation
+- test: Add or update tests
+- build: Change build system or dependencies
+- ci: Change CI/CD configuration
+- chore: Perform maintenance tasks
+- style: Make formatting-only changes
+- revert: Revert a previous commit
+
+## Scope Rules
+
+- Use a short, lowercase scope describing the affected area.
+- Use a scope when it improves clarity.
+- Omit the scope when the change affects the entire project.
+
+Examples:
+
+feat(auth): add password reset flow
+fix(api): handle missing user records
+refactor(components): simplify modal state
+docs: update local development instructions
+chore: update project metadata
+
+## Description Rules
+
+- Use imperative mood: add, fix, update.
+- Start the description with a lowercase letter.
+- Do not end the description with a period.
+- Keep the first line at 72 characters or fewer.
+- Be specific and concise.
+- Describe the actual code change.
+- Do not use vague descriptions such as:
+  - update files
+  - fix stuff
+  - changes
+  - minor updates
+- Do not include secrets, credentials, tokens, or sensitive information.
+- Do not include unnecessary ticket or issue identifiers.
+
+## Breaking Changes
+
+For breaking changes, add ! after the type or scope:
+
+feat(api)!: replace authentication response format
+
+Alternatively, include a BREAKING CHANGE footer:
+
+feat(api): replace authentication response format
+
+BREAKING CHANGE: clients must now use the v2 response schema
+
+## Commit Body
+
+Add a body when the reason, impact, migration details, or testing information is not obvious.
+
+Separate the body from the subject with one blank line:
+
+fix(checkout): prevent duplicate order submission
+
+Prevent repeated submissions while the first payment request is pending.
+
+## Commit Footer
+
+Use footers for breaking changes or explicitly provided issue references:
+
+fix(api): handle expired sessions
+
+Refs: LIN-123
+
+Only reference a Linear issue, GitHub issue, or other ticket when the identifier is explicitly provided or reliably known.
+
+## Validation
+
+Before creating a commit:
+
+1. Review the complete diff.
+2. Confirm that the commit contains only related changes.
+3. Run relevant tests, linting, type checks, and build commands.
+4. Do not create the commit if validation fails unless explicitly authorized.
+5. Use a single atomic commit for one logical change whenever practical.
+
+## Required Format
+
+<type>(<scope>): <imperative description>
+
+[optional body]
+
+[optional footer]

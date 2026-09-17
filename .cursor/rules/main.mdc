@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+When working on frontend components, prioritise using following libraries tanstack/react-query, tanstack/react-form, tanstack/react-table, shadcn, date-fns, lucide-react, zod
+
+always use tailwind for styles.

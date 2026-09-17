@@ -1,0 +1,107 @@
+---
+description: When working on forms in project
+alwaysApply: true
+---
+
+Reference implementation: app/assessments/components/assessment.form.tsx
+
+Hook
+- import { useForm } from '@/lib/forms/use-form'
+- Available field components: TextField, TextareaField, DateField, SelectField, ComboField,
+  CheckField, SwitchField, RadioField, FileField.
+
+Field validation
+- Use onChange validators for required fields so errors show inline as the user types.
+- Do NOT add form-level validators to duplicate what field-level validators already check.
+- Use form-level validators ONLY for cross-field rules (e.g. field B required when field A is set).
+- Use form.Subscribe and useStore from tanstack for reactivity, avoid useEffect, useRef and similar.
+
+Submit pattern
+- Do NOT bind handleSubmit to the <Form> component.
+- Each action button is type="button" with an explicit onClick handler.
+- Read form.state.values directly inside the handler — no useRef, no hidden fields.
+- Wrap mutation call in submitWrapper for automatic toast handling.
+
+<Form> component
+- Use <Form> from @/components/form as a layout wrapper only (no onSubmit prop needed).
+- Use <FormActions> for the button row at the bottom.
+
+User/profile picker
+- Use useProfilesQuery() from @/lib/query/use-profiles for the options list.
+- access details like userId, smfRoles and similiar from useUserModuleAccessContext().
+
+Confirm dialogs
+- Use <ConfirmModal> from @/components/ui/confirm-modal — there is no AlertDialog component, when applicable.
+
+
+DYNAMIC TEMPLATE-RESPONSE FORMS
+================================
+
+Use this pattern for any form whose fields come from a document template
+(sections → questions with dynamic response_type). Do NOT hand-roll
+`useState<Record<questionId, value>>` for these surfaces.
+
+Reference implementations
+- Unified documents: app/documents/[id]/use-document-actions.tsx
+  + document-detail.tsx
+- Maturity assessments: app/assessments/assessment-instance-detail.tsx
+
+Shared pieces
+- Hook: `useTemplateResponseForm` from `@/lib/forms/use-template-response-form`
+- Default Zod schema: `buildTemplateQuestionSchema` from `@/lib/forms/template-response-schema`
+- Seed helper: `responseValueForQuestion` from `@/app/assessments/query/types`
+  (accepts any TemplateResponseSeedRow — works for assessments, target markets, etc.)
+- Wire converter: `inputForResponse` (assessments/TM) or `papStepInputForResponse` (step docs)
+
+How to wire a surface
+1. Call the hook with sections, responses, seed, and toInput:
+     const { QuestionField, getResponseInputs, validateForSubmit, isValid, form } =
+       useTemplateResponseForm({
+         sections,
+         responses,
+         seed: responseValueForQuestion,   // or papStepResponseValueForQuestion
+         toInput: inputForResponse,        // or papStepInputForResponse
+         // buildSchema?: optional override of the default Zod builder
+       });
+2. Render each question with the returned QuestionField (not QuestionResponseField
+   directly). Pass surface-specific passthrough props (disabled, evidenceContext,
+   linkedEvidence, evidenceValue, onEvidenceChange, …):
+     <QuestionField question={question} disabled={!editable} … />
+3. Save: call getResponseInputs() inside the mutation handler (no separate values state).
+4. Submit: await validateForSubmit() first; if false, toast and return. Inline errors
+   are already shown on each QuestionField via FieldError. Then mutate with
+   getResponseInputs() (save+submit in one click when the RPC accepts responses).
+5. Keep surface-only state caller-side: evidenceValues map, confidentiality,
+   changeReason, ConfirmModal open, etc. Merge those into toInput / the mutation
+   payload — do not put them on the shared form.
+
+What the hook owns
+- Per-question TanStack Form field under `responses.<questionId>`
+- Seeding once on mount (background refetches do not clobber edits)
+- Per-field Zod validators (onSubmit only) from buildTemplateQuestionSchema
+- getResponseInputs(), isValid, validateForSubmit()
+
+What the hook does NOT own
+- ActionMenuItem construction, ConfirmModal, ownership/RBAC gates
+- Inline evidence ID maps (non-evidence response types)
+- Confidentiality / change-reason / resubmit flows
+- Read-only rendering of already-answered templates (pass precomputed `values`
+  into a sections component without QuestionField — see TargetMarketTemplateSections)
+
+Validation notes
+- Validators run on submit only (via validateForSubmit), not on change or blur only for dynamic templates.
+- Validators run on onChange for static forms.
+- yes_no seeds as '' until the user explicitly picks Yes or No (false is a real answer).
+- Table required-cell rules reuse tableRequiredCellsMissing inside the schema.
+- Save/draft must NOT require validateForSubmit — only Submit/sign-off gates.
+- Server-side RPC validation remains the source of truth; the schema is a UX layer.
+- Custom required semantics: inject buildSchema, do not fork the hook.
+
+Tests
+- New schemas and formatters ship with a co-located test (`foo.ts` → `foo.test.ts`).
+- Assert Zod `safeParse` on `error.issues[].path`, not message strings.
+
+Bare form.Field
+- Template questions intentionally use bare `<form.Field>` (not form.AppField) because
+  field names are dynamic UUIDs. Static forms should keep using form.AppField with
+  the registered field components listed above.
