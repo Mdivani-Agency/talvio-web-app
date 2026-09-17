@@ -5,7 +5,8 @@ alwaysApply: true
 
 # Linear Workflow
 
-- This repository is associated with the Linear workspace: `Talvio`.
+- This repository is associated with the Linear project: `Talvio`.
+- project id is "1483a14a626b"
 - When creating or updating Linear issues for this repository, use that project.
 - Preserve the existing team, project, labels, priority, and workflow conventions.
 - Before creating a new issue, search Linear for duplicates.
