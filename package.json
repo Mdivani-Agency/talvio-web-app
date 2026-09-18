@@ -15,7 +15,8 @@
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff",
-    "db:push": "supabase db push"
+    "db:push": "supabase db push",
+    "db:test": "supabase test db"
   },
   "dependencies": {
     "@headlessui/react": "2.2.10",
