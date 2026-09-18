@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(23);
+select plan(33);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -82,10 +82,20 @@ values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Ann Co', 'Dev', '2020-01-01', true),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Bob Co', 'PM', '2019-01-01', true);
 
-insert into public.resumes (user_id, name, template_key)
+insert into public.resumes (id, user_id, name, template_key)
 values
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Ann CV', 'mid-level-modern'),
-  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Bob CV', 'senior-level-modern');
+  (
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    'Ann CV',
+    'mid-level-modern'
+  ),
+  (
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    'Bob CV',
+    'senior-level-modern'
+  );
 
 select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 
@@ -249,11 +259,102 @@ where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 
 select throws_ok(
-  $$ select public.consume_credits(5); $$,
+  $$ select public.consume_credits(
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    'generate_pdf'
+  ); $$,
+  '42501',
+  null,
+  'authenticated cannot execute consume_credits'
+);
+
+select throws_ok(
+  $$ select count(*) from public.credit_prices; $$,
+  '42501',
+  null,
+  'authenticated cannot select credit_prices'
+);
+
+select throws_ok(
+  $$ select public.generate_pdf('dddddddd-dddd-4ddd-8ddd-dddddddddddd'); $$,
   'P0001',
   'insufficient_credits',
-  'consume_credits raises when balance is below the amount'
+  'generate_pdf raises when balance is below the catalog price'
 );
+
+select throws_ok(
+  $$ select public.generate_pdf('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'); $$,
+  'P0001',
+  'resume_not_found',
+  'generate_pdf does not generate another users resume'
+);
+
+select pg_temp.logout();
+
+select throws_ok(
+  $$ set local role anon; select count(*) from public.credit_prices; $$,
+  '42501',
+  null,
+  'anon cannot select credit_prices'
+);
+
+select throws_ok(
+  $$ select public.consume_credits(
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    'not_a_real_action'
+  ); $$,
+  'P0001',
+  'unknown_action',
+  'consume_credits raises for an unknown action'
+);
+
+update public.resumes
+set pdf_url = 'https://media.example/ann.pdf'
+where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.generate_pdf('dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+  'https://media.example/ann.pdf',
+  'generate_pdf returns an existing pdf_url without debiting'
+);
+
+select pg_temp.logout();
+
+select is(
+  (select balance from public.user_credits
+   where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+  3,
+  're-download of an existing pdf_url does not consume credits'
+);
+
+update public.resumes
+set pdf_url = null
+where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+update public.user_credits
+set balance = 50
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.generate_pdf('dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+  '',
+  'generate_pdf debits and returns empty until render is wired'
+);
+
+select pg_temp.logout();
+
+select is(
+  (select balance from public.user_credits
+   where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+  20,
+  'generate_pdf consumes the catalog price for generate_pdf'
+);
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 
 select public.save_profile(jsonb_build_object(
   'user_id', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',

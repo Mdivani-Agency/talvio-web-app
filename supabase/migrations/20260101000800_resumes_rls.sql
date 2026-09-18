@@ -1,7 +1,8 @@
 -- Owner-only RLS + Data API grants for resumes and user_credits.
 -- resumes: authenticated full CRUD. user_credits: authenticated SELECT only;
--- writes go through consume_credits / handle_new_user / service_role.
--- anon: none.
+-- writes go through generate_pdf → consume_credits / handle_new_user /
+-- service_role. credit_prices is server-side only (created in 00600,
+-- no Data API grants). anon: none.
 
 alter table public.resumes enable row level security;
 revoke all on table public.resumes from anon, public;

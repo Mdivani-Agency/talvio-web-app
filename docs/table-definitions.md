@@ -1,6 +1,8 @@
 # Table definitions
 
-Shipped DDL for Talvio v1. Source: Notion [Supabase schema (unified)](https://app.notion.com/p/3daf87a6db5781d29b1ce0e579b8dd1c) and `supabase/migrations/20260101000100_*.sql` … `20260101000500_resumes.sql`.
+Shipped DDL for Talvio v1. Source: Notion [Supabase schema (unified)](https://app.notion.com/p/3daf87a6db5781d29b1ce0e579b8dd1c) and `supabase/migrations/20260101000100_*.sql` … `20260101000900_auth_hooks.sql`.
+
+`credit_prices` is an addition on top of the Notion SQL so clients cannot pass a debit amount.
 
 RLS, grants, and RPCs: [supabase-rls.md](./supabase-rls.md),
 [data-api-grants.md](./data-api-grants.md), [supabase-triggers.md](./supabase-triggers.md).
@@ -215,10 +217,26 @@ Indexes:
 
 ## `user_credits`
 
-Balance only in v1. Writes via RPCs in MDI-171 (`handle_new_user`, `consume_credits`).
+Balance only in v1. Writes via RPCs in MDI-171 (`handle_new_user`,
+`generate_pdf` → private `consume_credits`). Clients never pass an amount.
 
 | Column | Type | Notes |
 | --- | --- | --- |
 | `user_id` | `uuid` | PK, `references auth.users (id) on delete cascade` |
 | `balance` | `integer not null default 0` | `check (balance >= 0)` |
 | `updated_at` | `timestamptz not null default now()` | trigger `user_credits_set_updated_at` |
+
+## `credit_prices`
+
+Server-side catalog of paid-action prices. No Data API grants — hidden from
+`/graphql/v1`. RLS enabled, no policies. Seeded in
+`20260101000600_profile_rpcs.sql`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `action` | `text` | PK (e.g. `generate_pdf`) |
+| `amount` | `integer not null` | `check (amount > 0)` |
+| `updated_at` | `timestamptz not null default now()` | trigger `credit_prices_set_updated_at` |
+
+Seeded row: `generate_pdf` = **30** (300 signup credits / 10 job-specific
+resumes from the marketing packs). Change prices with a later migration.

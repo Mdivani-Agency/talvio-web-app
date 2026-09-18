@@ -10,6 +10,14 @@
 -- collection DELETE mutations. Job-specific variants live in
 -- resumes.content, not extra profiles (profiles.user_id is 1:1).
 -- Any user_id in the payload is ignored — writes always use auth.uid().
+--
+-- Credits: clients never pass an amount. consume_credits(user_id, action)
+-- is a private DEFINER helper (no EXECUTE for authenticated / anon).
+-- Public paid-action RPCs (generate_pdf, later others) call it after
+-- auth + ownership checks. Prices live in credit_prices (server-side
+-- only — no Data API grants). generate_pdf is 30 credits (300 signup
+-- / 10 job-specific resumes from the marketing packs). Render + upload
+-- of the PDF itself is MDI-174.
 
 create or replace function public.save_profile(p_payload jsonb)
 returns text
@@ -442,7 +450,36 @@ begin
 end;
 $$;
 
-create or replace function public.consume_credits(p_amount integer)
+-- Replace the client-amount signature. CREATE OR REPLACE cannot change
+-- argument types, and authenticated must not keep EXECUTE on it.
+drop function if exists public.consume_credits(integer);
+
+-- Server-side price catalog. Hidden from /graphql/v1 (no grants).
+-- Price changes go through migrations. RLS on, no policies — even a
+-- later SELECT grant would return no rows.
+create table public.credit_prices (
+  action text primary key,
+  amount integer not null check (amount > 0),
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.credit_prices is
+  'Server-side credit price catalog. No Data API grants.';
+
+alter table public.credit_prices enable row level security;
+revoke all on table public.credit_prices from public, anon, authenticated;
+
+drop trigger if exists credit_prices_set_updated_at on public.credit_prices;
+create trigger credit_prices_set_updated_at
+before update on public.credit_prices
+for each row execute function public.set_updated_at();
+
+insert into public.credit_prices (action, amount)
+values ('generate_pdf', 30);
+
+-- Private debit. Callers pass the billed user and an action key; this
+-- function looks up the current price. Not exposed to pg_graphql.
+create or replace function public.consume_credits(p_user_id uuid, p_action text)
 returns integer
 language plpgsql
 volatile
@@ -450,20 +487,28 @@ security definer
 set search_path = public
 as $$
 declare
-  v_uid uuid := auth.uid();
+  v_amount integer;
   v_balance integer;
 begin
-  if v_uid is null then
-    raise exception 'not authenticated';
+  if p_user_id is null then
+    raise exception 'invalid_user';
   end if;
-  if p_amount is null or p_amount <= 0 then
-    raise exception 'invalid_amount';
+  if p_action is null or btrim(p_action) = '' then
+    raise exception 'unknown_action';
+  end if;
+
+  select amount into v_amount
+  from public.credit_prices
+  where action = p_action;
+
+  if v_amount is null then
+    raise exception 'unknown_action';
   end if;
 
   update public.user_credits
-  set balance = balance - p_amount
-  where user_id = v_uid
-    and balance >= p_amount
+  set balance = balance - v_amount
+  where user_id = p_user_id
+    and balance >= v_amount
   returning balance into v_balance;
 
   if not found then
@@ -474,7 +519,51 @@ begin
 end;
 $$;
 
+-- Public paid action. Re-download of an existing pdf_url is free.
+-- First generation debits credit_prices.generate_pdf (30). DEFINER so
+-- it can call the revoked consume_credits helper. Render / upload /
+-- persist of pdf_url is MDI-174 — this mutation returns '' after a
+-- successful debit until that lands.
+create or replace function public.generate_pdf(p_resume_id uuid)
+returns text
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_pdf_url text;
+begin
+  if v_uid is null then
+    raise exception 'not authenticated';
+  end if;
+  if p_resume_id is null then
+    raise exception 'resume_not_found';
+  end if;
+
+  select pdf_url into v_pdf_url
+  from public.resumes
+  where id = p_resume_id
+    and user_id = v_uid
+  for update;
+
+  if not found then
+    raise exception 'resume_not_found';
+  end if;
+
+  if v_pdf_url is not null and v_pdf_url <> '' then
+    return v_pdf_url;
+  end if;
+
+  perform public.consume_credits(v_uid, 'generate_pdf');
+
+  return '';
+end;
+$$;
+
 revoke all on function public.save_profile(jsonb) from public, anon;
-revoke all on function public.consume_credits(integer) from public, anon;
+revoke all on function public.consume_credits(uuid, text) from public, anon, authenticated;
+revoke all on function public.generate_pdf(uuid) from public, anon;
 grant execute on function public.save_profile(jsonb) to authenticated;
-grant execute on function public.consume_credits(integer) to authenticated;
+grant execute on function public.generate_pdf(uuid) to authenticated;

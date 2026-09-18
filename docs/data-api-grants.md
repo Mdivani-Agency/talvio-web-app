@@ -34,7 +34,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;
 ### Credits (balance only)
 
 `user_credits` — authenticated can read their own balance (RLS). Writes go
-through `SECURITY DEFINER` RPCs (`handle_new_user`, `consume_credits`).
+through `SECURITY DEFINER` RPCs (`handle_new_user`, `generate_pdf` →
+private `consume_credits`).
 
 ```sql
 GRANT SELECT ON public.user_credits TO authenticated;
@@ -42,16 +43,33 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_credits TO service_role;
 -- anon: none
 ```
 
+### Server-side only (`credit_prices`)
+
+Price catalog for paid actions. No Data API grants — invisible to
+`/graphql/v1`. RLS enabled with no policies. Updates go through
+migrations. Seeded `generate_pdf = 30` (300 signup credits / 10
+job-specific resumes).
+
+```sql
+REVOKE ALL ON TABLE public.credit_prices FROM public, anon, authenticated;
+-- no GRANT — DEFINER helpers read it as the table owner
+```
+
 ### RPCs
 
 ```sql
 REVOKE ALL ON FUNCTION public.save_profile(jsonb) FROM public, anon;
-REVOKE ALL ON FUNCTION public.consume_credits(integer) FROM public, anon;
+REVOKE ALL ON FUNCTION public.consume_credits(uuid, text) FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.generate_pdf(uuid) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.save_profile(jsonb) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.consume_credits(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.generate_pdf(uuid) TO authenticated;
 ```
 
-Table grants alone do not expose RPCs to pg_graphql. Both functions are
+`consume_credits` is private: it receives `user_id` + `action`, looks up
+`credit_prices`, and debits. Clients call `generate_pdf` (or later paid
+action RPCs), never `consume_credits` and never an amount.
+
+Table grants alone do not expose RPCs to pg_graphql. Public functions are
 `VOLATILE` so pg_graphql puts them on `Mutation`. `save_profile(jsonb)` is
 the GraphQL `JSON` scalar (serialized string).
 
@@ -71,6 +89,7 @@ the GraphQL `JSON` scalar (serialized string).
 | `languages` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
 | `resumes` | none | SELECT, INSERT, UPDATE, DELETE | all | `00800_resumes_rls.sql` |
 | `user_credits` | none | SELECT | all | `00800_resumes_rls.sql` |
+| `credit_prices` | none | none | none | `00600_profile_rpcs.sql` (server-side) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

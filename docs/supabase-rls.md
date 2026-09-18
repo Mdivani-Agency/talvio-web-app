@@ -31,16 +31,30 @@ Every table below except `user_credits` has four policies:
 | `languages` | select / insert / update / delete own |
 | `resumes` | select / insert / update / delete own |
 | `user_credits` | `user_credits_select_own` only |
+| `credit_prices` | none (no grants, no policies) |
 
 `user_credits` has no insert / update / delete policies. Authenticated clients
 cannot write the balance through GraphQL; `handle_new_user` and
-`consume_credits` are `SECURITY DEFINER`.
+`generate_pdf` (which calls private `consume_credits`) are `SECURITY DEFINER`.
+
+`credit_prices` has RLS enabled and **no policies** and **no Data API grants**.
+It is invisible to `/graphql/v1`. `consume_credits(p_user_id, p_action)` looks
+up the current amount and debits that user. Execute is revoked from
+`public` / `anon` / `authenticated` — only other DEFINER helpers (same owner)
+can call it.
 
 `save_profile` is `SECURITY INVOKER` and `VOLATILE` (required for a Mutation
 field). A payload `user_id` cannot override `auth.uid()`. It upserts the
 caller's profile and any child rows in the payload; it never deletes children.
 Removals use collection DELETE mutations. Job-specific copies live in
 `resumes.content` — `profiles.user_id` is 1:1 with `auth.users`.
+
+`generate_pdf(p_resume_id)` is `SECURITY DEFINER` and `VOLATILE`. It uses
+`auth.uid()`, locks the caller's resume, returns an existing `pdf_url` for
+free, otherwise calls `consume_credits(uid, 'generate_pdf')` (30 credits).
+Render / upload / persist of `pdf_url` is [MDI-174](https://linear.app/mdivani/issue/MDI-174).
+Until that lands the mutation returns `''` after a successful debit — do not
+wire it in the app yet (a second call would debit again).
 
 `p_payload` is `jsonb`, exposed as the GraphQL `JSON` scalar (a serialized
 string). Pass `'{"profile":{...}}'`, not an inline object.
@@ -55,9 +69,10 @@ Query: `profilesCollection`, `contactsCollection`, `experiencesCollection`,
 `skillsCollection`, `toolsCollection`, `linksCollection`,
 `languagesCollection`, `resumesCollection`, `user_creditsCollection`.
 
-Mutation: `save_profile`, `consume_credits`, `insertIntoresumesCollection`,
+Mutation: `save_profile`, `generate_pdf`, `insertIntoresumesCollection`,
 `updateresumesCollection`, `deleteFromresumesCollection` (and the matching
-profile-child collection mutations).
+profile-child collection mutations). `consume_credits` is **not** a Mutation
+field — authenticated has no `EXECUTE`. `credit_pricesCollection` is absent.
 
 The same introspection with the **anon** key lists none of the domain
 collections — there are no `anon` grants.

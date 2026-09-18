@@ -17,6 +17,7 @@ has an `updated_at` column:
 | `recommendations` | `recommendations_set_updated_at` |
 | `resumes` | `resumes_set_updated_at` |
 | `user_credits` | `user_credits_set_updated_at` |
+| `credit_prices` | `credit_prices_set_updated_at` |
 
 `contacts`, `skills`, `tools`, `links`, and `languages` have `created_at` only.
 
@@ -29,7 +30,8 @@ Inserts `public.user_credits (user_id, balance)` with **300** credits for
 `new.id`. Locked on [MDI-144](https://linear.app/mdivani/issue/MDI-144):
 
 - Preview is free
-- Final PDF generation is paid (`consume_credits`)
+- Final PDF generation is paid (`generate_pdf` → private `consume_credits`
+  looking up `credit_prices.generate_pdf` = 30)
 - Re-downloading an existing `pdf_url` is free
 - Editing a resume clears `pdf_url`, so the next final generation is paid again
 
