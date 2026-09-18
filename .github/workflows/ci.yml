@@ -23,6 +23,8 @@ jobs:
       NEXT_PUBLIC_BASE_URL: http://localhost:3002
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3002
       NEXT_PUBLIC_AUTH_BASE_URL: http://localhost:3002
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: stub-publishable-key
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -47,3 +49,51 @@ jobs:
 
       - name: Build
         run: yarn build
+
+  database:
+    name: Apply migrations from scratch
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.117.0
+
+      - name: Start local stack
+        run: supabase start
+
+      - name: Replay every migration from scratch
+        run: supabase db reset --yes
+
+      - name: GraphQL endpoint is live
+        run: |
+          set -euo pipefail
+          eval "$(supabase status -o env)"
+          api_url="${API_URL:-${SUPABASE_URL:-http://127.0.0.1:54321}}"
+          anon_key="${ANON_KEY:-${PUBLISHABLE_KEY:-${SUPABASE_ANON_KEY:-}}}"
+          if [ -z "$anon_key" ]; then
+            echo "Could not read a local publishable/anon key from supabase status"
+            supabase status
+            exit 1
+          fi
+          curl -fsS -X POST "${api_url}/graphql/v1" \
+            -H "apikey: ${anon_key}" \
+            -H "Authorization: Bearer ${anon_key}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ __typename }"}' \
+            | tee /tmp/graphql.json
+          python3 - <<'PY'
+          import json, sys
+          payload = json.load(open("/tmp/graphql.json", encoding="utf-8"))
+          if payload.get("data", {}).get("__typename") != "Query":
+              print("unexpected GraphQL response:", payload, file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Stop local stack
+        if: always()
+        run: supabase stop
