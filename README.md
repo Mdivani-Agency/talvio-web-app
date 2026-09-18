@@ -20,7 +20,7 @@ yarn build
 yarn start
 ```
 
-Pull requests and pushes to `main` / `development` run lint, typecheck, `yarn build`, and a `database` job that starts a local Supabase stack and applies migrations from scratch. The workflow uses Node 22 and Yarn 4 via Corepack, with public `NEXT_PUBLIC_*` stubs only — no production secrets.
+Pull requests and pushes to `main` / `development` run lint, typecheck, and `yarn build`. After a merge to `development` or `main`, a separate workflow pushes pending migrations to the matching hosted Supabase project (`talvio-dev` / `talvio-prod`). The quality job uses public `NEXT_PUBLIC_*` stubs only — no production secrets.
 
 ## Local Supabase
 

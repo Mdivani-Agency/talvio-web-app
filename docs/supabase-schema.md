@@ -49,6 +49,18 @@ yarn db:diff           # generate a migration from the shadow DB
 yarn db:push           # apply pending migrations to a linked remote
 ```
 
+`yarn db:reset` is **local only** (destroys the Docker database and replays
+migrations). Do not run it against a linked hosted project.
+
+After merge to `development` or `main`, GitHub Actions runs
+`supabase db push` (forward-only, pending migrations) to `talvio-dev` or
+`talvio-prod`. That workflow does not run on pull requests. Required
+repository secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF_DEV`,
+`SUPABASE_PROJECT_REF_PROD`. The job skips until those are set.
+
+PR merge gates for db / e2e / unit / integration tests will land later;
+they are not part of this bootstrap.
+
 Agents do not run these commands. After `db:start`, copy the local URL and keys
 from `supabase status` into `.env.local`:
 
