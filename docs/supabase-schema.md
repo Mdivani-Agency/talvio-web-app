@@ -54,8 +54,9 @@ migrations). Do not run it against a linked hosted project.
 
 After merge to `development` or `main`, GitHub Actions runs
 `supabase db push` (forward-only, pending migrations) to `talvio-dev` or
-`talvio-prod`. That workflow does not run on pull requests. Required
-repository secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF_DEV`,
+`talvio-prod` **only when the push changes `supabase/migrations/`**. That
+workflow does not run on pull requests. Required repository secrets:
+`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF_DEV`,
 `SUPABASE_PROJECT_REF_PROD`. The job skips until those are set.
 
 PR merge gates for db / e2e / unit / integration tests will land later;

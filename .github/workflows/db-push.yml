@@ -2,11 +2,14 @@ name: Database
 
 # Apply pending migrations to the hosted project after merge.
 # Never runs on pull requests. Never resets a database.
+# Only fires when this push changes supabase/migrations/.
 on:
   push:
     branches:
       - main
       - development
+    paths:
+      - "supabase/migrations/**"
 
 permissions:
   contents: read
