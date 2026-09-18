@@ -98,20 +98,23 @@ and do not collide.
 ## Migration chain
 
 Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format
-`YYYYMMDDHHMMSS`. Empty until [MDI-170](https://linear.app/mdivani/issue/MDI-170).
+`YYYYMMDDHHMMSS`. Column-level detail: [table-definitions.md](./table-definitions.md).
 
 | File | Concern |
 | --- | --- |
-| _none yet_ | Bootstrap only (this PR). Schema, RLS, and RPCs follow in MDI-170 / MDI-171. |
+| `20260101000100_extensions_enums.sql` | `pgcrypto`; enums; `comment on schema public` `max_rows: 100` |
+| `20260101000200_generic_triggers.sql` | `public.set_updated_at()` |
+| `20260101000300_profiles.sql` | `profiles`, `contacts`, primary-contact unique indexes, `updated_at` trigger |
+| `20260101000400_profile_children.sql` | experiences … languages, skill/tool uniqueness, `experiences_dates_ck`, `updated_at` triggers |
+| `20260101000500_resumes.sql` | `resumes`, `user_credits`, indexes, `updated_at` triggers |
+| `20260101000600_rpcs.sql` | reserved — `save_profile`, `consume_credits`, `handle_new_user` ([MDI-171](https://linear.app/mdivani/issue/MDI-171)) |
+| `20260101000700_rls.sql` | reserved — RLS + Data API grants ([MDI-171](https://linear.app/mdivani/issue/MDI-171)) |
 
-Planned order (do not land here):
-
-1. Generic triggers (`set_updated_at`)
-2. Enums + `profiles` + contacts + children + `resumes` + `user_credits`
-3. RLS + Data API grants + `save_profile` / `consume_credits` RPCs
+Constraint smoke tests: `supabase/tests/schema_constraints.sql` (`yarn db:test` after `yarn db:reset`).
 
 ## Related docs
 
+- [table-definitions.md](./table-definitions.md) — columns, constraints, indexes
 - [data-api-grants.md](./data-api-grants.md) — grant tiers
 - Notion schema page — locked decisions and suggested SQL
 - `.cursor/rules/migrations.mdc` — migration layout
