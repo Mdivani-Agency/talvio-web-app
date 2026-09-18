@@ -104,8 +104,9 @@ select throws_ok(
 
 select throws_ok(
   $$
-    insert into public.user_credits (user_id, balance)
-    values ('11111111-1111-4111-8111-111111111111', -1);
+    update public.user_credits
+    set balance = -1
+    where user_id = '11111111-1111-4111-8111-111111111111';
   $$,
   '23514',
   null,

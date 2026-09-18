@@ -1,8 +1,7 @@
 -- Profile-owned career collections. All children reference profiles(user_id).
 -- Rich tables share additional_details text + description jsonb (TipTap).
 -- degree_type is text (Zod in the app), not a Postgres enum.
--- Not exposed to the Data API in this migration. Grants + RLS land in
--- 20260101000700_rls.sql (MDI-171).
+-- Grants + RLS land in 20260101000700_profile_rls.sql (MDI-171).
 
 create table public.experiences (
   id uuid primary key default gen_random_uuid(),

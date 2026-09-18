@@ -2,7 +2,8 @@
 
 Shipped DDL for Talvio v1. Source: Notion [Supabase schema (unified)](https://app.notion.com/p/3daf87a6db5781d29b1ce0e579b8dd1c) and `supabase/migrations/20260101000100_*.sql` … `20260101000500_resumes.sql`.
 
-No Data API grants or RLS in these files — tables are not reachable via `/graphql/v1` until [MDI-171](https://linear.app/mdivani/issue/MDI-171).
+RLS, grants, and RPCs: [supabase-rls.md](./supabase-rls.md),
+[data-api-grants.md](./data-api-grants.md), [supabase-triggers.md](./supabase-triggers.md).
 
 There is **no intentional drift** from the Notion SQL.
 

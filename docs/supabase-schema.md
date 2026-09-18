@@ -107,15 +107,20 @@ Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format
 | `20260101000300_profiles.sql` | `profiles`, `contacts`, primary-contact unique indexes, `updated_at` trigger |
 | `20260101000400_profile_children.sql` | experiences … languages, skill/tool uniqueness, `experiences_dates_ck`, `updated_at` triggers |
 | `20260101000500_resumes.sql` | `resumes`, `user_credits`, indexes, `updated_at` triggers |
-| `20260101000600_rpcs.sql` | reserved — `save_profile`, `consume_credits`, `handle_new_user` ([MDI-171](https://linear.app/mdivani/issue/MDI-171)) |
-| `20260101000700_rls.sql` | reserved — RLS + Data API grants ([MDI-171](https://linear.app/mdivani/issue/MDI-171)) |
+| `20260101000600_profile_rpcs.sql` | `save_profile`, `consume_credits` |
+| `20260101000700_profile_rls.sql` | RLS + grants for profiles + 9 children; enum `USAGE` |
+| `20260101000800_resumes_rls.sql` | RLS + grants for `resumes` and `user_credits` |
+| `20260101000900_auth_hooks.sql` | `handle_new_user` → 300 signup credits |
 
-Constraint smoke tests: `supabase/tests/schema_constraints.sql` (`yarn db:test` after `yarn db:reset`).
+Constraint / RLS smokes: `supabase/tests/schema_constraints.sql` and
+`supabase/tests/rls.test.sql` (`yarn db:test` after `yarn db:reset`).
 
 ## Related docs
 
 - [table-definitions.md](./table-definitions.md) — columns, constraints, indexes
 - [data-api-grants.md](./data-api-grants.md) — grant tiers
+- [supabase-rls.md](./supabase-rls.md) — policy per table
+- [supabase-triggers.md](./supabase-triggers.md) — `set_updated_at`, `handle_new_user`
 - Notion schema page — locked decisions and suggested SQL
 - `.cursor/rules/migrations.mdc` — migration layout
 - `.cursor/rules/graphql.mdc` — query / mutation / hook patterns

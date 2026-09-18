@@ -45,11 +45,33 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_credits TO service_role;
 ### RPCs
 
 ```sql
+REVOKE ALL ON FUNCTION public.save_profile(jsonb) FROM public, anon;
+REVOKE ALL ON FUNCTION public.consume_credits(integer) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.save_profile(jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.consume_credits(integer) TO authenticated;
 ```
 
 Table grants alone do not expose RPCs to pg_graphql.
+
+## Per-table grants (shipped)
+
+| Table | `anon` | `authenticated` | `service_role` | File |
+| --- | --- | --- | --- | --- |
+| `profiles` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `contacts` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `experiences` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `educations` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `projects` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `recommendations` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `skills` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `tools` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `links` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `languages` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
+| `resumes` | none | SELECT, INSERT, UPDATE, DELETE | all | `00800_resumes_rls.sql` |
+| `user_credits` | none | SELECT | all | `00800_resumes_rls.sql` |
+
+Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
+(not `anon`).
 
 ## Generic tiers (from `.cursor/rules/migrations.mdc`)
 

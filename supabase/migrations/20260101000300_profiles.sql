@@ -1,8 +1,7 @@
 -- Profile (1:1 with auth.users) and CV contact channels.
 -- No profiles.email / phone / website — those live in contacts.
 -- No auto-created profile row (onboarding inserts with real values).
--- Not exposed to the Data API in this migration. Grants + RLS land in
--- 20260101000700_rls.sql (MDI-171).
+-- Grants + RLS land in 20260101000700_profile_rls.sql (MDI-171).
 
 create table public.profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,

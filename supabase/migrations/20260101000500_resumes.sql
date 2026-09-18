@@ -3,9 +3,9 @@
 -- template_key is text (Zod / app catalogue). color default matches
 -- RESUME_COLORS_MAP.black. content jsonb is shaped like resumeFormSchema
 -- (top-level key `profile`).
--- Not exposed to the Data API in this migration. Grants + RLS +
--- handle_new_user / consume_credits land in 20260101000600_rpcs.sql and
--- 20260101000700_rls.sql (MDI-171).
+-- Grants + RLS land in 20260101000800_resumes_rls.sql.
+-- RPCs and signup credits land in 20260101000600_profile_rpcs.sql and
+-- 20260101000900_auth_hooks.sql (MDI-171).
 
 create table public.resumes (
   id uuid primary key default gen_random_uuid(),
