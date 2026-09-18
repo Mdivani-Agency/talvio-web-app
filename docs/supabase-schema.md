@@ -95,6 +95,33 @@ and do not collide.
 - Schema comment (lands with the first DDL migration):
   `comment on schema public is e'@graphql({"max_rows": 100})';`
 
+## GraphQL client
+
+Plumbing for MDI-172. Feature queries/mutations land in MDI-175.
+
+| Piece | Role |
+| --- | --- |
+| `codegen.ts` | Documents: `app/**/*.graphql`, `lib/**/*.graphql`. Output: `lib/graphql/generated.ts` (committed). |
+| `lib/graphql/schema.graphql` | Checked-in snapshot used by `yarn codegen` (CI). Refresh from local Supabase with `yarn codegen:from-supabase`. |
+| `lib/graphql-client.ts` | `getGraphqlSdk()` (session via `@supabase/ssr`) and `parseGraphqlError()`. supabase-js is **auth only**. |
+| `lib/query/base-query.ts` | `useGraphqlQuery(queryKey, (sdk) => …)` and `unwrapCollection()`. |
+| `app/actions/action.utils.ts` | `submitWrapper({ fn, onSuccess?, successMessage?, errorMessage? })`. |
+
+```bash
+yarn codegen                 # regenerate types from lib/graphql/schema.graphql
+yarn codegen:from-supabase   # introspect local /graphql/v1 (needs yarn db:start)
+```
+
+`codegen:from-supabase` uses `SUPABASE_SECRET_KEY` (or `CODEGEN_AUTH_TOKEN`) so
+introspection sees granted collections. Never ship the service key.
+
+List queries should still pass `first` explicitly (schema `max_rows` is 100).
+
+CI runs `yarn codegen && git diff --exit-code lib/graphql/generated.ts` — it
+does **not** run `db reset`. After a migration that changes the GraphQL
+surface, refresh the snapshot locally and commit both `schema.graphql` and
+`generated.ts`.
+
 ## Migration chain
 
 Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format

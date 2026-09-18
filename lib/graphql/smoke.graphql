@@ -1,0 +1,30 @@
+# Smoke documents so codegen emits collection + RPC operation types.
+# Feature queries land in MDI-175.
+
+query ProfilesCollection($first: Int) {
+  profilesCollection(first: $first) {
+    edges {
+      node {
+        user_id
+      }
+    }
+  }
+}
+
+query ResumesCollection($first: Int) {
+  resumesCollection(first: $first) {
+    edges {
+      node {
+        id
+      }
+    }
+  }
+}
+
+mutation Save_Profile($p_payload: JSON) {
+  save_profile(p_payload: $p_payload)
+}
+
+mutation Generate_Pdf($p_resume_id: UUID) {
+  generate_pdf(p_resume_id: $p_resume_id)
+}
