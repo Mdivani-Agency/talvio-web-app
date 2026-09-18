@@ -51,7 +51,9 @@ GRANT EXECUTE ON FUNCTION public.save_profile(jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.consume_credits(integer) TO authenticated;
 ```
 
-Table grants alone do not expose RPCs to pg_graphql.
+Table grants alone do not expose RPCs to pg_graphql. Both functions are
+`VOLATILE` so pg_graphql puts them on `Mutation`. `save_profile(jsonb)` is
+the GraphQL `JSON` scalar (serialized string).
 
 ## Per-table grants (shipped)
 

@@ -36,8 +36,14 @@ Every table below except `user_credits` has four policies:
 cannot write the balance through GraphQL; `handle_new_user` and
 `consume_credits` are `SECURITY DEFINER`.
 
-`save_profile` is `SECURITY INVOKER`, so these policies still apply inside the
-RPC. A payload `user_id` cannot override `auth.uid()`.
+`save_profile` is `SECURITY INVOKER` and `VOLATILE` (required for a Mutation
+field). A payload `user_id` cannot override `auth.uid()`. It upserts the
+caller's profile and any child rows in the payload; it never deletes children.
+Removals use collection DELETE mutations. Job-specific copies live in
+`resumes.content` — `profiles.user_id` is 1:1 with `auth.users`.
+
+`p_payload` is `jsonb`, exposed as the GraphQL `JSON` scalar (a serialized
+string). Pass `'{"profile":{...}}'`, not an inline object.
 
 ## GraphQL exposure
 

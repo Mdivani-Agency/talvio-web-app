@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(22);
+select plan(23);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -271,6 +271,12 @@ select is(
   (select first_name from public.profiles where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
   'AnnSaved',
   'save_profile writes to auth.uid() even when payload user_id is someone else'
+);
+
+select is(
+  (select count(*)::int from public.experiences where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+  1,
+  'save_profile does not delete existing experiences'
 );
 
 select is(
