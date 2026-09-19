@@ -52,7 +52,7 @@ Copy [`.env.example`](.env.example) to `.env.local`. Set the same names in the V
 | Name | Required | Used for |
 | --- | --- | --- |
 | `NEXT_PUBLIC_BASE_URL` | yes | Public site origin (auth redirect and error URLs) |
-| `NEXT_PUBLIC_API_BASE_URL` | yes | Resume, account, and media API origin (media-service stays after the migrate) |
+| `NEXT_PUBLIC_API_BASE_URL` | yes | Media-service origin (`/media`). Account and resume data go through Supabase GraphQL. |
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL (`http://127.0.0.1:54321` locally) |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Supabase publishable / anon key |
 | `SUPABASE_SECRET_KEY` | yes (server) | Supabase secret / service-role key — never `NEXT_PUBLIC_` |

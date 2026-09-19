@@ -19,6 +19,7 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
+          env: { TZ: 'UTC' },
           include: ['**/*.test.ts'],
           exclude: ['node_modules', '.next'],
         },
@@ -28,6 +29,7 @@ export default defineConfig({
         test: {
           name: 'dom',
           environment: 'jsdom',
+          env: { TZ: 'UTC' },
           include: ['**/*.test.tsx'],
           exclude: ['node_modules', '.next'],
         },

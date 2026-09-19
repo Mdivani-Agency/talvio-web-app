@@ -2,42 +2,33 @@
 
 import { useAccountContext } from "./providers/state-provider";
 import { Loading } from "@components/views";
-import { AccountRequestError, getAccount } from "@lib/clients/account.client";
+import { fetchProfile } from "@app/account/query/use-profile";
 import { useQuery } from "@tanstack/react-query";
 import { redirect, useRouter } from "next/navigation";
 import { Dashboard } from "./dashboard";
 import ErrorPage from "@app/auth/error/page";
 import { useUserSession } from "@lib/providers/session-provider";
+import { shouldRetryGraphqlQuery } from "@/lib/graphql-client";
 
 export default function AccountPage() {
   const router = useRouter();
   const { session } = useUserSession();
   const { state, userId, send } = useAccountContext();
 
-  const { isLoading, data: account } = useQuery({
+  const { isLoading, isError, data: account } = useQuery({
     queryKey: ['account', userId],
     enabled: !!userId,
-    retry: (failureCount, error) => {
-      if (error instanceof AccountRequestError && (error.status === 401 || error.status === 403)) {
-        return false;
-      }
-      return failureCount < 2;
-    },
+    retry: shouldRetryGraphqlQuery,
     queryFn: async () => {
       send({ type: 'INITIALIZE' });
-      try {
-        const account = await getAccount(userId);
-        send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: account });
-        return account;
-      } catch (error) {
-        console.error('Failed to fetch account');
-        if (error instanceof AccountRequestError && error.status === 404) {
-          send({ type: 'FETCHING_ACCOUNT_FAILURE' });
-          router.push('/account/create');
-          return undefined;
-        }
-        throw error;
+      const nextAccount = await fetchProfile(userId);
+      if (!nextAccount) {
+        send({ type: 'FETCHING_ACCOUNT_FAILURE' });
+        router.push('/account/create');
+        return null;
       }
+      send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: nextAccount });
+      return nextAccount;
     },
   });
 
@@ -47,6 +38,10 @@ export default function AccountPage() {
 
   if (state.matches('newAccount')) {
     return redirect('/account/create');
+  }
+
+  if (isError) {
+    return <ErrorPage />;
   }
 
   if (account && session?.user) {

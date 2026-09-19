@@ -141,6 +141,10 @@ stays guest-friendly. Sign-out clears the Supabase cookie and any leftover
 `bearer_token`. Credits are no longer on the session — `CreditsCard` reads
 `user_creditsCollection`.
 
+Account and resume CRUD go through GraphQL (`ProfileByUser`, `save_profile`,
+`resumesCollection` insert/update/delete). Templates are local constants in
+`lib/templates.ts`. `NEXT_PUBLIC_API_BASE_URL` remains only for media-service.
+
 ## Migration chain
 
 Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format

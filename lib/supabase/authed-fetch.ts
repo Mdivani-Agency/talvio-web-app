@@ -1,6 +1,6 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
-export const secureFetch = async (url: string, options: RequestInit = {}) => {
+export async function authedFetch(url: string, options: RequestInit = {}) {
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase.auth.getSession();
   const accessToken = data.session?.access_token;
@@ -17,4 +17,4 @@ export const secureFetch = async (url: string, options: RequestInit = {}) => {
       Authorization: `Bearer ${accessToken}`,
     },
   });
-};
+}

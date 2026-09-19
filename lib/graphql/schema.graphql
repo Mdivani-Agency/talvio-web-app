@@ -104,6 +104,11 @@ input DateFilter {
   lte: Date
 }
 
+input resume_typeFilter {
+  eq: resume_type
+  in: [resume_type!]
+}
+
 input DatetimeFilter {
   eq: Datetime
   gt: Datetime
@@ -453,7 +458,7 @@ type resumesConnection {
 input resumesFilter {
   id: UUIDFilter
   user_id: UUIDFilter
-  type: StringFilter
+  type: resume_typeFilter
 }
 
 input resumesOrderBy {
@@ -596,7 +601,58 @@ type Query {
   ): user_creditsConnection
 }
 
+input resumesInsertInput {
+  id: UUID
+  user_id: UUID
+  name: String
+  type: resume_type
+  template_key: String
+  color: String
+  font_size: resume_font_size
+  font_family: String
+  content: JSON
+  pdf_url: String
+  pdf_media_key: String
+}
+
+input resumesUpdateInput {
+  name: String
+  type: resume_type
+  template_key: String
+  color: String
+  font_size: resume_font_size
+  font_family: String
+  content: JSON
+  pdf_url: String
+  pdf_media_key: String
+}
+
+type resumesInsertResponse {
+  records: [resumes!]!
+  affectedCount: Int!
+}
+
+type resumesUpdateResponse {
+  records: [resumes!]!
+  affectedCount: Int!
+}
+
+type resumesDeleteResponse {
+  records: [resumes!]!
+  affectedCount: Int!
+}
+
 type Mutation {
   save_profile(p_payload: JSON): String
   generate_pdf(p_resume_id: UUID): String
+  insertIntoresumesCollection(objects: [resumesInsertInput!]!): resumesInsertResponse
+  updateresumesCollection(
+    set: resumesUpdateInput!
+    filter: resumesFilter
+    atMost: Int
+  ): resumesUpdateResponse
+  deleteFromresumesCollection(
+    filter: resumesFilter
+    atMost: Int
+  ): resumesDeleteResponse
 }

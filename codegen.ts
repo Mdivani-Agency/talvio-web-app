@@ -21,6 +21,9 @@ const schema: CodegenConfig['schema'] = fromSupabase
 const config: CodegenConfig = {
   schema,
   documents: ['app/**/*.graphql', 'lib/**/*.graphql'],
+  hooks: {
+    afterOneFileWrite: ['node scripts/dedupe-graphql-generated.mjs'],
+  },
   generates: {
     ...(fromSupabase
       ? {
@@ -37,11 +40,12 @@ const config: CodegenConfig = {
         'typescript-graphql-request',
       ],
       config: {
+        enumsAsTypes: true,
         scalars: {
           UUID: 'string',
           Date: 'string',
           Datetime: 'string',
-          JSON: 'unknown',
+          JSON: 'string',
           BigInt: 'string',
           BigFloat: 'string',
           Cursor: 'string',

@@ -1,4 +1,4 @@
-import { secureFetch } from "./secure.client";
+import { authedFetch } from '@/lib/supabase/authed-fetch';
 
 const MEDIA_API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/media`;
 
@@ -12,7 +12,7 @@ export interface MediaItem {
 }
 
 export const getDocuments = async (userId: string) => {
-  const response = await secureFetch(`${MEDIA_API_URL}/${userId}/records`, {
+  const response = await authedFetch(`${MEDIA_API_URL}/${userId}/records`, {
     method: 'GET',
   });
   return response.json() as Promise<{ items: MediaItem[], nextToken?: string }>;

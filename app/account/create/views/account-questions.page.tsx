@@ -2,7 +2,7 @@
 import { memo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAccountContext } from '@app/account/providers/state-provider';
-import { createAccount } from '@lib/clients/account.client';
+import { saveProfile } from '@app/account/query/use-save-profile';
 import { fetchQuestions, fetchTailoredAccount } from '@lib/clients/llm.client';
 import { ResumeQuestions } from './forms/resume-questions';
 import { useRouter } from 'next/navigation';
@@ -67,7 +67,7 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
 
       const { success, data: tailoredAccountData, error } = accountSchema.safeParse(dto);
       if (success && tailoredAccountData) {
-        return createAccount({ userId, accountDto: tailoredAccountData });
+        return saveProfile(userId, tailoredAccountData);
       }
       console.error('error', error);
 
@@ -75,7 +75,7 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
     },
     onSuccess(data) {
       send({ type: 'CREATE_ACCOUNT_SUCCESS', value: data });
-      router.push('/account/resume');
+      router.push('/account');
     },
     onError(error) {
       toast.error(`Failed to tailor your account: ${error instanceof Error ? error.message : 'Server error'}`);

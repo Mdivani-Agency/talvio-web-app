@@ -5,6 +5,7 @@ import type { AppForm } from '@lib/forms/use-form';
 import { fieldErrorMessage } from '@lib/forms/errors';
 
 export const projectFormValuesSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, { message: 'Name is required' }),
   url: z.url().optional(),
   additionalDetails: z.string().min(150, { message: 'Additional details must be at least 150 characters long' }),

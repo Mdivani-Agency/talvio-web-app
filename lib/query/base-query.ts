@@ -7,7 +7,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 
-import { getGraphqlSdk, type GraphqlSdk } from '@/lib/graphql-client';
+import { getGraphqlSdk, shouldRetryGraphqlQuery, type GraphqlSdk } from '@/lib/graphql-client';
 
 export type Collection<T> = {
   edges?: Array<{ node?: T | null } | null> | null;
@@ -35,6 +35,7 @@ export function useGraphqlQuery<T>(
       const sdk = await getGraphqlSdk();
       return queryFn(sdk);
     },
+    retry: shouldRetryGraphqlQuery,
     ...options,
   });
 }

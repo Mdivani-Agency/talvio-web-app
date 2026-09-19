@@ -1,0 +1,73 @@
+fragment ListResume on resumes {
+  id
+  user_id
+  name
+  type
+  template_key
+  color
+  font_size
+  font_family
+  pdf_url
+  pdf_media_key
+  created_at
+  updated_at
+}
+
+query ResumesByUser($userId: UUID!, $type: resume_type, $first: Int, $after: Cursor) {
+  resumesCollection(
+    filter: { user_id: { eq: $userId }, type: { eq: $type } }
+    orderBy: [{ updated_at: DescNullsLast }]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ListResume
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query ResumeById($id: UUID!) {
+  resumesCollection(filter: { id: { eq: $id } }, first: 1) {
+    edges {
+      node {
+        ...ListResume
+        content
+      }
+    }
+  }
+}
+
+mutation InsertResume($objects: [resumesInsertInput!]!) {
+  insertIntoresumesCollection(objects: $objects) {
+    affectedCount
+    records {
+      ...ListResume
+      content
+    }
+  }
+}
+
+mutation UpdateResume($id: UUID!, $set: resumesUpdateInput!, $atMost: Int) {
+  updateresumesCollection(set: $set, filter: { id: { eq: $id } }, atMost: $atMost) {
+    affectedCount
+    records {
+      ...ListResume
+      content
+    }
+  }
+}
+
+mutation DeleteResume($id: UUID!, $atMost: Int) {
+  deleteFromresumesCollection(filter: { id: { eq: $id } }, atMost: $atMost) {
+    affectedCount
+    records {
+      id
+    }
+  }
+}

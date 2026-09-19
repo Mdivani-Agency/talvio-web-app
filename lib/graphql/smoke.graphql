@@ -1,5 +1,4 @@
 # Smoke documents so codegen emits collection + RPC operation types.
-# Feature queries land in MDI-175.
 
 query ProfilesCollection($first: Int) {
   profilesCollection(first: $first) {
