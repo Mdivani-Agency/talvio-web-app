@@ -1,15 +1,23 @@
 'use client';
 import { BurgerMenu } from "./burger-menu";
 import { HomeNavigationMenu } from "./navigation-menu";
-import { authClient } from "@lib/auth.client";
+import { useUserSession } from '@lib/providers';
 
 export const ResponsiveNavigationMenu = () => {
-  const { data } = authClient.useSession();
+  const { session } = useUserSession();
+  const user = session?.user
+    ? {
+        id: session.user.id,
+        name: session.user.name ?? session.user.email,
+        email: session.user.email,
+        image: session.user.image,
+      }
+    : undefined;
 
   return (
     <div className="flex w-full">
       <HomeNavigationMenu
-        user={data?.user}
+        user={user}
         withActions={true}
         className="hidden md:flex w-full"
         links={[
@@ -18,7 +26,7 @@ export const ResponsiveNavigationMenu = () => {
           { name: 'Price', href: '#plans' },
           { name: 'FAQ', href: '#faq' },
         ]} />
-      <BurgerMenu className="ml-auto" user={data?.user} />
+      <BurgerMenu className="ml-auto" user={user} />
     </div>
   )
 }

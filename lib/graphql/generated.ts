@@ -697,6 +697,13 @@ export type User_CreditsOrderBy = {
   updated_at?: InputMaybe<OrderByDirection>;
 };
 
+export type CreditsQueryVariables = Exact<{
+  first?: number | null | undefined;
+}>;
+
+
+export type CreditsQuery = { user_creditsCollection: { edges: Array<{ node: { balance: number } | null }> } | null };
+
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -731,6 +738,17 @@ export type Generate_PdfMutationVariables = Exact<{
 export type Generate_PdfMutation = { generate_pdf: string | null };
 
 
+export const CreditsDocument = gql`
+    query Credits($first: Int) {
+  user_creditsCollection(first: $first) {
+    edges {
+      node {
+        balance
+      }
+    }
+  }
+}
+    `;
 export const HealthDocument = gql`
     query Health {
   __typename
@@ -776,6 +794,9 @@ const defaultWrapper: SdkFunctionWrapper = (action, _operationName, _operationTy
 
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
+    Credits(variables?: CreditsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<CreditsQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<CreditsQuery>({ document: CreditsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Credits', 'query', variables);
+    },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);
     },

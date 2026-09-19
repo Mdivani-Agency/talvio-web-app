@@ -1,41 +1,71 @@
 'use client';
+
 import { Loading } from '@components/views';
-import { authClient } from '@lib/auth.client';
+import { mapAuthUser } from '@lib/auth/map-auth-user';
+import { createSupabaseBrowserClient } from '@lib/supabase/client';
+import { clearLegacyBearerToken } from '@lib/supabase/legacy-token';
 import { User } from '@lib/types';
+import type { AuthChangeEvent } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+
+import { queryClient } from './query-provider';
 
 type Session = {
   user: User;
-  session: {
-    id: string;
-    expiresAt: Date;
-    token: string;
-    ipAddress?: string | null;
-    userAgent?: string | null;
-    userId: string;
-  };
 };
 
-export const SessionContext = createContext<{ session: Session | null, isPending: boolean }>({ session: null, isPending: false });
+export const SessionContext = createContext<{
+  session: Session | null;
+  isPending: boolean;
+}>({ session: null, isPending: true });
 
 type SessionProviderProps = {
   fallbackURL?: string;
   children: React.ReactNode;
-}
+};
 
 export const SessionProvider = ({ children, fallbackURL }: SessionProviderProps) => {
-  const { data: session, isPending } = authClient.useSession();
+  const [session, setSession] = useState<Session | null>(null);
+  const [isPending, setIsPending] = useState(true);
+  const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
 
-  if (isPending) {
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    clearLegacyBearerToken();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'SIGNED_OUT') {
+        queryClient.clear();
+      }
+      setAuthEvent(event);
+      setSession(nextSession?.user ? { user: mapAuthUser(nextSession.user) } : null);
+      setIsPending(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (isPending && fallbackURL) {
     return <Loading message={'Loading session...'} />;
   }
 
-  if (!session && fallbackURL) {
+  if (!isPending && !session && fallbackURL) {
+    if (authEvent === 'SIGNED_OUT') {
+      return <Loading message={'Signing out...'} />;
+    }
     redirect(fallbackURL);
   }
 
-  return <SessionContext.Provider value={{ session, isPending }}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={{ session, isPending }}>
+      {children}
+    </SessionContext.Provider>
+  );
 };
 
 export const useUserSession = () => {

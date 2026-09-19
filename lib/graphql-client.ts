@@ -1,7 +1,7 @@
 import { GraphQLClient, ClientError } from 'graphql-request';
 
 import { getSdk } from '@/lib/graphql/generated';
-import { createSupabaseBrowserClient } from '@/lib/supabase/browser-client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export type GraphqlSdk = ReturnType<typeof getSdk>;
 

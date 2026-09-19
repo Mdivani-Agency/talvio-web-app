@@ -1,6 +1,7 @@
 'use client';
 
-import { authClient } from '@lib/auth.client';
+import { createSupabaseBrowserClient } from '@lib/supabase/client';
+import { clearLegacyBearerToken } from '@lib/supabase/legacy-token';
 import { Icon } from '@components/icons';
 import {
   Avatar,
@@ -19,6 +20,7 @@ import {
   AvatarFallback,
 } from '@components/ui';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@lib/utils';
 
@@ -34,10 +36,15 @@ interface UserAvatarProps {
 
 export function UserAvatar({ className, user }: UserAvatarProps) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   const handleSignOut = async () => {
     setOpen(false);
-    await authClient.signOut();
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    clearLegacyBearerToken();
+    router.replace('/');
+    router.refresh();
   };
 
   return (

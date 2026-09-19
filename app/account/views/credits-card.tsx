@@ -1,14 +1,15 @@
-import { Icon } from "@components/icons";
-import { Button } from "@components/ui";
-import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
-import Link from "next/link";
+import { Icon } from '@components/icons';
+import { Button } from '@components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
+import { useCredits } from '@app/account/query/use-credits';
+import Link from 'next/link';
 
 type CreditsCardProps = {
-  credits: number;
   className?: string;
 };
 
-export const CreditsCard = ({ credits, className }: CreditsCardProps) => {
+export const CreditsCard = ({ className }: CreditsCardProps) => {
+  const { data: credits = 0 } = useCredits();
   return (
     <Card className={className}>
       <CardHeader>

@@ -1,12 +1,13 @@
-import { authClient } from "@lib/auth.client";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
 export default async function AppPage() {
-  const headersList = await headers();
-  const { data } = await authClient.getSession({ fetchOptions: { headers: headersList } });
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (data?.user) {
+  if (user) {
     return redirect('/account');
   }
 
