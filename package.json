@@ -17,8 +17,8 @@
     "db:diff": "supabase db diff",
     "db:push": "supabase db push",
     "db:test": "supabase test db",
-    "codegen": "graphql-codegen --config codegen.ts",
-    "codegen:from-supabase": "CODEGEN_FROM_SUPABASE=1 graphql-codegen --config codegen.ts",
+    "codegen": "graphql-codegen --config codegen.ts && node scripts/dedupe-graphql-generated.mjs",
+    "codegen:from-supabase": "CODEGEN_FROM_SUPABASE=1 graphql-codegen --config codegen.ts && node scripts/dedupe-graphql-generated.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -54,26 +54,41 @@ export type IntFilter = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  deleteFromresumesCollection?: Maybe<ResumesDeleteResponse>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
+  insertIntoresumesCollection?: Maybe<ResumesInsertResponse>;
   save_profile?: Maybe<Scalars['String']['output']>;
+  updateresumesCollection?: Maybe<ResumesUpdateResponse>;
 };
 
+export type MutationDeleteFromresumesCollectionArgs = {
+  atMost?: InputMaybe<Scalars['Int']['input']>;
+  filter?: InputMaybe<ResumesFilter>;
+};
 
 export type MutationGenerate_PdfArgs = {
   p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
+export type MutationInsertIntoresumesCollectionArgs = {
+  objects: Array<ResumesInsertInput>;
+};
 
 export type MutationSave_ProfileArgs = {
   p_payload?: InputMaybe<Scalars['JSON']['input']>;
 };
 
-export enum OrderByDirection {
-  AscNullsFirst = 'AscNullsFirst',
-  AscNullsLast = 'AscNullsLast',
-  DescNullsFirst = 'DescNullsFirst',
-  DescNullsLast = 'DescNullsLast'
-}
+export type MutationUpdateresumesCollectionArgs = {
+  atMost?: InputMaybe<Scalars['Int']['input']>;
+  filter?: InputMaybe<ResumesFilter>;
+  set: ResumesUpdateInput;
+};
+
+export type OrderByDirection =
+  | 'AscNullsFirst'
+  | 'AscNullsLast'
+  | 'DescNullsFirst'
+  | 'DescNullsLast';
 
 export type PageInfo = {
   __typename?: 'PageInfo';
@@ -99,7 +114,6 @@ export type Query = {
   user_creditsCollection?: Maybe<User_CreditsConnection>;
 };
 
-
 export type QueryContactsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -109,7 +123,6 @@ export type QueryContactsCollectionArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ContactsOrderBy>>;
 };
-
 
 export type QueryEducationsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
@@ -121,7 +134,6 @@ export type QueryEducationsCollectionArgs = {
   orderBy?: InputMaybe<Array<EducationsOrderBy>>;
 };
 
-
 export type QueryExperiencesCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -131,7 +143,6 @@ export type QueryExperiencesCollectionArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
 };
-
 
 export type QueryLanguagesCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
@@ -143,7 +154,6 @@ export type QueryLanguagesCollectionArgs = {
   orderBy?: InputMaybe<Array<LanguagesOrderBy>>;
 };
 
-
 export type QueryLinksCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -153,7 +163,6 @@ export type QueryLinksCollectionArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<LinksOrderBy>>;
 };
-
 
 export type QueryProfilesCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
@@ -165,7 +174,6 @@ export type QueryProfilesCollectionArgs = {
   orderBy?: InputMaybe<Array<ProfilesOrderBy>>;
 };
 
-
 export type QueryProjectsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -175,7 +183,6 @@ export type QueryProjectsCollectionArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ProjectsOrderBy>>;
 };
-
 
 export type QueryRecommendationsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
@@ -187,7 +194,6 @@ export type QueryRecommendationsCollectionArgs = {
   orderBy?: InputMaybe<Array<RecommendationsOrderBy>>;
 };
 
-
 export type QueryResumesCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -197,7 +203,6 @@ export type QueryResumesCollectionArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ResumesOrderBy>>;
 };
-
 
 export type QuerySkillsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
@@ -209,7 +214,6 @@ export type QuerySkillsCollectionArgs = {
   orderBy?: InputMaybe<Array<SkillsOrderBy>>;
 };
 
-
 export type QueryToolsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -219,7 +223,6 @@ export type QueryToolsCollectionArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ToolsOrderBy>>;
 };
-
 
 export type QueryUser_CreditsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
@@ -241,11 +244,10 @@ export type UuidFilter = {
   in?: InputMaybe<Array<Scalars['UUID']['input']>>;
 };
 
-export enum Contact_Kind {
-  Email = 'email',
-  Phone = 'phone',
-  Url = 'url'
-}
+export type Contact_Kind =
+  | 'email'
+  | 'phone'
+  | 'url';
 
 export type Contacts = {
   __typename?: 'contacts';
@@ -319,16 +321,15 @@ export type EducationsOrderBy = {
   sort_order?: InputMaybe<OrderByDirection>;
 };
 
-export enum Employment_Type {
-  Apprenticeship = 'apprenticeship',
-  Contract = 'contract',
-  FullTime = 'full_time',
-  Internship = 'internship',
-  PartTime = 'part_time',
-  Seasonal = 'seasonal',
-  SelfEmployed = 'self_employed',
-  Volunteer = 'volunteer'
-}
+export type Employment_Type =
+  | 'apprenticeship'
+  | 'contract'
+  | 'full_time'
+  | 'internship'
+  | 'part_time'
+  | 'seasonal'
+  | 'self_employed'
+  | 'volunteer';
 
 export type Experiences = {
   __typename?: 'experiences';
@@ -373,12 +374,11 @@ export type ExperiencesOrderBy = {
   start_date?: InputMaybe<OrderByDirection>;
 };
 
-export enum Language_Proficiency {
-  Beginner = 'beginner',
-  Fluent = 'fluent',
-  Intermediate = 'intermediate',
-  Native = 'native'
-}
+export type Language_Proficiency =
+  | 'beginner'
+  | 'fluent'
+  | 'intermediate'
+  | 'native';
 
 export type Languages = {
   __typename?: 'languages';
@@ -442,11 +442,10 @@ export type LinksOrderBy = {
   sort_order?: InputMaybe<OrderByDirection>;
 };
 
-export enum Location_Type {
-  Hybrid = 'hybrid',
-  Office = 'office',
-  Remote = 'remote'
-}
+export type Location_Type =
+  | 'hybrid'
+  | 'office'
+  | 'remote';
 
 export type Profiles = {
   __typename?: 'profiles';
@@ -553,16 +552,14 @@ export type RecommendationsOrderBy = {
   sort_order?: InputMaybe<OrderByDirection>;
 };
 
-export enum Resume_Font_Size {
-  Lg = 'lg',
-  Md = 'md',
-  Sm = 'sm'
-}
+export type Resume_Font_Size =
+  | 'lg'
+  | 'md'
+  | 'sm';
 
-export enum Resume_Type {
-  General = 'general',
-  JobSpecific = 'job_specific'
-}
+export type Resume_Type =
+  | 'general'
+  | 'job_specific';
 
 export type Resumes = {
   __typename?: 'resumes';
@@ -587,6 +584,12 @@ export type ResumesConnection = {
   pageInfo: PageInfo;
 };
 
+export type ResumesDeleteResponse = {
+  __typename?: 'resumesDeleteResponse';
+  affectedCount: Scalars['Int']['output'];
+  records: Array<Resumes>;
+};
+
 export type ResumesEdge = {
   __typename?: 'resumesEdge';
   cursor: Scalars['String']['output'];
@@ -599,16 +602,53 @@ export type ResumesFilter = {
   user_id?: InputMaybe<UuidFilter>;
 };
 
+export type ResumesInsertInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  content?: InputMaybe<Scalars['JSON']['input']>;
+  font_family?: InputMaybe<Scalars['String']['input']>;
+  font_size?: InputMaybe<Resume_Font_Size>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  pdf_media_key?: InputMaybe<Scalars['String']['input']>;
+  pdf_url?: InputMaybe<Scalars['String']['input']>;
+  template_key?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Resume_Type>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type ResumesInsertResponse = {
+  __typename?: 'resumesInsertResponse';
+  affectedCount: Scalars['Int']['output'];
+  records: Array<Resumes>;
+};
+
 export type ResumesOrderBy = {
   created_at?: InputMaybe<OrderByDirection>;
   updated_at?: InputMaybe<OrderByDirection>;
 };
 
-export enum Seniority_Level {
-  Entry = 'entry',
-  Mid = 'mid',
-  Senior = 'senior'
-}
+export type ResumesUpdateInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  content?: InputMaybe<Scalars['JSON']['input']>;
+  font_family?: InputMaybe<Scalars['String']['input']>;
+  font_size?: InputMaybe<Resume_Font_Size>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  pdf_media_key?: InputMaybe<Scalars['String']['input']>;
+  pdf_url?: InputMaybe<Scalars['String']['input']>;
+  template_key?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Resume_Type>;
+};
+
+export type ResumesUpdateResponse = {
+  __typename?: 'resumesUpdateResponse';
+  affectedCount: Scalars['Int']['output'];
+  records: Array<Resumes>;
+};
+
+export type Seniority_Level =
+  | 'entry'
+  | 'mid'
+  | 'senior';
 
 export type Skills = {
   __typename?: 'skills';
@@ -701,11 +741,55 @@ export type CreditsQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
 
-
 export type CreditsQuery = { user_creditsCollection: { edges: Array<{ node: { balance: number } | null }> } | null };
 
-export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
+export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string };
 
+export type ProfileByUserQueryVariables = Exact<{
+  userId: string;
+}>;
+
+export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string } | null }> } | null, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } | null }> } | null, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string>, responsibilities: Array<string>, key_contributions: Array<string>, additional_details: string | null, sort_order: number } | null }> } | null, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } | null }> } | null, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } | null }> } | null, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } | null }> } | null, skillsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } | null }> } | null, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } | null }> } | null, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } | null }> } | null, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } | null }> } | null };
+
+export type ListResumeFragment = { id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string };
+
+export type ResumesByUserQueryVariables = Exact<{
+  userId: string;
+  type?: string | null | undefined;
+  first?: number | null | undefined;
+  after?: string | null | undefined;
+}>;
+
+export type ResumesByUserQuery = { resumesCollection: { edges: Array<{ node: { id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string } | null }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+
+export type ResumeByIdQueryVariables = Exact<{
+  id: string;
+}>;
+
+export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: unknown, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string } | null }> } | null };
+
+export type InsertResumeMutationVariables = Exact<{
+  objects: Array<ResumesInsertInput> | ResumesInsertInput;
+}>;
+
+export type InsertResumeMutation = { insertIntoresumesCollection: { affectedCount: number, records: Array<{ content: unknown, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string }> } | null };
+
+export type UpdateResumeMutationVariables = Exact<{
+  id: string;
+  set: ResumesUpdateInput;
+  atMost?: number | null | undefined;
+}>;
+
+export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: unknown, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string }> } | null };
+
+export type DeleteResumeMutationVariables = Exact<{
+  id: string;
+  atMost?: number | null | undefined;
+}>;
+
+export type DeleteResumeMutation = { deleteFromresumesCollection: { affectedCount: number, records: Array<{ id: string }> } | null };
+
+export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type HealthQuery = { __typename: 'Query' };
 
@@ -713,13 +797,11 @@ export type ProfilesCollectionQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
 
-
 export type ProfilesCollectionQuery = { profilesCollection: { edges: Array<{ node: { user_id: string } | null }> } | null };
 
 export type ResumesCollectionQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
-
 
 export type ResumesCollectionQuery = { resumesCollection: { edges: Array<{ node: { id: string } | null }> } | null };
 
@@ -727,17 +809,44 @@ export type Save_ProfileMutationVariables = Exact<{
   p_payload?: unknown;
 }>;
 
-
 export type Save_ProfileMutation = { save_profile: string | null };
 
 export type Generate_PdfMutationVariables = Exact<{
   p_resume_id?: string | null | undefined;
 }>;
 
-
 export type Generate_PdfMutation = { generate_pdf: string | null };
 
-
+export const ProfileFieldsFragmentDoc = gql`
+    fragment ProfileFields on profiles {
+  user_id
+  first_name
+  last_name
+  role
+  tagline
+  seniority
+  city
+  country
+  created_at
+  updated_at
+}
+    `;
+export const ListResumeFragmentDoc = gql`
+    fragment ListResume on resumes {
+  id
+  user_id
+  name
+  type
+  template_key
+  color
+  font_size
+  font_family
+  pdf_url
+  pdf_media_key
+  created_at
+  updated_at
+}
+    `;
 export const CreditsDocument = gql`
     query Credits($first: Int) {
   user_creditsCollection(first: $first) {
@@ -745,6 +854,222 @@ export const CreditsDocument = gql`
       node {
         balance
       }
+    }
+  }
+}
+    `;
+export const ProfileByUserDocument = gql`
+    query ProfileByUser($userId: UUID!) {
+  profilesCollection(filter: {user_id: {eq: $userId}}, first: 1) {
+    edges {
+      node {
+        ...ProfileFields
+      }
+    }
+  }
+  contactsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        kind
+        value
+        label
+        is_primary
+        sort_order
+      }
+    }
+  }
+  experiencesCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        company
+        job_title
+        employment_type
+        location_type
+        start_date
+        end_date
+        is_present
+        achievements
+        responsibilities
+        key_contributions
+        additional_details
+        sort_order
+      }
+    }
+  }
+  educationsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        name
+        degree_type
+        start_date
+        end_date
+        is_present
+        additional_details
+        sort_order
+      }
+    }
+  }
+  projectsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        name
+        url
+        additional_details
+        sort_order
+      }
+    }
+  }
+  recommendationsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        name
+        url
+        additional_details
+        sort_order
+      }
+    }
+  }
+  skillsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        name
+        sort_order
+      }
+    }
+  }
+  toolsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        name
+        sort_order
+      }
+    }
+  }
+  linksCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        type
+        value
+        sort_order
+      }
+    }
+  }
+  languagesCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 50
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        language
+        proficiency
+        sort_order
+      }
+    }
+  }
+}
+    ${ProfileFieldsFragmentDoc}`;
+export const ResumesByUserDocument = gql`
+    query ResumesByUser($userId: UUID!, $type: String, $first: Int, $after: Cursor) {
+  resumesCollection(
+    filter: {user_id: {eq: $userId}, type: {eq: $type}}
+    orderBy: [{updated_at: DescNullsLast}]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ListResume
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    ${ListResumeFragmentDoc}`;
+export const ResumeByIdDocument = gql`
+    query ResumeById($id: UUID!) {
+  resumesCollection(filter: {id: {eq: $id}}, first: 1) {
+    edges {
+      node {
+        ...ListResume
+        content
+      }
+    }
+  }
+}
+    ${ListResumeFragmentDoc}`;
+export const InsertResumeDocument = gql`
+    mutation InsertResume($objects: [resumesInsertInput!]!) {
+  insertIntoresumesCollection(objects: $objects) {
+    affectedCount
+    records {
+      ...ListResume
+      content
+    }
+  }
+}
+    ${ListResumeFragmentDoc}`;
+export const UpdateResumeDocument = gql`
+    mutation UpdateResume($id: UUID!, $set: resumesUpdateInput!, $atMost: Int) {
+  updateresumesCollection(set: $set, filter: {id: {eq: $id}}, atMost: $atMost) {
+    affectedCount
+    records {
+      ...ListResume
+      content
+    }
+  }
+}
+    ${ListResumeFragmentDoc}`;
+export const DeleteResumeDocument = gql`
+    mutation DeleteResume($id: UUID!, $atMost: Int) {
+  deleteFromresumesCollection(filter: {id: {eq: $id}}, atMost: $atMost) {
+    affectedCount
+    records {
+      id
     }
   }
 }
@@ -789,13 +1114,30 @@ export const Generate_PdfDocument = gql`
 
 export type SdkFunctionWrapper = <T>(action: (requestHeaders?:Record<string, string>) => Promise<T>, operationName: string, operationType?: string, variables?: any) => Promise<T>;
 
-
 const defaultWrapper: SdkFunctionWrapper = (action, _operationName, _operationType, _variables) => action();
 
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
     Credits(variables?: CreditsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<CreditsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<CreditsQuery>({ document: CreditsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Credits', 'query', variables);
+    },
+    ProfileByUser(variables: ProfileByUserQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileByUserQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ProfileByUserQuery>({ document: ProfileByUserDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileByUser', 'query', variables);
+    },
+    ResumesByUser(variables: ResumesByUserQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesByUserQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ResumesByUserQuery>({ document: ResumesByUserDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesByUser', 'query', variables);
+    },
+    ResumeById(variables: ResumeByIdQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumeByIdQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ResumeByIdQuery>({ document: ResumeByIdDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumeById', 'query', variables);
+    },
+    InsertResume(variables: InsertResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<InsertResumeMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<InsertResumeMutation>({ document: InsertResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'InsertResume', 'mutation', variables);
+    },
+    UpdateResume(variables: UpdateResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<UpdateResumeMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<UpdateResumeMutation>({ document: UpdateResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'UpdateResume', 'mutation', variables);
+    },
+    DeleteResume(variables: DeleteResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteResumeMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<DeleteResumeMutation>({ document: DeleteResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteResume', 'mutation', variables);
     },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);

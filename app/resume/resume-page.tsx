@@ -9,7 +9,8 @@ import { Preview } from './views/resume-preview';
 import { useResumeContext } from './providers/state-provider';
 import { Template } from '@pdf-tlv/resume';
 import TemplatesView from './views/templates-view';
-import { createResume, listResumeTemplates } from '@lib/clients/resume.client';
+import { createResume } from '@app/resume/query/use-create-resume';
+import { findTemplate, listResumeTemplates } from '@lib/templates';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useUserSession } from '@lib/providers';
 import { redirect } from 'next/navigation';
@@ -31,12 +32,8 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
     queryKey: ['templates'],
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const templates = await listResumeTemplates();
-      const template = [
-        ...templates.entry,
-        ...templates.mid,
-        ...templates.senior,
-      ].find(({ key }) => key === resume.template);
+      const templates = listResumeTemplates();
+      const template = findTemplate(resume.template);
 
       if (template) {
         send({

@@ -1,6 +1,6 @@
 'use client';
 import { Loading } from '@components/views';
-import { getAccount } from '@lib/clients/account.client';
+import { fetchProfile } from '@app/account/query/use-profile';
 import { useUserSession } from '@lib/providers';
 import { useQuery } from '@tanstack/react-query';
 import { DEFAULT_ACCOUNT_DTO } from '@app/account/create/views/account.form';
@@ -38,7 +38,10 @@ export default function ResumePage() {
           return null;
         }
 
-        const account = await getAccount(userId);
+        const account = await fetchProfile(userId);
+        if (!account) {
+          throw new Error('No profile');
+        }
 
         send({
           type: 'FETCHING_RESUME_FAILURE',

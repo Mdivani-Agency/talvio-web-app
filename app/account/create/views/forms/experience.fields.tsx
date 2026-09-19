@@ -11,7 +11,7 @@ export const experienceFormValuesSchema = z.object({
   jobTitle: z.string().min(1, { message: 'Job title is required' }),
   startDate: z.iso.datetime().or(z.literal('')),
   endDate: z.iso.datetime().or(z.literal('')).optional(),
-  isPresent: z.iso.datetime().or(z.literal('')).optional(),
+  isPresent: z.boolean().optional(),
   employmentType: employmentTypeEnum.or(z.literal('')),
   locationType: locationTypeEnum.or(z.literal('')),
   additionalDetails: z.string(),
@@ -30,7 +30,7 @@ type ExperienceFieldsProps = {
 export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => {
   const startDate = useStore(form.store, (state) => String(state.values.startDate ?? ''));
   const endDate = useStore(form.store, (state) => String(state.values.endDate ?? ''));
-  const isPresent = useStore(form.store, (state) => String(state.values.isPresent ?? ''));
+  const isPresent = useStore(form.store, (state) => Boolean(state.values.isPresent));
   const achievements = useStore(form.store, (state) => (state.values.achievements as string[] | undefined) ?? []);
   const responsibilities = useStore(form.store, (state) => (state.values.responsibilities as string[] | undefined) ?? []);
   const keyContributions = useStore(form.store, (state) => (state.values.keyContributions as string[] | undefined) ?? []);
@@ -81,11 +81,11 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
         range={{
           startDate,
           endDate,
-          isPresent: Boolean(isPresent),
+          isPresent,
         }}
         onChange={(range) => {
           if (range.field === 'isPresent') {
-            form.setFieldValue('isPresent', range.value ? new Date().toISOString() : undefined);
+            form.setFieldValue('isPresent', range.value);
           } else {
             form.setFieldValue(range.field, range.value);
           }

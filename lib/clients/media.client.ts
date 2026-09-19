@@ -1,4 +1,4 @@
-import { secureFetch } from "./secure.client";
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const MEDIA_API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/media`;
 
@@ -11,8 +11,27 @@ export interface MediaItem {
   createdAt?: string;
 }
 
+async function mediaFetch(url: string, options: RequestInit = {}) {
+  const supabase = createSupabaseBrowserClient();
+  const { data } = await supabase.auth.getSession();
+  const accessToken = data.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error('No token found');
+  }
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
 export const getDocuments = async (userId: string) => {
-  const response = await secureFetch(`${MEDIA_API_URL}/${userId}/records`, {
+  const response = await mediaFetch(`${MEDIA_API_URL}/${userId}/records`, {
     method: 'GET',
   });
   return response.json() as Promise<{ items: MediaItem[], nextToken?: string }>;

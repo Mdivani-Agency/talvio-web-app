@@ -11,7 +11,7 @@ export const educationFormValuesSchema = z.object({
   degreeType: DegreeTypeEnum.or(z.literal('')).refine((val) => val !== '', { message: 'Degree type is required' }),
   startDate: z.iso.datetime().or(z.literal('')),
   endDate: z.iso.datetime().or(z.literal('')).optional(),
-  isPresent: z.iso.datetime().or(z.literal('')).optional(),
+  isPresent: z.boolean().optional(),
   additionalDetails: z.string(),
 });
 
@@ -25,7 +25,7 @@ type EducationFieldsProps = {
 export const EducationFields = ({ className, form }: EducationFieldsProps) => {
   const startDate = useStore(form.store, (state) => String(state.values.startDate ?? ''));
   const endDate = useStore(form.store, (state) => String(state.values.endDate ?? ''));
-  const isPresent = useStore(form.store, (state) => String(state.values.isPresent ?? ''));
+  const isPresent = useStore(form.store, (state) => Boolean(state.values.isPresent));
 
   return (
     <Form className={cn('space-y-6', className)}>
@@ -73,11 +73,11 @@ export const EducationFields = ({ className, form }: EducationFieldsProps) => {
         range={{
           startDate,
           endDate,
-          isPresent: Boolean(isPresent),
+          isPresent,
         }}
         onChange={(range) => {
           if (range.field === 'isPresent') {
-            form.setFieldValue('isPresent', range.value ? new Date().toISOString() : '');
+            form.setFieldValue('isPresent', range.value);
           } else {
             form.setFieldValue(range.field, range.value);
           }

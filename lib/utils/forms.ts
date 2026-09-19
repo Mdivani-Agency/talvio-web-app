@@ -98,7 +98,7 @@ export const transformFromParsedToAccount = (parsed: ParsedAccount): AccountDto 
           jobTitle: experience.jobTitle,
           startDate: new Date(experience.startDate).toISOString(),
           endDate: experience.endDate ? new Date(experience.endDate).toISOString() : undefined,
-          isPresent: experience.isPresent ? new Date(experience.isPresent).toISOString() : undefined,
+          isPresent: Boolean(experience.isPresent),
           employmentType: experience.employmentType || undefined,
           locationType: experience.locationType || undefined,
           additionalDetails: experience.additionalDetails || undefined,
@@ -117,7 +117,7 @@ export const transformFromParsedToAccount = (parsed: ParsedAccount): AccountDto 
           degreeType: education.degreeType,
           startDate: new Date(education.startDate).toISOString(),
           endDate: education.endDate ? new Date(education.endDate).toISOString() : undefined,
-          isPresent: education.isPresent ? new Date(education.isPresent).toISOString() : undefined,
+          isPresent: Boolean(education.isPresent),
           additionalDetails: education.additionalDetails || undefined,
         }];
       } else {

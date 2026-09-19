@@ -53,6 +53,10 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
         link.setAttribute('target', '_blank');
         link.click();
         link.remove();
+      } else if (res) {
+        toast.success('Resume saved', {
+          description: 'Final PDF download will be available after generation is enabled.',
+        });
       }
       setIsDownloadResumeModalOpen(false);
     } catch {

@@ -1,10 +1,9 @@
 'use client';
 import Image from 'next/image';
 import { Template } from '@pdf-tlv/resume';
-import { listResumeTemplates } from '@lib/clients/resume.client';
+import { findTemplate, listResumeTemplates } from '@lib/templates';
 import { TemplateKey } from '@lib/types';
-import { useQuery } from '@tanstack/react-query';
-import { Loading } from '@components/views';
+import { useEffect } from 'react';
 
 type TemplateParams = {
   selectedTemplate?: TemplateKey;
@@ -13,32 +12,20 @@ type TemplateParams = {
 };
 
 export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplateParams) => {
-  const { data: templates } = useQuery({
-    queryKey: ['templates'],
-    refetchOnWindowFocus: false,
-    queryFn: () => listResumeTemplates(),
-    select: (data) => {
-      const template = [
-        ...data.entry,
-        ...data.mid,
-        ...data.senior,
-      ].find(({ key }) => key === selectedTemplate);
+  const templates = listResumeTemplates();
 
-      if (template) {
-        onSelect(template.template, template.key);
-      }
-
-      return data;
-    },
-  });
+  useEffect(() => {
+    const template = findTemplate(selectedTemplate);
+    if (template) {
+      onSelect(template.template, template.key);
+    }
+    // Parent callbacks are often inline; only re-run when the selected key changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  }, [selectedTemplate]);
 
   const handleTemplateClick = (template: Template, key: TemplateKey) => {
     onSelect(template, key);
   };
-
-  if (!templates) {
-    return <Loading className='top-0 left-0 h-screen w-screen absolute bg-background'  message="Loading resume templates..." />;
-  }
 
   return templates[level].map(({ template, name, imageUrl, key }) => (
     <div key={`${level} ${name}`} className={'w-full mx-2 hover:cursor-pointer hover:ring-2 hover:ring-secondary'} onClick={() => handleTemplateClick(template, key)}>
@@ -47,7 +34,7 @@ export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplatePara
           selectedTemplate === key ? 'border-2 border-blue-500' : ''
         }`}
       >
-        <Image src={imageUrl} fill alt={`${level} ${name}`} />
+        <Image src={imageUrl} fill alt={`${level} ${name}`} unoptimized />
       </div>
     </div>
   ));

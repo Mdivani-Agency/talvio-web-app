@@ -1,7 +1,9 @@
 'use client';
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getResume, listResumeTemplates, updateResume } from "@lib/clients/resume.client";
+import { fetchResume } from "@app/resume/query/use-resume";
+import { updateResume } from "@app/resume/query/use-update-resume";
+import { findTemplate, listResumeTemplates } from "@lib/templates";
 import { Loading } from "@components/views";
 import { queryClient, useUserSession } from "@lib/providers";
 import { Resume } from "@lib/types";
@@ -18,21 +20,19 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
 
   const { data: resume, isLoading: isLoadingResume } = useQuery({
     queryKey: ['resume', resumeId],
-    queryFn: () => getResume(userId!, resumeId),
+    queryFn: () => fetchResume(resumeId),
     enabled: !!userId,
   });
 
   const { data: templates, isLoading: isLoadingTemplate } = useQuery({
     queryKey: ['templates'],
-    queryFn: async () => {
-      return listResumeTemplates();
-    },
+    queryFn: async () => listResumeTemplates(),
     enabled: !!resume?.template,
   });
 
   const { mutateAsync: updateResumeMutation } = useMutation({
     mutationFn: async (dto: Partial<Resume>) => {
-      await updateResume(userId!, resumeId, dto);
+      await updateResume(resumeId, dto);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resume', resumeId] });
@@ -47,7 +47,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     return <Loading message="Loading templates..." />;
   }
 
-  const template = [...templates?.entry, ...templates?.mid, ...templates?.senior].find((template) => template.key === resume?.template);
+  const template = findTemplate(resume?.template);
 
   console.log(resume, template);
   if (!resume || !template) {

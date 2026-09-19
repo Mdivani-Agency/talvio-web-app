@@ -12,7 +12,7 @@ const DEFAULT_VALUES: EducationFormValues = {
   degreeType: '',
   startDate: '',
   endDate: '',
-  isPresent: '',
+  isPresent: false,
   additionalDetails: '',
 };
 
@@ -43,7 +43,7 @@ export const EducationForm = ({ className, defaultValues = DEFAULT_VALUES, actio
 
     const { success, data: parsedData, error } = educationFormSchema.safeParse({
       ...form.state.values,
-      isPresent: form.state.values.isPresent || undefined,
+      isPresent: Boolean(form.state.values.isPresent),
       endDate: form.state.values.endDate || undefined,
     });
 

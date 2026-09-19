@@ -31,7 +31,7 @@ const baseExperienceSchema = z.object({
   employmentType: employmentTypeEnum,
   locationType: locationTypeEnum,
   endDate: z.iso.datetime(),
-  isPresent: z.iso.datetime(),
+  isPresent: z.boolean(),
   achievements: z.array(z.string()),
   responsibilities: z.array(z.string()),
   keyContributions: z.array(z.string()),
@@ -52,7 +52,7 @@ const educationSchema = z.object({
   degreeType: DegreeTypeEnum,
   startDate: z.iso.datetime(),
   endDate: z.iso.datetime(),
-  isPresent: z.iso.datetime(),
+  isPresent: z.boolean(),
 });
 
 export const formEducationSchema = z.object({
@@ -132,3 +132,5 @@ export const resumeSchema = z.object({
   fontSize: z.enum(['sm', 'md', 'lg']),
   fontFamily: z.string().optional(),
 });
+
+export const resumeContentSchema = resumeFormSchema;
