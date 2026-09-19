@@ -35,7 +35,7 @@ export const Dashboard = ({ account, sessionUser }: DashboardProps) => {
       <AccountUser sessionUser={sessionUser} />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <ResumeCard resume={resumes?.[0]} />
-        <CreditsCard credits={sessionUser.credits || 0} className="col-span-2" />
+        <CreditsCard className="col-span-2" />
       </div>
       <ProfileSection profile={account.profile} />
       {/* TODO: Add empty placeholders for sections to add new item */}

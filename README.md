@@ -53,7 +53,6 @@ Copy [`.env.example`](.env.example) to `.env.local`. Set the same names in the V
 | --- | --- | --- |
 | `NEXT_PUBLIC_BASE_URL` | yes | Public site origin (auth redirect and error URLs) |
 | `NEXT_PUBLIC_API_BASE_URL` | yes | Resume, account, and media API origin (media-service stays after the migrate) |
-| `NEXT_PUBLIC_AUTH_BASE_URL` | yes | better-auth client base URL (replaced by Supabase Auth later) |
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL (`http://127.0.0.1:54321` locally) |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Supabase publishable / anon key |
 | `SUPABASE_SECRET_KEY` | yes (server) | Supabase secret / service-role key — never `NEXT_PUBLIC_` |
@@ -72,6 +71,6 @@ Connect this repo to a Vercel project (Next.js framework preset). Vercel does no
 | Build | `yarn build` |
 | Output | `.next` (handled by the Next.js preset) |
 
-Add the environment variables above to the Vercel project. Preview and production should each use the matching public URLs for `NEXT_PUBLIC_BASE_URL`, the API/auth origins, and the hosted Supabase project (`talvio-dev` / `talvio-prod`).
+Add the environment variables above to the Vercel project. Preview and production should each use the matching public URLs for `NEXT_PUBLIC_BASE_URL`, the API origin, and the hosted Supabase project (`talvio-dev` / `talvio-prod`). Redirect URLs must include `/auth/callback`.
 
 Do not use AWS Amplify for this app. Amplify Hosting config has been removed.

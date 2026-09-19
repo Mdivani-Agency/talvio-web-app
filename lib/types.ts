@@ -22,7 +22,6 @@ export type User = {
   email: string;
   name?: string | null;
   image?: string | null;
-  credits?: number;
   createdAt: Date;
   updatedAt: Date;
 };

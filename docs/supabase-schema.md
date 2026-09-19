@@ -30,12 +30,12 @@ Dashboard → Project Settings → Data API:
 - [ ] `select extname from pg_extension where extname = 'pg_graphql'` returns a row
 - [ ] `POST /graphql/v1` with `{ __typename }` returns `{"data":{"__typename":"Query"}}`
 
-Auth providers (settings only; app wiring is [MDI-173](https://linear.app/mdivani/issue/MDI-173)):
+Auth providers (app wiring is [MDI-173](https://linear.app/mdivani/issue/MDI-173)):
 
-- [ ] Email magic link / OTP
+- [ ] Email magic link / OTP (local mail: Inbucket on `:54324`)
 - [ ] Google
 - [ ] LinkedIn (`linkedin_oidc`)
-- [ ] Redirect URLs: `http://localhost:3002/**`, Vercel preview + production origins
+- [ ] Redirect URLs: `http://localhost:3002/**`, `http://localhost:3002/auth/callback`, Vercel preview + production origins
 
 ## Local workflow
 
@@ -97,7 +97,8 @@ and do not collide.
 
 ## GraphQL client
 
-Plumbing for MDI-172. Feature queries/mutations land in MDI-175.
+Plumbing for MDI-172. Feature queries/mutations (except credits) land in MDI-175.
+`getGraphqlSdk()` sends the Supabase session JWT after sign-in (MDI-173).
 
 | Piece | Role |
 | --- | --- |
@@ -121,6 +122,24 @@ CI runs `yarn codegen && git diff --exit-code lib/graphql/generated.ts` — it
 does **not** run `db reset`. After a migration that changes the GraphQL
 surface, refresh the snapshot locally and commit both `schema.graphql` and
 `generated.ts`.
+
+## Auth (MDI-173)
+
+Supabase Auth is the identity provider. `auth.users` is identity — no
+`public.users` table. The app uses `@supabase/ssr`:
+
+| Piece | Role |
+| --- | --- |
+| `lib/supabase/client.ts` | Browser client (auth only) |
+| `lib/supabase/server.ts` | Server Components / route handlers |
+| `lib/supabase/middleware.ts` + root `middleware.ts` | Refresh the session cookie |
+| `app/auth/callback/route.ts` | `exchangeCodeForSession` then redirect to `next` |
+| `app/auth/sign-in` | Magic link (`signInWithOtp`) + Google + `linkedin_oidc` |
+
+`/account` redirects to `/auth/sign-in` when there is no session. `/resume`
+stays guest-friendly. Sign-out clears the Supabase cookie and any leftover
+`bearer_token`. Credits are no longer on the session — `CreditsCard` reads
+`user_creditsCollection`.
 
 ## Migration chain
 
