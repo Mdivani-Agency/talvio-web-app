@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 
 /**
  * Server Supabase client for Server Components and route handlers.
- * Cookie writes from a Server Component are ignored — middleware refreshes
+ * Cookie writes from a Server Component are ignored — proxy refreshes
  * the session. Auth only; no table calls.
  */
 export async function createSupabaseServerClient() {
@@ -29,7 +29,7 @@ export async function createSupabaseServerClient() {
             cookieStore.set(name, value, options);
           });
         } catch {
-          // Server Component — middleware refreshes the session cookie.
+          // Server Component — proxy refreshes the session cookie.
         }
       },
     },

@@ -2,7 +2,7 @@
 
 import { useAccountContext } from "./providers/state-provider";
 import { Loading } from "@components/views";
-import { getAccount } from "@lib/clients/account.client";
+import { AccountRequestError, getAccount } from "@lib/clients/account.client";
 import { useQuery } from "@tanstack/react-query";
 import { redirect, useRouter } from "next/navigation";
 import { Dashboard } from "./dashboard";
@@ -17,17 +17,26 @@ export default function AccountPage() {
   const { isLoading, data: account } = useQuery({
     queryKey: ['account', userId],
     enabled: !!userId,
+    retry: (failureCount, error) => {
+      if (error instanceof AccountRequestError && (error.status === 401 || error.status === 403)) {
+        return false;
+      }
+      return failureCount < 2;
+    },
     queryFn: async () => {
+      send({ type: 'INITIALIZE' });
       try {
-        send({ type: 'INITIALIZE' });
         const account = await getAccount(userId);
-        console.log(account);
         send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: account });
         return account;
-      } catch {
+      } catch (error) {
         console.error('Failed to fetch account');
-        send({ type: 'FETCHING_ACCOUNT_FAILURE' });
-        router.push('/account/create');
+        if (error instanceof AccountRequestError && error.status === 404) {
+          send({ type: 'FETCHING_ACCOUNT_FAILURE' });
+          router.push('/account/create');
+          return undefined;
+        }
+        throw error;
       }
     },
   });

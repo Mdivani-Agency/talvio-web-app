@@ -1,24 +1,34 @@
 import { NextResponse } from 'next/server';
 
+import {
+  publicRequestOrigin,
+  safeRedirectPath,
+  sameOriginRedirect,
+} from '@/lib/auth/safe-redirect-path';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-function safeNextPath(next: string | null) {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) {
-    return '/account';
-  }
-  return next;
-}
-
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = publicRequestOrigin(request);
   const code = searchParams.get('code');
-  const next = safeNextPath(searchParams.get('next'));
+  const next = safeRedirectPath(searchParams.get('next'));
+  const supabaseError = searchParams.get('error');
+
+  if (supabaseError) {
+    const errorUrl = new URL('/auth/error', origin);
+    errorUrl.searchParams.set('error', supabaseError);
+    const description = searchParams.get('error_description');
+    if (description) {
+      errorUrl.searchParams.set('error_description', description);
+    }
+    return NextResponse.redirect(errorUrl);
+  }
 
   if (code) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(new URL(next, origin));
+      return NextResponse.redirect(sameOriginRedirect(next, origin));
     }
   }
 

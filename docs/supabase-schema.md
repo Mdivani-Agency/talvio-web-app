@@ -132,7 +132,7 @@ Supabase Auth is the identity provider. `auth.users` is identity — no
 | --- | --- |
 | `lib/supabase/client.ts` | Browser client (auth only) |
 | `lib/supabase/server.ts` | Server Components / route handlers |
-| `lib/supabase/middleware.ts` + root `middleware.ts` | Refresh the session cookie |
+| `lib/supabase/middleware.ts` + root `proxy.ts` | Refresh the session cookie |
 | `app/auth/callback/route.ts` | `exchangeCodeForSession` then redirect to `next` |
 | `app/auth/sign-in` | Magic link (`signInWithOtp`) + Google + `linkedin_oidc` |
 

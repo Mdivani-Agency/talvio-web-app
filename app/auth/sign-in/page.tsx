@@ -8,27 +8,24 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { toast } from 'sonner';
 
+import { safeRedirectPath } from '@/lib/auth/safe-redirect-path';
+
 import { SignInForm } from './sign-in.form';
 
-function callbackPath(raw: string | null) {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) {
-    return '/account';
-  }
-  return raw;
+function authRedirectTo(next: string) {
+  return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 }
 
 function SignInPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = callbackPath(searchParams.get('callbackURL') ?? searchParams.get('next'));
-
-  const redirectTo = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=${encodeURIComponent(next)}`;
+  const next = safeRedirectPath(searchParams.get('callbackURL') ?? searchParams.get('next'));
 
   const handleEmailSignIn = async ({ email }: { email: string }) => {
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: redirectTo },
+      options: { emailRedirectTo: authRedirectTo(next) },
     });
     if (error) {
       toast.error(error.message);
@@ -39,16 +36,12 @@ function SignInPageContent() {
 
   const handleOAuth = async (provider: 'google' | 'linkedin_oidc') => {
     const supabase = createSupabaseBrowserClient();
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo },
+      options: { redirectTo: authRedirectTo(next) },
     });
     if (error) {
       toast.error(error.message);
-      return;
-    }
-    if (data.url) {
-      window.location.assign(data.url);
     }
   };
 

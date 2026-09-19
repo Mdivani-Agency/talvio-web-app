@@ -5,8 +5,11 @@ import { mapAuthUser } from '@lib/auth/map-auth-user';
 import { createSupabaseBrowserClient } from '@lib/supabase/client';
 import { clearLegacyBearerToken } from '@lib/supabase/legacy-token';
 import { User } from '@lib/types';
+import type { AuthChangeEvent } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
+
+import { queryClient } from './query-provider';
 
 type Session = {
   user: User;
@@ -25,6 +28,7 @@ type SessionProviderProps = {
 export const SessionProvider = ({ children, fallbackURL }: SessionProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isPending, setIsPending] = useState(true);
+  const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -32,7 +36,11 @@ export const SessionProvider = ({ children, fallbackURL }: SessionProviderProps)
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'SIGNED_OUT') {
+        queryClient.clear();
+      }
+      setAuthEvent(event);
       setSession(nextSession?.user ? { user: mapAuthUser(nextSession.user) } : null);
       setIsPending(false);
     });
@@ -47,6 +55,9 @@ export const SessionProvider = ({ children, fallbackURL }: SessionProviderProps)
   }
 
   if (!isPending && !session && fallbackURL) {
+    if (authEvent === 'SIGNED_OUT') {
+      return <Loading message={'Signing out...'} />;
+    }
     redirect(fallbackURL);
   }
 
