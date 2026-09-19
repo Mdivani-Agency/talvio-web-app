@@ -10,11 +10,11 @@ import { useResumeContext } from './providers/state-provider';
 import { Template } from '@pdf-tlv/resume';
 import TemplatesView from './views/templates-view';
 import { createResume } from '@app/resume/query/use-create-resume';
+import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { findTemplate, listResumeTemplates } from '@lib/templates';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { useUserSession } from '@lib/providers';
-import { redirect } from 'next/navigation';
-import { toast } from 'sonner';
 
 type ResumePreviewPageProps = {
   level: 'entry' | 'mid' | 'senior';
@@ -23,6 +23,7 @@ type ResumePreviewPageProps = {
 
 export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreviewPageProps) {
   const { session } = useUserSession();
+  const router = useRouter();
   const [current, setCurrent] = useState(initialMode === 'edit' ? 1 : 0);
   const { state, send } = useResumeContext();
 
@@ -46,21 +47,21 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
     },
   });
 
-  const { mutateAsync: createResumeMutation } = useMutation({
+  const generatePdf = useGenerateResumePdf(session?.user.id);
+
+  const { mutateAsync: createAndDownload } = useMutation({
     mutationFn: async () => {
-      const body = state.context.resumeDto;
-
       if (!session) {
-        return redirect('/auth/sign-in?callbackUrl=/resume');
+        router.push('/auth/sign-in?callbackUrl=/resume');
+        throw new Error('Please sign in');
       }
 
-      try {
-        const data = await createResume({ userId: session.user.id, type: 'GENERAL', body });
-        return data;
-      } catch (error) {
-        console.error(error);
-        toast.error('Failed to create resume');
-      }
+      const created = await createResume({
+        userId: session.user.id,
+        type: 'GENERAL',
+        body: state.context.resumeDto,
+      });
+      return generatePdf.mutateAsync(created);
     },
   });
 
@@ -108,7 +109,7 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
       </AnimatedTransition>
       <Preview
         className="pt-16 col-span-3"
-        onDownload={createResumeMutation}
+        onDownload={createAndDownload}
         action={
           <Button
             variant="ghost"

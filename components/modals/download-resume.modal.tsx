@@ -1,3 +1,4 @@
+import { GENERATE_PDF_CREDITS } from '@/lib/credits';
 import { Button, Input } from '@components/ui';
 import { Modal } from '@components/views';
 
@@ -8,6 +9,8 @@ export const DownloadResumeModal = ({
   setFilename,
   generateResume,
   onClose,
+  costCredits = GENERATE_PDF_CREDITS,
+  isFreeDownload = false,
 }: {
   isOpen: boolean;
   filename: string;
@@ -15,12 +18,16 @@ export const DownloadResumeModal = ({
   setFilename: (filename: string) => void;
   generateResume: () => void;
   onClose: () => void;
+  costCredits?: number;
+  isFreeDownload?: boolean;
 }) => {
   return (
     <Modal title="Final Review" open={isOpen} onOpenChange={onClose}>
       <div className="flex flex-col gap-4">
         <p className="text-sm text-center text-secondary-900">
-          Your resume is ready to download. Click the button below to download it in PDF format.
+          {isFreeDownload
+            ? 'Your resume PDF is ready. Download it again at no extra cost.'
+            : `Your resume is ready. Generating the final PDF costs ${costCredits} credits. Re-downloads of that file stay free.`}
         </p>
         <Input
           placeholder="Enter a resume name"
@@ -28,7 +35,9 @@ export const DownloadResumeModal = ({
           value={filename}
           onChange={(e) => setFilename(e.target.value)}
         />
-        <Button loading={isGenerating} onClick={generateResume}>Generate and Download Resume</Button>
+        <Button loading={isGenerating} onClick={generateResume}>
+          {isFreeDownload ? 'Download Resume' : 'Generate and Download Resume'}
+        </Button>
       </div>
     </Modal>
   );

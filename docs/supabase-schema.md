@@ -143,7 +143,11 @@ stays guest-friendly. Sign-out clears the Supabase cookie and any leftover
 
 Account and resume CRUD go through GraphQL (`ProfileByUser`, `save_profile`,
 `resumesCollection` insert/update/delete). Templates are local constants in
-`lib/templates.ts`. `NEXT_PUBLIC_API_BASE_URL` remains only for media-service.
+`lib/templates.ts`. `NEXT_PUBLIC_API_BASE_URL` is the media-service origin.
+Final PDFs are rendered in the browser (`generateResumePdf`, no watermark),
+uploaded via `POST /api/media/presign` (server adds `X-API-KEY` to
+`POST /media/presign/{userId}`), then `pdf_url` / `pdf_media_key` are saved
+on that draft. Generated rows stay immutable; edit inserts a new draft.
 
 ## Migration chain
 

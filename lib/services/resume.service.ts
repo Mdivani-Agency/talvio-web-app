@@ -96,3 +96,23 @@ export class ResumeService {
 }
 
 export const resumeService = new ResumeService();
+
+export async function generateResumePdf(
+  data: ResumeForm,
+  template: Template,
+  options: Partial<Config> = {},
+): Promise<Blob> {
+  const service = new ResumePDFService();
+  await service.create({
+    color: options.color ?? '#000',
+    fontSize: options.fontSize ?? 'md',
+    leading: 'md',
+    isPreview: false,
+  });
+  const bytes = await service.generate({
+    data: convertToResumeData(data),
+    template,
+    options: { ...options, isPreview: false },
+  });
+  return new Blob([bytes as BlobPart], { type: 'application/pdf' });
+}

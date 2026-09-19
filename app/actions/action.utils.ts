@@ -1,3 +1,5 @@
+import { createElement } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 import { parseGraphqlError } from '@/lib/graphql-client';
@@ -25,7 +27,14 @@ export async function submitWrapper({
     onSuccess?.(result);
     return true;
   } catch (error) {
-    toast.error(errorMessage ?? parseGraphqlError(error));
+    const message = errorMessage ?? parseGraphqlError(error);
+    if (message === 'Not enough credits') {
+      toast.error(message, {
+        action: createElement(Link, { href: '/account/credits' }, 'Buy credits'),
+      });
+      return false;
+    }
+    toast.error(message);
     return false;
   }
 }

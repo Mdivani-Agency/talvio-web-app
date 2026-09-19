@@ -9,8 +9,8 @@ import { ResumeActionBar } from '../components/resume-actions';
 import { ResumeImageCarousel } from '../components/resume-image-carousel';
 import { useResumeContext } from '../providers/state-provider';
 import { accountToResume, resumeToAccount } from '@lib/utils';
+import { submitWrapper } from '@app/actions/action.utils';
 import { DownloadResumeModal, FullSizeResumeModal } from '@components/modals';
-import { toast } from 'sonner';
 
 interface PreviewProps {
   action?: React.ReactNode;
@@ -41,28 +41,20 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
   };
 
   const downloadPdf = async () => {
-    try {
     setIsGenerating(true);
-    const res = await onDownload();
-
-    const { media, name } = res || {};
-    if (media && name) {
-        const link = document.createElement('a');
-        link.href = media.url;
-        link.setAttribute('download', `${name}.pdf`);
-        link.setAttribute('target', '_blank');
-        link.click();
-        link.remove();
-      } else if (res) {
-        toast.success('Resume saved', {
-          description: 'Final PDF download will be available after generation is enabled.',
-        });
-      }
-      setIsDownloadResumeModalOpen(false);
-    } catch {
-      toast.error('Failed to generate resume', {
-        description: 'Please try again later',
+    try {
+      const ok = await submitWrapper({
+        fn: async () => {
+          const res = await onDownload();
+          if (!res) {
+            throw new Error('Failed to generate resume');
+          }
+          return { id: res.id };
+        },
       });
+      if (ok) {
+        setIsDownloadResumeModalOpen(false);
+      }
     } finally {
       setIsGenerating(false);
     }

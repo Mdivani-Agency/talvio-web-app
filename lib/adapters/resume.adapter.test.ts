@@ -4,10 +4,13 @@ import type { PreviewDto, Resume } from '@lib/types';
 
 import {
   encodeGraphqlJson,
+  isGeneratedResume,
   parseResumeContent,
+  resumeToPreviewDto,
   resumeTypeToDb,
   toResume,
   toResumeInsertInput,
+  toResumePdfPointerSet,
   toResumeUpdateSet,
 } from './resume.adapter';
 
@@ -125,7 +128,7 @@ describe('write adapters', () => {
     expect(JSON.parse(input.content).profile.firstName).toBe('Ann');
   });
 
-  it('clears pdf pointers on update and stringifies content', () => {
+  it('updates draft fields without touching pdf pointers', () => {
     const patch: Partial<Resume> = {
       name: 'Updated',
       color: '#005BA2',
@@ -137,10 +140,51 @@ describe('write adapters', () => {
     expect(set).toMatchObject({
       name: 'Updated',
       color: '#005BA2',
-      pdf_url: null,
-      pdf_media_key: null,
     });
+    expect(set).not.toHaveProperty('pdf_url');
+    expect(set).not.toHaveProperty('pdf_media_key');
     expect(typeof set.content).toBe('string');
     expect(JSON.parse(set.content as string).profile.firstName).toBe('Ann');
+  });
+
+  it('builds a persist-only pdf pointer set', () => {
+    expect(toResumePdfPointerSet('https://media.talvio.co/ann.pdf', 'resume/ann.pdf')).toEqual({
+      pdf_url: 'https://media.talvio.co/ann.pdf',
+      pdf_media_key: 'resume/ann.pdf',
+    });
+  });
+});
+
+describe('isGeneratedResume', () => {
+  it('is true only when a pdf url exists', () => {
+    expect(isGeneratedResume({ media: { url: 'https://media.talvio.co/ann.pdf', key: 'ann.pdf' } })).toBe(true);
+    expect(isGeneratedResume({ media: undefined })).toBe(false);
+    expect(isGeneratedResume(undefined)).toBe(false);
+  });
+});
+
+describe('resumeToPreviewDto', () => {
+  it('copies the row and applies a patch for a new draft insert', () => {
+    const resume = toResume({
+      id: '11111111-1111-4111-8111-111111111111',
+      name: 'Ann Owner',
+      template_key: 'senior-level-talvio',
+      color: '#1B1B1B',
+      font_size: 'md',
+      content: contentJson,
+      pdf_url: 'https://media.talvio.co/ann.pdf',
+      pdf_media_key: 'ann.pdf',
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+    });
+
+    const body = resumeToPreviewDto(resume, { color: '#005BA2', name: 'Ann Owner v2' });
+    expect(body).toMatchObject({
+      name: 'Ann Owner v2',
+      template: 'senior-level-talvio',
+      color: '#005BA2',
+      fontSize: 'md',
+    });
+    expect(body.resume.profile.firstName).toBe('Ann');
   });
 });

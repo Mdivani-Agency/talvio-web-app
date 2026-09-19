@@ -43,6 +43,14 @@
   `db:reset` and commit the live AST so insert/update inputs and filters
   cannot drift.
 
+## Resume PDF
+
+- **`generate_pdf` debit-then-upload race.** The RPC debits before the
+  client renders and uploads. A failed upload leaves the user charged with
+  `pdf_url` still null; retry would debit again. Two tabs on the same draft
+  can also double-debit. Add a pending-generation marker or persist the
+  pointer in the same server step as the upload.
+
 ## Auth
 
 - **Deep-link callback after the account gate.** `app/account/layout.tsx`

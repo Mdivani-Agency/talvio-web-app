@@ -32,8 +32,11 @@ Inserts `public.user_credits (user_id, balance)` with **300** credits for
 - Preview is free
 - Final PDF generation is paid (`generate_pdf` → private `consume_credits`
   looking up `credit_prices.generate_pdf` = 30)
-- Re-downloading an existing `pdf_url` is free
-- Editing a resume clears `pdf_url`, so the next final generation is paid again
+- Re-downloading an existing `pdf_url` is free and unlimited
+- Generated rows stay immutable. Editing a generated resume inserts a new
+  draft (null PDF pointers); the previous URL stays downloadable. The next
+  generate on the new draft is a new paid event. Drafts without a PDF may
+  still be updated in place.
 
 No profile row is created here. Onboarding inserts `profiles` with real values.
 

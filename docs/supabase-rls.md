@@ -51,10 +51,12 @@ Removals use collection DELETE mutations. Job-specific copies live in
 
 `generate_pdf(p_resume_id)` is `SECURITY DEFINER` and `VOLATILE`. It uses
 `auth.uid()`, locks the caller's resume, returns an existing `pdf_url` for
-free, otherwise calls `consume_credits(uid, 'generate_pdf')` (30 credits).
-Render / upload / persist of `pdf_url` is [MDI-174](https://linear.app/mdivani/issue/MDI-174).
-Until that lands the mutation returns `''` after a successful debit — do not
-wire it in the app yet (a second call would debit again).
+free, otherwise calls `consume_credits(uid, 'generate_pdf')` (30 credits)
+and returns `''`. The app then renders the final PDF (no watermark), uploads
+it through media-service (`POST /api/media/presign` → `X-API-KEY` on
+`POST /media/presign/{userId}`), and writes only `{ pdf_url, pdf_media_key }`
+on that draft. After those pointers exist the row is immutable: client
+"edit" inserts a new draft instead of updating content or clearing the URL.
 
 `p_payload` is `jsonb`, exposed as the GraphQL `JSON` scalar (a serialized
 string). Pass `'{"profile":{...}}'`, not an inline object.

@@ -794,6 +794,12 @@ export type DeleteResumeMutationVariables = Exact<{
 
 export type DeleteResumeMutation = { deleteFromresumesCollection: { affectedCount: number, records: Array<{ id: string }> } | null };
 
+export type Generate_PdfMutationVariables = Exact<{
+  p_resume_id?: string | null | undefined;
+}>;
+
+export type Generate_PdfMutation = { generate_pdf: string | null };
+
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type HealthQuery = { __typename: 'Query' };
@@ -815,12 +821,6 @@ export type Save_ProfileMutationVariables = Exact<{
 }>;
 
 export type Save_ProfileMutation = { save_profile: string | null };
-
-export type Generate_PdfMutationVariables = Exact<{
-  p_resume_id?: string | null | undefined;
-}>;
-
-export type Generate_PdfMutation = { generate_pdf: string | null };
 
 export const ProfileFieldsFragmentDoc = gql`
     fragment ProfileFields on profiles {
@@ -1079,6 +1079,11 @@ export const DeleteResumeDocument = gql`
   }
 }
     `;
+export const Generate_PdfDocument = gql`
+    mutation Generate_Pdf($p_resume_id: UUID) {
+  generate_pdf(p_resume_id: $p_resume_id)
+}
+    `;
 export const HealthDocument = gql`
     query Health {
   __typename
@@ -1111,11 +1116,6 @@ export const Save_ProfileDocument = gql`
   save_profile(p_payload: $p_payload)
 }
     `;
-export const Generate_PdfDocument = gql`
-    mutation Generate_Pdf($p_resume_id: UUID) {
-  generate_pdf(p_resume_id: $p_resume_id)
-}
-    `;
 
 export type SdkFunctionWrapper = <T>(action: (requestHeaders?:Record<string, string>) => Promise<T>, operationName: string, operationType?: string, variables?: any) => Promise<T>;
 
@@ -1144,6 +1144,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     DeleteResume(variables: DeleteResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteResumeMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<DeleteResumeMutation>({ document: DeleteResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteResume', 'mutation', variables);
     },
+    Generate_Pdf(variables?: Generate_PdfMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Generate_PdfMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Generate_PdfMutation>({ document: Generate_PdfDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Generate_Pdf', 'mutation', variables);
+    },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);
     },
@@ -1155,9 +1158,6 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Save_Profile(variables?: Save_ProfileMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Save_ProfileMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Save_ProfileMutation>({ document: Save_ProfileDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Save_Profile', 'mutation', variables);
-    },
-    Generate_Pdf(variables?: Generate_PdfMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Generate_PdfMutation> {
-      return withWrapper((wrappedRequestHeaders) => client.request<Generate_PdfMutation>({ document: Generate_PdfDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Generate_Pdf', 'mutation', variables);
     }
   };
 }

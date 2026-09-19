@@ -24,9 +24,9 @@ export const Dashboard = ({ account, sessionUser }: DashboardProps) => {
   return (
     <section className={'flex flex-col gap-8 p-4'}>
       <AccountUser sessionUser={sessionUser} />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <ResumeCard resume={data?.resumes[0]} userId={sessionUser.id} />
-        <CreditsCard className="col-span-2" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ResumeCard resumes={data?.resumes ?? []} userId={sessionUser.id} />
+        <CreditsCard />
       </div>
       <ProfileSection profile={account.profile} />
       {/* TODO: Add empty placeholders for sections to add new item */}

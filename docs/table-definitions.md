@@ -215,6 +215,12 @@ Indexes:
 - `resumes_user_id_idx (user_id, updated_at desc)`
 - `resumes_user_type_idx (user_id, type)`
 
+Generated rows are immutable. Once `pdf_url` is set, do not update `content`,
+styling, or PDF pointers. Client "edit" copies the row into a new draft
+(`insertIntoresumesCollection` with null PDF pointers) so the previous URL
+stays downloadable. Drafts with no `pdf_url` may still be updated in place.
+Explicit delete remains allowed.
+
 ## `user_credits`
 
 Balance only in v1. Writes via RPCs in MDI-171 (`handle_new_user`,
