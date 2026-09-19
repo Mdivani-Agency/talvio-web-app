@@ -5,13 +5,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 import { submitWrapper } from '@app/actions/action.utils';
-import { fetchResume } from '@app/resume/query/use-resume';
+import { fetchResumeFamily } from '@app/resume/query/use-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
 import { isGeneratedResume } from '@/lib/adapters/resume.adapter';
 import { findTemplate, listResumeTemplates } from '@lib/templates';
 import { Loading } from '@components/views';
 import { ConfirmModal, DownloadResumeModal } from '@components/modals';
+import { Button } from '@components/ui';
 import { useUserSession } from '@lib/providers';
 import type { Resume } from '@lib/types';
 import { ResumePreview } from '../components/resume-preview';
@@ -28,37 +30,49 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const userId = session?.user.id;
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [forkOpen, setForkOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [viewingOriginal, setViewingOriginal] = useState(false);
   const [pendingPatch, setPendingPatch] = useState<Partial<Resume>>();
 
-  const { data: resume, isLoading: isLoadingResume } = useQuery({
-    queryKey: ['resume', resumeId],
-    queryFn: () => fetchResume(resumeId),
+  const { data: family, isLoading: isLoadingResume } = useQuery({
+    queryKey: ['resume-family', resumeId],
+    queryFn: () => fetchResumeFamily(resumeId),
     enabled: !!userId,
   });
 
   const { data: templates, isLoading: isLoadingTemplate } = useQuery({
     queryKey: ['templates'],
     queryFn: async () => listResumeTemplates(),
-    enabled: !!resume?.template,
+    enabled: !!family,
   });
 
   const generatePdf = useGenerateResumePdf(userId);
+  const deleteResume = useDeleteResume(userId);
+
+  const original = family?.original;
+  const draft = family?.draft;
+  const hasFamily = Boolean(original && draft);
+  const displayed = hasFamily && viewingOriginal
+    ? original
+    : (draft ?? original);
+  const readOnly = Boolean(hasFamily && viewingOriginal);
 
   const { mutateAsync: persistEdit } = useMutation({
     mutationFn: async (patch: Partial<Resume>) => {
-      if (!userId || !resume) {
+      if (!userId || !displayed) {
         throw new Error('Sign in to edit a resume');
       }
-      return saveResumeEdit({ userId, existing: resume, patch });
+      const existing = !viewingOriginal && draft ? draft : displayed;
+      return saveResumeEdit({ userId, existing, patch });
     },
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
-      if (result.created) {
-        await queryClient.invalidateQueries({ queryKey: ['resume', result.resume.id] });
-        router.push(`/resume/${result.resume.id}`);
-        return;
+      await queryClient.invalidateQueries({ queryKey: ['resume-family', resumeId] });
+      await queryClient.invalidateQueries({ queryKey: ['resume', result.resume.id] });
+      if (original) {
+        await queryClient.invalidateQueries({ queryKey: ['resume-family', original.id] });
       }
-      await queryClient.invalidateQueries({ queryKey: ['resume', resumeId] });
+      setViewingOriginal(false);
     },
   });
 
@@ -70,8 +84,8 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     return <Loading message="Loading templates..." />;
   }
 
-  const template = findTemplate(resume?.template);
-  if (!resume || !template) {
+  const template = findTemplate(displayed?.template);
+  if (!displayed || !template) {
     return (
       <div className="h-screen flex items-center justify-center">
         <h1 className="text-2xl font-bold">Resume not found</h1>
@@ -79,10 +93,11 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     );
   }
 
-  const generated = isGeneratedResume(resume);
-
   const requestEdit = (patch: Partial<Resume>) => {
-    if (generated) {
+    if (readOnly) {
+      return;
+    }
+    if (isGeneratedResume(displayed)) {
       setPendingPatch(patch);
       setForkOpen(true);
       return;
@@ -99,34 +114,64 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const downloadCurrent = () =>
     submitWrapper({
       fn: async () => {
-        const result = await generatePdf.mutateAsync(resume);
+        const result = await generatePdf.mutateAsync(displayed);
+        if (displayed.sourceResumeId && result.media?.url && result.id !== resumeId) {
+          router.push(`/resume/${result.id}`);
+        }
         return { id: result.id };
       },
     });
 
   return (
     <section className="grid grid-cols-5">
-      <ResumeEditor
-        className="col-span-2"
-        resume={resume}
-        level={'senior'}
-        templates={templates}
-        mode="template"
-        onChange={({ data, template: nextTemplate }) => {
-          requestEdit({
-            metadata: data,
-            template: nextTemplate,
-          });
-        }}
-      />
+      <div className="col-span-2 flex flex-col">
+        {hasFamily ? (
+          <div className="flex items-center justify-between gap-2 border-b border-input px-4 py-3 pt-16">
+            <p className="text-sm text-muted-foreground">
+              {viewingOriginal
+                ? 'Viewing the generated PDF. This version is read-only.'
+                : 'Editing a draft. Your generated PDF stays downloadable.'}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              {viewingOriginal ? (
+                <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setViewingOriginal(false)}>
+                  View draft
+                </Button>
+              ) : (
+                <>
+                  <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setViewingOriginal(true)}>
+                    View original
+                  </Button>
+                  <Button type="button" variant="link" size="sm" className="px-0 text-destructive" onClick={() => setDiscardOpen(true)}>
+                    Discard draft
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        ) : null}
+        <ResumeEditor
+          className={hasFamily ? 'border-r border-input' : 'col-span-2'}
+          resume={displayed}
+          level={'senior'}
+          templates={templates}
+          mode="template"
+          onChange={({ data, template: nextTemplate }) => {
+            requestEdit({
+              metadata: data,
+              template: nextTemplate,
+            });
+          }}
+        />
+      </div>
       <ResumePreview
         className="col-span-3 pt-16"
         template={template?.template || null}
-        resume={resume.metadata}
-        fontSize={resume.fontSize}
-        color={resume.color}
+        resume={displayed.metadata}
+        fontSize={displayed.fontSize}
+        color={displayed.color}
         onDownload={() => {
-          if (generated) {
+          if (isGeneratedResume(displayed)) {
             void downloadCurrent();
             return;
           }
@@ -140,7 +185,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       />
       <DownloadResumeModal
         isOpen={downloadOpen}
-        filename={resume.name}
+        filename={displayed.name}
         isGenerating={generatePdf.isPending}
         setFilename={(name) => {
           requestEdit({ name });
@@ -156,8 +201,8 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       />
       <ConfirmModal
         isOpen={forkOpen}
-        title="Create a new version"
-        description="This creates a new version. Your current PDF stays downloadable."
+        title="Create a draft"
+        description="This creates a draft. Your current PDF stays downloadable."
         onClose={() => {
           setForkOpen(false);
           setPendingPatch(undefined);
@@ -171,7 +216,33 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
               const result = await persistEdit(pendingPatch);
               return { id: result.resume.id };
             },
-            successMessage: 'New version created',
+            successMessage: 'Draft created',
+          });
+        }}
+      />
+      <ConfirmModal
+        isOpen={discardOpen}
+        title="Discard draft"
+        description="This deletes the unpublished draft. The generated PDF stays downloadable."
+        onClose={() => setDiscardOpen(false)}
+        onConfirm={() => {
+          if (!draft) {
+            return;
+          }
+          void submitWrapper({
+            fn: async () => {
+              await deleteResume.mutateAsync(draft.id);
+              if (original && resumeId === draft.id) {
+                router.push(`/resume/${original.id}`);
+              }
+              await queryClient.invalidateQueries({ queryKey: ['resume-family', resumeId] });
+              if (original) {
+                await queryClient.invalidateQueries({ queryKey: ['resume-family', original.id] });
+              }
+              setViewingOriginal(true);
+              return { id: draft.id };
+            },
+            successMessage: 'Draft discarded',
           });
         }}
       />

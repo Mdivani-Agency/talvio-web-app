@@ -10,7 +10,12 @@ vi.mock('./use-update-resume', () => ({
   updateResume: vi.fn(),
 }));
 
+vi.mock('./use-resume', () => ({
+  fetchDraftBySource: vi.fn(),
+}));
+
 import { createResume } from './use-create-resume';
+import { fetchDraftBySource } from './use-resume';
 import { updateResume } from './use-update-resume';
 import { saveResumeEdit } from './use-save-resume-edit';
 
@@ -47,12 +52,18 @@ describe('saveResumeEdit', () => {
     expect(createResume).not.toHaveBeenCalled();
   });
 
-  it('inserts a new draft when the source row already has a pdf', async () => {
+  it('inserts a draft pointing at a generated resume when none exists', async () => {
     const generated = {
       ...draft,
       media: { url: 'https://media.talvio.co/ann.pdf', key: 'ann.pdf' },
     };
-    const created = { ...draft, id: '22222222-2222-4222-8222-222222222222', media: undefined };
+    const created = {
+      ...draft,
+      id: '22222222-2222-4222-8222-222222222222',
+      sourceResumeId: generated.id,
+      media: undefined,
+    };
+    vi.mocked(fetchDraftBySource).mockResolvedValue(undefined);
     vi.mocked(createResume).mockResolvedValue(created);
 
     const result = await saveResumeEdit({
@@ -62,8 +73,35 @@ describe('saveResumeEdit', () => {
     });
 
     expect(result.created).toBe(true);
-    expect(result.resume.id).toBe('22222222-2222-4222-8222-222222222222');
-    expect(createResume).toHaveBeenCalled();
+    expect(createResume).toHaveBeenCalledWith({
+      userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      body: expect.objectContaining({ color: '#005BA2' }),
+      sourceResumeId: generated.id,
+    });
     expect(updateResume).not.toHaveBeenCalled();
+  });
+
+  it('reuses the open draft instead of inserting another', async () => {
+    const generated = {
+      ...draft,
+      media: { url: 'https://media.talvio.co/ann.pdf', key: 'ann.pdf' },
+    };
+    const existingDraft = {
+      ...draft,
+      id: '22222222-2222-4222-8222-222222222222',
+      sourceResumeId: generated.id,
+    };
+    vi.mocked(fetchDraftBySource).mockResolvedValue(existingDraft);
+    vi.mocked(updateResume).mockResolvedValue({ ...existingDraft, color: '#005BA2' });
+
+    const result = await saveResumeEdit({
+      userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      existing: generated,
+      patch: { color: '#005BA2' },
+    });
+
+    expect(result.created).toBe(false);
+    expect(updateResume).toHaveBeenCalledWith(existingDraft.id, { color: '#005BA2' });
+    expect(createResume).not.toHaveBeenCalled();
   });
 });

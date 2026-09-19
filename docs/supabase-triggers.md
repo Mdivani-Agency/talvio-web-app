@@ -33,10 +33,17 @@ Inserts `public.user_credits (user_id, balance)` with **300** credits for
 - Final PDF generation is paid (`generate_pdf` → private `consume_credits`
   looking up `credit_prices.generate_pdf` = 30)
 - Re-downloading an existing `pdf_url` is free and unlimited
-- Generated rows stay immutable. Editing a generated resume inserts a new
-  draft (null PDF pointers); the previous URL stays downloadable. The next
-  generate on the new draft is a new paid event. Drafts without a PDF may
-  still be updated in place.
+- Generated rows stay immutable. Editing a generated resume creates or reuses
+  one open draft (`source_resume_id`, unique while `pdf_url` is null). The
+  previous URL stays downloadable. Generating that draft is a new paid event
+  and keeps lineage so the parent can get another open draft later.
+
+## `resumes_validate_source`
+
+`public.resumes_validate_source()` — `BEFORE INSERT OR UPDATE` on `resumes`.
+`source_resume_id` is immutable after insert. When set, the source row must
+exist, belong to the same `user_id`, and already have a non-empty `pdf_url`.
+Execute is revoked from `public` / `anon` / `authenticated` — trigger-only.
 
 No profile row is created here. Onboarding inserts `profiles` with real values.
 

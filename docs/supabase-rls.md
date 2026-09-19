@@ -55,8 +55,9 @@ free, otherwise calls `consume_credits(uid, 'generate_pdf')` (30 credits)
 and returns `''`. The app then renders the final PDF (no watermark), uploads
 it through media-service (`POST /api/media/presign` → `X-API-KEY` on
 `POST /media/presign/{userId}`), and writes only `{ pdf_url, pdf_media_key }`
-on that draft. After those pointers exist the row is immutable: client
-"edit" inserts a new draft instead of updating content or clearing the URL.
+on that draft. After those pointers exist the row is immutable. Client
+"edit" creates or reuses one open draft (`source_resume_id`); the parent
+URL is never cleared. A draft cannot point at another draft.
 
 `p_payload` is `jsonb`, exposed as the GraphQL `JSON` scalar (a serialized
 string). Pass `'{"profile":{...}}'`, not an inline object.

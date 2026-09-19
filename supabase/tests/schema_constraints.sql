@@ -9,7 +9,7 @@
 
 begin;
 
-select plan(4);
+select plan(6);
 
 insert into auth.users (
   instance_id,
@@ -111,6 +111,58 @@ select throws_ok(
   '23514',
   null,
   'negative credit balance is rejected'
+);
+
+insert into public.resumes (
+  id, user_id, name, template_key, pdf_url
+) values (
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  '11111111-1111-4111-8111-111111111111',
+  'Ann Owner',
+  'senior-level-talvio',
+  'https://media.talvio.co/ann.pdf'
+);
+
+insert into public.resumes (
+  id, user_id, name, template_key, source_resume_id
+) values (
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  '11111111-1111-4111-8111-111111111111',
+  'Ann Owner draft',
+  'senior-level-talvio',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+);
+
+select throws_ok(
+  $$
+    insert into public.resumes (
+      user_id, name, template_key, source_resume_id
+    ) values (
+      '11111111-1111-4111-8111-111111111111',
+      'Second draft',
+      'senior-level-talvio',
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    );
+  $$,
+  '23505',
+  null,
+  'a generated resume may have only one open draft'
+);
+
+select throws_ok(
+  $$
+    insert into public.resumes (
+      user_id, name, template_key, source_resume_id
+    ) values (
+      '11111111-1111-4111-8111-111111111111',
+      'Draft of a draft',
+      'senior-level-talvio',
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+    );
+  $$,
+  '23514',
+  null,
+  'a draft cannot point at another draft'
 );
 
 select * from finish();

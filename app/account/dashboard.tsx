@@ -19,7 +19,7 @@ type DashboardProps = {
 };
 
 export const Dashboard = ({ account, sessionUser }: DashboardProps) => {
-  const { data } = useResumes(sessionUser.id, 'GENERAL');
+  const { data } = useResumes(sessionUser.id, 'GENERAL', 50);
 
   return (
     <section className={'flex flex-col gap-8 p-4'}>

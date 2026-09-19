@@ -147,7 +147,8 @@ Account and resume CRUD go through GraphQL (`ProfileByUser`, `save_profile`,
 Final PDFs are rendered in the browser (`generateResumePdf`, no watermark),
 uploaded via `POST /api/media/presign` (server adds `X-API-KEY` to
 `POST /media/presign/{userId}`), then `pdf_url` / `pdf_media_key` are saved
-on that draft. Generated rows stay immutable; edit inserts a new draft.
+on that draft. Generated rows stay immutable. Edit creates or reuses one
+open draft via `source_resume_id` (0 or 1 per generated resume).
 
 ## Migration chain
 
@@ -160,7 +161,7 @@ Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format
 | `20260101000200_generic_triggers.sql` | `public.set_updated_at()` |
 | `20260101000300_profiles.sql` | `profiles`, `contacts`, primary-contact unique indexes, `updated_at` trigger |
 | `20260101000400_profile_children.sql` | experiences … languages, skill/tool uniqueness, `experiences_dates_ck`, `updated_at` triggers |
-| `20260101000500_resumes.sql` | `resumes`, `user_credits`, indexes, `updated_at` triggers |
+| `20260101000500_resumes.sql` | `resumes`, `user_credits`, `source_resume_id`, indexes, `updated_at` + source triggers |
 | `20260101000600_profile_rpcs.sql` | `save_profile`; `credit_prices`; private `consume_credits(user_id, action)`; public `generate_pdf` |
 | `20260101000700_profile_rls.sql` | RLS + grants for profiles + 9 children; enum `USAGE` |
 | `20260101000800_resumes_rls.sql` | RLS + grants for `resumes` and `user_credits` |

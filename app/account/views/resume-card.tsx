@@ -11,16 +11,17 @@ import { ConfirmModal } from '@components/modals';
 import { submitWrapper } from '@app/actions/action.utils';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
-import { isGeneratedResume } from '@/lib/adapters/resume.adapter';
+import { groupResumeFamilies, isGeneratedResume, type ResumeFamily } from '@/lib/adapters/resume.adapter';
 import { GENERATE_PDF_CREDITS } from '@/lib/credits';
 
 export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userId?: string }) => {
-  const [resumeToDelete, setResumeToDelete] = useState<Resume>();
+  const [familyToDelete, setFamilyToDelete] = useState<ResumeFamily>();
   const deleteResume = useDeleteResume(userId);
   const generatePdf = useGenerateResumePdf(userId);
   const pendingId = generatePdf.isPending ? generatePdf.variables?.id : undefined;
+  const families = groupResumeFamilies(resumes);
 
-  if (resumes.length === 0) {
+  if (families.length === 0) {
     return (
       <Card className="gap-0">
         <CardHeader>
@@ -49,20 +50,31 @@ export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userI
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {resumes.map((resume) => {
-            const generated = isGeneratedResume(resume);
+          {families.map((family) => {
+            const display = family.draft ?? family.original;
+            if (!display) {
+              return null;
+            }
+            const generated = family.original && isGeneratedResume(family.original);
+            const href = `/resume/${family.id}`;
             return (
-              <div key={resume.id} className="flex items-start justify-between gap-3">
+              <div key={family.id} className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <Link className="text-sm text-primary underline truncate" href={`/resume/${resume.id}`}>
-                    {resume.name}
+                  <Link className="text-sm text-primary underline truncate" href={href}>
+                    {display.name}
                   </Link>
                   <span className="text-xs text-muted-foreground">
-                    {generated ? 'PDF ready' : 'Draft'} · {format(new Date(resume.updatedAt), 'MMM d, yyyy')}
+                    {generated && family.draft
+                      ? 'PDF ready · unpublished draft'
+                      : generated
+                        ? 'PDF ready'
+                        : 'Draft'}
+                    {' · '}
+                    {format(new Date(display.updatedAt), 'MMM d, yyyy')}
                   </span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {generated && resume.media?.url ? (
+                  {generated && family.original?.media?.url ? (
                     <Button
                       type="button"
                       variant="link"
@@ -71,7 +83,7 @@ export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userI
                       onClick={() => {
                         void submitWrapper({
                           fn: async () => {
-                            const result = await generatePdf.mutateAsync(resume);
+                            const result = await generatePdf.mutateAsync(family.original!);
                             return { id: result.id };
                           },
                         });
@@ -85,12 +97,12 @@ export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userI
                       variant="link"
                       size="sm"
                       className="px-0"
-                      loading={pendingId === resume.id}
+                      loading={pendingId === display.id}
                       disabled={generatePdf.isPending}
                       onClick={() => {
                         void submitWrapper({
                           fn: async () => {
-                            const result = await generatePdf.mutateAsync(resume);
+                            const result = await generatePdf.mutateAsync(display);
                             return { id: result.id };
                           },
                         });
@@ -99,10 +111,10 @@ export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userI
                       Generate PDF ({GENERATE_PDF_CREDITS})
                     </Button>
                   )}
-                  <Link href={`/resume/${resume.id}`} aria-label={`Edit ${resume.name}`}>
+                  <Link href={href} aria-label={`Edit ${display.name}`}>
                     <Icon type="Edit" className="size-4" />
                   </Link>
-                  <button type="button" onClick={() => setResumeToDelete(resume)} aria-label={`Delete ${resume.name}`}>
+                  <button type="button" onClick={() => setFamilyToDelete(family)} aria-label={`Delete ${display.name}`}>
                     <Icon type="TrashBin" className="size-4 text-destructive" />
                   </button>
                 </div>
@@ -112,16 +124,28 @@ export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userI
         </CardContent>
       </Card>
       <ConfirmModal
-        isOpen={Boolean(resumeToDelete)}
+        isOpen={Boolean(familyToDelete)}
         title="Delete resume"
-        description="This permanently removes the resume. This cannot be undone."
-        onClose={() => setResumeToDelete(undefined)}
+        description={
+          familyToDelete?.draft && familyToDelete.original
+            ? 'This permanently removes the generated resume and its unpublished draft. This cannot be undone.'
+            : 'This permanently removes the resume. This cannot be undone.'
+        }
+        onClose={() => setFamilyToDelete(undefined)}
         onConfirm={() => {
-          if (!resumeToDelete) {
+          if (!familyToDelete) {
             return;
           }
           void submitWrapper({
-            fn: () => deleteResume.mutateAsync(resumeToDelete.id),
+            fn: async () => {
+              if (familyToDelete.draft) {
+                await deleteResume.mutateAsync(familyToDelete.draft.id);
+              }
+              if (familyToDelete.original) {
+                await deleteResume.mutateAsync(familyToDelete.original.id);
+              }
+              return { id: familyToDelete.id };
+            },
             successMessage: 'Resume deleted',
           });
         }}

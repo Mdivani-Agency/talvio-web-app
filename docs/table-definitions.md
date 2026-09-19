@@ -207,6 +207,7 @@ Owned by `auth.users` (not `profiles`) so a user can build a resume before onboa
 | `content` | `jsonb not null default '{}'` | `resumeFormSchema`; top-level key `profile` |
 | `pdf_url` | `text` | media-service URL |
 | `pdf_media_key` | `text` | media-service key |
+| `source_resume_id` | `uuid` | open draft / lineage → parent `resumes.id`; `on delete set null` |
 | `created_at` | `timestamptz not null default now()` | |
 | `updated_at` | `timestamptz not null default now()` | trigger `resumes_set_updated_at` |
 
@@ -214,12 +215,20 @@ Indexes:
 
 - `resumes_user_id_idx (user_id, updated_at desc)`
 - `resumes_user_type_idx (user_id, type)`
+- `resumes_source_resume_id_idx (source_resume_id) where source_resume_id is not null`
+- `resumes_one_open_draft_per_source_idx` unique on `source_resume_id` where `source_resume_id is not null and pdf_url is null`
 
-Generated rows are immutable. Once `pdf_url` is set, do not update `content`,
-styling, or PDF pointers. Client "edit" copies the row into a new draft
-(`insertIntoresumesCollection` with null PDF pointers) so the previous URL
-stays downloadable. Drafts with no `pdf_url` may still be updated in place.
-Explicit delete remains allowed.
+Checks / triggers:
+
+- `resumes_source_not_self_ck` — `source_resume_id is distinct from id`
+- `resumes_validate_source` — source is same-user and already generated; `source_resume_id` cannot change after insert
+
+A generated resume has 0 or 1 **open** draft (`pdf_url` null + `source_resume_id`).
+Standalone `/resume` builder drafts leave `source_resume_id` null. After a draft
+is generated it keeps `source_resume_id` as lineage so the parent can get a new
+open draft. Generated rows stay immutable; edits go to the open draft (create
+if missing). Explicit delete remains allowed; the app deletes the open draft
+before the parent.
 
 ## `user_credits`
 

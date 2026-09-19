@@ -24,14 +24,18 @@ export async function fetchResumes(
   };
 }
 
-export function useResumes(userId?: string, type: 'GENERAL' | 'JOB_SPECIFIC' = 'GENERAL') {
+export function useResumes(
+  userId?: string,
+  type: 'GENERAL' | 'JOB_SPECIFIC' = 'GENERAL',
+  first = RESUME_PAGE_SIZE,
+) {
   return useGraphqlQuery(
-    ['resumes', userId, type],
+    ['resumes', userId, type, first],
     async () => {
       if (!userId) {
         return { resumes: [], hasNextPage: false, endCursor: null };
       }
-      return fetchResumes(userId, type);
+      return fetchResumes(userId, type, first);
     },
     { enabled: !!userId },
   );

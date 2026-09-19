@@ -80,6 +80,7 @@ export function useGenerateResumePdf(userId?: string) {
     mutationFn: downloadResumePdf,
     onSuccess: async (resume) => {
       await queryClient.invalidateQueries({ queryKey: ['resume', resume.id] });
+      await queryClient.invalidateQueries({ queryKey: ['resume-family'] });
       await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
       await queryClient.invalidateQueries({ queryKey: ['credits', userId] });
       await queryClient.invalidateQueries({ queryKey: ['documents', userId] });
