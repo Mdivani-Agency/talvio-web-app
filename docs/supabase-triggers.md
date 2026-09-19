@@ -30,8 +30,9 @@ Inserts `public.user_credits (user_id, balance)` with **300** credits for
 `new.id`. Locked on [MDI-144](https://linear.app/mdivani/issue/MDI-144):
 
 - Preview is free
-- Final PDF generation is paid (`generate_pdf` → private `consume_credits`
-  looking up `credit_prices.generate_pdf` = 30)
+- Final PDF generation is paid (`generate_pdf` checks balance, then
+  `finalize_pdf` → private `consume_credits` looking up
+  `credit_prices.generate_pdf` = 30)
 - Re-downloading an existing `pdf_url` is free and unlimited
 - Generated rows stay immutable. Editing a generated resume creates or reuses
   one open draft (`source_resume_id`, unique while `pdf_url` is null). The
@@ -41,8 +42,11 @@ Inserts `public.user_credits (user_id, balance)` with **300** credits for
 ## `resumes_validate_source`
 
 `public.resumes_validate_source()` — `BEFORE INSERT OR UPDATE` on `resumes`.
-`source_resume_id` is immutable after insert. When set, the source row must
-exist, belong to the same `user_id`, and already have a non-empty `pdf_url`.
+`source_resume_id` cannot be re-pointed; detaching (`NULL`) is allowed so
+`ON DELETE SET NULL` works. When set, the source row must exist, belong to
+the same `user_id`, and already have a `pdf_url`. Generated rows
+(`pdf_url` not null) reject changes to content, template, colour, fonts,
+type, and PDF pointers; `label` and `name` stay writable.
 Execute is revoked from `public` / `anon` / `authenticated` — trigger-only.
 
 No profile row is created here. Onboarding inserts `profiles` with real values.

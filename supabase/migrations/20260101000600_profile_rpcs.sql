@@ -13,11 +13,11 @@
 --
 -- Credits: clients never pass an amount. consume_credits(user_id, action)
 -- is a private DEFINER helper (no EXECUTE for authenticated / anon).
--- Public paid-action RPCs (generate_pdf, later others) call it after
--- auth + ownership checks. Prices live in credit_prices (server-side
--- only — no Data API grants). generate_pdf is 30 credits (300 signup
--- / 10 job-specific resumes from the marketing packs). Render + upload
--- of the PDF itself is MDI-174.
+-- generate_pdf checks ownership + catalog balance and does not debit.
+-- The Next generate route renders and uploads, then finalize_pdf
+-- persists pointers and debits. Prices live in credit_prices
+-- (server-side only — no Data API grants). generate_pdf is 30 credits
+-- (300 signup / 10 job-specific resumes from the marketing packs).
 
 create or replace function public.save_profile(p_payload jsonb)
 returns text
@@ -519,11 +519,48 @@ begin
 end;
 $$;
 
--- Public paid action. Re-download of an existing pdf_url is free.
--- First generation debits credit_prices.generate_pdf (30). DEFINER so
--- it can call the revoked consume_credits helper. Render / upload /
--- persist of pdf_url is MDI-174 — this mutation returns '' after a
--- successful debit until that lands.
+-- Private balance check. Raises insufficient_credits without debiting.
+create or replace function public.require_credits(p_user_id uuid, p_action text)
+returns integer
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  v_amount integer;
+  v_balance integer;
+begin
+  if p_user_id is null then
+    raise exception 'invalid_user';
+  end if;
+  if p_action is null or btrim(p_action) = '' then
+    raise exception 'unknown_action';
+  end if;
+
+  select amount into v_amount
+  from public.credit_prices
+  where action = p_action;
+
+  if v_amount is null then
+    raise exception 'unknown_action';
+  end if;
+
+  select balance into v_balance
+  from public.user_credits
+  where user_id = p_user_id;
+
+  if v_balance is null or v_balance < v_amount then
+    raise exception 'insufficient_credits';
+  end if;
+
+  return v_balance;
+end;
+$$;
+
+-- Public check. Re-download of an existing pdf_url is free. First
+-- generation confirms the catalog balance and returns '' so the Next
+-- route can render + upload before finalize_pdf charges.
 create or replace function public.generate_pdf(p_resume_id uuid)
 returns text
 language plpgsql
@@ -552,18 +589,75 @@ begin
     raise exception 'resume_not_found';
   end if;
 
-  if v_pdf_url is not null and v_pdf_url <> '' then
+  if v_pdf_url is not null then
     return v_pdf_url;
   end if;
 
-  perform public.consume_credits(v_uid, 'generate_pdf');
+  perform public.require_credits(v_uid, 'generate_pdf');
 
   return '';
 end;
 $$;
 
+-- Persist pointers and debit in one transaction. A concurrent caller
+-- that loses the row lock sees the stored URL and does not debit.
+create or replace function public.finalize_pdf(
+  p_resume_id uuid,
+  p_pdf_url text,
+  p_pdf_media_key text
+)
+returns text
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_pdf_url text;
+begin
+  if v_uid is null then
+    raise exception 'not authenticated';
+  end if;
+  if p_resume_id is null then
+    raise exception 'resume_not_found';
+  end if;
+  if p_pdf_url is null or btrim(p_pdf_url) = ''
+     or p_pdf_media_key is null or btrim(p_pdf_media_key) = '' then
+    raise exception 'invalid_pdf';
+  end if;
+
+  select pdf_url into v_pdf_url
+  from public.resumes
+  where id = p_resume_id
+    and user_id = v_uid
+  for update;
+
+  if not found then
+    raise exception 'resume_not_found';
+  end if;
+
+  if v_pdf_url is not null then
+    return v_pdf_url;
+  end if;
+
+  perform public.consume_credits(v_uid, 'generate_pdf');
+
+  update public.resumes
+  set pdf_url = btrim(p_pdf_url),
+      pdf_media_key = btrim(p_pdf_media_key)
+  where id = p_resume_id
+    and user_id = v_uid;
+
+  return btrim(p_pdf_url);
+end;
+$$;
+
 revoke all on function public.save_profile(jsonb) from public, anon;
 revoke all on function public.consume_credits(uuid, text) from public, anon, authenticated;
+revoke all on function public.require_credits(uuid, text) from public, anon, authenticated;
 revoke all on function public.generate_pdf(uuid) from public, anon;
+revoke all on function public.finalize_pdf(uuid, text, text) from public, anon;
 grant execute on function public.save_profile(jsonb) to authenticated;
 grant execute on function public.generate_pdf(uuid) to authenticated;
+grant execute on function public.finalize_pdf(uuid, text, text) to authenticated;

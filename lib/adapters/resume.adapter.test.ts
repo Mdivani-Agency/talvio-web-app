@@ -213,6 +213,13 @@ describe('groupResumeFamilies', () => {
       { id: standalone.id, draft: standalone },
     ]);
   });
+
+  it('renders a draft as its own family when the parent is missing', () => {
+    expect(groupResumeFamilies([draft, standalone])).toEqual([
+      { id: draft.id, draft },
+      { id: standalone.id, draft: standalone },
+    ]);
+  });
 });
 
 describe('resumeDisplayTitle', () => {

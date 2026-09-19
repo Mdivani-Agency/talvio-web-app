@@ -222,7 +222,11 @@ Indexes:
 Checks / triggers:
 
 - `resumes_source_not_self_ck` — `source_resume_id is distinct from id`
-- `resumes_validate_source` — source is same-user and already generated; `source_resume_id` cannot change after insert
+- `resumes_pdf_url_nonempty_ck` — `pdf_url` is null or non-blank
+- `resumes_pdf_media_key_nonempty_ck` — `pdf_media_key` is null or non-blank
+- `resumes_validate_source` — source is same-user and already generated;
+  `source_resume_id` cannot be re-pointed (detach/`NULL` is allowed);
+  generated content/style/PDF pointers are immutable
 
 A generated resume has 0 or 1 **open** draft (`pdf_url` null + `source_resume_id`).
 Standalone `/resume` builder drafts leave `source_resume_id` null. After a draft
@@ -233,8 +237,8 @@ Explicit delete remains allowed; the app deletes the open draft before the paren
 
 ## `user_credits`
 
-Balance only in v1. Writes via RPCs in MDI-171 (`handle_new_user`,
-`generate_pdf` → private `consume_credits`). Clients never pass an amount.
+Balance only in v1. Writes via RPCs (`handle_new_user`,
+`finalize_pdf` → private `consume_credits`). Clients never pass an amount.
 
 | Column | Type | Notes |
 | --- | --- | --- |

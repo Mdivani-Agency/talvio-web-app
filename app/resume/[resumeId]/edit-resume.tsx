@@ -29,6 +29,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const { session } = useUserSession();
   const userId = session?.user.id;
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [downloadName, setDownloadName] = useState('');
   const [forkOpen, setForkOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [viewingOriginal, setViewingOriginal] = useState(false);
@@ -113,11 +114,11 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     });
   };
 
-  const downloadCurrent = () =>
+  const downloadCurrent = (resume = displayed) =>
     submitWrapper({
       fn: async () => {
-        const result = await generatePdf.mutateAsync(displayed);
-        if (displayed.sourceResumeId && result.media?.url && result.id !== resumeId) {
+        const result = await generatePdf.mutateAsync(resume);
+        if (resume.sourceResumeId && result.media?.url && result.id !== resumeId) {
           router.push(`/resume/${result.id}`);
         }
         return { id: result.id };
@@ -173,6 +174,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           level={'senior'}
           templates={templates}
           mode="template"
+          readOnly={readOnly}
           onChange={({ data, template: nextTemplate }) => {
             requestEdit({
               metadata: data,
@@ -187,11 +189,13 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         resume={displayed.metadata}
         fontSize={displayed.fontSize}
         color={displayed.color}
+        readOnly={readOnly}
         onDownload={() => {
           if (isGeneratedResume(displayed)) {
             void downloadCurrent();
             return;
           }
+          setDownloadName(displayed.name);
           setDownloadOpen(true);
         }}
         handleChange={(key, value) => {
@@ -202,17 +206,19 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       />
       <DownloadResumeModal
         isOpen={downloadOpen}
-        filename={displayed.name}
+        filename={downloadName}
         isGenerating={generatePdf.isPending}
-        setFilename={(name) => {
-          requestEdit({ name });
-        }}
+        setFilename={setDownloadName}
         generateResume={() => {
-          void downloadCurrent().then((ok) => {
+          void (async () => {
+            const named = downloadName.trim() && downloadName !== displayed.name
+              ? (await persistEdit({ name: downloadName })).resume
+              : displayed;
+            const ok = await downloadCurrent(named);
             if (ok) {
               setDownloadOpen(false);
             }
-          });
+          })();
         }}
         onClose={() => setDownloadOpen(false)}
       />

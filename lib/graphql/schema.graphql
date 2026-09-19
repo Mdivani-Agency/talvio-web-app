@@ -74,9 +74,15 @@ type PageInfo {
   startCursor: String
 }
 
+enum FilterIs {
+  NULL
+  NOT_NULL
+}
+
 input StringFilter {
   eq: String
   in: [String!]
+  is: FilterIs
 }
 
 input UUIDFilter {
@@ -462,6 +468,7 @@ input resumesFilter {
   user_id: UUIDFilter
   type: resume_typeFilter
   source_resume_id: UUIDFilter
+  pdf_url: StringFilter
 }
 
 input resumesOrderBy {
@@ -651,6 +658,7 @@ type resumesDeleteResponse {
 type Mutation {
   save_profile(p_payload: JSON): String
   generate_pdf(p_resume_id: UUID): String
+  finalize_pdf(p_resume_id: UUID, p_pdf_url: String, p_pdf_media_key: String): String
   insertIntoresumesCollection(objects: [resumesInsertInput!]!): resumesInsertResponse
   updateresumesCollection(
     set: resumesUpdateInput!

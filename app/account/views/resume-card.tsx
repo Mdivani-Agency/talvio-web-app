@@ -14,7 +14,17 @@ import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { groupResumeFamilies, isGeneratedResume, resumeDisplayTitle, type ResumeFamily } from '@/lib/adapters/resume.adapter';
 import { GENERATE_PDF_CREDITS } from '@/lib/credits';
 
-export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userId?: string }) => {
+export const ResumeCard = ({
+  resumes = [],
+  userId,
+  hasNextPage = false,
+  onLoadMore,
+}: {
+  resumes?: Resume[];
+  userId?: string;
+  hasNextPage?: boolean;
+  onLoadMore?: () => void;
+}) => {
   const [familyToDelete, setFamilyToDelete] = useState<ResumeFamily>();
   const deleteResume = useDeleteResume(userId);
   const generatePdf = useGenerateResumePdf(userId);
@@ -121,6 +131,11 @@ export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userI
               </div>
             );
           })}
+          {hasNextPage ? (
+            <Button type="button" variant="link" size="sm" className="px-0" onClick={onLoadMore}>
+              Load more
+            </Button>
+          ) : null}
         </CardContent>
       </Card>
       <ConfirmModal

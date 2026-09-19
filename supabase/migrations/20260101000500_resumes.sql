@@ -23,7 +23,11 @@ create table public.resumes (
   source_resume_id uuid references public.resumes (id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint resumes_source_not_self_ck check (source_resume_id is distinct from id)
+  constraint resumes_source_not_self_ck check (source_resume_id is distinct from id),
+  constraint resumes_pdf_url_nonempty_ck check (pdf_url is null or btrim(pdf_url) <> ''),
+  constraint resumes_pdf_media_key_nonempty_ck check (
+    pdf_media_key is null or btrim(pdf_media_key) <> ''
+  )
 );
 
 create index resumes_user_id_idx on public.resumes (user_id, updated_at desc);
@@ -42,9 +46,41 @@ as $$
 declare
   source public.resumes;
 begin
+  if new.source_resume_id is not distinct from new.id then
+    raise exception 'source resume cannot reference itself'
+      using errcode = '23514';
+  end if;
+
+  -- Allow ON DELETE SET NULL to detach children. Forbid re-pointing.
   if tg_op = 'UPDATE'
+     and new.source_resume_id is not null
      and new.source_resume_id is distinct from old.source_resume_id then
     raise exception 'source_resume_id is immutable'
+      using errcode = '23514';
+  end if;
+
+  if tg_op = 'UPDATE'
+     and old.pdf_url is not null
+     and (
+       new.content,
+       new.template_key,
+       new.color,
+       new.font_size,
+       new.font_family,
+       new.type,
+       new.pdf_url,
+       new.pdf_media_key
+     ) is distinct from (
+       old.content,
+       old.template_key,
+       old.color,
+       old.font_size,
+       old.font_family,
+       old.type,
+       old.pdf_url,
+       old.pdf_media_key
+     ) then
+    raise exception 'generated resume is immutable'
       using errcode = '23514';
   end if;
 
@@ -66,7 +102,7 @@ begin
       using errcode = '42501';
   end if;
 
-  if source.pdf_url is null or btrim(source.pdf_url) = '' then
+  if source.pdf_url is null then
     raise exception 'source resume must be generated'
       using errcode = '23514';
   end if;

@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(33);
+select plan(39);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -342,7 +342,61 @@ select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 select is(
   public.generate_pdf('dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
   '',
-  'generate_pdf debits and returns empty until render is wired'
+  'generate_pdf checks the catalog balance and does not debit'
+);
+
+select pg_temp.logout();
+
+select is(
+  (select balance from public.user_credits
+   where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+  50,
+  'generate_pdf does not consume credits before render'
+);
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select throws_ok(
+  $$
+    update public.resumes
+    set pdf_url = 'https://media.example/stolen.pdf'
+    where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+  $$,
+  '42501',
+  null,
+  'authenticated cannot write pdf_url directly'
+);
+
+select is(
+  public.finalize_pdf(
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    'https://media.example/ann-final.pdf',
+    'resume/ann-final.pdf'
+  ),
+  'https://media.example/ann-final.pdf',
+  'finalize_pdf persists pointers after a successful render'
+);
+
+select is(
+  public.finalize_pdf(
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    'https://media.example/other.pdf',
+    'resume/other.pdf'
+  ),
+  'https://media.example/ann-final.pdf',
+  'finalize_pdf returns the stored url without debiting again'
+);
+
+select throws_ok(
+  $$
+    update public.resumes
+    set name = 'rewritten',
+        content = '{"rewritten":true}'::jsonb
+    where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+  $$,
+  '23514',
+  null,
+  'authenticated cannot rewrite a generated resume'
 );
 
 select pg_temp.logout();
@@ -351,7 +405,14 @@ select is(
   (select balance from public.user_credits
    where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
   20,
-  'generate_pdf consumes the catalog price for generate_pdf'
+  'finalize_pdf consumes the catalog price for generate_pdf'
+);
+
+select is(
+  (select pdf_media_key from public.resumes
+   where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+  'resume/ann-final.pdf',
+  'finalize_pdf stores the media key'
 );
 
 select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');

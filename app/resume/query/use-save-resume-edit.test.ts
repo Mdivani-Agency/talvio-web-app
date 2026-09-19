@@ -17,7 +17,7 @@ vi.mock('./use-resume', () => ({
 import { createResume } from './use-create-resume';
 import { fetchDraftBySource } from './use-resume';
 import { updateResume } from './use-update-resume';
-import { saveResumeEdit } from './use-save-resume-edit';
+import { isLabelOnlyPatch, saveResumeEdit } from './use-save-resume-edit';
 
 const draft: Resume = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -32,6 +32,15 @@ const draft: Resume = {
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
+
+describe('isLabelOnlyPatch', () => {
+  it('is true only when label is the sole defined field', () => {
+    expect(isLabelOnlyPatch({ label: 'Frontend' })).toBe(true);
+    expect(isLabelOnlyPatch({ label: undefined })).toBe(false);
+    expect(isLabelOnlyPatch({ label: 'x', name: undefined })).toBe(true);
+    expect(isLabelOnlyPatch({ label: 'x', name: 'Ann' })).toBe(false);
+  });
+});
 
 describe('saveResumeEdit', () => {
   beforeEach(() => {

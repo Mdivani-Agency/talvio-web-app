@@ -34,7 +34,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;
 ### Credits (balance only)
 
 `user_credits` — authenticated can read their own balance (RLS). Writes go
-through `SECURITY DEFINER` RPCs (`handle_new_user`, `generate_pdf` →
+through `SECURITY DEFINER` RPCs (`handle_new_user`, `finalize_pdf` →
 private `consume_credits`).
 
 ```sql
@@ -60,14 +60,19 @@ REVOKE ALL ON TABLE public.credit_prices FROM public, anon, authenticated;
 ```sql
 REVOKE ALL ON FUNCTION public.save_profile(jsonb) FROM public, anon;
 REVOKE ALL ON FUNCTION public.consume_credits(uuid, text) FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.require_credits(uuid, text) FROM public, anon, authenticated;
 REVOKE ALL ON FUNCTION public.generate_pdf(uuid) FROM public, anon;
+REVOKE ALL ON FUNCTION public.finalize_pdf(uuid, text, text) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.save_profile(jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.generate_pdf(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.finalize_pdf(uuid, text, text) TO authenticated;
 ```
 
-`consume_credits` is private: it receives `user_id` + `action`, looks up
-`credit_prices`, and debits. Clients call `generate_pdf` (or later paid
-action RPCs), never `consume_credits` and never an amount.
+`consume_credits` and `require_credits` are private: they receive
+`user_id` + `action` and look up `credit_prices`. `generate_pdf` checks
+the balance without debiting. `finalize_pdf` persists pointers and
+debits. Clients never pass an amount. The Next generate route is the
+product path.
 
 Table grants alone do not expose RPCs to pg_graphql. Public functions are
 `VOLATILE` so pg_graphql puts them on `Mutation`. `save_profile(jsonb)` is
@@ -87,7 +92,7 @@ the GraphQL `JSON` scalar (serialized string).
 | `tools` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
 | `links` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
 | `languages` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `resumes` | none | SELECT, INSERT, UPDATE, DELETE | all | `00800_resumes_rls.sql` |
+| `resumes` | none | SELECT, DELETE; INSERT/UPDATE without pdf pointers | all | `00800_resumes_rls.sql` |
 | `user_credits` | none | SELECT | all | `00800_resumes_rls.sql` |
 | `credit_prices` | none | none | none | `00600_profile_rpcs.sql` (server-side) |
 

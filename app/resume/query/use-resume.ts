@@ -15,8 +15,8 @@ export async function fetchResume(resumeId: string): Promise<Resume> {
 
 export async function fetchDraftBySource(sourceResumeId: string): Promise<Resume | undefined> {
   const sdk = await getGraphqlSdk();
-  const data = await sdk.ResumesBySource({ sourceId: sourceResumeId, first: 10 });
-  return unwrapCollection(data.resumesCollection).map(toResume).find(isOpenDraft);
+  const data = await sdk.ResumesBySource({ sourceId: sourceResumeId, first: 1 });
+  return unwrapCollection(data.resumesCollection).map(toResume)[0];
 }
 
 export async function fetchResumeFamily(resumeId: string): Promise<{

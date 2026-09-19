@@ -11,10 +11,12 @@ import { Template } from '@pdf-tlv/resume';
 import TemplatesView from './views/templates-view';
 import { createResume } from '@app/resume/query/use-create-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { updateResume } from '@app/resume/query/use-update-resume';
 import { findTemplate, listResumeTemplates } from '@lib/templates';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useUserSession } from '@lib/providers';
+import type { Resume } from '@lib/types';
 
 type ResumePreviewPageProps = {
   level: 'entry' | 'mid' | 'senior';
@@ -48,6 +50,7 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
   });
 
   const generatePdf = useGenerateResumePdf(session?.user.id);
+  const [createdResume, setCreatedResume] = useState<Resume | null>(null);
 
   const { mutateAsync: createAndDownload } = useMutation({
     mutationFn: async () => {
@@ -56,12 +59,23 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
         throw new Error('Please sign in');
       }
 
-      const created = await createResume({
-        userId: session.user.id,
-        type: 'GENERAL',
-        body: state.context.resumeDto,
-      });
-      return generatePdf.mutateAsync(created);
+      const body = state.context.resumeDto;
+      const saved = createdResume
+        ? await updateResume(createdResume.id, {
+          name: body.name,
+          label: body.label,
+          template: body.template,
+          color: body.color,
+          fontSize: body.fontSize,
+          resume: body.resume,
+        })
+        : await createResume({
+          userId: session.user.id,
+          type: 'GENERAL',
+          body,
+        });
+      setCreatedResume(saved);
+      return generatePdf.mutateAsync(saved);
     },
   });
 

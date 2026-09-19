@@ -1,3 +1,4 @@
+import { parseResumePresignBody } from '@/lib/clients/media-presign';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
@@ -16,9 +17,16 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Media upload is not configured' }, { status: 503 });
   }
 
-  const body = (await request.json()) as { name?: string; type?: string; path?: string };
-  if (!body.name) {
-    return Response.json({ error: 'File name is required' }, { status: 400 });
+  let json: unknown;
+  try {
+    json = await request.json();
+  } catch {
+    return Response.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  const parsed = parseResumePresignBody(json);
+  if ('error' in parsed) {
+    return Response.json({ error: parsed.error }, { status: 400 });
   }
 
   const response = await fetch(`${baseUrl.replace(/\/$/, '')}/media/presign/${user.id}`, {
@@ -28,15 +36,20 @@ export async function POST(request: Request) {
       'X-API-KEY': apiKey,
     },
     body: JSON.stringify({
-      name: body.name,
-      type: body.type ?? 'application/pdf',
-      path: body.path ?? 'resume',
+      name: parsed.name,
+      type: 'application/pdf',
+      path: 'resume',
     }),
   });
 
+  if (!response.ok) {
+    console.error('media presign upstream failed', response.status);
+    return Response.json({ error: 'Failed to create upload URL' }, { status: 502 });
+  }
+
   const payload = await response.text();
   return new Response(payload, {
-    status: response.status,
+    status: 200,
     headers: { 'Content-Type': response.headers.get('Content-Type') ?? 'application/json' },
   });
 }

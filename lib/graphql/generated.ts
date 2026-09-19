@@ -44,6 +44,10 @@ export type DatetimeFilter = {
   lte?: InputMaybe<Scalars['Datetime']['input']>;
 };
 
+export type FilterIs =
+  | 'NOT_NULL'
+  | 'NULL';
+
 export type IntFilter = {
   eq?: InputMaybe<Scalars['Int']['input']>;
   gt?: InputMaybe<Scalars['Int']['input']>;
@@ -55,6 +59,7 @@ export type IntFilter = {
 export type Mutation = {
   __typename?: 'Mutation';
   deleteFromresumesCollection?: Maybe<ResumesDeleteResponse>;
+  finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
   insertIntoresumesCollection?: Maybe<ResumesInsertResponse>;
   save_profile?: Maybe<Scalars['String']['output']>;
@@ -64,6 +69,12 @@ export type Mutation = {
 export type MutationDeleteFromresumesCollectionArgs = {
   atMost?: InputMaybe<Scalars['Int']['input']>;
   filter?: InputMaybe<ResumesFilter>;
+};
+
+export type MutationFinalize_PdfArgs = {
+  p_pdf_media_key?: InputMaybe<Scalars['String']['input']>;
+  p_pdf_url?: InputMaybe<Scalars['String']['input']>;
+  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 export type MutationGenerate_PdfArgs = {
@@ -237,6 +248,7 @@ export type QueryUser_CreditsCollectionArgs = {
 export type StringFilter = {
   eq?: InputMaybe<Scalars['String']['input']>;
   in?: InputMaybe<Array<Scalars['String']['input']>>;
+  is?: InputMaybe<FilterIs>;
 };
 
 export type UuidFilter = {
@@ -605,6 +617,7 @@ export type ResumesEdge = {
 
 export type ResumesFilter = {
   id?: InputMaybe<UuidFilter>;
+  pdf_url?: InputMaybe<StringFilter>;
   source_resume_id?: InputMaybe<UuidFilter>;
   type?: InputMaybe<Resume_TypeFilter>;
   user_id?: InputMaybe<UuidFilter>;
@@ -799,12 +812,6 @@ export type DeleteResumeMutationVariables = Exact<{
 }>;
 
 export type DeleteResumeMutation = { deleteFromresumesCollection: { affectedCount: number, records: Array<{ id: string }> } | null };
-
-export type Generate_PdfMutationVariables = Exact<{
-  p_resume_id?: string | null | undefined;
-}>;
-
-export type Generate_PdfMutation = { generate_pdf: string | null };
 
 export type ResumesBySourceQueryVariables = Exact<{
   sourceId: string;
@@ -1094,15 +1101,10 @@ export const DeleteResumeDocument = gql`
   }
 }
     `;
-export const Generate_PdfDocument = gql`
-    mutation Generate_Pdf($p_resume_id: UUID) {
-  generate_pdf(p_resume_id: $p_resume_id)
-}
-    `;
 export const ResumesBySourceDocument = gql`
     query ResumesBySource($sourceId: UUID!, $first: Int) {
   resumesCollection(
-    filter: {source_resume_id: {eq: $sourceId}}
+    filter: {source_resume_id: {eq: $sourceId}, pdf_url: {is: NULL}}
     orderBy: [{updated_at: DescNullsLast}]
     first: $first
   ) {
@@ -1174,9 +1176,6 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     DeleteResume(variables: DeleteResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteResumeMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<DeleteResumeMutation>({ document: DeleteResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteResume', 'mutation', variables);
-    },
-    Generate_Pdf(variables?: Generate_PdfMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Generate_PdfMutation> {
-      return withWrapper((wrappedRequestHeaders) => client.request<Generate_PdfMutation>({ document: Generate_PdfDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Generate_Pdf', 'mutation', variables);
     },
     ResumesBySource(variables: ResumesBySourceQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesBySourceQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ResumesBySourceQuery>({ document: ResumesBySourceDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesBySource', 'query', variables);

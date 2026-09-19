@@ -45,11 +45,16 @@
 
 ## Resume PDF
 
-- **`generate_pdf` debit-then-upload race.** The RPC debits before the
-  client renders and uploads. A failed upload leaves the user charged with
-  `pdf_url` still null; retry would debit again. Two tabs on the same draft
-  can also double-debit. Add a pending-generation marker or persist the
-  pointer in the same server step as the upload.
+- **Dashboard family pagination is client-side.** The list uses
+  `RESUME_PAGE_SIZE` (10) plus a Load more bump, and fetches a missing
+  parent when an open draft's source is off the page. Families are still
+  grouped in the browser. Paginate parent families server-side
+  (`source_resume_id` is null or `pdf_url` is not null) and pull the open
+  draft via the reverse `resumesCollection` relation.
+
+- **Generated lineage children look unrelated.** A generated draft that
+  keeps `source_resume_id` renders as its own "PDF ready" card with no
+  "v2 of {label}" hint. Group by root or show lineage on the card.
 
 ## Auth
 

@@ -1,6 +1,6 @@
 -- Signup credits. Locked decision: every new auth.users row gets 300.
--- Preview is free. Final PDF generation calls generate_pdf, which
--- looks up credit_prices and debits via private consume_credits.
+-- Preview is free. Final PDF generation checks generate_pdf, then
+-- finalize_pdf looks up credit_prices and debits via consume_credits.
 -- Re-downloading an existing pdf_url is free.
 
 create or replace function public.handle_new_user()

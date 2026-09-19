@@ -1,7 +1,9 @@
 import { unwrapCollection, useGraphqlQuery } from '@/lib/query/base-query';
-import { RESUME_PAGE_SIZE, toResume } from '@/lib/adapters/resume.adapter';
+import { isOpenDraft, RESUME_PAGE_SIZE, toResume } from '@/lib/adapters/resume.adapter';
 import { getGraphqlSdk } from '@/lib/graphql-client';
 import type { Resume } from '@lib/types';
+
+import { fetchResume } from './use-resume';
 
 export async function fetchResumes(
   userId: string,
@@ -17,8 +19,20 @@ export async function fetchResumes(
     after,
   });
 
+  const resumes = unwrapCollection(data.resumesCollection).map(toResume);
+  const knownIds = new Set(resumes.map((resume) => resume.id));
+  const missingParentIds = resumes
+    .filter(isOpenDraft)
+    .map((draft) => draft.sourceResumeId)
+    .filter((id): id is string => Boolean(id) && !knownIds.has(id));
+
+  if (missingParentIds.length > 0) {
+    const parents = await Promise.all(missingParentIds.map((id) => fetchResume(id)));
+    resumes.push(...parents);
+  }
+
   return {
-    resumes: unwrapCollection(data.resumesCollection).map(toResume),
+    resumes,
     hasNextPage: data.resumesCollection?.pageInfo.hasNextPage ?? false,
     endCursor: data.resumesCollection?.pageInfo.endCursor,
   };

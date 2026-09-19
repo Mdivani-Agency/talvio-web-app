@@ -90,6 +90,9 @@ export function parseGraphqlError(error: unknown): string {
   if (haystack.includes('resume_not_found')) {
     return 'Resume not found';
   }
+  if (haystack.includes('invalid_pdf')) {
+    return 'Resume PDF was not created';
+  }
   if (haystack.includes('not authenticated') || haystack.includes('invalid_user')) {
     return 'Please sign in';
   }

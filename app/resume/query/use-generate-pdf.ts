@@ -1,20 +1,9 @@
 import { isGeneratedResume } from '@/lib/adapters/resume.adapter';
-import { uploadResumePdf } from '@/lib/clients/media.client';
 import { GENERATE_PDF_CREDITS } from '@/lib/credits';
-import { getGraphqlSdk, parseGraphqlError } from '@/lib/graphql-client';
-import { generateResumePdf } from '@/lib/services/resume.service';
-import { findTemplate } from '@/lib/templates';
 import type { Resume } from '@lib/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { persistResumePdf } from './use-persist-resume-pdf';
-
 export { GENERATE_PDF_CREDITS };
-
-function safeFilename(name: string) {
-  const trimmed = name.trim() || 'resume';
-  return `${trimmed.replace(/[^\w.\- ]+/g, '')}.pdf`;
-}
 
 export function triggerBrowserDownload(url: string, filename: string) {
   const link = document.createElement('a');
@@ -26,42 +15,35 @@ export function triggerBrowserDownload(url: string, filename: string) {
   link.remove();
 }
 
-export async function renderFinalResumePdf(resume: Resume): Promise<Blob> {
-  const template = findTemplate(resume.template);
-  if (!template) {
-    throw new Error('Template not found');
-  }
-  return generateResumePdf(resume.metadata, template.template, {
-    color: resume.color,
-    fontSize: resume.fontSize,
-    isPreview: false,
-  });
-}
-
 export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
   if (isGeneratedResume(resume) && resume.media?.url) {
     return resume;
   }
 
-  const sdk = await getGraphqlSdk();
-  let existingUrl = '';
+  const response = await fetch('/api/resume/generate-pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resumeId: resume.id }),
+  });
+
+  let payload: { error?: string; url?: string; key?: string } = {};
   try {
-    const data = await sdk.Generate_Pdf({ p_resume_id: resume.id });
-    existingUrl = data.generate_pdf ?? '';
-  } catch (error) {
-    throw new Error(parseGraphqlError(error));
+    payload = (await response.json()) as { error?: string; url?: string; key?: string };
+  } catch {
+    payload = {};
   }
 
-  if (existingUrl) {
-    return {
-      ...resume,
-      media: { url: existingUrl, key: resume.media?.key || '' },
-    };
+  if (!response.ok) {
+    throw new Error(payload.error || 'Failed to generate PDF');
+  }
+  if (!payload.url) {
+    throw new Error('Resume PDF was not created');
   }
 
-  const blob = await renderFinalResumePdf(resume);
-  const uploaded = await uploadResumePdf(safeFilename(resume.name), blob);
-  return persistResumePdf(resume.id, uploaded);
+  return {
+    ...resume,
+    media: { url: payload.url, key: payload.key || resume.media?.key || '' },
+  };
 }
 
 export async function downloadResumePdf(resume: Resume): Promise<Resume> {
