@@ -1,14 +1,12 @@
 import { parseResumePresignBody } from '@/lib/clients/media-presign';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiUser, unauthorizedResponse } from '@/lib/supabase/require-api-user';
 
 export async function POST(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return Response.json({ error: 'Please sign in' }, { status: 401 });
+  let context;
+  try {
+    context = await requireApiUser(request);
+  } catch (error) {
+    return unauthorizedResponse(error) ?? Response.json({ error: 'Please sign in' }, { status: 401 });
   }
 
   const apiKey = process.env.MEDIA_SERVICE_API_KEY;
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
 
-  const response = await fetch(`${baseUrl.replace(/\/$/, '')}/media/presign/${user.id}`, {
+  const response = await fetch(`${baseUrl.replace(/\/$/, '')}/media/presign/${context.user.id}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

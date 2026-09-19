@@ -48,9 +48,8 @@ export async function createPresignedUpload(input: {
   type?: string;
   path?: string;
 }): Promise<PresignedUpload> {
-  const response = await fetch('/api/media/presign', {
+  const response = await authedFetch('/api/media/presign', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       name: input.name,
       type: input.type ?? 'application/pdf',

@@ -2,6 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Resume } from '@lib/types';
 
+const { authedFetch } = vi.hoisted(() => ({
+  authedFetch: vi.fn(),
+}));
+
+vi.mock('@/lib/supabase/authed-fetch', () => ({
+  authedFetch,
+}));
+
 import { generateAndPersistPdf } from './use-generate-pdf';
 
 const draft: Resume = {
@@ -20,37 +28,32 @@ const draft: Resume = {
 
 describe('generateAndPersistPdf', () => {
   beforeEach(() => {
-    vi.unstubAllGlobals();
+    authedFetch.mockReset();
   });
 
   it('returns the existing url without calling the generate route', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-
     const generated = await generateAndPersistPdf({
       ...draft,
       media: { url: 'https://media.talvio.co/ann.pdf', key: 'ann.pdf' },
     });
 
     expect(generated.media?.url).toBe('https://media.talvio.co/ann.pdf');
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(authedFetch).not.toHaveBeenCalled();
   });
 
-  it('asks the server to check balance, generate, and charge', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
+  it('asks the server to check balance, generate, and charge with the session token', async () => {
+    authedFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
         url: 'https://media.talvio.co/new.pdf',
         key: 'resume/new.pdf',
       }),
     });
-    vi.stubGlobal('fetch', fetchMock);
 
     const generated = await generateAndPersistPdf(draft);
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/resume/generate-pdf', {
+    expect(authedFetch).toHaveBeenCalledWith('/api/resume/generate-pdf', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ resumeId: draft.id }),
     });
     expect(generated.media).toEqual({
@@ -60,10 +63,10 @@ describe('generateAndPersistPdf', () => {
   });
 
   it('surfaces a server credit error without treating it as generated', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    authedFetch.mockResolvedValue({
       ok: false,
       json: async () => ({ error: 'Not enough credits' }),
-    }));
+    });
 
     await expect(generateAndPersistPdf(draft)).rejects.toThrow('Not enough credits');
   });

@@ -2,29 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   rpc,
-  getUser,
   resumeById,
   findTemplate,
   generateResumePdfBytes,
   uploadResumePdfBytes,
 } = vi.hoisted(() => ({
   rpc: vi.fn(),
-  getUser: vi.fn(),
   resumeById: vi.fn(),
   findTemplate: vi.fn(),
   generateResumePdfBytes: vi.fn(),
   uploadResumePdfBytes: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/server', () => ({
-  createSupabaseServerClient: vi.fn(async () => ({
-    auth: { getUser },
-    rpc,
-  })),
-}));
-
 vi.mock('@/lib/graphql/server-sdk', () => ({
-  getServerGraphqlSdk: vi.fn(async () => ({
+  getServerGraphqlSdk: vi.fn(() => ({
     ResumeById: resumeById,
   })),
 }));
@@ -43,6 +34,13 @@ vi.mock('@/lib/clients/media.server', () => ({
 
 import { generateAndChargeResumePdf } from './generate-resume-pdf.server';
 
+const userId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const context = {
+  user: { id: userId },
+  accessToken: 'user-jwt',
+  supabase: { rpc },
+} as never;
+
 const resume = {
   id: '11111111-1111-4111-8111-111111111111',
   name: 'Ann Owner',
@@ -57,6 +55,19 @@ const resume = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
+function resumeRow(overrides: Record<string, unknown> = {}) {
+  return {
+    ...resume,
+    user_id: userId,
+    template_key: resume.template,
+    font_size: resume.fontSize,
+    content: JSON.stringify(resume.metadata),
+    created_at: resume.createdAt,
+    updated_at: resume.updatedAt,
+    ...overrides,
+  };
+}
+
 function resumeCollection(row: Record<string, unknown>) {
   return {
     resumesCollection: {
@@ -68,8 +79,7 @@ function resumeCollection(row: Record<string, unknown>) {
 describe('generateAndChargeResumePdf', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-    resumeById.mockResolvedValue(resumeCollection(resume));
+    resumeById.mockResolvedValue(resumeCollection(resumeRow()));
     findTemplate.mockReturnValue({ template: {} });
     generateResumePdfBytes.mockResolvedValue(new Uint8Array([1, 2, 3]));
     uploadResumePdfBytes.mockResolvedValue({
@@ -79,20 +89,27 @@ describe('generateAndChargeResumePdf', () => {
   });
 
   it('returns an existing url without rendering or charging', async () => {
-    resumeById.mockResolvedValue(resumeCollection({
-      ...resume,
+    resumeById.mockResolvedValue(resumeCollection(resumeRow({
       pdf_url: 'https://media.talvio.co/ann.pdf',
       pdf_media_key: 'ann.pdf',
-      template_key: resume.template,
-      font_size: resume.fontSize,
-      content: JSON.stringify(resume.metadata),
-      created_at: resume.createdAt,
-      updated_at: resume.updatedAt,
-    }));
+    })));
 
-    await expect(generateAndChargeResumePdf(resume.id)).resolves.toEqual({
+    await expect(generateAndChargeResumePdf(resume.id, context)).resolves.toEqual({
       url: 'https://media.talvio.co/ann.pdf',
       key: 'ann.pdf',
+    });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(generateResumePdfBytes).not.toHaveBeenCalled();
+  });
+
+  it('rejects another users resume before rendering', async () => {
+    resumeById.mockResolvedValue(resumeCollection(resumeRow({
+      user_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    })));
+
+    await expect(generateAndChargeResumePdf(resume.id, context)).rejects.toMatchObject({
+      message: 'Resume not found',
+      status: 404,
     });
     expect(rpc).not.toHaveBeenCalled();
     expect(generateResumePdfBytes).not.toHaveBeenCalled();
@@ -102,23 +119,15 @@ describe('generateAndChargeResumePdf', () => {
     rpc
       .mockResolvedValueOnce({ data: '', error: null })
       .mockResolvedValueOnce({ data: 'https://media.talvio.co/new.pdf', error: null });
-    resumeById.mockResolvedValue(resumeCollection({
-      ...resume,
-      template_key: resume.template,
-      font_size: resume.fontSize,
-      content: JSON.stringify(resume.metadata),
-      created_at: resume.createdAt,
-      updated_at: resume.updatedAt,
-    }));
 
-    await expect(generateAndChargeResumePdf(resume.id)).resolves.toEqual({
+    await expect(generateAndChargeResumePdf(resume.id, context)).resolves.toEqual({
       url: 'https://media.talvio.co/new.pdf',
       key: 'resume/new.pdf',
     });
 
     expect(rpc).toHaveBeenNthCalledWith(1, 'generate_pdf', { p_resume_id: resume.id });
     expect(generateResumePdfBytes).toHaveBeenCalled();
-    expect(uploadResumePdfBytes).toHaveBeenCalled();
+    expect(uploadResumePdfBytes).toHaveBeenCalledWith(userId, 'Ann Owner.pdf', expect.any(Uint8Array));
     expect(rpc).toHaveBeenNthCalledWith(2, 'finalize_pdf', {
       p_resume_id: resume.id,
       p_pdf_url: 'https://media.talvio.co/new.pdf',
@@ -131,16 +140,8 @@ describe('generateAndChargeResumePdf', () => {
       data: null,
       error: { message: 'insufficient_credits' },
     });
-    resumeById.mockResolvedValue(resumeCollection({
-      ...resume,
-      template_key: resume.template,
-      font_size: resume.fontSize,
-      content: JSON.stringify(resume.metadata),
-      created_at: resume.createdAt,
-      updated_at: resume.updatedAt,
-    }));
 
-    await expect(generateAndChargeResumePdf(resume.id)).rejects.toMatchObject({
+    await expect(generateAndChargeResumePdf(resume.id, context)).rejects.toMatchObject({
       message: 'Not enough credits',
       status: 402,
     });
@@ -153,16 +154,8 @@ describe('generateAndChargeResumePdf', () => {
     uploadResumePdfBytes.mockRejectedValue(
       Object.assign(new Error('Failed to upload resume PDF'), { status: 502 }),
     );
-    resumeById.mockResolvedValue(resumeCollection({
-      ...resume,
-      template_key: resume.template,
-      font_size: resume.fontSize,
-      content: JSON.stringify(resume.metadata),
-      created_at: resume.createdAt,
-      updated_at: resume.updatedAt,
-    }));
 
-    await expect(generateAndChargeResumePdf(resume.id)).rejects.toThrow('Failed to upload resume PDF');
+    await expect(generateAndChargeResumePdf(resume.id, context)).rejects.toThrow('Failed to upload resume PDF');
     expect(rpc).toHaveBeenCalledTimes(1);
     expect(rpc).toHaveBeenCalledWith('generate_pdf', { p_resume_id: resume.id });
   });

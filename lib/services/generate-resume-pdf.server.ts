@@ -4,7 +4,7 @@ import { getServerGraphqlSdk } from '@/lib/graphql/server-sdk';
 import { unwrapCollection } from '@/lib/query/base-query';
 import { resumePdfFilename } from '@/lib/resume-filename';
 import { generateResumePdfBytes } from '@/lib/services/resume-pdf.server';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import type { ApiUserContext } from '@/lib/supabase/require-api-user';
 import { findTemplate } from '@/lib/templates';
 import type { Resume } from '@lib/types';
 
@@ -50,26 +50,21 @@ function mapRpcError(error: { message?: string }) {
   return new GeneratePdfError(message, status);
 }
 
-async function loadResume(resumeId: string): Promise<Resume> {
-  const sdk = await getServerGraphqlSdk();
+async function loadOwnedResume(resumeId: string, context: ApiUserContext): Promise<Resume> {
+  const sdk = getServerGraphqlSdk(context.accessToken);
   const data = await sdk.ResumeById({ id: resumeId });
   const row = unwrapCollection(data.resumesCollection)[0];
-  if (!row) {
+  if (!row || row.user_id !== context.user.id) {
     throw new GeneratePdfError('Resume not found', 404);
   }
   return toResume(row);
 }
 
-export async function generateAndChargeResumePdf(resumeId: string) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    throw new GeneratePdfError('Please sign in', 401);
-  }
-
-  const resume = await loadResume(resumeId);
+export async function generateAndChargeResumePdf(
+  resumeId: string,
+  context: ApiUserContext,
+) {
+  const resume = await loadOwnedResume(resumeId, context);
   if (resume.media?.url) {
     return {
       url: resume.media.url,
@@ -77,7 +72,7 @@ export async function generateAndChargeResumePdf(resumeId: string) {
     };
   }
 
-  const { data: existingUrl, error: peekError } = await supabase.rpc('generate_pdf', {
+  const { data: existingUrl, error: peekError } = await context.supabase.rpc('generate_pdf', {
     p_resume_id: resumeId,
   });
   if (peekError) {
@@ -97,9 +92,13 @@ export async function generateAndChargeResumePdf(resumeId: string) {
     fontSize: resume.fontSize,
     isPreview: false,
   });
-  const uploaded = await uploadResumePdfBytes(user.id, resumePdfFilename(resume.name), bytes);
+  const uploaded = await uploadResumePdfBytes(
+    context.user.id,
+    resumePdfFilename(resume.name),
+    bytes,
+  );
 
-  const { data: chargedUrl, error: finalizeError } = await supabase.rpc('finalize_pdf', {
+  const { data: chargedUrl, error: finalizeError } = await context.supabase.rpc('finalize_pdf', {
     p_resume_id: resumeId,
     p_pdf_url: uploaded.url,
     p_pdf_media_key: uploaded.key,

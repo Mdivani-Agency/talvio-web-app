@@ -52,10 +52,12 @@ Removals use collection DELETE mutations. Job-specific copies live in
 `generate_pdf(p_resume_id)` is `SECURITY DEFINER` and `VOLATILE`. It uses
 `auth.uid()`, locks the caller's resume, returns an existing `pdf_url` for
 free, otherwise calls `require_credits` (no debit) and returns `''`.
-`POST /api/resume/generate-pdf` then renders the final PDF (no watermark),
-uploads it with `MEDIA_SERVICE_API_KEY`, and calls `finalize_pdf` which
-debits 30 credits and writes `{ pdf_url, pdf_media_key }` in one
-transaction. Authenticated cannot `UPDATE` those columns. After the
+`POST /api/resume/generate-pdf` and `POST /api/media/presign` require a
+signed-in user (`Authorization: Bearer` or the session cookie). The
+generate route also checks `resumes.user_id = auth.uid()` before render.
+It then renders the final PDF (no watermark), uploads it with
+`MEDIA_SERVICE_API_KEY`, and calls `finalize_pdf` which debits 30 credits
+and writes `{ pdf_url, pdf_media_key }` in one transaction. Authenticated cannot `UPDATE` those columns. After the
 pointers exist the row is immutable (label and name stay writable). Client
 "edit" creates or reuses one open draft (`source_resume_id`); the parent
 URL is never cleared. A draft cannot point at another draft.

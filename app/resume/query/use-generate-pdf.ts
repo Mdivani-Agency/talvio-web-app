@@ -1,5 +1,6 @@
 import { isGeneratedResume } from '@/lib/adapters/resume.adapter';
 import { GENERATE_PDF_CREDITS } from '@/lib/credits';
+import { authedFetch } from '@/lib/supabase/authed-fetch';
 import type { Resume } from '@lib/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -20,9 +21,8 @@ export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
     return resume;
   }
 
-  const response = await fetch('/api/resume/generate-pdf', {
+  const response = await authedFetch('/api/resume/generate-pdf', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resumeId: resume.id }),
   });
 

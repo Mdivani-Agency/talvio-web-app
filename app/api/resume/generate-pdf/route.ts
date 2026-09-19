@@ -4,12 +4,20 @@ import {
   GeneratePdfError,
   generateAndChargeResumePdf,
 } from '@/lib/services/generate-resume-pdf.server';
+import { requireApiUser, unauthorizedResponse } from '@/lib/supabase/require-api-user';
 
 const bodySchema = z.object({
   resumeId: z.string().uuid(),
 });
 
 export async function POST(request: Request) {
+  let context;
+  try {
+    context = await requireApiUser(request);
+  } catch (error) {
+    return unauthorizedResponse(error) ?? Response.json({ error: 'Please sign in' }, { status: 401 });
+  }
+
   let json: unknown;
   try {
     json = await request.json();
@@ -23,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const media = await generateAndChargeResumePdf(parsed.data.resumeId);
+    const media = await generateAndChargeResumePdf(parsed.data.resumeId, context);
     return Response.json(media);
   } catch (error) {
     if (error instanceof GeneratePdfError) {
