@@ -7,6 +7,8 @@ import {
   groupResumeFamilies,
   isGeneratedResume,
   isOpenDraft,
+  normalizeResumeLabel,
+  resumeDisplayTitle,
   parseResumeContent,
   resumeToPreviewDto,
   resumeTypeToDb,
@@ -45,6 +47,7 @@ describe('toResume', () => {
     const resume = toResume({
       id: '11111111-1111-4111-8111-111111111111',
       name: 'Ann Owner',
+      label: 'Frontend',
       type: 'general',
       template_key: 'senior-level-talvio',
       color: '#1B1B1B',
@@ -60,6 +63,7 @@ describe('toResume', () => {
     expect(resume).toMatchObject({
       id: '11111111-1111-4111-8111-111111111111',
       name: 'Ann Owner',
+      label: 'Frontend',
       template: 'senior-level-talvio',
       fontSize: 'md',
       sourceResumeId: null,
@@ -105,6 +109,7 @@ describe('write adapters', () => {
   it('builds an insert object from PreviewDto with stringified JSON content', () => {
     const body: PreviewDto = {
       name: 'Ann Owner',
+      label: 'Frontend',
       template: 'mid-level-ember',
       color: '#670000',
       fontSize: 'lg',
@@ -127,6 +132,7 @@ describe('write adapters', () => {
     expect(input).toMatchObject({
       user_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       name: 'Ann Owner',
+      label: 'Frontend',
       type: 'general',
       template_key: 'mid-level-ember',
       font_size: 'lg',
@@ -139,6 +145,7 @@ describe('write adapters', () => {
   it('updates draft fields without touching pdf pointers', () => {
     const patch: Partial<Resume> = {
       name: 'Updated',
+      label: '  Frontend  ',
       color: '#005BA2',
       metadata: parseResumeContent(contentJson),
     };
@@ -147,6 +154,7 @@ describe('write adapters', () => {
 
     expect(set).toMatchObject({
       name: 'Updated',
+      label: 'Frontend',
       color: '#005BA2',
     });
     expect(set).not.toHaveProperty('pdf_url');
@@ -204,6 +212,15 @@ describe('groupResumeFamilies', () => {
       { id: generated.id, original: generated, draft },
       { id: standalone.id, draft: standalone },
     ]);
+  });
+});
+
+describe('resumeDisplayTitle', () => {
+  it('prefers a trimmed label and falls back to name', () => {
+    expect(normalizeResumeLabel('  Role  ')).toBe('Role');
+    expect(normalizeResumeLabel('   ')).toBeNull();
+    expect(resumeDisplayTitle({ name: 'Ann Owner', label: 'Frontend' })).toBe('Frontend');
+    expect(resumeDisplayTitle({ name: 'Ann Owner' })).toBe('Ann Owner');
   });
 });
 

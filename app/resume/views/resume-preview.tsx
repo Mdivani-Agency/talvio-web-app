@@ -120,6 +120,8 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
         filename={resumeDto.name}
         isGenerating={isGenerating}
         setFilename={(name) => send({ type: 'CHANGE_RESUME', value: { ...resumeDto, name } })}
+        label={resumeDto.label ?? ''}
+        setLabel={(label) => send({ type: 'CHANGE_RESUME', value: { ...resumeDto, label } })}
         generateResume={downloadPdf}
         onClose={() => setIsDownloadResumeModalOpen(false)}
       />

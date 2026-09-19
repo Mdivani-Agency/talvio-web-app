@@ -127,6 +127,7 @@ export const resumeFormSchema = z.object({
 export const resumeSchema = z.object({
   metadata: resumeFormSchema,
   name: z.string(),
+  label: z.string().optional(),
   template: TemplateKeyEnum,
   color: z.string(),
   fontSize: z.enum(['sm', 'md', 'lg']),

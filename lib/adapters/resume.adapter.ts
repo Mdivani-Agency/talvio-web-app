@@ -4,9 +4,19 @@ import { accountToResume, resumeToAccount } from '@lib/utils/resume';
 
 export const RESUME_PAGE_SIZE = 10;
 
+export function normalizeResumeLabel(label?: string | null): string | null {
+  const trimmed = label?.trim();
+  return trimmed ? trimmed : null;
+}
+
+export function resumeDisplayTitle(resume: Pick<Resume, 'name' | 'label'>): string {
+  return normalizeResumeLabel(resume.label) ?? resume.name;
+}
+
 export type ResumeRow = {
   id: string;
   name: string;
+  label?: string | null;
   type?: string | null;
   template_key: string;
   color: string;
@@ -60,6 +70,7 @@ export function toResume(row: ResumeRow): Resume {
   return {
     id: row.id,
     name: row.name,
+    label: row.label ?? undefined,
     template: row.template_key as TemplateKey,
     color: row.color,
     fontSize: row.font_size as Resume['fontSize'],
@@ -85,10 +96,12 @@ export function toResumeInsertInput(input: {
   sourceResumeId?: string | null;
 }) {
   const content = previewToResumeContent(input.body);
+  const label = normalizeResumeLabel(input.body.label);
 
   return {
     user_id: input.userId,
     name: input.body.name,
+    ...(label ? { label } : {}),
     type: resumeTypeToDb(input.type),
     template_key: input.body.template,
     color: input.body.color,
@@ -112,6 +125,7 @@ export function resumeToPreviewDto(
 
   return {
     name: patch.name ?? resume.name,
+    label: patch.label !== undefined ? patch.label : resume.label,
     template: patch.template ?? resume.template,
     color: patch.color ?? resume.color,
     fontSize: patch.fontSize ?? resume.fontSize,
@@ -126,6 +140,7 @@ export function toResumeUpdateSet(patch: Partial<Resume> & { resume?: AccountDto
 
   return {
     ...(patch.name ? { name: patch.name } : {}),
+    ...(patch.label !== undefined ? { label: normalizeResumeLabel(patch.label) } : {}),
     ...(patch.template ? { template_key: patch.template } : {}),
     ...(patch.color ? { color: patch.color } : {}),
     ...(patch.fontSize ? { font_size: patch.fontSize } : {}),

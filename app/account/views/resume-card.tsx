@@ -11,7 +11,7 @@ import { ConfirmModal } from '@components/modals';
 import { submitWrapper } from '@app/actions/action.utils';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
-import { groupResumeFamilies, isGeneratedResume, type ResumeFamily } from '@/lib/adapters/resume.adapter';
+import { groupResumeFamilies, isGeneratedResume, resumeDisplayTitle, type ResumeFamily } from '@/lib/adapters/resume.adapter';
 import { GENERATE_PDF_CREDITS } from '@/lib/credits';
 
 export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userId?: string }) => {
@@ -61,7 +61,7 @@ export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userI
               <div key={family.id} className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
                   <Link className="text-sm text-primary underline truncate" href={href}>
-                    {display.name}
+                    {resumeDisplayTitle(display)}
                   </Link>
                   <span className="text-xs text-muted-foreground">
                     {generated && family.draft
@@ -111,10 +111,10 @@ export const ResumeCard = ({ resumes = [], userId }: { resumes?: Resume[]; userI
                       Generate PDF ({GENERATE_PDF_CREDITS})
                     </Button>
                   )}
-                  <Link href={href} aria-label={`Edit ${display.name}`}>
+                  <Link href={href} aria-label={`Edit ${resumeDisplayTitle(display)}`}>
                     <Icon type="Edit" className="size-4" />
                   </Link>
-                  <button type="button" onClick={() => setFamilyToDelete(family)} aria-label={`Delete ${display.name}`}>
+                  <button type="button" onClick={() => setFamilyToDelete(family)} aria-label={`Delete ${resumeDisplayTitle(display)}`}>
                     <Icon type="TrashBin" className="size-4 text-destructive" />
                   </button>
                 </div>

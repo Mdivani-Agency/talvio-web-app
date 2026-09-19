@@ -2,6 +2,7 @@ fragment ListResume on resumes {
   id
   user_id
   name
+  label
   type
   template_key
   color

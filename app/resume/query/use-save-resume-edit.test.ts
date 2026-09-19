@@ -52,6 +52,25 @@ describe('saveResumeEdit', () => {
     expect(createResume).not.toHaveBeenCalled();
   });
 
+  it('updates label on a generated resume without creating a draft', async () => {
+    const generated = {
+      ...draft,
+      media: { url: 'https://media.talvio.co/ann.pdf', key: 'ann.pdf' },
+    };
+    vi.mocked(updateResume).mockResolvedValue({ ...generated, label: 'Frontend' });
+
+    const result = await saveResumeEdit({
+      userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      existing: generated,
+      patch: { label: 'Frontend' },
+    });
+
+    expect(result.created).toBe(false);
+    expect(updateResume).toHaveBeenCalledWith(generated.id, { label: 'Frontend' });
+    expect(createResume).not.toHaveBeenCalled();
+    expect(fetchDraftBySource).not.toHaveBeenCalled();
+  });
+
   it('inserts a draft pointing at a generated resume when none exists', async () => {
     const generated = {
       ...draft,

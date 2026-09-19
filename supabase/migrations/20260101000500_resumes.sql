@@ -11,6 +11,7 @@ create table public.resumes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
+  label text,
   type public.resume_type not null default 'general',
   template_key text not null,
   color text not null default '#1B1B1B',

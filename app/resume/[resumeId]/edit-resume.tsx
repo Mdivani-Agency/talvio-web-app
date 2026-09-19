@@ -8,12 +8,12 @@ import { submitWrapper } from '@app/actions/action.utils';
 import { fetchResumeFamily } from '@app/resume/query/use-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
-import { saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
-import { isGeneratedResume } from '@/lib/adapters/resume.adapter';
+import { isLabelOnlyPatch, saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
+import { isGeneratedResume, normalizeResumeLabel } from '@/lib/adapters/resume.adapter';
 import { findTemplate, listResumeTemplates } from '@lib/templates';
 import { Loading } from '@components/views';
 import { ConfirmModal, DownloadResumeModal } from '@components/modals';
-import { Button } from '@components/ui';
+import { Button, Input } from '@components/ui';
 import { useUserSession } from '@lib/providers';
 import type { Resume } from '@lib/types';
 import { ResumePreview } from '../components/resume-preview';
@@ -72,7 +72,9 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       if (original) {
         await queryClient.invalidateQueries({ queryKey: ['resume-family', original.id] });
       }
-      setViewingOriginal(false);
+      if (result.created) {
+        setViewingOriginal(false);
+      }
     },
   });
 
@@ -94,10 +96,10 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   }
 
   const requestEdit = (patch: Partial<Resume>) => {
-    if (readOnly) {
+    if (readOnly && !isLabelOnlyPatch(patch)) {
       return;
     }
-    if (isGeneratedResume(displayed)) {
+    if (isGeneratedResume(displayed) && !isLabelOnlyPatch(patch)) {
       setPendingPatch(patch);
       setForkOpen(true);
       return;
@@ -125,31 +127,46 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   return (
     <section className="grid grid-cols-5">
       <div className="col-span-2 flex flex-col">
-        {hasFamily ? (
-          <div className="flex items-center justify-between gap-2 border-b border-input px-4 py-3 pt-16">
-            <p className="text-sm text-muted-foreground">
-              {viewingOriginal
-                ? 'Viewing the generated PDF. This version is read-only.'
-                : 'Editing a draft. Your generated PDF stays downloadable.'}
-            </p>
-            <div className="flex shrink-0 items-center gap-2">
-              {viewingOriginal ? (
-                <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setViewingOriginal(false)}>
-                  View draft
-                </Button>
-              ) : (
-                <>
-                  <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setViewingOriginal(true)}>
-                    View original
+        <div className={`flex flex-col gap-3 border-b border-input px-4 py-3 ${hasFamily ? '' : 'pt-16'}`}>
+          {hasFamily ? (
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-muted-foreground">
+                {viewingOriginal
+                  ? 'Viewing the generated PDF. This version is read-only.'
+                  : 'Editing a draft. Your generated PDF stays downloadable.'}
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                {viewingOriginal ? (
+                  <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setViewingOriginal(false)}>
+                    View draft
                   </Button>
-                  <Button type="button" variant="link" size="sm" className="px-0 text-destructive" onClick={() => setDiscardOpen(true)}>
-                    Discard draft
-                  </Button>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setViewingOriginal(true)}>
+                      View original
+                    </Button>
+                    <Button type="button" variant="link" size="sm" className="px-0 text-destructive" onClick={() => setDiscardOpen(true)}>
+                      Discard draft
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+          <Input
+            key={`${displayed.id}:${displayed.label ?? ''}`}
+            defaultValue={displayed.label ?? ''}
+            placeholder="Label (optional)"
+            aria-label="Resume label"
+            onBlur={(event) => {
+              const next = event.target.value;
+              if (normalizeResumeLabel(next) === normalizeResumeLabel(displayed.label)) {
+                return;
+              }
+              requestEdit({ label: next });
+            }}
+          />
+        </div>
         <ResumeEditor
           className={hasFamily ? 'border-r border-input' : 'col-span-2'}
           resume={displayed}

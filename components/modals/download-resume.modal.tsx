@@ -11,6 +11,8 @@ export const DownloadResumeModal = ({
   onClose,
   costCredits = GENERATE_PDF_CREDITS,
   isFreeDownload = false,
+  label,
+  setLabel,
 }: {
   isOpen: boolean;
   filename: string;
@@ -20,6 +22,8 @@ export const DownloadResumeModal = ({
   onClose: () => void;
   costCredits?: number;
   isFreeDownload?: boolean;
+  label?: string;
+  setLabel?: (label: string) => void;
 }) => {
   return (
     <Modal title="Final Review" open={isOpen} onOpenChange={onClose}>
@@ -35,6 +39,14 @@ export const DownloadResumeModal = ({
           value={filename}
           onChange={(e) => setFilename(e.target.value)}
         />
+        {setLabel ? (
+          <Input
+            placeholder="Label (optional)"
+            disabled={isGenerating}
+            value={label ?? ''}
+            onChange={(e) => setLabel(e.target.value)}
+          />
+        ) : null}
         <Button loading={isGenerating} onClick={generateResume}>
           {isFreeDownload ? 'Download Resume' : 'Generate and Download Resume'}
         </Button>

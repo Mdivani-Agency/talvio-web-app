@@ -574,6 +574,7 @@ export type Resumes = {
   font_family?: Maybe<Scalars['String']['output']>;
   font_size: Resume_Font_Size;
   id: Scalars['UUID']['output'];
+  label?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   pdf_media_key?: Maybe<Scalars['String']['output']>;
   pdf_url?: Maybe<Scalars['String']['output']>;
@@ -615,6 +616,7 @@ export type ResumesInsertInput = {
   font_family?: InputMaybe<Scalars['String']['input']>;
   font_size?: InputMaybe<Resume_Font_Size>;
   id?: InputMaybe<Scalars['UUID']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   pdf_media_key?: InputMaybe<Scalars['String']['input']>;
   pdf_url?: InputMaybe<Scalars['String']['input']>;
@@ -640,6 +642,7 @@ export type ResumesUpdateInput = {
   content?: InputMaybe<Scalars['JSON']['input']>;
   font_family?: InputMaybe<Scalars['String']['input']>;
   font_size?: InputMaybe<Resume_Font_Size>;
+  label?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   pdf_media_key?: InputMaybe<Scalars['String']['input']>;
   pdf_url?: InputMaybe<Scalars['String']['input']>;
@@ -759,7 +762,7 @@ export type ProfileByUserQueryVariables = Exact<{
 
 export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string } | null }> } | null, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } | null }> } | null, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string>, responsibilities: Array<string>, key_contributions: Array<string>, additional_details: string | null, sort_order: number } | null }> } | null, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } | null }> } | null, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } | null }> } | null, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } | null }> } | null, skillsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } | null }> } | null, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } | null }> } | null, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } | null }> } | null, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } | null }> } | null };
 
-export type ListResumeFragment = { id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string };
+export type ListResumeFragment = { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string };
 
 export type ResumesByUserQueryVariables = Exact<{
   userId: string;
@@ -768,19 +771,19 @@ export type ResumesByUserQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
-export type ResumesByUserQuery = { resumesCollection: { edges: Array<{ node: { id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+export type ResumesByUserQuery = { resumesCollection: { edges: Array<{ node: { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
 
 export type ResumeByIdQueryVariables = Exact<{
   id: string;
 }>;
 
-export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
+export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
 
 export type InsertResumeMutationVariables = Exact<{
   objects: Array<ResumesInsertInput> | ResumesInsertInput;
 }>;
 
-export type InsertResumeMutation = { insertIntoresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
+export type InsertResumeMutation = { insertIntoresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
 
 export type UpdateResumeMutationVariables = Exact<{
   id: string;
@@ -788,7 +791,7 @@ export type UpdateResumeMutationVariables = Exact<{
   atMost?: number | null | undefined;
 }>;
 
-export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
+export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
 
 export type DeleteResumeMutationVariables = Exact<{
   id: string;
@@ -808,7 +811,7 @@ export type ResumesBySourceQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
 
-export type ResumesBySourceQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
+export type ResumesBySourceQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
 
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -851,6 +854,7 @@ export const ListResumeFragmentDoc = gql`
   id
   user_id
   name
+  label
   type
   template_key
   color

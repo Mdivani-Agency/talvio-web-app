@@ -198,7 +198,8 @@ Owned by `auth.users` (not `profiles`) so a user can build a resume before onboa
 | --- | --- | --- |
 | `id` | `uuid` | PK |
 | `user_id` | `uuid not null` | `references auth.users (id) on delete cascade` |
-| `name` | `text not null` | |
+| `name` | `text not null` | PDF filename / default title |
+| `label` | `text` | optional user label to distinguish versions |
 | `type` | `resume_type not null default 'general'` | |
 | `template_key` | `text not null` | Zod / app catalogue |
 | `color` | `text not null default '#1B1B1B'` | `RESUME_COLORS_MAP.black` |
@@ -226,9 +227,9 @@ Checks / triggers:
 A generated resume has 0 or 1 **open** draft (`pdf_url` null + `source_resume_id`).
 Standalone `/resume` builder drafts leave `source_resume_id` null. After a draft
 is generated it keeps `source_resume_id` as lineage so the parent can get a new
-open draft. Generated rows stay immutable; edits go to the open draft (create
-if missing). Explicit delete remains allowed; the app deletes the open draft
-before the parent.
+open draft. Generated rows stay immutable; content/style edits go to the open
+draft (create if missing). `label` may be updated in place on a generated row.
+Explicit delete remains allowed; the app deletes the open draft before the parent.
 
 ## `user_credits`
 

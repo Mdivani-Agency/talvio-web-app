@@ -6,6 +6,12 @@ import { createResume } from './use-create-resume';
 import { fetchDraftBySource } from './use-resume';
 import { updateResume } from './use-update-resume';
 
+export function isLabelOnlyPatch(patch: Partial<Resume> & { resume?: AccountDto }) {
+  return Object.entries(patch).every(([key, value]) => (
+    value === undefined || key === 'label'
+  )) && patch.label !== undefined;
+}
+
 export async function saveResumeEdit({
   userId,
   existing,
@@ -15,7 +21,7 @@ export async function saveResumeEdit({
   existing: Resume;
   patch: Partial<Resume> & { resume?: AccountDto };
 }): Promise<{ resume: Resume; created: boolean }> {
-  if (!isGeneratedResume(existing)) {
+  if (isLabelOnlyPatch(patch) || !isGeneratedResume(existing)) {
     return {
       resume: await updateResume(existing.id, patch),
       created: false,
