@@ -1,0 +1,602 @@
+# Snapshot of the Talvio pg_graphql surface (inflect_names off).
+# Refresh from a running local project:
+#   yarn db:start && yarn db:reset && yarn codegen:from-supabase
+# That overwrites this file and lib/graphql/generated.ts.
+# Agents do not run those commands.
+
+scalar UUID
+scalar Date
+scalar Datetime
+scalar JSON
+scalar BigInt
+scalar BigFloat
+scalar Cursor
+scalar Opaque
+
+enum employment_type {
+  full_time
+  part_time
+  contract
+  self_employed
+  volunteer
+  internship
+  apprenticeship
+  seasonal
+}
+
+enum location_type {
+  remote
+  hybrid
+  office
+}
+
+enum language_proficiency {
+  beginner
+  intermediate
+  fluent
+  native
+}
+
+enum contact_kind {
+  email
+  phone
+  url
+}
+
+enum resume_type {
+  general
+  job_specific
+}
+
+enum resume_font_size {
+  sm
+  md
+  lg
+}
+
+enum seniority_level {
+  entry
+  mid
+  senior
+}
+
+enum OrderByDirection {
+  AscNullsFirst
+  AscNullsLast
+  DescNullsFirst
+  DescNullsLast
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+input StringFilter {
+  eq: String
+  in: [String!]
+}
+
+input UUIDFilter {
+  eq: UUID
+  in: [UUID!]
+}
+
+input IntFilter {
+  eq: Int
+  gt: Int
+  gte: Int
+  lt: Int
+  lte: Int
+}
+
+input BooleanFilter {
+  eq: Boolean
+}
+
+input DateFilter {
+  eq: Date
+  gt: Date
+  gte: Date
+  lt: Date
+  lte: Date
+}
+
+input DatetimeFilter {
+  eq: Datetime
+  gt: Datetime
+  gte: Datetime
+  lt: Datetime
+  lte: Datetime
+}
+
+type profiles {
+  user_id: UUID!
+  first_name: String!
+  last_name: String!
+  role: String!
+  tagline: String
+  seniority: seniority_level!
+  city: String
+  country: String
+  created_at: Datetime!
+  updated_at: Datetime!
+}
+
+type profilesEdge {
+  cursor: String!
+  node: profiles
+}
+
+type profilesConnection {
+  edges: [profilesEdge!]!
+  pageInfo: PageInfo!
+}
+
+input profilesFilter {
+  user_id: UUIDFilter
+  first_name: StringFilter
+}
+
+input profilesOrderBy {
+  user_id: OrderByDirection
+  created_at: OrderByDirection
+  updated_at: OrderByDirection
+}
+
+type contacts {
+  id: UUID!
+  user_id: UUID!
+  kind: contact_kind!
+  value: String!
+  label: String
+  is_primary: Boolean!
+  sort_order: Int!
+  created_at: Datetime!
+}
+
+type contactsEdge {
+  cursor: String!
+  node: contacts
+}
+
+type contactsConnection {
+  edges: [contactsEdge!]!
+  pageInfo: PageInfo!
+}
+
+input contactsFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+  kind: StringFilter
+}
+
+input contactsOrderBy {
+  sort_order: OrderByDirection
+  created_at: OrderByDirection
+}
+
+type experiences {
+  id: UUID!
+  user_id: UUID!
+  company: String!
+  job_title: String!
+  employment_type: employment_type
+  location_type: location_type
+  start_date: Date!
+  end_date: Date
+  is_present: Boolean!
+  achievements: [String!]!
+  responsibilities: [String!]!
+  key_contributions: [String!]!
+  additional_details: String
+  description: JSON
+  sort_order: Int!
+  created_at: Datetime!
+  updated_at: Datetime!
+}
+
+type experiencesEdge {
+  cursor: String!
+  node: experiences
+}
+
+type experiencesConnection {
+  edges: [experiencesEdge!]!
+  pageInfo: PageInfo!
+}
+
+input experiencesFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input experiencesOrderBy {
+  sort_order: OrderByDirection
+  start_date: OrderByDirection
+}
+
+type educations {
+  id: UUID!
+  user_id: UUID!
+  name: String!
+  degree_type: String!
+  start_date: Date!
+  end_date: Date
+  is_present: Boolean!
+  additional_details: String
+  description: JSON
+  sort_order: Int!
+  created_at: Datetime!
+  updated_at: Datetime!
+}
+
+type educationsEdge {
+  cursor: String!
+  node: educations
+}
+
+type educationsConnection {
+  edges: [educationsEdge!]!
+  pageInfo: PageInfo!
+}
+
+input educationsFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input educationsOrderBy {
+  sort_order: OrderByDirection
+}
+
+type projects {
+  id: UUID!
+  user_id: UUID!
+  name: String!
+  url: String
+  additional_details: String!
+  description: JSON
+  sort_order: Int!
+  created_at: Datetime!
+  updated_at: Datetime!
+}
+
+type projectsEdge {
+  cursor: String!
+  node: projects
+}
+
+type projectsConnection {
+  edges: [projectsEdge!]!
+  pageInfo: PageInfo!
+}
+
+input projectsFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input projectsOrderBy {
+  sort_order: OrderByDirection
+}
+
+type recommendations {
+  id: UUID!
+  user_id: UUID!
+  name: String!
+  url: String!
+  additional_details: String!
+  description: JSON
+  sort_order: Int!
+  created_at: Datetime!
+  updated_at: Datetime!
+}
+
+type recommendationsEdge {
+  cursor: String!
+  node: recommendations
+}
+
+type recommendationsConnection {
+  edges: [recommendationsEdge!]!
+  pageInfo: PageInfo!
+}
+
+input recommendationsFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input recommendationsOrderBy {
+  sort_order: OrderByDirection
+}
+
+type skills {
+  id: UUID!
+  user_id: UUID!
+  name: String!
+  sort_order: Int!
+  created_at: Datetime!
+}
+
+type skillsEdge {
+  cursor: String!
+  node: skills
+}
+
+type skillsConnection {
+  edges: [skillsEdge!]!
+  pageInfo: PageInfo!
+}
+
+input skillsFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input skillsOrderBy {
+  sort_order: OrderByDirection
+}
+
+type tools {
+  id: UUID!
+  user_id: UUID!
+  name: String!
+  sort_order: Int!
+  created_at: Datetime!
+}
+
+type toolsEdge {
+  cursor: String!
+  node: tools
+}
+
+type toolsConnection {
+  edges: [toolsEdge!]!
+  pageInfo: PageInfo!
+}
+
+input toolsFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input toolsOrderBy {
+  sort_order: OrderByDirection
+}
+
+type links {
+  id: UUID!
+  user_id: UUID!
+  type: String!
+  value: String!
+  sort_order: Int!
+  created_at: Datetime!
+}
+
+type linksEdge {
+  cursor: String!
+  node: links
+}
+
+type linksConnection {
+  edges: [linksEdge!]!
+  pageInfo: PageInfo!
+}
+
+input linksFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input linksOrderBy {
+  sort_order: OrderByDirection
+}
+
+type languages {
+  id: UUID!
+  user_id: UUID!
+  language: String!
+  proficiency: language_proficiency!
+  sort_order: Int!
+  created_at: Datetime!
+}
+
+type languagesEdge {
+  cursor: String!
+  node: languages
+}
+
+type languagesConnection {
+  edges: [languagesEdge!]!
+  pageInfo: PageInfo!
+}
+
+input languagesFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input languagesOrderBy {
+  sort_order: OrderByDirection
+}
+
+type resumes {
+  id: UUID!
+  user_id: UUID!
+  name: String!
+  type: resume_type!
+  template_key: String!
+  color: String!
+  font_size: resume_font_size!
+  font_family: String
+  content: JSON!
+  pdf_url: String
+  pdf_media_key: String
+  created_at: Datetime!
+  updated_at: Datetime!
+}
+
+type resumesEdge {
+  cursor: String!
+  node: resumes
+}
+
+type resumesConnection {
+  edges: [resumesEdge!]!
+  pageInfo: PageInfo!
+}
+
+input resumesFilter {
+  id: UUIDFilter
+  user_id: UUIDFilter
+  type: StringFilter
+}
+
+input resumesOrderBy {
+  updated_at: OrderByDirection
+  created_at: OrderByDirection
+}
+
+type user_credits {
+  user_id: UUID!
+  balance: Int!
+  updated_at: Datetime!
+}
+
+type user_creditsEdge {
+  cursor: String!
+  node: user_credits
+}
+
+type user_creditsConnection {
+  edges: [user_creditsEdge!]!
+  pageInfo: PageInfo!
+}
+
+input user_creditsFilter {
+  user_id: UUIDFilter
+}
+
+input user_creditsOrderBy {
+  updated_at: OrderByDirection
+}
+
+type Query {
+  profilesCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: profilesFilter
+    orderBy: [profilesOrderBy!]
+  ): profilesConnection
+  contactsCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: contactsFilter
+    orderBy: [contactsOrderBy!]
+  ): contactsConnection
+  experiencesCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: experiencesFilter
+    orderBy: [experiencesOrderBy!]
+  ): experiencesConnection
+  educationsCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: educationsFilter
+    orderBy: [educationsOrderBy!]
+  ): educationsConnection
+  projectsCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: projectsFilter
+    orderBy: [projectsOrderBy!]
+  ): projectsConnection
+  recommendationsCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: recommendationsFilter
+    orderBy: [recommendationsOrderBy!]
+  ): recommendationsConnection
+  skillsCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: skillsFilter
+    orderBy: [skillsOrderBy!]
+  ): skillsConnection
+  toolsCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: toolsFilter
+    orderBy: [toolsOrderBy!]
+  ): toolsConnection
+  linksCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: linksFilter
+    orderBy: [linksOrderBy!]
+  ): linksConnection
+  languagesCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: languagesFilter
+    orderBy: [languagesOrderBy!]
+  ): languagesConnection
+  resumesCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: resumesFilter
+    orderBy: [resumesOrderBy!]
+  ): resumesConnection
+  user_creditsCollection(
+    first: Int
+    last: Int
+    before: Cursor
+    after: Cursor
+    offset: Int
+    filter: user_creditsFilter
+    orderBy: [user_creditsOrderBy!]
+  ): user_creditsConnection
+}
+
+type Mutation {
+  save_profile(p_payload: JSON): String
+  generate_pdf(p_resume_id: UUID): String
+}

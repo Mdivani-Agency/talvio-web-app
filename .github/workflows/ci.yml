@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Lint, typecheck, and build
+    name: Lint, typecheck, test, and build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -46,6 +46,12 @@ jobs:
 
       - name: Typecheck
         run: yarn typecheck
+
+      - name: Unit tests
+        run: yarn test
+
+      - name: GraphQL types in sync
+        run: yarn codegen && git diff --exit-code -- lib/graphql/generated.ts
 
       - name: Build
         run: yarn build
