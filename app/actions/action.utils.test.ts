@@ -37,7 +37,15 @@ describe('submitWrapper', () => {
     });
 
     expect(result).toBe(false);
-    expect(toast.error).toHaveBeenCalledWith('Not enough credits');
+    expect(toast.error).toHaveBeenCalledWith(
+      'Not enough credits',
+      expect.objectContaining({
+        action: expect.objectContaining({
+          type: expect.anything(),
+          props: expect.objectContaining({ href: '/account/credits' }),
+        }),
+      }),
+    );
     expect(toast.success).not.toHaveBeenCalled();
   });
 

@@ -13,10 +13,11 @@ type ResumeEditorProps = {
   level: 'entry' | 'mid' | 'senior';
   templates: TemplateList;
   className?: string;
+  readOnly?: boolean;
   onChange: (state: Partial<{ template: TemplateKey; data: ResumeForm }>) => void;
 };
 
-export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange, className }: ResumeEditorProps) {
+export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange, className, readOnly = false }: ResumeEditorProps) {
   const components = useMemo(() => {
     return [
       <TemplatesView
@@ -31,7 +32,15 @@ export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange
   }, [level, resume.metadata, resume.template, onChange, templates]);
 
   return (
-      <AnimatedTransition direction="left" className={cn("col-span-2 border-r border-input", className)} current={mode === 'edit' ? 0 : 1}>
+      <AnimatedTransition
+        direction="left"
+        className={cn(
+          "col-span-2 border-r border-input",
+          readOnly && "pointer-events-none opacity-60",
+          className,
+        )}
+        current={mode === 'edit' ? 0 : 1}
+      >
         {mode === 'edit' ? components[0] : components[1]}
       </AnimatedTransition>
   );

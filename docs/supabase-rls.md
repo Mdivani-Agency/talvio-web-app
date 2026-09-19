@@ -35,7 +35,7 @@ Every table below except `user_credits` has four policies:
 
 `user_credits` has no insert / update / delete policies. Authenticated clients
 cannot write the balance through GraphQL; `handle_new_user` and
-`generate_pdf` (which calls private `consume_credits`) are `SECURITY DEFINER`.
+`finalize_pdf` (which calls private `consume_credits`) are `SECURITY DEFINER`.
 
 `credit_prices` has RLS enabled and **no policies** and **no Data API grants**.
 It is invisible to `/graphql/v1`. `consume_credits(p_user_id, p_action)` looks
@@ -51,10 +51,18 @@ Removals use collection DELETE mutations. Job-specific copies live in
 
 `generate_pdf(p_resume_id)` is `SECURITY DEFINER` and `VOLATILE`. It uses
 `auth.uid()`, locks the caller's resume, returns an existing `pdf_url` for
-free, otherwise calls `consume_credits(uid, 'generate_pdf')` (30 credits).
-Render / upload / persist of `pdf_url` is [MDI-174](https://linear.app/mdivani/issue/MDI-174).
-Until that lands the mutation returns `''` after a successful debit — do not
-wire it in the app yet (a second call would debit again).
+free, otherwise calls `require_credits` (no debit) and returns `''`.
+`POST /api/resume/generate-pdf` and `POST /api/media/presign` require a
+signed-in user (`Authorization: Bearer` or the session cookie). The
+generate route also checks `resumes.user_id = auth.uid()` before render.
+It then renders the final PDF (no watermark), uploads it with
+`MEDIA_SERVICE_API_KEY`, and calls `finalize_pdf` which debits 30 credits
+and writes `{ pdf_url, pdf_media_key }` in one transaction. Authenticated cannot `UPDATE` those columns. After the
+pointers exist the row is immutable (label and name stay writable). Client
+"edit" creates or reuses one open draft (`source_resume_id`); the parent
+URL is never cleared. A draft cannot point at another draft.
+`source_resume_id` may be detached (`NULL`) so parent delete can
+`ON DELETE SET NULL`.
 
 `p_payload` is `jsonb`, exposed as the GraphQL `JSON` scalar (a serialized
 string). Pass `'{"profile":{...}}'`, not an inline object.
@@ -69,7 +77,7 @@ Query: `profilesCollection`, `contactsCollection`, `experiencesCollection`,
 `skillsCollection`, `toolsCollection`, `linksCollection`,
 `languagesCollection`, `resumesCollection`, `user_creditsCollection`.
 
-Mutation: `save_profile`, `generate_pdf`, `insertIntoresumesCollection`,
+Mutation: `save_profile`, `generate_pdf`, `finalize_pdf`, `insertIntoresumesCollection`,
 `updateresumesCollection`, `deleteFromresumesCollection` (and the matching
 profile-child collection mutations). `consume_credits` is **not** a Mutation
 field — authenticated has no `EXECUTE`. `credit_pricesCollection` is absent.

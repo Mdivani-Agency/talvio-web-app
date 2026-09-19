@@ -8,14 +8,16 @@ export async function createResume({
   userId,
   type = 'GENERAL',
   body,
+  sourceResumeId,
 }: {
   userId: string;
   type?: 'GENERAL' | 'JOB_SPECIFIC';
   body: PreviewDto;
+  sourceResumeId?: string | null;
 }): Promise<Resume> {
   const sdk = await getGraphqlSdk();
   const data = await sdk.InsertResume({
-    objects: [toResumeInsertInput({ userId, type, body })],
+    objects: [toResumeInsertInput({ userId, type, body, sourceResumeId })],
   });
   const row = data.insertIntoresumesCollection?.records?.[0];
   if (!row) {

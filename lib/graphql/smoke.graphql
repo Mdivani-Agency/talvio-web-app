@@ -23,7 +23,3 @@ query ResumesCollection($first: Int) {
 mutation Save_Profile($p_payload: JSON) {
   save_profile(p_payload: $p_payload)
 }
-
-mutation Generate_Pdf($p_resume_id: UUID) {
-  generate_pdf(p_resume_id: $p_resume_id)
-}

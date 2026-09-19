@@ -56,6 +56,7 @@ Copy [`.env.example`](.env.example) to `.env.local`. Set the same names in the V
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL (`http://127.0.0.1:54321` locally) |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Supabase publishable / anon key |
 | `SUPABASE_SECRET_KEY` | yes (server) | Supabase secret / service-role key — never `NEXT_PUBLIC_` |
+| `MEDIA_SERVICE_API_KEY` | yes (server) | Media-service `X-API-KEY` for `POST /media/presign/{userId}` — never `NEXT_PUBLIC_` |
 | `GOOGLE_FONTS_API_KEY` | yes | Font file lookup at `/api/resume/fonts` |
 | `OPENAI_API_KEY` | no | Resume parse/QA; falls back to `TEST_KEY` if unset |
 

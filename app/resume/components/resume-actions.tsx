@@ -16,6 +16,7 @@ type ResumeActionBarProps = {
   handleDownload: () => void;
   handlePreviewOpen: () => void;
   action?: React.ReactNode;
+  disabled?: boolean;
 };
 
 export const ResumeActionBar = ({
@@ -31,6 +32,7 @@ export const ResumeActionBar = ({
   goToNext,
   handleDownload,
   handlePreviewOpen,
+  disabled = false,
 }: ResumeActionBarProps) => {
   return (
     <div
@@ -44,6 +46,7 @@ export const ResumeActionBar = ({
         <Select
           value={fontSize}
           onValueChange={onFontSizeChange}
+          disabled={disabled}
         >
           <SelectTrigger className="flex justify-center items-center gap-1 max-h-8 p-1 hover:cursor-pointer">
             <Icon type="FontSize" className="size-4" />
@@ -57,6 +60,7 @@ export const ResumeActionBar = ({
         <ColorPaletteSelector
           value={color}
           onSelect={setColor}
+          disabled={disabled}
         />
       </div>
       <div className="flex justify-center items-center">

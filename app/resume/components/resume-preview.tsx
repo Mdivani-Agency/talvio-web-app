@@ -19,13 +19,14 @@ interface ResumePreviewProps {
   color: string;
   handleChange: (key: 'color' | 'fontSize' | 'name', value: string) => void;
   onDownload: () => void;
+  readOnly?: boolean;
 }
 
 export type RenderPreviewParams = Omit<ResumeDto, 'template' | 'resume'> & {
   metadata: ResumeForm;
 }
 
-export function ResumePreview({ className, action, template, resume, fontSize, color, onDownload, handleChange }: ResumePreviewProps) {
+export function ResumePreview({ className, action, template, resume, fontSize, color, onDownload, handleChange, readOnly = false }: ResumePreviewProps) {
   const [isFullSizeResumeModalOpen, setIsFullSizeResumeModalOpen] = useState(false);
   const { images, renderPDF } = usePdfImage();
 
@@ -74,13 +75,22 @@ export function ResumePreview({ className, action, template, resume, fontSize, c
           className="absolute bottom-10 left-0 right-0 z-30"
           color={color}
           action={action}
-          setColor={(color) => handleChange('color', color)}
+          setColor={(nextColor) => {
+            if (!readOnly) {
+              handleChange('color', nextColor);
+            }
+          }}
           imageCount={images.length}
           currentIndex={currentIndex}
           goToPrevious={goToPrevious}
           goToNext={goToNext}
           fontSize={fontSize}
-          onFontSizeChange={(fontSize) => handleChange('fontSize', fontSize)}
+          onFontSizeChange={(nextFontSize) => {
+            if (!readOnly) {
+              handleChange('fontSize', nextFontSize);
+            }
+          }}
+          disabled={readOnly}
           handleDownload={() => onDownload()}
           handlePreviewOpen={() => setIsFullSizeResumeModalOpen(true)}
         />
@@ -89,7 +99,11 @@ export function ResumePreview({ className, action, template, resume, fontSize, c
         isOpen={isFullSizeResumeModalOpen}
         urls={images}
         color={color}
-        setColor={(color) => handleChange('color', color)}
+        setColor={(nextColor) => {
+          if (!readOnly) {
+            handleChange('color', nextColor);
+          }
+        }}
         onClose={() => setIsFullSizeResumeModalOpen(false)}
         onDownload={() => onDownload()}
       />

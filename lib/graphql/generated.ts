@@ -44,6 +44,10 @@ export type DatetimeFilter = {
   lte?: InputMaybe<Scalars['Datetime']['input']>;
 };
 
+export type FilterIs =
+  | 'NOT_NULL'
+  | 'NULL';
+
 export type IntFilter = {
   eq?: InputMaybe<Scalars['Int']['input']>;
   gt?: InputMaybe<Scalars['Int']['input']>;
@@ -55,6 +59,7 @@ export type IntFilter = {
 export type Mutation = {
   __typename?: 'Mutation';
   deleteFromresumesCollection?: Maybe<ResumesDeleteResponse>;
+  finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
   insertIntoresumesCollection?: Maybe<ResumesInsertResponse>;
   save_profile?: Maybe<Scalars['String']['output']>;
@@ -64,6 +69,12 @@ export type Mutation = {
 export type MutationDeleteFromresumesCollectionArgs = {
   atMost?: InputMaybe<Scalars['Int']['input']>;
   filter?: InputMaybe<ResumesFilter>;
+};
+
+export type MutationFinalize_PdfArgs = {
+  p_pdf_media_key?: InputMaybe<Scalars['String']['input']>;
+  p_pdf_url?: InputMaybe<Scalars['String']['input']>;
+  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 export type MutationGenerate_PdfArgs = {
@@ -237,6 +248,7 @@ export type QueryUser_CreditsCollectionArgs = {
 export type StringFilter = {
   eq?: InputMaybe<Scalars['String']['input']>;
   in?: InputMaybe<Array<Scalars['String']['input']>>;
+  is?: InputMaybe<FilterIs>;
 };
 
 export type UuidFilter = {
@@ -574,9 +586,11 @@ export type Resumes = {
   font_family?: Maybe<Scalars['String']['output']>;
   font_size: Resume_Font_Size;
   id: Scalars['UUID']['output'];
+  label?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   pdf_media_key?: Maybe<Scalars['String']['output']>;
   pdf_url?: Maybe<Scalars['String']['output']>;
+  source_resume_id?: Maybe<Scalars['UUID']['output']>;
   template_key: Scalars['String']['output'];
   type: Resume_Type;
   updated_at: Scalars['Datetime']['output'];
@@ -603,6 +617,8 @@ export type ResumesEdge = {
 
 export type ResumesFilter = {
   id?: InputMaybe<UuidFilter>;
+  pdf_url?: InputMaybe<StringFilter>;
+  source_resume_id?: InputMaybe<UuidFilter>;
   type?: InputMaybe<Resume_TypeFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
@@ -613,9 +629,11 @@ export type ResumesInsertInput = {
   font_family?: InputMaybe<Scalars['String']['input']>;
   font_size?: InputMaybe<Resume_Font_Size>;
   id?: InputMaybe<Scalars['UUID']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   pdf_media_key?: InputMaybe<Scalars['String']['input']>;
   pdf_url?: InputMaybe<Scalars['String']['input']>;
+  source_resume_id?: InputMaybe<Scalars['UUID']['input']>;
   template_key?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<Resume_Type>;
   user_id?: InputMaybe<Scalars['UUID']['input']>;
@@ -637,6 +655,7 @@ export type ResumesUpdateInput = {
   content?: InputMaybe<Scalars['JSON']['input']>;
   font_family?: InputMaybe<Scalars['String']['input']>;
   font_size?: InputMaybe<Resume_Font_Size>;
+  label?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   pdf_media_key?: InputMaybe<Scalars['String']['input']>;
   pdf_url?: InputMaybe<Scalars['String']['input']>;
@@ -756,7 +775,7 @@ export type ProfileByUserQueryVariables = Exact<{
 
 export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string } | null }> } | null, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } | null }> } | null, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string>, responsibilities: Array<string>, key_contributions: Array<string>, additional_details: string | null, sort_order: number } | null }> } | null, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } | null }> } | null, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } | null }> } | null, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } | null }> } | null, skillsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } | null }> } | null, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } | null }> } | null, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } | null }> } | null, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } | null }> } | null };
 
-export type ListResumeFragment = { id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string };
+export type ListResumeFragment = { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string };
 
 export type ResumesByUserQueryVariables = Exact<{
   userId: string;
@@ -765,19 +784,19 @@ export type ResumesByUserQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
-export type ResumesByUserQuery = { resumesCollection: { edges: Array<{ node: { id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string } | null }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+export type ResumesByUserQuery = { resumesCollection: { edges: Array<{ node: { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
 
 export type ResumeByIdQueryVariables = Exact<{
   id: string;
 }>;
 
-export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string } | null }> } | null };
+export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
 
 export type InsertResumeMutationVariables = Exact<{
   objects: Array<ResumesInsertInput> | ResumesInsertInput;
 }>;
 
-export type InsertResumeMutation = { insertIntoresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string }> } | null };
+export type InsertResumeMutation = { insertIntoresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
 
 export type UpdateResumeMutationVariables = Exact<{
   id: string;
@@ -785,7 +804,7 @@ export type UpdateResumeMutationVariables = Exact<{
   atMost?: number | null | undefined;
 }>;
 
-export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string }> } | null };
+export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
 
 export type DeleteResumeMutationVariables = Exact<{
   id: string;
@@ -793,6 +812,13 @@ export type DeleteResumeMutationVariables = Exact<{
 }>;
 
 export type DeleteResumeMutation = { deleteFromresumesCollection: { affectedCount: number, records: Array<{ id: string }> } | null };
+
+export type ResumesBySourceQueryVariables = Exact<{
+  sourceId: string;
+  first?: number | null | undefined;
+}>;
+
+export type ResumesBySourceQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
 
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -816,12 +842,6 @@ export type Save_ProfileMutationVariables = Exact<{
 
 export type Save_ProfileMutation = { save_profile: string | null };
 
-export type Generate_PdfMutationVariables = Exact<{
-  p_resume_id?: string | null | undefined;
-}>;
-
-export type Generate_PdfMutation = { generate_pdf: string | null };
-
 export const ProfileFieldsFragmentDoc = gql`
     fragment ProfileFields on profiles {
   user_id
@@ -841,6 +861,7 @@ export const ListResumeFragmentDoc = gql`
   id
   user_id
   name
+  label
   type
   template_key
   color
@@ -848,6 +869,7 @@ export const ListResumeFragmentDoc = gql`
   font_family
   pdf_url
   pdf_media_key
+  source_resume_id
   created_at
   updated_at
 }
@@ -1079,6 +1101,22 @@ export const DeleteResumeDocument = gql`
   }
 }
     `;
+export const ResumesBySourceDocument = gql`
+    query ResumesBySource($sourceId: UUID!, $first: Int) {
+  resumesCollection(
+    filter: {source_resume_id: {eq: $sourceId}, pdf_url: {is: NULL}}
+    orderBy: [{updated_at: DescNullsLast}]
+    first: $first
+  ) {
+    edges {
+      node {
+        ...ListResume
+        content
+      }
+    }
+  }
+}
+    ${ListResumeFragmentDoc}`;
 export const HealthDocument = gql`
     query Health {
   __typename
@@ -1111,11 +1149,6 @@ export const Save_ProfileDocument = gql`
   save_profile(p_payload: $p_payload)
 }
     `;
-export const Generate_PdfDocument = gql`
-    mutation Generate_Pdf($p_resume_id: UUID) {
-  generate_pdf(p_resume_id: $p_resume_id)
-}
-    `;
 
 export type SdkFunctionWrapper = <T>(action: (requestHeaders?:Record<string, string>) => Promise<T>, operationName: string, operationType?: string, variables?: any) => Promise<T>;
 
@@ -1144,6 +1177,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     DeleteResume(variables: DeleteResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteResumeMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<DeleteResumeMutation>({ document: DeleteResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteResume', 'mutation', variables);
     },
+    ResumesBySource(variables: ResumesBySourceQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesBySourceQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ResumesBySourceQuery>({ document: ResumesBySourceDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesBySource', 'query', variables);
+    },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);
     },
@@ -1155,9 +1191,6 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Save_Profile(variables?: Save_ProfileMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Save_ProfileMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Save_ProfileMutation>({ document: Save_ProfileDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Save_Profile', 'mutation', variables);
-    },
-    Generate_Pdf(variables?: Generate_PdfMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Generate_PdfMutation> {
-      return withWrapper((wrappedRequestHeaders) => client.request<Generate_PdfMutation>({ document: Generate_PdfDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Generate_Pdf', 'mutation', variables);
     }
   };
 }

@@ -91,6 +91,7 @@ export type Resume = ResumeDto & {
     key: string;
   };
   id: string;
+  sourceResumeId?: string | null;
   createdAt: string;
   updatedAt: string;
 };

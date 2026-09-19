@@ -43,6 +43,19 @@
   `db:reset` and commit the live AST so insert/update inputs and filters
   cannot drift.
 
+## Resume PDF
+
+- **Dashboard family pagination is client-side.** The list uses
+  `RESUME_PAGE_SIZE` (10) plus a Load more bump, and fetches a missing
+  parent when an open draft's source is off the page. Families are still
+  grouped in the browser. Paginate parent families server-side
+  (`source_resume_id` is null or `pdf_url` is not null) and pull the open
+  draft via the reverse `resumesCollection` relation.
+
+- **Generated lineage children look unrelated.** A generated draft that
+  keeps `source_resume_id` renders as its own "PDF ready" card with no
+  "v2 of {label}" hint. Group by root or show lineage on the card.
+
 ## Auth
 
 - **Deep-link callback after the account gate.** `app/account/layout.tsx`

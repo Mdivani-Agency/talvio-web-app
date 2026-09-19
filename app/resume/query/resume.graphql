@@ -2,6 +2,7 @@ fragment ListResume on resumes {
   id
   user_id
   name
+  label
   type
   template_key
   color
@@ -9,6 +10,7 @@ fragment ListResume on resumes {
   font_family
   pdf_url
   pdf_media_key
+  source_resume_id
   created_at
   updated_at
 }
@@ -68,6 +70,21 @@ mutation DeleteResume($id: UUID!, $atMost: Int) {
     affectedCount
     records {
       id
+    }
+  }
+}
+
+query ResumesBySource($sourceId: UUID!, $first: Int) {
+  resumesCollection(
+    filter: { source_resume_id: { eq: $sourceId }, pdf_url: { is: NULL } }
+    orderBy: [{ updated_at: DescNullsLast }]
+    first: $first
+  ) {
+    edges {
+      node {
+        ...ListResume
+        content
+      }
     }
   }
 }

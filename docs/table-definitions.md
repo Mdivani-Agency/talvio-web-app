@@ -198,7 +198,8 @@ Owned by `auth.users` (not `profiles`) so a user can build a resume before onboa
 | --- | --- | --- |
 | `id` | `uuid` | PK |
 | `user_id` | `uuid not null` | `references auth.users (id) on delete cascade` |
-| `name` | `text not null` | |
+| `name` | `text not null` | PDF filename / default title |
+| `label` | `text` | optional user label to distinguish versions |
 | `type` | `resume_type not null default 'general'` | |
 | `template_key` | `text not null` | Zod / app catalogue |
 | `color` | `text not null default '#1B1B1B'` | `RESUME_COLORS_MAP.black` |
@@ -207,6 +208,7 @@ Owned by `auth.users` (not `profiles`) so a user can build a resume before onboa
 | `content` | `jsonb not null default '{}'` | `resumeFormSchema`; top-level key `profile` |
 | `pdf_url` | `text` | media-service URL |
 | `pdf_media_key` | `text` | media-service key |
+| `source_resume_id` | `uuid` | open draft / lineage → parent `resumes.id`; `on delete set null` |
 | `created_at` | `timestamptz not null default now()` | |
 | `updated_at` | `timestamptz not null default now()` | trigger `resumes_set_updated_at` |
 
@@ -214,11 +216,29 @@ Indexes:
 
 - `resumes_user_id_idx (user_id, updated_at desc)`
 - `resumes_user_type_idx (user_id, type)`
+- `resumes_source_resume_id_idx (source_resume_id) where source_resume_id is not null`
+- `resumes_one_open_draft_per_source_idx` unique on `source_resume_id` where `source_resume_id is not null and pdf_url is null`
+
+Checks / triggers:
+
+- `resumes_source_not_self_ck` — `source_resume_id is distinct from id`
+- `resumes_pdf_url_nonempty_ck` — `pdf_url` is null or non-blank
+- `resumes_pdf_media_key_nonempty_ck` — `pdf_media_key` is null or non-blank
+- `resumes_validate_source` — source is same-user and already generated;
+  `source_resume_id` cannot be re-pointed (detach/`NULL` is allowed);
+  generated content/style/PDF pointers are immutable
+
+A generated resume has 0 or 1 **open** draft (`pdf_url` null + `source_resume_id`).
+Standalone `/resume` builder drafts leave `source_resume_id` null. After a draft
+is generated it keeps `source_resume_id` as lineage so the parent can get a new
+open draft. Generated rows stay immutable; content/style edits go to the open
+draft (create if missing). `label` may be updated in place on a generated row.
+Explicit delete remains allowed; the app deletes the open draft before the parent.
 
 ## `user_credits`
 
-Balance only in v1. Writes via RPCs in MDI-171 (`handle_new_user`,
-`generate_pdf` → private `consume_credits`). Clients never pass an amount.
+Balance only in v1. Writes via RPCs (`handle_new_user`,
+`finalize_pdf` → private `consume_credits`). Clients never pass an amount.
 
 | Column | Type | Notes |
 | --- | --- | --- |
