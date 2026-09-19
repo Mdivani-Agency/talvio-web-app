@@ -102,3 +102,12 @@ export function parseGraphqlError(error: unknown): string {
 
   return message || 'Something went wrong';
 }
+
+export function isGraphqlAuthError(error: unknown): boolean {
+  const mapped = parseGraphqlError(error);
+  return mapped === 'Please sign in' || mapped === "You don't have permission to do that";
+}
+
+export function shouldRetryGraphqlQuery(failureCount: number, error: unknown): boolean {
+  return !isGraphqlAuthError(error) && failureCount < 2;
+}

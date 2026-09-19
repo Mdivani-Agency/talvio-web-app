@@ -18,6 +18,12 @@ describe('date adapters', () => {
     expect(toIsoDateTime(null)).toBeUndefined();
     expect(toDateOnly(undefined)).toBeUndefined();
   });
+
+  it('does not shift midnight UTC dates when formatted as date-only', () => {
+    // 2016-09-01T00:00:00.000Z is 2016-08-31 in America/New_York.
+    expect(toDateOnly('2016-09-01T00:00:00.000Z')).toBe('2016-09-01');
+    expect(toDateOnly('2016-09-01')).toBe('2016-09-01');
+  });
 });
 
 describe('enum adapters', () => {
@@ -76,6 +82,7 @@ describe('accountFromProfile', () => {
         ],
         experiences: [
           {
+            id: '11111111-1111-4111-8111-111111111111',
             company: 'Talvio',
             job_title: 'Engineer',
             employment_type: 'full_time',
@@ -91,6 +98,7 @@ describe('accountFromProfile', () => {
         ],
         educations: [
           {
+            id: '22222222-2222-4222-8222-222222222222',
             name: 'TSU',
             degree_type: "Bachelor's Degree",
             start_date: '2016-09-01',
@@ -99,7 +107,7 @@ describe('accountFromProfile', () => {
             additional_details: 'CS',
           },
         ],
-        skills: [{ name: 'TypeScript' }],
+        skills: [{ id: '33333333-3333-4333-8333-333333333333', name: 'TypeScript' }],
         tools: [{ name: 'Git' }],
         languages: [{ language: 'en', proficiency: 'fluent' }],
       },
@@ -114,6 +122,7 @@ describe('accountFromProfile', () => {
       seniority: 'mid',
     });
     expect(account.experience?.[0]).toMatchObject({
+      id: '11111111-1111-4111-8111-111111111111',
       jobTitle: 'Engineer',
       employmentType: 'full-time',
       locationType: 'remote',
@@ -121,6 +130,7 @@ describe('accountFromProfile', () => {
       startDate: '2020-01-15T00:00:00.000Z',
       additionalDetails: 'Notes',
     });
+    expect(account.education?.[0]?.id).toBe('22222222-2222-4222-8222-222222222222');
     expect(account.education?.[0]?.isPresent).toBe(false);
     expect(account.education?.[0]?.endDate).toBe('2020-06-01T00:00:00.000Z');
   });
@@ -140,6 +150,7 @@ describe('accountDtoToSavePayload', () => {
       },
       experience: [
         {
+          id: '11111111-1111-4111-8111-111111111111',
           company: 'Talvio',
           jobTitle: 'Engineer',
           startDate: '2020-01-15T08:00:00.000Z',
@@ -150,6 +161,7 @@ describe('accountDtoToSavePayload', () => {
       ],
       education: [
         {
+          id: '22222222-2222-4222-8222-222222222222',
           name: 'TSU',
           degreeType: "Bachelor's Degree",
           startDate: '2016-09-01T00:00:00.000Z',
@@ -158,19 +170,43 @@ describe('accountDtoToSavePayload', () => {
       ],
     });
 
-    expect(payload.contacts).toEqual([
-      { kind: 'email', value: 'ann@talvio.test', is_primary: true, sort_order: 0 },
-      { kind: 'phone', value: '+995555', is_primary: true, sort_order: 1 },
-      { kind: 'url', value: 'https://ann.test', is_primary: true, sort_order: 2 },
-    ]);
+    expect(payload).not.toHaveProperty('contacts');
+    expect(payload.profile).toMatchObject({
+      email: 'ann@talvio.test',
+      phone: '+995555',
+      website: 'https://ann.test',
+    });
     expect(payload.experience[0]).toMatchObject({
+      id: '11111111-1111-4111-8111-111111111111',
       employmentType: 'full_time',
       startDate: '2020-01-15',
       isPresent: true,
     });
     expect(payload.education[0]).toMatchObject({
+      id: '22222222-2222-4222-8222-222222222222',
       startDate: '2016-09-01',
       isPresent: false,
     });
+  });
+
+  it('drops client list keys that are not UUIDs', () => {
+    const payload = accountDtoToSavePayload({
+      profile: {
+        firstName: 'Ann',
+        lastName: 'Owner',
+        role: 'Engineer',
+        email: 'ann@talvio.test',
+      },
+      experience: [
+        {
+          id: 'experience-0',
+          company: 'Talvio',
+          jobTitle: 'Engineer',
+          startDate: '2020-01-15T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(payload.experience[0].id).toBeUndefined();
   });
 });

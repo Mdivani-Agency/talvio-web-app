@@ -45,7 +45,7 @@ const config: CodegenConfig = {
           UUID: 'string',
           Date: 'string',
           Datetime: 'string',
-          JSON: 'unknown',
+          JSON: 'string',
           BigInt: 'string',
           BigFloat: 'string',
           Cursor: 'string',

@@ -1,22 +1,20 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { accountDtoToSavePayload } from '@/lib/adapters/profile.adapter';
-import { getGraphqlSdk } from '@/lib/graphql-client';
-import { accountSchema } from '@lib/schema/account.schema';
+import { getGraphqlSdk, parseGraphqlError } from '@/lib/graphql-client';
 import type { Account, AccountDto } from '@lib/types';
 
 import { fetchProfile } from './use-profile';
 
 export async function saveProfile(userId: string, accountDto: AccountDto): Promise<Account> {
-  const parsed = accountSchema.safeParse(accountDto);
-  if (!parsed.success) {
-    throw new Error('Account details are incomplete');
-  }
-
   const sdk = await getGraphqlSdk();
-  await sdk.Save_Profile({
-    p_payload: JSON.stringify(accountDtoToSavePayload(parsed.data)),
-  });
+  try {
+    await sdk.Save_Profile({
+      p_payload: JSON.stringify(accountDtoToSavePayload(accountDto)),
+    });
+  } catch (error) {
+    throw new Error(parseGraphqlError(error));
+  }
 
   const account = await fetchProfile(userId);
   if (!account) {

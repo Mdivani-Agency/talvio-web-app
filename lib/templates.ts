@@ -5,6 +5,7 @@ import type { TemplateItem, TemplateKey, TemplateList } from '@lib/types';
 import { RESUME_COLORS_MAP } from '@lib/utils/tailwind';
 
 const STYLES = [
+  // Modern reuses the Ember layout; only the default colour differs.
   { suffix: 'modern', name: 'Modern', template: ember, color: RESUME_COLORS_MAP.grayLight, description: 'Clean modern layout' },
   { suffix: 'ember', name: 'Ember', template: ember, color: RESUME_COLORS_MAP.ember, description: 'Warm accent layout' },
   { suffix: 'mint', name: 'Mint', template: mint, color: RESUME_COLORS_MAP.mint, description: 'Fresh accent layout' },

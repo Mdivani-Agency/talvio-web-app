@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { PreviewDto, Resume } from '@lib/types';
 
 import {
+  encodeGraphqlJson,
   parseResumeContent,
   resumeTypeToDb,
   toResume,
@@ -14,11 +15,23 @@ const content = {
   profile: { firstName: 'Ann', lastName: 'Owner', role: 'Engineer' },
   contacts: { email: 'ann@talvio.test' },
 };
+const contentJson = encodeGraphqlJson(content);
 
 describe('resumeTypeToDb', () => {
   it('maps REST type enums to GraphQL resume_type', () => {
     expect(resumeTypeToDb('GENERAL')).toBe('general');
     expect(resumeTypeToDb('JOB_SPECIFIC')).toBe('job_specific');
+  });
+});
+
+describe('parseResumeContent', () => {
+  it('parses a pg_graphql JSON string', () => {
+    expect(parseResumeContent(contentJson)?.profile.firstName).toBe('Ann');
+  });
+
+  it('returns undefined for malformed content instead of throwing', () => {
+    expect(parseResumeContent('{"nope":true}')).toBeUndefined();
+    expect(parseResumeContent('{')).toBeUndefined();
   });
 });
 
@@ -32,7 +45,7 @@ describe('toResume', () => {
       color: '#1B1B1B',
       font_size: 'md',
       font_family: 'Inter',
-      content,
+      content: contentJson,
       pdf_url: 'https://media.talvio.co/ann.pdf',
       pdf_media_key: 'ann.pdf',
       created_at: '2026-01-01T00:00:00.000Z',
@@ -56,7 +69,7 @@ describe('toResume', () => {
       template_key: 'entry-level-mint',
       color: '#015408',
       font_size: 'sm',
-      content,
+      content: contentJson,
       pdf_url: null,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z',
@@ -64,10 +77,26 @@ describe('toResume', () => {
 
     expect(resume.media).toBeUndefined();
   });
+
+  it('uses an empty metadata placeholder when content is invalid', () => {
+    const resume = toResume({
+      id: '11111111-1111-4111-8111-111111111111',
+      name: 'Broken',
+      template_key: 'entry-level-mint',
+      color: '#015408',
+      font_size: 'sm',
+      content: '{"legacy":true}',
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(resume.metadata.contacts.email).toBe('');
+    expect(resume.metadata.profile.firstName).toBe('');
+  });
 });
 
 describe('write adapters', () => {
-  it('builds an insert object from PreviewDto', () => {
+  it('builds an insert object from PreviewDto with stringified JSON content', () => {
     const body: PreviewDto = {
       name: 'Ann Owner',
       template: 'mid-level-ember',
@@ -83,27 +112,35 @@ describe('write adapters', () => {
       },
     };
 
-    expect(toResumeInsertInput({ userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', body })).toMatchObject({
+    const input = toResumeInsertInput({ userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', body });
+
+    expect(input).toMatchObject({
       user_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       name: 'Ann Owner',
       type: 'general',
       template_key: 'mid-level-ember',
       font_size: 'lg',
     });
+    expect(typeof input.content).toBe('string');
+    expect(JSON.parse(input.content).profile.firstName).toBe('Ann');
   });
 
-  it('clears pdf pointers on update', () => {
+  it('clears pdf pointers on update and stringifies content', () => {
     const patch: Partial<Resume> = {
       name: 'Updated',
       color: '#005BA2',
-      metadata: parseResumeContent(content),
+      metadata: parseResumeContent(contentJson),
     };
 
-    expect(toResumeUpdateSet(patch)).toMatchObject({
+    const set = toResumeUpdateSet(patch);
+
+    expect(set).toMatchObject({
       name: 'Updated',
       color: '#005BA2',
       pdf_url: null,
       pdf_media_key: null,
     });
+    expect(typeof set.content).toBe('string');
+    expect(JSON.parse(set.content as string).profile.firstName).toBe('Ann');
   });
 });

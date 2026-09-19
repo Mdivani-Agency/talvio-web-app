@@ -7,6 +7,7 @@ import type { AppForm } from '@lib/forms/use-form';
 import { fieldErrorMessage } from '@lib/forms/errors';
 
 export const experienceFormValuesSchema = z.object({
+  id: z.string().optional(),
   company: z.string().min(1, { message: 'Company is required' }),
   jobTitle: z.string().min(1, { message: 'Job title is required' }),
   startDate: z.iso.datetime().or(z.literal('')),

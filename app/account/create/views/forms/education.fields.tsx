@@ -7,6 +7,7 @@ import type { AppForm } from '@lib/forms/use-form';
 import { fieldErrorMessage } from '@lib/forms/errors';
 
 export const educationFormValuesSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, { message: 'Name is required' }),
   degreeType: DegreeTypeEnum.or(z.literal('')).refine((val) => val !== '', { message: 'Degree type is required' }),
   startDate: z.iso.datetime().or(z.literal('')),

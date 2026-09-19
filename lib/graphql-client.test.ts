@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseGraphqlError } from './graphql-client';
+import { parseGraphqlError, shouldRetryGraphqlQuery } from './graphql-client';
 
 function graphqlError(message: string, code?: string) {
   return {
@@ -51,5 +51,18 @@ describe('parseGraphqlError', () => {
     expect(parseGraphqlError(new Error('network down'))).toBe('network down');
     expect(parseGraphqlError('plain')).toBe('plain');
     expect(parseGraphqlError({})).toBe('Something went wrong');
+  });
+});
+
+describe('shouldRetryGraphqlQuery', () => {
+  it('does not retry auth or permission errors', () => {
+    expect(shouldRetryGraphqlQuery(0, graphqlError('not authenticated'))).toBe(false);
+    expect(shouldRetryGraphqlQuery(0, graphqlError('permission denied', '42501'))).toBe(false);
+  });
+
+  it('retries other errors up to two failures', () => {
+    expect(shouldRetryGraphqlQuery(0, graphqlError('custom boom'))).toBe(true);
+    expect(shouldRetryGraphqlQuery(1, graphqlError('custom boom'))).toBe(true);
+    expect(shouldRetryGraphqlQuery(2, graphqlError('custom boom'))).toBe(false);
   });
 });

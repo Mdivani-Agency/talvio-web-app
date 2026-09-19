@@ -4,7 +4,10 @@ import { getGraphqlSdk } from '@/lib/graphql-client';
 
 export async function deleteResume(resumeId: string): Promise<{ id: string }> {
   const sdk = await getGraphqlSdk();
-  await sdk.DeleteResume({ id: resumeId, atMost: 1 });
+  const data = await sdk.DeleteResume({ id: resumeId, atMost: 1 });
+  if (!data.deleteFromresumesCollection?.affectedCount) {
+    throw new Error('Resume not found');
+  }
   return { id: resumeId };
 }
 

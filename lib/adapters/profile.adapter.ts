@@ -1,7 +1,8 @@
-import { format } from 'date-fns';
-
 import type { Account, AccountDto, Education, Experience } from '@lib/types';
 import { employmentTypeEnum, locationTypeEnum } from '@lib/schema/enums';
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const EMPLOYMENT_TO_DB: Record<string, string> = {
   'full-time': 'full_time',
@@ -32,6 +33,7 @@ export type ProfileRow = {
 };
 
 export type ContactRow = {
+  id?: string;
   kind: string;
   value: string;
   is_primary: boolean;
@@ -39,6 +41,7 @@ export type ContactRow = {
 };
 
 export type ExperienceRow = {
+  id?: string;
   company: string;
   job_title: string;
   employment_type?: string | null;
@@ -53,6 +56,7 @@ export type ExperienceRow = {
 };
 
 export type EducationRow = {
+  id?: string;
   name: string;
   degree_type: string;
   start_date: string;
@@ -62,17 +66,20 @@ export type EducationRow = {
 };
 
 export type NamedRow = {
+  id?: string;
   name: string;
   url?: string | null;
   additional_details?: string | null;
 };
 
 export type LinkRow = {
+  id?: string;
   type: string;
   value: string;
 };
 
 export type LanguageRow = {
+  id?: string;
   language: string;
   proficiency: string;
 };
@@ -83,8 +90,8 @@ export type ProfileCollections = {
   educations?: EducationRow[];
   projects?: NamedRow[];
   recommendations?: NamedRow[];
-  skills?: Array<{ name: string }>;
-  tools?: Array<{ name: string }>;
+  skills?: Array<{ id?: string; name: string }>;
+  tools?: Array<{ id?: string; name: string }>;
   links?: LinkRow[];
   languages?: LanguageRow[];
 };
@@ -104,11 +111,19 @@ export function toDateOnly(value?: string | null): string | undefined {
   if (!value) {
     return undefined;
   }
+  const dateOnly = /^(\d{4}-\d{2}-\d{2})/.exec(value);
+  if (dateOnly) {
+    return dateOnly[1];
+  }
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
     return undefined;
   }
-  return format(parsed, 'yyyy-MM-dd');
+  return parsed.toISOString().slice(0, 10);
+}
+
+export function persistedRowId(id?: string | null): string | undefined {
+  return id && UUID_RE.test(id) ? id : undefined;
 }
 
 export function toBooleanPresent(value: unknown): boolean {
@@ -150,29 +165,9 @@ function primaryContact(contacts: ContactRow[] | undefined, kind: string) {
   return (matches.find((row) => row.is_primary) ?? matches[0])?.value;
 }
 
-function contactsFromProfile(profile: AccountDto['profile']) {
-  const contacts: Array<{
-    kind: 'email' | 'phone' | 'url';
-    value: string;
-    is_primary: boolean;
-    sort_order: number;
-  }> = [];
-
-  if (profile.email) {
-    contacts.push({ kind: 'email', value: profile.email, is_primary: true, sort_order: 0 });
-  }
-  if (profile.phone) {
-    contacts.push({ kind: 'phone', value: profile.phone, is_primary: true, sort_order: 1 });
-  }
-  if (profile.website) {
-    contacts.push({ kind: 'url', value: profile.website, is_primary: true, sort_order: 2 });
-  }
-
-  return contacts;
-}
-
 function experienceFromRow(row: ExperienceRow): Experience {
   return {
+    id: persistedRowId(row.id),
     company: row.company,
     jobTitle: row.job_title,
     startDate: toIsoDateTime(row.start_date) ?? `${row.start_date}T00:00:00.000Z`,
@@ -189,6 +184,7 @@ function experienceFromRow(row: ExperienceRow): Experience {
 
 function educationFromRow(row: EducationRow): Education {
   return {
+    id: persistedRowId(row.id),
     name: row.name,
     degreeType: row.degree_type as Education['degreeType'],
     startDate: toIsoDateTime(row.start_date) ?? `${row.start_date}T00:00:00.000Z`,
@@ -218,19 +214,32 @@ export function accountFromProfile(profile: ProfileRow, collections: ProfileColl
     experience: (collections.experiences ?? []).map(experienceFromRow),
     education: (collections.educations ?? []).map(educationFromRow),
     projects: (collections.projects ?? []).map((row) => ({
+      id: persistedRowId(row.id),
       name: row.name,
       url: row.url ?? undefined,
       additionalDetails: row.additional_details ?? '',
     })),
     recommendations: (collections.recommendations ?? []).map((row) => ({
+      id: persistedRowId(row.id),
       name: row.name,
       url: row.url ?? '',
       additionalDetails: row.additional_details ?? '',
     })),
-    skills: (collections.skills ?? []).map((row) => ({ name: row.name })),
-    tools: (collections.tools ?? []).map((row) => ({ name: row.name })),
-    links: (collections.links ?? []).map((row) => ({ type: row.type, value: row.value })),
+    skills: (collections.skills ?? []).map((row) => ({
+      id: persistedRowId(row.id),
+      name: row.name,
+    })),
+    tools: (collections.tools ?? []).map((row) => ({
+      id: persistedRowId(row.id),
+      name: row.name,
+    })),
+    links: (collections.links ?? []).map((row) => ({
+      id: persistedRowId(row.id),
+      type: row.type,
+      value: row.value,
+    })),
     languages: (collections.languages ?? []).map((row) => ({
+      id: persistedRowId(row.id),
       language: row.language,
       proficiency: row.proficiency as NonNullable<AccountDto['languages']>[number]['proficiency'],
     })),
@@ -247,9 +256,12 @@ export function accountDtoToSavePayload(account: AccountDto) {
       seniority: account.profile.seniority ?? 'entry',
       city: account.profile.city,
       country: account.profile.country,
+      email: account.profile.email,
+      phone: account.profile.phone,
+      website: account.profile.website,
     },
-    contacts: contactsFromProfile(account.profile),
     experience: (account.experience ?? []).map((row, index) => ({
+      id: persistedRowId(row.id),
       company: row.company,
       jobTitle: row.jobTitle,
       startDate: toDateOnly(row.startDate),
@@ -264,6 +276,7 @@ export function accountDtoToSavePayload(account: AccountDto) {
       sortOrder: index,
     })),
     education: (account.education ?? []).map((row, index) => ({
+      id: persistedRowId(row.id),
       name: row.name,
       degreeType: row.degreeType,
       startDate: toDateOnly(row.startDate),
@@ -273,25 +286,37 @@ export function accountDtoToSavePayload(account: AccountDto) {
       sortOrder: index,
     })),
     projects: (account.projects ?? []).map((row, index) => ({
+      id: persistedRowId(row.id),
       name: row.name,
       url: row.url,
       additionalDetails: row.additionalDetails,
       sortOrder: index,
     })),
     recommendations: (account.recommendations ?? []).map((row, index) => ({
+      id: persistedRowId(row.id),
       name: row.name,
       url: row.url,
       additionalDetails: row.additionalDetails,
       sortOrder: index,
     })),
-    skills: (account.skills ?? []).map((row, index) => ({ name: row.name, sortOrder: index })),
-    tools: (account.tools ?? []).map((row, index) => ({ name: row.name, sortOrder: index })),
+    skills: (account.skills ?? []).map((row, index) => ({
+      id: persistedRowId(row.id),
+      name: row.name,
+      sortOrder: index,
+    })),
+    tools: (account.tools ?? []).map((row, index) => ({
+      id: persistedRowId(row.id),
+      name: row.name,
+      sortOrder: index,
+    })),
     links: (account.links ?? []).map((row, index) => ({
+      id: persistedRowId(row.id),
       type: row.type,
       value: row.value,
       sortOrder: index,
     })),
     languages: (account.languages ?? []).map((row, index) => ({
+      id: persistedRowId(row.id),
       language: row.language,
       proficiency: row.proficiency,
       sortOrder: index,

@@ -21,7 +21,7 @@ query ProfileByUser($userId: UUID!) {
   }
   contactsCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {
@@ -37,7 +37,7 @@ query ProfileByUser($userId: UUID!) {
   }
   experiencesCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {
@@ -60,7 +60,7 @@ query ProfileByUser($userId: UUID!) {
   }
   educationsCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {
@@ -78,7 +78,7 @@ query ProfileByUser($userId: UUID!) {
   }
   projectsCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {
@@ -93,7 +93,7 @@ query ProfileByUser($userId: UUID!) {
   }
   recommendationsCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {
@@ -108,7 +108,7 @@ query ProfileByUser($userId: UUID!) {
   }
   skillsCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {
@@ -121,7 +121,7 @@ query ProfileByUser($userId: UUID!) {
   }
   toolsCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {
@@ -134,7 +134,7 @@ query ProfileByUser($userId: UUID!) {
   }
   linksCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {
@@ -148,7 +148,7 @@ query ProfileByUser($userId: UUID!) {
   }
   languagesCollection(
     filter: { user_id: { eq: $userId } }
-    first: 50
+    first: 200
     orderBy: [{ sort_order: AscNullsLast }]
   ) {
     edges {

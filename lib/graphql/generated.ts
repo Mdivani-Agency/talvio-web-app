@@ -19,7 +19,7 @@ export type Scalars = {
   Cursor: { input: string; output: string; }
   Date: { input: string; output: string; }
   Datetime: { input: string; output: string; }
-  JSON: { input: unknown; output: unknown; }
+  JSON: { input: string; output: string; }
   Opaque: { input: unknown; output: unknown; }
   UUID: { input: string; output: string; }
 };
@@ -561,6 +561,11 @@ export type Resume_Type =
   | 'general'
   | 'job_specific';
 
+export type Resume_TypeFilter = {
+  eq?: InputMaybe<Resume_Type>;
+  in?: InputMaybe<Array<Resume_Type>>;
+};
+
 export type Resumes = {
   __typename?: 'resumes';
   color: Scalars['String']['output'];
@@ -598,7 +603,7 @@ export type ResumesEdge = {
 
 export type ResumesFilter = {
   id?: InputMaybe<UuidFilter>;
-  type?: InputMaybe<StringFilter>;
+  type?: InputMaybe<Resume_TypeFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
@@ -755,7 +760,7 @@ export type ListResumeFragment = { id: string, user_id: string, name: string, ty
 
 export type ResumesByUserQueryVariables = Exact<{
   userId: string;
-  type?: string | null | undefined;
+  type?: Resume_Type | null | undefined;
   first?: number | null | undefined;
   after?: string | null | undefined;
 }>;
@@ -766,13 +771,13 @@ export type ResumeByIdQueryVariables = Exact<{
   id: string;
 }>;
 
-export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: unknown, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string } | null }> } | null };
+export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string } | null }> } | null };
 
 export type InsertResumeMutationVariables = Exact<{
   objects: Array<ResumesInsertInput> | ResumesInsertInput;
 }>;
 
-export type InsertResumeMutation = { insertIntoresumesCollection: { affectedCount: number, records: Array<{ content: unknown, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string }> } | null };
+export type InsertResumeMutation = { insertIntoresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string }> } | null };
 
 export type UpdateResumeMutationVariables = Exact<{
   id: string;
@@ -780,7 +785,7 @@ export type UpdateResumeMutationVariables = Exact<{
   atMost?: number | null | undefined;
 }>;
 
-export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: unknown, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string }> } | null };
+export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, created_at: string, updated_at: string }> } | null };
 
 export type DeleteResumeMutationVariables = Exact<{
   id: string;
@@ -806,7 +811,7 @@ export type ResumesCollectionQueryVariables = Exact<{
 export type ResumesCollectionQuery = { resumesCollection: { edges: Array<{ node: { id: string } | null }> } | null };
 
 export type Save_ProfileMutationVariables = Exact<{
-  p_payload?: unknown;
+  p_payload?: string | null | undefined;
 }>;
 
 export type Save_ProfileMutation = { save_profile: string | null };
@@ -869,7 +874,7 @@ export const ProfileByUserDocument = gql`
   }
   contactsCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -885,7 +890,7 @@ export const ProfileByUserDocument = gql`
   }
   experiencesCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -908,7 +913,7 @@ export const ProfileByUserDocument = gql`
   }
   educationsCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -926,7 +931,7 @@ export const ProfileByUserDocument = gql`
   }
   projectsCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -941,7 +946,7 @@ export const ProfileByUserDocument = gql`
   }
   recommendationsCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -956,7 +961,7 @@ export const ProfileByUserDocument = gql`
   }
   skillsCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -969,7 +974,7 @@ export const ProfileByUserDocument = gql`
   }
   toolsCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -982,7 +987,7 @@ export const ProfileByUserDocument = gql`
   }
   linksCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -996,7 +1001,7 @@ export const ProfileByUserDocument = gql`
   }
   languagesCollection(
     filter: {user_id: {eq: $userId}}
-    first: 50
+    first: 200
     orderBy: [{sort_order: AscNullsLast}]
   ) {
     edges {
@@ -1011,7 +1016,7 @@ export const ProfileByUserDocument = gql`
 }
     ${ProfileFieldsFragmentDoc}`;
 export const ResumesByUserDocument = gql`
-    query ResumesByUser($userId: UUID!, $type: String, $first: Int, $after: Cursor) {
+    query ResumesByUser($userId: UUID!, $type: resume_type, $first: Int, $after: Cursor) {
   resumesCollection(
     filter: {user_id: {eq: $userId}, type: {eq: $type}}
     orderBy: [{updated_at: DescNullsLast}]

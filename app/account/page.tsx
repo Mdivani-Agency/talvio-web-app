@@ -8,6 +8,7 @@ import { redirect, useRouter } from "next/navigation";
 import { Dashboard } from "./dashboard";
 import ErrorPage from "@app/auth/error/page";
 import { useUserSession } from "@lib/providers/session-provider";
+import { shouldRetryGraphqlQuery } from "@/lib/graphql-client";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function AccountPage() {
   const { isLoading, isError, data: account } = useQuery({
     queryKey: ['account', userId],
     enabled: !!userId,
+    retry: shouldRetryGraphqlQuery,
     queryFn: async () => {
       send({ type: 'INITIALIZE' });
       const nextAccount = await fetchProfile(userId);

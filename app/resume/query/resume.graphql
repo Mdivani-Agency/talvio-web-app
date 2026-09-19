@@ -13,7 +13,7 @@ fragment ListResume on resumes {
   updated_at
 }
 
-query ResumesByUser($userId: UUID!, $type: String, $first: Int, $after: Cursor) {
+query ResumesByUser($userId: UUID!, $type: resume_type, $first: Int, $after: Cursor) {
   resumesCollection(
     filter: { user_id: { eq: $userId }, type: { eq: $type } }
     orderBy: [{ updated_at: DescNullsLast }]

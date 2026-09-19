@@ -104,6 +104,11 @@ input DateFilter {
   lte: Date
 }
 
+input resume_typeFilter {
+  eq: resume_type
+  in: [resume_type!]
+}
+
 input DatetimeFilter {
   eq: Datetime
   gt: Datetime
@@ -453,7 +458,7 @@ type resumesConnection {
 input resumesFilter {
   id: UUIDFilter
   user_id: UUIDFilter
-  type: StringFilter
+  type: resume_typeFilter
 }
 
 input resumesOrderBy {

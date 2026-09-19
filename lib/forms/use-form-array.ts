@@ -17,7 +17,10 @@ export function useFormArray<TItem extends Record<string, unknown>>(form: AppFor
   };
 
   return {
-    fields: values.map((item, index) => ({ ...item, id: `${name}-${index}` })),
+    fields: values.map((item, index) => ({
+      ...item,
+      id: typeof item.id === 'string' && item.id.length > 0 ? item.id : `${name}-${index}`,
+    })),
     append: (item: TItem) => arrayApi.pushFieldValue(name, item),
     remove: (index: number) => {
       void arrayApi.removeFieldValue(name, index);
