@@ -12,5 +12,6 @@ alwaysApply: true
 - Before creating a new issue, search Linear for duplicates.
 - Include a concise title, relevant context, acceptance criteria, and implementation notes.
 - Do not create or modify Linear issues unless explicitly requested by the user, but update status if your work results in status change of the issue.
+- For planning (Notion first, then Linear issues), follow `plan.mdc`. Do not implement unless explicitly asked.
 - For ticket implementation workflow (status, comments, PR handoff, Notion updates), follow `start-issue.mdc`.
 - If the project name is ambiguous or unavailable, ask before creating an issue.
