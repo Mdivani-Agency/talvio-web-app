@@ -12,7 +12,7 @@ alwaysApply: true
 - Before creating a new issue, search Linear for duplicates.
 - Include a concise title, relevant context, acceptance criteria, and implementation notes.
 - Do not create or modify Linear issues unless explicitly requested by the user, but update status if your work results in status change of the issue.
-- For planning (Notion first, then Linear issues), use `/plan`. Do not implement unless explicitly asked.
-- For reviewing a plan or Linear issue without implementing, use `/review-plan`.
-- For ticket implementation workflow (status, comments, PR handoff, Notion updates), use `/start-issue`.
+- For planning (Notion first, then Linear issues), use `/plan` (or read `.cursor/commands/plan.md`). Do not implement unless explicitly asked.
+- For reviewing a plan or Linear issue without implementing, use `/review-plan` (or read `.cursor/commands/review-plan.md`).
+- For ticket implementation workflow (status, comments, PR handoff, Notion updates), use `/start-issue` (or read `.cursor/commands/start-issue.md`).
 - If the project name is ambiguous or unavailable, ask before creating an issue.
