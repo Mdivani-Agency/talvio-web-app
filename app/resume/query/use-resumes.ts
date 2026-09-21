@@ -24,7 +24,7 @@ export async function fetchResumes(
   const missingParentIds = resumes
     .filter(isOpenDraft)
     .map((draft) => draft.sourceResumeId)
-    .filter((id): id is string => Boolean(id) && !knownIds.has(id));
+    .filter((id): id is string => typeof id === 'string' && id.length > 0 && !knownIds.has(id));
 
   if (missingParentIds.length > 0) {
     const parents = await Promise.all(missingParentIds.map((id) => fetchResume(id)));
