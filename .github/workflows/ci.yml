@@ -1,5 +1,15 @@
 name: CI
 
+# PRs: quality only.
+# Push to main / development: quality → db push → Vercel CLI deploy.
+# Vercel Git auto-deploys for those branches are off (see vercel.json).
+#
+# GitHub Environments (same secret names, different values):
+#   development ← branch development
+#   production  ← branch main
+# Secrets: SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF,
+#          VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+
 on:
   pull_request:
   push:
@@ -11,8 +21,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quality:
@@ -53,3 +63,85 @@ jobs:
 
       - name: Build
         run: yarn build
+
+  db-push:
+    name: Push migrations
+    needs: quality
+    if: github.event_name == 'push'
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Skip when hosted project is not configured
+        if: env.SUPABASE_ACCESS_TOKEN == '' || env.SUPABASE_PROJECT_REF == ''
+        run: |
+          echo "::notice::Skipping db push — set environment secrets SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF."
+
+      - name: Set up Supabase CLI
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.117.0
+
+      - name: Push pending migrations
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
+        run: supabase db push --yes --project-ref "${{ env.SUPABASE_PROJECT_REF }}"
+
+  deploy:
+    name: Deploy to Vercel
+    needs: [quality, db-push]
+    if: github.event_name == 'push'
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Require Vercel secrets
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN}" ] || [ -z "${VERCEL_ORG_ID}" ] || [ -z "${VERCEL_PROJECT_ID}" ]; then
+            echo "::error::Set environment secrets VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID."
+            exit 1
+          fi
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel environment
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            vercel pull --yes --environment=production --token="${VERCEL_TOKEN}"
+          else
+            vercel pull --yes --environment=preview --token="${VERCEL_TOKEN}"
+          fi
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            vercel build --prod --token="${VERCEL_TOKEN}"
+          else
+            vercel build --token="${VERCEL_TOKEN}"
+          fi
+
+      - name: Deploy
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            vercel deploy --prebuilt --prod --token="${VERCEL_TOKEN}"
+          else
+            vercel deploy --prebuilt --token="${VERCEL_TOKEN}"
+          fi

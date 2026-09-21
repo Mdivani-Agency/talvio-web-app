@@ -52,12 +52,12 @@ yarn db:push           # apply pending migrations to a linked remote
 `yarn db:reset` is **local only** (destroys the Docker database and replays
 migrations). Do not run it against a linked hosted project.
 
-After merge to `development` or `main`, GitHub Actions runs
-`supabase db push` (forward-only, pending migrations) to `talvio-dev` or
-`talvio-prod` **only when the push changes `supabase/migrations/`**. That
-workflow does not run on pull requests. Required repository secrets:
-`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF_DEV`,
-`SUPABASE_PROJECT_REF_PROD`. The job skips until those are set.
+After quality checks pass on `development` or `main`, GitHub Actions runs
+`supabase db push` (forward-only, pending migrations) then a Vercel CLI
+deploy. That path does not run on pull requests. Use GitHub Environments
+`development` and `production` with secrets `SUPABASE_ACCESS_TOKEN` and
+`SUPABASE_PROJECT_REF` (one ref per environment). The db-push job skips
+until those are set.
 
 PR merge gates for db / e2e / unit / integration tests will land later;
 they are not part of this bootstrap.

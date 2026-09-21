@@ -20,7 +20,7 @@ yarn build
 yarn start
 ```
 
-Pull requests and pushes to `main` / `development` run lint, typecheck, and `yarn build`. After a merge to `development` or `main` that changes `supabase/migrations/`, a separate workflow pushes pending migrations to the matching hosted Supabase project (`talvio-dev` / `talvio-prod`). The quality job uses public `NEXT_PUBLIC_*` stubs only — no production secrets.
+Pull requests run lint, typecheck, tests, and `yarn build`. Pushes to `main` or `development` run those checks, then `supabase db push` and a Vercel CLI deploy. The quality job uses public `NEXT_PUBLIC_*` stubs only — no production secrets. Vercel Git auto-deploys are disabled for those two branches (`vercel.json`).
 
 ## Local Supabase
 
@@ -60,9 +60,28 @@ Copy [`.env.example`](.env.example) to `.env.local`. Set the same names in the V
 | `GOOGLE_FONTS_API_KEY` | yes | Font file lookup at `/api/resume/fonts` |
 | `OPENAI_API_KEY` | no | Resume parse/QA; falls back to `TEST_KEY` if unset |
 
+## GitHub Actions
+
+Create two GitHub Environments and put the **same secret names** on each (values differ):
+
+| Environment | Branch | Hosted Supabase |
+| --- | --- | --- |
+| `development` | `development` | talvio-dev |
+| `production` | `main` | talvio-prod |
+
+| Secret | Used for |
+| --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | Supabase CLI `db push` |
+| `SUPABASE_PROJECT_REF` | Target project ref for that environment |
+| `VERCEL_TOKEN` | Vercel CLI deploy |
+| `VERCEL_ORG_ID` | Vercel team / org |
+| `VERCEL_PROJECT_ID` | Vercel project for that environment |
+
+`db push` skips until the Supabase secrets are set. Deploy fails until the Vercel secrets are set.
+
 ## Deploy on Vercel
 
-Connect this repo to a Vercel project (Next.js framework preset). Vercel does not need a `vercel.json` — the Next.js preset is enough.
+Keep the repo connected to the Vercel project (Next.js framework preset) so CLI deploys can pull env vars. Do **not** rely on Vercel Git auto-deploys for `main` or `development` — `vercel.json` turns those off. GitHub Actions deploys `main` as production and `development` as preview.
 
 | Setting | Value |
 | --- | --- |
