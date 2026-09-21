@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   }
 
   const apiKey = process.env.MEDIA_SERVICE_API_KEY;
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const baseUrl = process.env.MEDIA_API_BASE_URL;
   if (!apiKey || !baseUrl) {
     return Response.json({ error: 'Media upload is not configured' }, { status: 503 });
   }
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
 
-  const response = await fetch(`${baseUrl.replace(/\/$/, '')}/media/presign/${context.user.id}`, {
+  const response = await fetch(`${baseUrl}/presign/${context.user.id}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
