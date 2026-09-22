@@ -2,7 +2,7 @@ import { Header } from "@components/views";
 import { SessionProvider } from "@lib/providers";
 import { ResumeProvider } from "./providers/state-provider";
 
-export default async function ResumeLayout({ children }: LayoutProps<'/resume'>) {
+export default async function ResumeLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="font-(family-var(--font-montserrat))">
       <SessionProvider>

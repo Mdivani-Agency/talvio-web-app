@@ -11,10 +11,10 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** Keep real row ids; drop client list keys like `experience-0`. */
-export const persistedIdSchema = z.preprocess(
-  (value) => (typeof value === 'string' && UUID_RE.test(value) ? value : undefined),
-  z.uuid().optional(),
-);
+export const persistedIdSchema = z
+  .string()
+  .transform((value) => (UUID_RE.test(value) ? value : undefined))
+  .optional();
 
 const baseProfileSchema = z.object({
   email: z.string({ message: 'Email is required' }).email({ message: 'Invalid email address' }),
