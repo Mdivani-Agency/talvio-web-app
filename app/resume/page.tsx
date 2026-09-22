@@ -12,7 +12,6 @@ import { RESUME_COLORS_MAP } from '@lib/utils';
 import OptionsView from './views/options-view';
 import ImportResumePage from './views/import-page';
 import { shouldSeedResumeFromQuery } from '@lib/drafts';
-import { useRef } from 'react';
 
 function previewSeed(account: AccountDto | null, template: TemplateKey): PreviewDto {
   if (!account) {
@@ -39,9 +38,7 @@ function ResumeFlow() {
   const searchParams = useSearchParams();
   const templatekey = searchParams.get('template') as TemplateKey;
   const { session, isPending: isAuthenticating } = useUserSession();
-  const { send, state } = useResumeContext();
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const { send, state, actorRef } = useResumeContext();
 
   const userId = session?.user.id;
 
@@ -49,7 +46,7 @@ function ResumeFlow() {
     queryKey: ['account', userId],
     queryFn: async () => {
       const seedIfNeeded = (value: PreviewDto) => {
-        if (shouldSeedResumeFromQuery(stateRef.current.value)) {
+        if (shouldSeedResumeFromQuery(actorRef.getSnapshot().value)) {
           send({
             type: 'FETCHING_RESUME_FAILURE',
             value,
