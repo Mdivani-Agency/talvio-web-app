@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createActor } from 'xstate';
 
 import { accountState } from '@app/account/state/machine';
-import { FLOW_USER_ID, fullAccountDto, versionedAccountDraft } from '../../test/fixtures/flow';
+import { FLOW_USER_ID, fullAccountDto, savedAccount, versionedAccountDraft } from '../../test/fixtures/flow';
 import type { AccountContext } from '@app/account/state/types';
 
 import {
@@ -91,6 +91,22 @@ describe('account drafts', () => {
     expect(snapshot.context.questionIndex).toBe(1);
     expect(snapshot.context.unsentAnswer).toBe('Cut render time');
     expect(snapshot.context.accountDto?.profile.firstName).toBe('Ada');
+    actor.stop();
+  });
+
+  it('reaches existingAccount from a restored draft when a saved profile is found', () => {
+    const parsed = parseAccountDraft(versionedAccountDraft);
+    const actor = createActor(accountState);
+    actor.start();
+    for (const event of accountDraftRestoreEvents(parsed!.content, parsed!.progress)) {
+      actor.send(event);
+    }
+    expect(actor.getSnapshot().matches('newAccount')).toBe(true);
+
+    actor.send({ type: 'INITIALIZE' });
+    actor.send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: savedAccount });
+    expect(actor.getSnapshot().matches('existingAccount')).toBe(true);
+    expect(actor.getSnapshot().context.account?.id).toBe(savedAccount.id);
     actor.stop();
   });
 });

@@ -27,6 +27,7 @@ export default function AccountPage() {
 
       const nextAccount = await fetchProfile(userId);
       if (nextAccount) {
+        send({ type: 'INITIALIZE' });
         clearAccountDraft();
         send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: nextAccount });
         return nextAccount;

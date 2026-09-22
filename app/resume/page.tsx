@@ -11,7 +11,7 @@ import { ResumeProvider, useResumeContext } from './providers/state-provider';
 import { RESUME_COLORS_MAP } from '@lib/utils';
 import OptionsView from './views/options-view';
 import ImportResumePage from './views/import-page';
-import { shouldSeedResumeFromQuery } from '@lib/drafts';
+import { normalizeResumeTemplate, shouldSeedResumeFromQuery } from '@lib/drafts';
 
 function previewSeed(account: AccountDto | null, template: TemplateKey): PreviewDto {
   if (!account) {
@@ -36,7 +36,7 @@ function previewSeed(account: AccountDto | null, template: TemplateKey): Preview
 
 function ResumeFlow() {
   const searchParams = useSearchParams();
-  const templatekey = searchParams.get('template') as TemplateKey;
+  const templatekey = normalizeResumeTemplate(searchParams.get('template'));
   const { session, isPending: isAuthenticating } = useUserSession();
   const { send, state, actorRef } = useResumeContext();
 

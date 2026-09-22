@@ -36,7 +36,9 @@ export {
 } from './account-draft';
 export {
   buildResumeDraft,
+  DEFAULT_RESUME_TEMPLATE,
   EMPTY_RESUME_PREVIEW,
+  normalizeResumeTemplate,
   parseResumeDraft,
   readParsedResumeDraft,
   restoreResumeDraft,

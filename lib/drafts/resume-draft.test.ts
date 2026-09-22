@@ -15,6 +15,8 @@ import { RESUME_COLORS_MAP } from '@lib/utils';
 
 import {
   buildResumeDraft,
+  DEFAULT_RESUME_TEMPLATE,
+  normalizeResumeTemplate,
   parseResumeDraft,
   resumeDraftRestoreEvents,
   resumeDraftToPreview,
@@ -100,6 +102,27 @@ describe('resume drafts', () => {
     expect(snapshot.context.resumeDto.color).toBe('#1B1B1B');
     expect(snapshot.context.template).toBeNull();
     actor.stop();
+  });
+
+  it('defaults a missing template so the draft can be restored', () => {
+    expect(normalizeResumeTemplate(null)).toBe(DEFAULT_RESUME_TEMPLATE);
+    expect(normalizeResumeTemplate('not-a-template')).toBe(DEFAULT_RESUME_TEMPLATE);
+
+    const draft = buildResumeDraft({
+      owner: { kind: 'guest', guestId: FLOW_GUEST_ID },
+      context: {
+        ...emptyContext,
+        resumeDto: {
+          ...emptyContext.resumeDto,
+          template: null as unknown as ResumeContext['resumeDto']['template'],
+        },
+      },
+      stateValue: 'options',
+      documentId: 'new',
+    });
+
+    expect(draft).not.toBeNull();
+    expect(parseResumeDraft(draft!)?.content.template).toBe(DEFAULT_RESUME_TEMPLATE);
   });
 
   it('does not persist the fetching state', () => {

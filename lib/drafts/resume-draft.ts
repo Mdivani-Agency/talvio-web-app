@@ -1,6 +1,7 @@
 import { EMPTY_RESUME_DOCUMENT } from '@lib/models/resume-document';
+import { TemplateKeyEnum } from '@lib/schema/enums';
 import { RESUME_COLORS_MAP } from '@lib/utils';
-import type { PreviewDto } from '@lib/types';
+import type { PreviewDto, TemplateKey } from '@lib/types';
 import type { ResumeContext, ResumeEvents } from '@app/resume/state/types';
 
 import {
@@ -24,12 +25,19 @@ export function resumeProgressFromState(stateValue: unknown): ResumeProgress | u
   return undefined;
 }
 
+export const DEFAULT_RESUME_TEMPLATE: TemplateKey = 'senior-level-modern';
+
+export function normalizeResumeTemplate(template: unknown): TemplateKey {
+  const parsed = TemplateKeyEnum.safeParse(template);
+  return parsed.success ? parsed.data : DEFAULT_RESUME_TEMPLATE;
+}
+
 export function resumeContentFromDto(dto: PreviewDto): ResumeDraftContent {
   return {
     resume: dto.resume,
     name: dto.name,
     ...(dto.label ? { label: dto.label } : {}),
-    template: dto.template,
+    template: normalizeResumeTemplate(dto.template),
     color: dto.color,
     fontSize: dto.fontSize,
   };
@@ -131,7 +139,7 @@ export function resumeDraftToSnapshot(draft: VersionedDraft) {
 export const EMPTY_RESUME_PREVIEW: PreviewDto = {
   resume: EMPTY_RESUME_DOCUMENT,
   name: 'my resume',
-  template: 'senior-level-modern',
+  template: DEFAULT_RESUME_TEMPLATE,
   color: RESUME_COLORS_MAP.black,
   fontSize: 'md',
 };
