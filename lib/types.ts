@@ -14,7 +14,7 @@ import {
 import { LanguageProficiency, TemplateKeyEnum } from "./schema/enums";
 import { parsedAccountSchema } from "./schema/parsed.schema";
 import { questionSchema } from "./clients/openai.client";
-import { resumeFormSchema, resumeSchema } from "./schema/resume.schema";
+import { resumeDraftSchema, resumeSchema } from "./schema/resume.schema";
 import { Template } from "@pdf-tlv/resume";
 
 export type User = {
@@ -84,7 +84,7 @@ export type TemplateItem = {
 
 export type TemplateList = Record<'entry' | 'mid' | 'senior', Array<TemplateItem>>;
 export type ResumeDto = z.infer<typeof resumeSchema>;
-export type ResumeForm = z.infer<typeof resumeFormSchema>;
+export type ResumeForm = z.infer<typeof resumeDraftSchema>;
 export type Resume = ResumeDto & {
   media?: {
     url: string;
@@ -97,7 +97,7 @@ export type Resume = ResumeDto & {
 };
 
 export type PreviewDto = Omit<ResumeDto, 'metadata'> & {
-  resume: AccountDto;
+  resume: ResumeForm;
 }
 
 // Parsed types

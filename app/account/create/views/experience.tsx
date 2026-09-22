@@ -8,28 +8,31 @@ import { Label } from '@components/ui';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
+import { preserveDocumentFields, resumeItemToAccountDialog } from '@lib/models/resume-document';
 
 type ExperienceViewProps = {
   className?: string;
   form: AppForm;
+  /** Convert account-shaped dialogs into resume document items. */
+  documentMode?: boolean;
 };
 
-export const ExperienceView = ({ className, form }: ExperienceViewProps) => {
+export const ExperienceView = ({ className, form, documentMode = false }: ExperienceViewProps) => {
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const { fields, append, remove, update, replace } = useFormArray<Experience>(form, 'experience');
 
   const handleAddExperience = useCallback(
     (experience: Experience) => {
-      append(experience);
+      append(documentMode ? preserveDocumentFields(undefined, experience) : experience);
     },
-    [append],
+    [append, documentMode],
   );
 
   const handleUpdateExperience = useCallback(
     (index: number, experience: Experience) => {
-      update(index, experience);
+      update(index, documentMode ? preserveDocumentFields(fields[index], experience) : experience);
     },
-    [update],
+    [documentMode, fields, update],
   );
 
   const handleRemoveExperience = useCallback(
@@ -50,7 +53,13 @@ export const ExperienceView = ({ className, form }: ExperienceViewProps) => {
           <FormList
             items={items}
             labelKey="company"
-            renderForm={(item, onSubmit) => <ExperienceForm action="edit" onSubmit={onSubmit} defaultValues={item} />}
+            renderForm={(item, onSubmit) => (
+              <ExperienceForm
+                action="edit"
+                onSubmit={onSubmit}
+                defaultValues={documentMode ? resumeItemToAccountDialog(item) : item}
+              />
+            )}
             onReorder={(nextItems) => {
               replace(nextItems);
               onReorder(nextItems);

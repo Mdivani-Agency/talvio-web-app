@@ -17,7 +17,7 @@ import {
 } from '@/lib/adapters/profile.adapter';
 import { accountSchema } from '@lib/schema/account.schema';
 import { resumeFormSchema, resumeSchema } from '@lib/schema/resume.schema';
-import { accountToResume, resumeToAccount } from '@lib/utils/resume';
+import { profileToResumeDocument } from '@lib/models/resume-document';
 
 import {
   EDUCATION_ID,
@@ -142,23 +142,52 @@ describe('flow baseline fixtures', () => {
     expect(legacyResumeSnapshot.context.template).toEqual({ kind: 'runtime-template-object' });
   });
 
-  it('documents the current lossy account/resume conversion', () => {
-    const converted = accountToResume(fullAccountDto);
-    expect(converted.skills).toEqual([{ name: 'TypeScript' }]);
-    expect(converted).not.toHaveProperty('location');
-    expect(converted.profile).not.toHaveProperty('seniority');
-    expect(converted.links).toBeUndefined();
+  it('converts a profile once and keeps every previously dropped field', () => {
+    const converted = profileToResumeDocument(fullAccountDto);
+    expect(converted.profile).toEqual({
+      firstName: 'Ada',
+      lastName: 'Owner',
+      role: 'Staff Engineer',
+      tagline: 'Builds hiring products',
+    });
+    expect(converted.contacts).toEqual({
+      email: 'ada@talvio.test',
+      phone: '+1-415-555-0100',
+      url: 'https://ada.example',
+    });
+    expect(converted.location).toEqual({ city: 'Oakland', country: 'United States' });
+    expect(converted.skills).toEqual([{ id: SKILL_ID, name: 'TypeScript' }]);
+    expect(converted.tools).toEqual([{ id: TOOL_ID, name: 'Postgres' }]);
+    expect(converted.links).toEqual([{ id: LINK_ID, type: 'github', value: 'https://github.com/ada' }]);
+    expect(converted.languages).toEqual([{ id: LANGUAGE_ID, language: 'English', proficiency: 'native' }]);
+    expect(converted.experience?.[0]).toMatchObject({
+      id: EXPERIENCE_ID,
+      company: 'Talvio',
+      jobTitle: 'Staff Engineer',
+      employmentType: 'full-time',
+      locationType: 'hybrid',
+      isPresent: false,
+      achievements: ['Cut PDF render time'],
+      responsibilities: ['Owned the editor'],
+      keyContributions: ['Shipped template gallery'],
+    });
+    expect(converted.experience?.[0]?.description?.content?.[0]?.content?.[0]?.content?.[0]).toMatchObject({
+      type: 'paragraph',
+      marks: [{ type: 'keyContributions' }],
+    });
+    expect(converted.education?.[0]?.id).toBe(EDUCATION_ID);
+    expect(converted.education?.[0]?.description).toMatchObject({ type: 'doc' });
+    expect(converted.recommendations?.[0]?.id).toBe(RECOMMENDATION_ID);
+    expect(converted.recommendations?.[0]?.description).toMatchObject({ type: 'doc' });
+    expect(converted.projects?.[0]?.id).toBe(PROJECT_ID);
+    expect(converted.projects?.[0]?.description).toMatchObject({ type: 'doc' });
 
-    const roundTrip = resumeToAccount(fullResumeContent);
-    expect(roundTrip.skills).toBeUndefined();
-    expect(roundTrip.tools).toBeUndefined();
-    expect(roundTrip.languages).toBeUndefined();
-    expect(roundTrip.links).toBeUndefined();
-    expect(roundTrip.profile.city).toBeUndefined();
-    expect(roundTrip.experience?.[0]?.keyContributions).toEqual([]);
-    expect(roundTrip.experience?.[0]?.achievements).toEqual([]);
-    expect(roundTrip.education?.[0]).not.toHaveProperty('additionalDetails');
-    expect(typeof roundTrip.projects?.[0]?.additionalDetails).toBe('string');
-    expect(roundTrip.projects?.[0]).not.toHaveProperty('description');
+    const reloaded = parseResumeContent(JSON.stringify(fullResumeContent));
+    expect(reloaded?.experience?.[0]?.description).toEqual(fullResumeContent.experience?.[0]?.description);
+    expect(reloaded?.education?.[0]?.description).toEqual(fullResumeContent.education?.[0]?.description);
+    expect(reloaded?.recommendations?.[0]?.description).toEqual(fullResumeContent.recommendations?.[0]?.description);
+    expect(reloaded?.projects?.[0]?.description).toEqual(fullResumeContent.projects?.[0]?.description);
+    expect(reloaded?.experience?.[0]?.id).toBe(EXPERIENCE_ID);
+    expect(reloaded?.skills?.[0]?.id).toBe(SKILL_ID);
   });
 });

@@ -1,5 +1,6 @@
 'use client';
 
+import { DEFAULT_ACCOUNT_DTO } from '@lib/models/account-defaults';
 import { accountSchema } from '@lib/schema/account.schema';
 import { ProfileForm } from './forms/profile.form';
 import { Button } from '@components/ui';
@@ -14,26 +15,7 @@ import { toast } from 'sonner';
 import { useAppForm } from '@lib/forms/use-form';
 import { firstFormError } from '@lib/forms/errors';
 
-export const DEFAULT_ACCOUNT_DTO: AccountDto = {
-  profile: {
-    firstName: '',
-    lastName: '',
-    role: '',
-    email: '',
-    phone: '',
-    website: '',
-    tagline: '',
-    city: '',
-    country: '',
-    seniority: 'entry',
-  },
-  languages: [],
-  links: [],
-  experience: [],
-  education: [],
-  skills: [],
-  tools: [],
-};
+export { DEFAULT_ACCOUNT_DTO };
 
 interface AccountFormProps {
   onSubmit: (data: AccountDto) => void;

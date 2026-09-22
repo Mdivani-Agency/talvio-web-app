@@ -1,12 +1,12 @@
-import { isGeneratedResume, resumeToPreviewDto } from '@/lib/adapters/resume.adapter';
+import { isGeneratedResume, resumeToPreviewDto, type ResumeContentPatch } from '@/lib/adapters/resume.adapter';
 import { parseGraphqlError } from '@/lib/graphql-client';
-import type { AccountDto, Resume } from '@lib/types';
+import type { Resume } from '@lib/types';
 
 import { createResume } from './use-create-resume';
 import { fetchDraftBySource } from './use-resume';
 import { updateResume } from './use-update-resume';
 
-export function isLabelOnlyPatch(patch: Partial<Resume> & { resume?: AccountDto }) {
+export function isLabelOnlyPatch(patch: ResumeContentPatch) {
   return Object.entries(patch).every(([key, value]) => (
     value === undefined || key === 'label'
   )) && patch.label !== undefined;
@@ -19,7 +19,7 @@ export async function saveResumeEdit({
 }: {
   userId: string;
   existing: Resume;
-  patch: Partial<Resume> & { resume?: AccountDto };
+  patch: ResumeContentPatch;
 }): Promise<{ resume: Resume; created: boolean }> {
   if (isLabelOnlyPatch(patch) || !isGeneratedResume(existing)) {
     return {

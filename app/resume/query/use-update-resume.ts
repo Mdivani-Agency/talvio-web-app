@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { toResume, toResumeUpdateSet } from '@/lib/adapters/resume.adapter';
+import { toResume, toResumeUpdateSet, type ResumeContentPatch } from '@/lib/adapters/resume.adapter';
 import { getGraphqlSdk } from '@/lib/graphql-client';
-import type { AccountDto, Resume } from '@lib/types';
+import type { Resume } from '@lib/types';
 
 export async function updateResume(
   resumeId: string,
-  patch: Partial<Resume> & { resume?: AccountDto },
+  patch: ResumeContentPatch,
 ): Promise<Resume> {
   const sdk = await getGraphqlSdk();
   const data = await sdk.UpdateResume({
@@ -25,7 +25,7 @@ export function useUpdateResume(resumeId?: string, userId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (patch: Partial<Resume> & { resume?: AccountDto }) => {
+    mutationFn: async (patch: ResumeContentPatch) => {
       if (!resumeId) {
         throw new Error('Resume is required');
       }

@@ -1,16 +1,19 @@
-import { AccountDto } from '@lib/types';
-import { ResumeFormView } from '../form/resume.form';
+import type { ResumeFieldIssue } from '@lib/models/resume-document';
+import type { ResumeForm } from '@lib/types';
+
+import { ResumeDocumentForm } from '../form/resume.form';
 
 type EditResumeProps = {
   className?: string;
-  defaultValues: AccountDto;
-  onSubmit: (data: AccountDto) => void;
+  defaultValues: ResumeForm;
+  issues?: ResumeFieldIssue[];
+  onSubmit: (data: ResumeForm) => void;
 };
 
-export const EditResumeView = ({ className, defaultValues, onSubmit }: EditResumeProps) => {
+export const EditResumeView = ({ className, defaultValues, issues, onSubmit }: EditResumeProps) => {
   return (
     <section className={`${className} w-full`}>
-      <ResumeFormView onSubmit={onSubmit} defaultValues={defaultValues} />
+      <ResumeDocumentForm onSubmit={onSubmit} defaultValues={defaultValues} issues={issues} />
     </section>
   );
 };

@@ -1,12 +1,12 @@
 import { assign, setup } from 'xstate';
 import { ResumeContext, ResumeEvents, MetaKey } from './types';
-import { DEFAULT_ACCOUNT_DTO } from '@app/account/create/views/account.form';
-import { RESUME_COLORS_MAP, resumeToAccount } from '@lib/utils';
+import { EMPTY_RESUME_DOCUMENT, normalizeResumeDocument } from '@lib/models/resume-document';
+import { RESUME_COLORS_MAP } from '@lib/utils';
 import { Resume } from '@lib/types';
 
 const buildPreviewDto = (value: Resume) => {
   const { metadata, ...resume } = value;
-  return { ...resume, resume: resumeToAccount(metadata) };
+  return { ...resume, resume: normalizeResumeDocument(metadata) };
 };
 
 export const resumeState = setup({
@@ -22,7 +22,7 @@ export const resumeState = setup({
   context: {
     resumeId: null,
     resumeDto: {
-      resume: DEFAULT_ACCOUNT_DTO,
+      resume: EMPTY_RESUME_DOCUMENT,
       name: 'my resume',
       template: 'senior-level-modern',
       color: RESUME_COLORS_MAP.black,

@@ -10,6 +10,7 @@ import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { isLabelOnlyPatch, saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
 import { isGeneratedResume, normalizeResumeLabel } from '@/lib/adapters/resume.adapter';
+import { formatResumeFieldIssues, resumeSubmissionIssues, type ResumeFieldIssue } from '@lib/models/resume-document';
 import { findTemplate, listResumeTemplates } from '@lib/templates';
 import { Loading } from '@components/views';
 import { ConfirmModal, DownloadResumeModal } from '@components/modals';
@@ -34,6 +35,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [viewingOriginal, setViewingOriginal] = useState(false);
   const [pendingPatch, setPendingPatch] = useState<Partial<Resume>>();
+  const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
 
   const { data: family, isLoading: isLoadingResume } = useQuery({
     queryKey: ['resume-family', resumeId],
@@ -117,6 +119,14 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const downloadCurrent = (resume = displayed) =>
     submitWrapper({
       fn: async () => {
+        if (!isGeneratedResume(resume)) {
+          const fieldIssues = resumeSubmissionIssues(resume.metadata);
+          if (fieldIssues.length > 0) {
+            setIssues(fieldIssues);
+            throw new Error(formatResumeFieldIssues(fieldIssues));
+          }
+          setIssues([]);
+        }
         const result = await generatePdf.mutateAsync(resume);
         if (resume.sourceResumeId && result.media?.url && result.id !== resumeId) {
           router.push(`/resume/${result.id}`);
@@ -175,7 +185,11 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           templates={templates}
           mode="template"
           readOnly={readOnly}
+          issues={issues}
           onChange={({ data, template: nextTemplate }) => {
+            if (data) {
+              setIssues([]);
+            }
             requestEdit({
               metadata: data,
               template: nextTemplate,

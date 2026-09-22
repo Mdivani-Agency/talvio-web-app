@@ -8,28 +8,31 @@ import { EducationForm } from './forms/education.form';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
+import { preserveDocumentFields, resumeItemToAccountDialog } from '@lib/models/resume-document';
 
 type EducationViewProps = {
   className?: string;
   form: AppForm;
+  /** Convert account-shaped dialogs into resume document items. */
+  documentMode?: boolean;
 };
 
-export const EducationView = ({ className, form }: EducationViewProps) => {
+export const EducationView = ({ className, form, documentMode = false }: EducationViewProps) => {
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const { fields, append, remove, update } = useFormArray<Education>(form, 'education');
 
   const handleAddEducation = useCallback(
     (education: Education) => {
-      append(education);
+      append(documentMode ? preserveDocumentFields(undefined, education) : education);
     },
-    [append],
+    [append, documentMode],
   );
 
   const handleUpdateEducation = useCallback(
     (index: number, education: Education) => {
-      update(index, education);
+      update(index, documentMode ? preserveDocumentFields(fields[index], education) : education);
     },
-    [update],
+    [documentMode, fields, update],
   );
 
   const handleRemoveEducation = useCallback(
@@ -50,7 +53,13 @@ export const EducationView = ({ className, form }: EducationViewProps) => {
           <FormList
             items={items}
             labelKey="name"
-            renderForm={(item, onSubmit) => <EducationForm action="edit" onSubmit={onSubmit} defaultValues={item} />}
+            renderForm={(item, onSubmit) => (
+              <EducationForm
+                action="edit"
+                onSubmit={onSubmit}
+                defaultValues={documentMode ? resumeItemToAccountDialog(item) : item}
+              />
+            )}
             onReorder={(nextItems) => {
               form.setFieldValue('education', nextItems);
               onReorder(nextItems);

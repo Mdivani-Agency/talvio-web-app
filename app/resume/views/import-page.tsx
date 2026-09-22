@@ -1,5 +1,6 @@
 import { UploadFile } from "@components/ui";
 import { useResumeParser } from "@hooks/use-resume-parser";
+import { profileToResumeDocument } from "@lib/models/resume-document";
 import { transformFromParsedToAccount } from "@lib/utils";
 import { useResumeContext } from "../providers/state-provider";
 import { toast } from "sonner";
@@ -16,10 +17,12 @@ export default function ImportResumePage() {
   const { parseResumeText, loading } = useResumeParser({
     onResumeParsed: (parsedResume) => {
       const transformed = transformFromParsedToAccount(parsedResume);
+      const resume = profileToResumeDocument(transformed);
+      const name = `${transformed.profile.firstName} ${transformed.profile.lastName}`.trim() || 'my resume';
 
       send({ type: 'UPLOAD_RESUME', value: {
-        resume: transformed,
-        name: `${transformed.profile.firstName} ${transformed.profile.lastName}`,
+        resume,
+        name,
         template: resumeDto.template,
         color: resumeDto.color,
         fontSize: resumeDto.fontSize,

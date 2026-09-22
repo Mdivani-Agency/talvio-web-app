@@ -1,6 +1,6 @@
 import type { JSONContent } from '@tiptap/react';
 
-/** TipTap doc written by `accountToResume` for one experience bullet. */
+/** TipTap doc written when a profile experience list becomes resume rich text. */
 export function markedBulletDoc(
   items: Array<{ text: string; mark: string }>,
 ): JSONContent {

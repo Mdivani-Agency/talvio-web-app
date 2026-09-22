@@ -1,8 +1,12 @@
 import type { ResumeForm } from '@lib/types';
 
 import {
+  EDUCATION_ID,
+  EXPERIENCE_ID,
   LANGUAGE_ID,
   LINK_ID,
+  PROJECT_ID,
+  RECOMMENDATION_ID,
   SKILL_ID,
   TOOL_ID,
 } from './ids';
@@ -34,6 +38,7 @@ export const fullResumeContent: ResumeForm = {
   languages: [{ id: LANGUAGE_ID, language: 'English', proficiency: 'native' }],
   experience: [
     {
+      id: EXPERIENCE_ID,
       company: 'Talvio',
       jobTitle: 'Staff Engineer',
       startDate: '2020-01-15T00:00:00.000Z',
@@ -53,6 +58,7 @@ export const fullResumeContent: ResumeForm = {
   ],
   education: [
     {
+      id: EDUCATION_ID,
       name: 'State University',
       degreeType: 'MBA',
       startDate: '2012-09-01T00:00:00.000Z',
@@ -63,6 +69,7 @@ export const fullResumeContent: ResumeForm = {
   ],
   recommendations: [
     {
+      id: RECOMMENDATION_ID,
       name: 'Grace Hopper',
       url: 'https://example.com/grace',
       description: richParagraphDoc('hiring quality'),
@@ -70,6 +77,7 @@ export const fullResumeContent: ResumeForm = {
   ],
   projects: [
     {
+      id: PROJECT_ID,
       name: 'Resume preview',
       url: 'https://example.com/preview',
       description: richParagraphDoc('preview pipeline'),
