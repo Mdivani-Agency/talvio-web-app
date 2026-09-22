@@ -8,29 +8,31 @@ import { ProjectForm } from './forms/project.form';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
-import { preserveDocumentFields } from '@lib/models/resume-document';
+import { preserveDocumentFields, resumeItemToAccountDialog } from '@lib/models/resume-document';
 
 type ProjectsViewProps = {
   className?: string;
   form: AppForm;
+  /** Convert account-shaped dialogs into resume document items. */
+  documentMode?: boolean;
 };
 
-export const ProjectsView = ({ className, form }: ProjectsViewProps) => {
+export const ProjectsView = ({ className, form, documentMode = false }: ProjectsViewProps) => {
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const { fields, append, remove, update } = useFormArray<Project>(form, 'projects');
 
   const handleAddProject = useCallback(
     (project: Project) => {
-      append(project);
+      append(documentMode ? preserveDocumentFields(undefined, project) : project);
     },
-    [append],
+    [append, documentMode],
   );
 
   const handleUpdateProject = useCallback(
     (index: number, project: Project) => {
-      update(index, preserveDocumentFields(fields[index], project));
+      update(index, documentMode ? preserveDocumentFields(fields[index], project) : project);
     },
-    [fields, update],
+    [documentMode, fields, update],
   );
 
   const handleRemoveProject = useCallback(
@@ -51,7 +53,13 @@ export const ProjectsView = ({ className, form }: ProjectsViewProps) => {
           <FormList
             items={items}
             labelKey="name"
-            renderForm={(item, onSubmit) => <ProjectForm action="edit" onSubmit={onSubmit} defaultValues={item} />}
+            renderForm={(item, onSubmit) => (
+              <ProjectForm
+                action="edit"
+                onSubmit={onSubmit}
+                defaultValues={documentMode ? resumeItemToAccountDialog(item) : item}
+              />
+            )}
             onReorder={(nextItems) => {
               form.setFieldValue('projects', nextItems);
               onReorder(nextItems);

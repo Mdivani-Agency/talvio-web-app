@@ -19,6 +19,7 @@ import {
   normalizeResumeDocument,
   preserveDocumentFields,
   profileToResumeDocument,
+  resumeItemToAccountDialog,
   resumeSubmissionIssues,
 } from './resume-document';
 
@@ -164,7 +165,7 @@ describe('normalizeResumeDocument', () => {
 });
 
 describe('preserveDocumentFields', () => {
-  it('keeps an existing description and a real id when a dialog replaces the item', () => {
+  it('keeps an existing description and a real id when dialog content is untouched', () => {
     const current = {
       id: EXPERIENCE_ID,
       company: 'Talvio',
@@ -183,6 +184,104 @@ describe('preserveDocumentFields', () => {
       jobTitle: 'Staff Engineer',
       description: current.description,
     });
+  });
+
+  it('rebuilds experience bullets when categorized arrays change', () => {
+    const current = {
+      id: EXPERIENCE_ID,
+      company: 'Talvio',
+      jobTitle: 'Engineer',
+      description: fullResumeContent.experience?.[0]?.description,
+    };
+    const next = {
+      id: EXPERIENCE_ID,
+      company: 'Talvio',
+      jobTitle: 'Engineer',
+      achievements: ['Shipped faster previews'],
+      responsibilities: ['Owned the editor'],
+      keyContributions: [] as string[],
+      additionalDetails: '',
+    };
+
+    const saved = preserveDocumentFields(current, next);
+    expect(saved.description).toEqual(
+      markedBulletDoc([
+        { text: 'Shipped faster previews', mark: 'achievements' },
+        { text: 'Owned the editor', mark: 'responsibilities' },
+      ]),
+    );
+  });
+
+  it('converts a new project dialog into a resume description', () => {
+    const next = {
+      name: 'Preview pipeline',
+      url: 'https://example.com/preview',
+      additionalDetails: 'Client-side PDF preview for hiring managers',
+    };
+
+    expect(preserveDocumentFields(undefined, next)).toEqual({
+      name: 'Preview pipeline',
+      url: 'https://example.com/preview',
+      description: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Client-side PDF preview for hiring managers' }],
+          },
+        ],
+      },
+    });
+  });
+
+  it('rebuilds education description when additionalDetails change', () => {
+    const current = {
+      id: EDUCATION_ID,
+      name: 'State University',
+      description: fullResumeContent.education?.[0]?.description,
+    };
+    const next = {
+      id: EDUCATION_ID,
+      name: 'State University',
+      additionalDetails: 'distributed systems thesis',
+    };
+
+    expect(preserveDocumentFields(current, next)).toEqual({
+      id: EDUCATION_ID,
+      name: 'State University',
+      description: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'distributed systems thesis' }],
+          },
+        ],
+      },
+    });
+  });
+});
+
+describe('resumeItemToAccountDialog', () => {
+  it('seeds additionalDetails and experience arrays for account-shaped dialogs', () => {
+    const project = resumeItemToAccountDialog({
+      name: fullResumeContent.projects![0]!.name,
+      url: fullResumeContent.projects![0]!.url,
+      description: fullResumeContent.projects![0]!.description,
+    });
+    expect(project.additionalDetails).toContain('preview pipeline');
+
+    const experience = resumeItemToAccountDialog({
+      company: 'Talvio',
+      jobTitle: 'Engineer',
+      description: fullResumeContent.experience?.[0]?.description,
+      achievements: [] as string[],
+      responsibilities: [] as string[],
+      keyContributions: [] as string[],
+    });
+    expect(experience.keyContributions).toEqual(['Shipped template gallery']);
+    expect(experience.achievements).toEqual(['Cut PDF render time']);
+    expect(experience.responsibilities).toEqual(['Owned the editor']);
   });
 });
 

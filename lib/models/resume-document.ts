@@ -13,6 +13,16 @@ export type ResumeFieldIssue = {
 
 type DatedItem = Record<string, unknown>;
 
+type AccountDialogItem = {
+  id?: string;
+  additionalDetails?: string;
+  achievements?: string[];
+  responsibilities?: string[];
+  keyContributions?: string[];
+  description?: unknown;
+  [key: string]: unknown;
+};
+
 function paragraphDoc(text: string): JSONContent {
   return {
     type: 'doc',
@@ -39,6 +49,70 @@ function bulletDoc(items: Array<{ text: string; mark: string }>): JSONContent {
       },
     ],
   };
+}
+
+function collectText(node: unknown, parts: string[]) {
+  if (!node || typeof node !== 'object') {
+    return;
+  }
+  const value = node as JSONContent;
+  if (typeof value.text === 'string') {
+    parts.push(value.text);
+  }
+  for (const child of value.content ?? []) {
+    collectText(child, parts);
+  }
+}
+
+function plainTextFromDoc(description: unknown): string {
+  const parts: string[] = [];
+  collectText(description, parts);
+  return parts.join('');
+}
+
+function arraysFromBulletDoc(description: unknown) {
+  const result = {
+    keyContributions: [] as string[],
+    achievements: [] as string[],
+    responsibilities: [] as string[],
+  };
+  if (!description || typeof description !== 'object') {
+    return result;
+  }
+
+  const walk = (node: unknown) => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    const value = node as JSONContent;
+    if (value.type === 'paragraph') {
+      const mark = value.marks?.find((entry) =>
+        entry.type === 'keyContributions'
+        || entry.type === 'achievements'
+        || entry.type === 'responsibilities',
+      )?.type;
+      if (mark === 'keyContributions' || mark === 'achievements' || mark === 'responsibilities') {
+        const text = plainTextFromDoc(value);
+        if (text) {
+          result[mark].push(text);
+        }
+      }
+    }
+    for (const child of value.content ?? []) {
+      walk(child);
+    }
+  };
+
+  walk(description);
+  return result;
+}
+
+function experienceBullets(item: Pick<AccountDialogItem, 'keyContributions' | 'achievements' | 'responsibilities'>) {
+  return [
+    ...(item.keyContributions ?? []).map((text) => ({ text, mark: 'keyContributions' })),
+    ...(item.achievements ?? []).map((text) => ({ text, mark: 'achievements' })),
+    ...(item.responsibilities ?? []).map((text) => ({ text, mark: 'responsibilities' })),
+  ];
 }
 
 function withId<T extends { id?: string }>(item: T): T {
@@ -96,11 +170,7 @@ export function profileToResumeDocument(account: AccountDto): ResumeForm {
   const city = profile.city?.trim() ?? '';
   const country = profile.country?.trim() ?? '';
   const experience = (account.experience ?? []).map((item) => {
-    const bullets = [
-      ...(item.keyContributions ?? []).map((text) => ({ text, mark: 'keyContributions' })),
-      ...(item.achievements ?? []).map((text) => ({ text, mark: 'achievements' })),
-      ...(item.responsibilities ?? []).map((text) => ({ text, mark: 'responsibilities' })),
-    ];
+    const bullets = experienceBullets(item);
     return withId({
       company: item.company,
       jobTitle: item.jobTitle,
@@ -216,26 +286,78 @@ export function normalizeResumeDocument<T>(document: T): T {
 }
 
 /**
- * Dialog saves replace an item with an account-shaped object.
- * Keep the existing rich-text description and only real UUID ids.
+ * Seed account-shaped dialogs from a resume document item.
+ * Education and projects map description text into additionalDetails.
+ * Experience keeps categorized arrays and rebuilds them from marked bullets when needed.
  */
-export function preserveDocumentFields<T extends { id?: string; description?: unknown }>(
-  current: T | undefined,
+export function resumeItemToAccountDialog<T extends AccountDialogItem>(
+  item: T,
+): T & { additionalDetails?: string } {
+  const next = { ...item } as T & AccountDialogItem;
+  const fromDoc = arraysFromBulletDoc(item.description);
+  const keyContributions = item.keyContributions?.length ? item.keyContributions : fromDoc.keyContributions;
+  const achievements = item.achievements?.length ? item.achievements : fromDoc.achievements;
+  const responsibilities = item.responsibilities?.length ? item.responsibilities : fromDoc.responsibilities;
+
+  if (keyContributions.length || achievements.length || responsibilities.length) {
+    next.keyContributions = keyContributions;
+    next.achievements = achievements;
+    next.responsibilities = responsibilities;
+  }
+
+  if (typeof item.additionalDetails !== 'string') {
+    next.additionalDetails = plainTextFromDoc(item.description);
+  }
+
+  return next as T & { additionalDetails?: string };
+}
+
+/**
+ * Dialog saves replace an item with an account-shaped object.
+ * Rebuild description when dialog content fields change. Keep a real UUID id.
+ * Strip account-only additionalDetails from the stored resume item.
+ */
+export function preserveDocumentFields<T extends AccountDialogItem>(
+  current: AccountDialogItem | undefined,
   next: T,
-): T {
-  const currentCopy = { ...(current ?? {}) } as T & { id?: string };
-  const nextCopy = { ...next } as T & { id?: string };
+): T & { description?: unknown; id?: string } {
+  const currentCopy = { ...(current ?? {}) };
+  const nextCopy = { ...next };
   const id = persistedRowId(next.id) ?? persistedRowId(current?.id);
   delete currentCopy.id;
   delete nextCopy.id;
-  const description = current?.description;
 
-  return {
+  let description = current?.description;
+  const hasDetails = typeof next.additionalDetails === 'string';
+  const hasExperienceLists = 'achievements' in next
+    || 'responsibilities' in next
+    || 'keyContributions' in next;
+
+  if (hasExperienceLists) {
+    const bullets = experienceBullets(next);
+    description = bullets.length ? bulletDoc(bullets) : undefined;
+  } else if (hasDetails) {
+    description = paragraphDoc(next.additionalDetails ?? '');
+  } else if (next.description !== undefined) {
+    description = next.description;
+  }
+
+  delete currentCopy.additionalDetails;
+  delete nextCopy.additionalDetails;
+
+  const result = {
     ...currentCopy,
     ...nextCopy,
     ...(id ? { id } : {}),
-    ...(description !== undefined ? { description } : {}),
-  } as T;
+  } as T & AccountDialogItem;
+
+  if (description !== undefined) {
+    result.description = description;
+  } else {
+    delete result.description;
+  }
+
+  return result as T & { description?: unknown; id?: string };
 }
 
 export function resumeSubmissionIssues(document: unknown): ResumeFieldIssue[] {

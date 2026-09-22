@@ -119,12 +119,14 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const downloadCurrent = (resume = displayed) =>
     submitWrapper({
       fn: async () => {
-        const fieldIssues = resumeSubmissionIssues(resume.metadata);
-        if (fieldIssues.length > 0) {
-          setIssues(fieldIssues);
-          throw new Error(formatResumeFieldIssues(fieldIssues));
+        if (!isGeneratedResume(resume)) {
+          const fieldIssues = resumeSubmissionIssues(resume.metadata);
+          if (fieldIssues.length > 0) {
+            setIssues(fieldIssues);
+            throw new Error(formatResumeFieldIssues(fieldIssues));
+          }
+          setIssues([]);
         }
-        setIssues([]);
         const result = await generatePdf.mutateAsync(resume);
         if (resume.sourceResumeId && result.media?.url && result.id !== resumeId) {
           router.push(`/resume/${result.id}`);

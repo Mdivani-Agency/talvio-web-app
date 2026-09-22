@@ -131,7 +131,7 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
         hasError={experienceHasError}
       >
         <section className="mt-8 w-full">
-          <ExperienceView form={form} />
+          <ExperienceView form={form} documentMode />
         </section>
       </TabNavigation.TabContent>
       <TabNavigation.TabContent
@@ -144,7 +144,7 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
         hasError={educationHasError}
       >
         <section className="mt-8 w-full">
-          <EducationView form={form} />
+          <EducationView form={form} documentMode />
         </section>
       </TabNavigation.TabContent>
       <TabNavigation.TabContent
@@ -157,7 +157,7 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
         hasError={projectsHasError}
       >
         <section className="mt-8 w-full">
-          <ProjectsView form={form} />
+          <ProjectsView form={form} documentMode />
         </section>
       </TabNavigation.TabContent>
     </TabNavigation>
