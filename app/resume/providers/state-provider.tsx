@@ -5,6 +5,7 @@ import { createContext, PropsWithChildren, useContext, useEffect } from 'react';
 import { ActorRef, AnyActorRef, MachineSnapshot, Snapshot, StateSchema } from 'xstate';
 import { ResumeContext, ResumeEvents, MetaKey, ResumeState } from '../state/types';
 import { resumeState } from '../state/machine';
+import { resumeSnapshotStorageKey } from '../state/storage';
 
 type State = MachineSnapshot<
   ResumeContext,
@@ -24,11 +25,9 @@ type ContextState = {
   send: (event: ResumeEvents) => void;
 };
 
-export const RESUME_SNAPSHOT_KEY = 'resume-state-snapshot';
-
-function getSnapshot(userId: string) {
+function getSnapshot(resumeId: string) {
   if (typeof window !== 'undefined') {
-    const snapshot = localStorage.getItem(`${RESUME_SNAPSHOT_KEY}-${userId}`);
+    const snapshot = localStorage.getItem(resumeSnapshotStorageKey(resumeId));
     return snapshot ? JSON.parse(snapshot) : undefined;
   }
 
@@ -43,7 +42,7 @@ const PersistState = ({ children, resumeId = 'new_resume' }: PropsWithChildren<{
   useEffect(() => {
     const subscription = actorRef.subscribe((snapshot) => {
       if (typeof window !== 'undefined') {
-        localStorage.setItem(`${RESUME_SNAPSHOT_KEY}-${resumeId}`, JSON.stringify(snapshot));
+        localStorage.setItem(resumeSnapshotStorageKey(resumeId), JSON.stringify(snapshot));
       }
     });
 

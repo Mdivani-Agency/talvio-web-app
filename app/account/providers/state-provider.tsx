@@ -5,6 +5,7 @@ import { createContext, PropsWithChildren, useContext, useEffect } from 'react';
 import { ActorRef, AnyActorRef, MachineSnapshot, Snapshot, StateSchema } from 'xstate';
 import { AccountContext, AccountEvents, AccountState, MetaKey } from '../state/types';
 import { accountState } from '../state/machine';
+import { accountSnapshotStorageKey } from '../state/storage';
 import { useUserSession } from '@lib/providers';
 
 type State = MachineSnapshot<
@@ -25,11 +26,9 @@ type ContextState = {
   send: (event: AccountEvents) => void;
 };
 
-export const ACCOUNT_SNAPSHOT_KEY = 'account-state-snapshot';
-
 function getSnapshot(userId: string) {
   if (typeof window !== 'undefined') {
-    const snapshot = localStorage.getItem(`${ACCOUNT_SNAPSHOT_KEY}-${userId}`);
+    const snapshot = localStorage.getItem(accountSnapshotStorageKey(userId));
     return snapshot ? JSON.parse(snapshot) : undefined;
   }
 
@@ -44,7 +43,7 @@ const PersistState = ({ children, userId }: PropsWithChildren<{ userId: string }
   useEffect(() => {
     const subscription = actorRef.subscribe((snapshot) => {
       if (typeof window !== 'undefined') {
-        localStorage.setItem(`${ACCOUNT_SNAPSHOT_KEY}-${userId}`, JSON.stringify(snapshot));
+        localStorage.setItem(accountSnapshotStorageKey(userId), JSON.stringify(snapshot));
       }
     });
 
