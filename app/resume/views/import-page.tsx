@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import { Loading } from "@components/views";
 import Image from "next/image";
 import { useUserSession } from "@lib/providers";
-import { redirect } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
+import { signInHref } from "@lib/auth/sign-in-href";
 
 export default function ImportResumePage() {
   const { session, isPending: isAuthenticating } = useUserSession();
   const { send, state } = useResumeContext();
   const { resumeDto } = state.context;
+  const searchParams = useSearchParams();
 
   const { parseResumeText, loading } = useResumeParser({
     onResumeParsed: (parsedResume) => {
@@ -38,7 +40,8 @@ export default function ImportResumePage() {
   }
 
   if (!session) {
-    return redirect('/auth/sign-in?callbackURL=/resume');
+    const template = searchParams.get('template');
+    return redirect(signInHref(template ? `/resume?template=${encodeURIComponent(template)}` : '/resume'));
   }
 
   return (

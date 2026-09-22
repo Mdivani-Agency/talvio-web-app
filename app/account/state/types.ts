@@ -5,7 +5,7 @@ export type AccountState =
   | 'newAccount'
   | 'existingAccount'
   | {
-      newAccount: 'accountForm' | 'accountQuestions' | 'accountPreview' | 'accountReady';
+      newAccount: 'accountForm' | 'accountQuestions' | 'accountPreview' | 'accountReady' | 'previewResume';
     };
 
 export type AccountContext = {
@@ -17,6 +17,8 @@ export type AccountContext = {
   questions: FeedbackQuestions | null;
   answers: string[] | null;
   parsingError: Record<string, unknown> | null;
+  questionIndex: number | null;
+  unsentAnswer: string | null;
 };
 
 export type AccountEvents =
@@ -52,6 +54,10 @@ export type AccountEvents =
   | {
       type: 'SET_ANSWERS';
       value: string[];
+    }
+  | {
+      type: 'SET_QUESTION_PROGRESS';
+      value: { questionIndex: number; unsentAnswer: string };
     }
   | {
       type: 'SET_TAILOR_ACCOUNT';

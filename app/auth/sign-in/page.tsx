@@ -9,6 +9,7 @@ import { Suspense } from 'react';
 import { toast } from 'sonner';
 
 import { safeRedirectPath } from '@/lib/auth/safe-redirect-path';
+import { signInSearchParams } from '@/lib/auth/sign-in-href';
 
 import { SignInForm } from './sign-in.form';
 
@@ -19,7 +20,7 @@ function authRedirectTo(next: string) {
 function SignInPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = safeRedirectPath(searchParams.get('callbackURL') ?? searchParams.get('next'));
+  const next = safeRedirectPath(signInSearchParams(searchParams));
 
   const handleEmailSignIn = async ({ email }: { email: string }) => {
     const supabase = createSupabaseBrowserClient();

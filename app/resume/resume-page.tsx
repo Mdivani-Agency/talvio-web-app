@@ -15,8 +15,9 @@ import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { updateResume } from '@app/resume/query/use-update-resume';
 import { findTemplate, listResumeTemplates } from '@lib/templates';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserSession } from '@lib/providers';
+import { signInHref } from '@lib/auth/sign-in-href';
 import type { Resume } from '@lib/types';
 
 type ResumePreviewPageProps = {
@@ -27,9 +28,10 @@ type ResumePreviewPageProps = {
 export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreviewPageProps) {
   const { session } = useUserSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [current, setCurrent] = useState(initialMode === 'edit' ? 1 : 0);
   const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
-  const { state, send } = useResumeContext();
+  const { state, send, clearResumeDraft } = useResumeContext();
 
   const resume = state.context.resumeDto;
 
@@ -57,7 +59,11 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
   const { mutateAsync: createAndDownload } = useMutation({
     mutationFn: async () => {
       if (!session) {
-        router.push('/auth/sign-in?callbackUrl=/resume');
+        const template = searchParams.get('template');
+        const returnPath = template
+          ? `/resume?template=${encodeURIComponent(template)}`
+          : '/resume';
+        router.push(signInHref(returnPath));
         throw new Error('Please sign in');
       }
 
@@ -83,7 +89,9 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
           body,
         });
       setCreatedResume(saved);
-      return generatePdf.mutateAsync(saved);
+      const generated = await generatePdf.mutateAsync(saved);
+      clearResumeDraft();
+      return generated;
     },
   });
 

@@ -20,6 +20,8 @@ export const accountState = setup({
     answers: null,
     parsingError: null,
     account: null,
+    questionIndex: null,
+    unsentAnswer: null,
   },
   states: {
     fetchingAccount: {
@@ -70,6 +72,12 @@ export const accountState = setup({
             SET_ANSWERS: {
               actions: assign({
                 answers: ({ event }) => event.value,
+              }),
+            },
+            SET_QUESTION_PROGRESS: {
+              actions: assign({
+                questionIndex: ({ event }) => event.value.questionIndex,
+                unsentAnswer: ({ event }) => event.value.unsentAnswer,
               }),
             },
             SET_TAILOR_ACCOUNT: {

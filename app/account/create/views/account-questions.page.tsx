@@ -1,5 +1,5 @@
 'use client';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAccountContext } from '@app/account/providers/state-provider';
 import { saveProfile } from '@app/account/query/use-save-profile';
@@ -16,13 +16,15 @@ type QuestionsProps = {
 };
 
 export const AccountQuestions = memo(function Questions({ userId }: QuestionsProps) {
-  const { send, state } = useAccountContext();
+  const { send, state, clearAccountDraft } = useAccountContext();
   const router = useRouter();
-  const initialIndex =
+  const recoveredIndex = state.context.questionIndex;
+  const fallbackIndex =
     state.context.answers?.length && state.context.answers.length > 1 ? state.context.answers.length - 1 : 0;
+  const initialIndex = recoveredIndex ?? fallbackIndex;
 
   const [current, setCurrent] = useState(initialIndex);
-  const [input, setInput] = useState(state.context.answers?.[initialIndex] || '');
+  const [input, setInput] = useState(state.context.unsentAnswer ?? state.context.answers?.[initialIndex] ?? '');
   const tailoredAccount = state.context.tailoredAccount;
   const answers = state.context.answers || [];
   const questions = state.context.questions;
@@ -75,6 +77,7 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
     },
     onSuccess(data) {
       send({ type: 'CREATE_ACCOUNT_SUCCESS', value: data });
+      clearAccountDraft();
       router.push('/account');
     },
     onError(error) {
@@ -97,6 +100,13 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
     setInput('Skipped');
     handleNext();
   };
+
+  useEffect(() => {
+    send({
+      type: 'SET_QUESTION_PROGRESS',
+      value: { questionIndex: current, unsentAnswer: input },
+    });
+  }, [current, input, send]);
 
   if (isFetchingQuestions || !questions)
     return (
