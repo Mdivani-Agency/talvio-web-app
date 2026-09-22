@@ -89,7 +89,7 @@ Preserved from MDI-174. Do not rebuild them.
 | Two editors | `/resume` edits a `PreviewDto` through `EditResumeView`. `/resume/[resumeId]` edits via `ResumeEditor`, which converts through `resumeToAccount` / `accountToResume` on every change. |
 | Duplicate standalone resumes | `createResume` always inserts. `createdResume` in `ResumePreviewPage` is memory only. A timeout after the insert, a refresh, or a second click before `setCreatedResume` inserts another row. Each row can then be generated and charged. |
 | Draft updates have no revision check | `toResumeUpdateSet` does not filter on `updated_at`. Last write wins. |
-| Profile child retries duplicate rows | `save_profile` inserts experience, education, projects, recommendations, links, and email/phone/url contacts when the payload has no persisted id. It never deletes omitted children. Skills and tools dedupe by lowercased name. Languages upsert on `(user_id, language)`. |
+| Profile child retries duplicate rows | `save_profile` inserts experience, education, projects, recommendations, and links when the payload has no persisted id. It never deletes omitted children. Skills and tools dedupe by lowercased name. Languages upsert on `(user_id, language)`. Primary email, phone, and URL contacts are already retry-safe for the payload `accountDtoToSavePayload` sends: they sit on `profile`, and the RPC updates the primary row for that kind, inserting only when none exists. |
 | Snapshot and type drift | Machine state `previewResume` / `downloadResume` is not in the TypeScript unions. Unions still name `accountPreview`, `accountReady`, `uploadResume`, and `resumeForm`, which the machines do not use. Persisted snapshots include actor metadata. |
 | Dead navigation | Nothing routes to `/account/resume`. |
 
@@ -103,6 +103,7 @@ This is the contract MDI-200 implements. Disabling a button is only a UX guard. 
 
 - Callers round-trip persisted UUIDs from `fetchProfile` on every save, including retries.
 - A retry without those ids inserts another experience, education, project, recommendation, or link.
+- Primary email, phone, and website do not need contact ids. `accountDtoToSavePayload` puts them on `profile`, and `save_profile` updates the existing primary row for that user and kind. A second save does not insert another primary contact.
 - Do not add a client-supplied credit or price field.
 - No profile revision token exists. Two tabs last-write the profile columns. After save, seed the form from the refetched account (`saveProfile` already refetches).
 - No new profile RPC is required for the refactor if ids are round-tripped. A later delete-missing sync is out of this contract.

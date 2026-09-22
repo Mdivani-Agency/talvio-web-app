@@ -9,6 +9,7 @@ import {
   toResume,
 } from '@/lib/adapters/resume.adapter';
 import {
+  accountDtoToSavePayload,
   employmentToApp,
   employmentToDb,
   toDateOnly,
@@ -19,23 +20,62 @@ import { resumeFormSchema, resumeSchema } from '@lib/schema/resume.schema';
 import { accountToResume, resumeToAccount } from '@lib/utils/resume';
 
 import {
+  EDUCATION_ID,
+  EXPERIENCE_ID,
   fullAccountDto,
   fullResumeContent,
   generatedResumeRow,
+  LANGUAGE_ID,
   legacyAccountSnapshot,
   legacyResumeSnapshot,
   LEGACY_ACCOUNT_SNAPSHOT_PREFIX,
   LEGACY_RESUME_SNAPSHOT_KEY,
+  LINK_ID,
   openDraftRow,
   persistedExperienceDates,
+  PROJECT_ID,
+  RECOMMENDATION_ID,
   savedAccount,
+  SKILL_ID,
   standaloneDraftRow,
+  TOOL_ID,
 } from './index';
 
 describe('flow baseline fixtures', () => {
   it('parses the full profile draft and the saved account', () => {
-    expect(accountSchema.safeParse(fullAccountDto).success).toBe(true);
-    expect(accountSchema.safeParse(savedAccount).success).toBe(true);
+    const draft = accountSchema.safeParse(fullAccountDto);
+    const saved = accountSchema.safeParse(savedAccount);
+    expect(draft.success).toBe(true);
+    expect(saved.success).toBe(true);
+    if (!draft.success || !saved.success) {
+      return;
+    }
+
+    expect(draft.data.experience?.[0]?.id).toBe(EXPERIENCE_ID);
+    expect(draft.data.education?.[0]?.id).toBe(EDUCATION_ID);
+    expect(draft.data.projects?.[0]?.id).toBe(PROJECT_ID);
+    expect(draft.data.recommendations?.[0]?.id).toBe(RECOMMENDATION_ID);
+    expect(draft.data.links?.[0]?.id).toBe(LINK_ID);
+    expect(draft.data.skills?.[0]?.id).toBe(SKILL_ID);
+    expect(draft.data.tools?.[0]?.id).toBe(TOOL_ID);
+    expect(draft.data.languages?.[0]?.id).toBe(LANGUAGE_ID);
+    expect(saved.data.experience?.[0]?.id).toBe(EXPERIENCE_ID);
+
+    const payload = accountDtoToSavePayload(draft.data);
+    expect(payload).not.toHaveProperty('contacts');
+    expect(payload.profile).toMatchObject({
+      email: fullAccountDto.profile.email,
+      phone: fullAccountDto.profile.phone,
+      website: fullAccountDto.profile.website,
+    });
+    expect(payload.experience[0]?.id).toBe(EXPERIENCE_ID);
+    expect(payload.education[0]?.id).toBe(EDUCATION_ID);
+    expect(payload.projects[0]?.id).toBe(PROJECT_ID);
+    expect(payload.recommendations[0]?.id).toBe(RECOMMENDATION_ID);
+    expect(payload.links[0]?.id).toBe(LINK_ID);
+    expect(payload.skills[0]?.id).toBe(SKILL_ID);
+    expect(payload.tools[0]?.id).toBe(TOOL_ID);
+    expect(payload.languages[0]?.id).toBe(LANGUAGE_ID);
   });
 
   it('parses resume content, including rich text and enums', () => {
