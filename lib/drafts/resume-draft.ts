@@ -64,6 +64,28 @@ export function readParsedResumeDraft(storage: DraftStorage | null, key: string)
   return { draft: result.draft, parsed, status: result.status };
 }
 
+export function buildResumeDocumentDraft(input: {
+  owner: DraftOwner;
+  document: PreviewDto;
+  existing?: VersionedDraft | null;
+  documentId: string;
+}): VersionedDraft | null {
+  if (input.owner.kind !== 'user') {
+    return null;
+  }
+
+  return createVersionedDraft({
+    kind: 'resume',
+    owner: input.owner,
+    content: resumeContentFromDto(input.document),
+    progress: { step: 'existingResume' },
+    documentId: input.documentId,
+    draftId: input.existing?.draftId,
+    createdAt: input.existing?.createdAt,
+    baseUpdatedAt: input.existing?.baseUpdatedAt,
+  });
+}
+
 export function buildResumeDraft(input: {
   owner: DraftOwner;
   context: ResumeContext;

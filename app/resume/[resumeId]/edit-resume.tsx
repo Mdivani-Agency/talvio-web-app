@@ -1,24 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 import { submitWrapper } from '@app/actions/action.utils';
-import { fetchResumeFamily } from '@app/resume/query/use-resume';
-import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { useResumeEditorDocument } from '@app/resume/hooks/use-resume-editor-document';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
+import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { fetchResumeFamily } from '@app/resume/query/use-resume';
 import { isLabelOnlyPatch, saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
-import { isGeneratedResume, normalizeResumeLabel } from '@/lib/adapters/resume.adapter';
-import { formatResumeFieldIssues, resumeSubmissionIssues, type ResumeFieldIssue } from '@lib/models/resume-document';
-import { findTemplate, listResumeTemplates } from '@lib/templates';
+import { ConfirmModal } from '@components/modals';
 import { Loading } from '@components/views';
-import { ConfirmModal, DownloadResumeModal } from '@components/modals';
-import { Button, Input } from '@components/ui';
+import { isGeneratedResume } from '@lib/adapters/resume.adapter';
+import {
+  browserStorage,
+  buildResumeDocumentDraft,
+  clearDraft,
+  createDebouncedWriter,
+  readDraft,
+  resumeDraftStorageKey,
+  writeDraft,
+  type DebouncedWriter,
+  type VersionedDraft,
+} from '@lib/drafts';
+import { formatResumeFieldIssues, resumeSubmissionIssues, type ResumeFieldIssue } from '@lib/models/resume-document';
+import {
+  displayedFamilyResume,
+  readMatchingResumeRecovery,
+  recoveryDocumentIds,
+  resumeToEditorDocument,
+} from '@lib/resume/resolve-editor';
 import { useUserSession } from '@lib/providers';
-import type { Resume } from '@lib/types';
-import { ResumePreview } from '../components/resume-preview';
-import { ResumeEditor } from '../components/resume-editor';
+import type { PreviewDto, Resume } from '@lib/types';
+
+import { ResumeEditorShell } from '../views/resume-editor-shell';
 
 interface EditResumePageProps {
   resumeId: string;
@@ -29,24 +45,20 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const queryClient = useQueryClient();
   const { session } = useUserSession();
   const userId = session?.user.id;
-  const [downloadOpen, setDownloadOpen] = useState(false);
-  const [downloadName, setDownloadName] = useState('');
+  const storage = useMemo(() => browserStorage(), []);
   const [forkOpen, setForkOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [viewingOriginal, setViewingOriginal] = useState(false);
   const [pendingPatch, setPendingPatch] = useState<Partial<Resume>>();
   const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
+  const draftRef = useRef<VersionedDraft | null>(null);
+  const writerRef = useRef<DebouncedWriter<VersionedDraft | null> | null>(null);
+  const { document, formRevision, initialize, apply, replaceDocument } = useResumeEditorDocument();
 
   const { data: family, isLoading: isLoadingResume } = useQuery({
     queryKey: ['resume-family', resumeId],
     queryFn: () => fetchResumeFamily(resumeId),
     enabled: !!userId,
-  });
-
-  const { data: templates, isLoading: isLoadingTemplate } = useQuery({
-    queryKey: ['templates'],
-    queryFn: async () => listResumeTemplates(),
-    enabled: !!family,
   });
 
   const generatePdf = useGenerateResumePdf(userId);
@@ -55,10 +67,93 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const original = family?.original;
   const draft = family?.draft;
   const hasFamily = Boolean(original && draft);
-  const displayed = hasFamily && viewingOriginal
-    ? original
-    : (draft ?? original);
+  const displayed = displayedFamilyResume({ original, draft, viewingOriginal });
   const readOnly = Boolean(hasFamily && viewingOriginal);
+  const editorDocument = viewingOriginal && original
+    ? resumeToEditorDocument(original)
+    : document;
+
+  const recovery = useMemo(() => {
+    if (!userId) {
+      return null;
+    }
+    return readMatchingResumeRecovery(
+      storage,
+      { kind: 'user', userId },
+      recoveryDocumentIds({
+        resumeId,
+        draftId: draft?.id,
+        originalId: original?.id,
+      }),
+    );
+  }, [draft?.id, original?.id, resumeId, storage, userId]);
+
+  useEffect(() => {
+    const saved = displayedFamilyResume({ original, draft, viewingOriginal: false }) ?? original ?? draft;
+    if (!saved) {
+      return;
+    }
+    initialize({
+      recovery,
+      saved: resumeToEditorDocument(saved),
+    });
+  }, [draft, initialize, original, recovery]);
+
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+    const writer = createDebouncedWriter((next: VersionedDraft | null) => {
+      const documentId = draft?.id ?? displayed?.id ?? resumeId;
+      const key = resumeDraftStorageKey({ kind: 'user', userId }, documentId);
+      if (!next) {
+        clearDraft(storage, key);
+        return;
+      }
+      writeDraft(storage, key, next);
+      if (original?.id && original.id !== documentId) {
+        clearDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, original.id));
+      }
+    });
+    writerRef.current = writer;
+
+    const flush = () => writer.flush();
+    const onVisibility = () => {
+      if (window.document.visibilityState === 'hidden') {
+        flush();
+      }
+    };
+    window.addEventListener('pagehide', flush);
+    window.document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      flush();
+      window.removeEventListener('pagehide', flush);
+      window.document.removeEventListener('visibilitychange', onVisibility);
+      if (writerRef.current === writer) {
+        writerRef.current = null;
+      }
+    };
+  }, [displayed?.id, draft?.id, original?.id, resumeId, storage, userId]);
+
+  useEffect(() => {
+    if (!userId || !document || viewingOriginal) {
+      return;
+    }
+    const documentId = draft?.id ?? displayed?.id ?? resumeId;
+    const existing = draftRef.current ?? readDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, documentId)).draft;
+    const next = buildResumeDocumentDraft({
+      owner: { kind: 'user', userId },
+      document,
+      existing,
+      documentId,
+    });
+    if (!next || !writerRef.current) {
+      return;
+    }
+    draftRef.current = next;
+    writerRef.current.schedule(next);
+  }, [displayed?.id, document, draft?.id, resumeId, storage, userId, viewingOriginal]);
 
   const { mutateAsync: persistEdit } = useMutation({
     mutationFn: async (patch: Partial<Resume>) => {
@@ -77,32 +172,18 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       }
       if (result.created) {
         setViewingOriginal(false);
+        if (original && userId) {
+          clearDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, original.id));
+        }
       }
     },
   });
-
-  if (isLoadingResume || isLoadingTemplate) {
-    return <Loading message="Loading resume..." />;
-  }
-
-  if (!templates) {
-    return <Loading message="Loading templates..." />;
-  }
-
-  const template = findTemplate(displayed?.template);
-  if (!displayed || !template) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <h1 className="text-2xl font-bold">Resume not found</h1>
-      </div>
-    );
-  }
 
   const requestEdit = (patch: Partial<Resume>) => {
     if (readOnly && !isLabelOnlyPatch(patch)) {
       return;
     }
-    if (isGeneratedResume(displayed) && !isLabelOnlyPatch(patch)) {
+    if (displayed && isGeneratedResume(displayed) && !isLabelOnlyPatch(patch)) {
       setPendingPatch(patch);
       setForkOpen(true);
       return;
@@ -116,11 +197,35 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     });
   };
 
+  const handleChange = (patch: Partial<PreviewDto>) => {
+    if (readOnly && patch.label === undefined) {
+      return;
+    }
+    if (!viewingOriginal) {
+      apply(patch);
+    }
+    if (patch.resume) {
+      setIssues([]);
+    }
+    requestEdit({
+      metadata: patch.resume,
+      template: patch.template,
+      color: patch.color,
+      fontSize: patch.fontSize,
+      name: patch.name,
+      label: patch.label,
+    });
+  };
+
   const downloadCurrent = (resume = displayed) =>
     submitWrapper({
       fn: async () => {
+        if (!resume) {
+          throw new Error('Resume not found');
+        }
         if (!isGeneratedResume(resume)) {
-          const fieldIssues = resumeSubmissionIssues(resume.metadata);
+          const source = editorDocument ?? resumeToEditorDocument(resume);
+          const fieldIssues = resumeSubmissionIssues(source.resume);
           if (fieldIssues.length > 0) {
             setIssues(fieldIssues);
             throw new Error(formatResumeFieldIssues(fieldIssues));
@@ -135,106 +240,48 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       },
     });
 
-  return (
-    <section className="grid grid-cols-5">
-      <div className="col-span-2 flex flex-col">
-        <div className={`flex flex-col gap-3 border-b border-input px-4 py-3 ${hasFamily ? '' : 'pt-16'}`}>
-          {hasFamily ? (
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">
-                {viewingOriginal
-                  ? 'Viewing the generated PDF. This version is read-only.'
-                  : 'Editing a draft. Your generated PDF stays downloadable.'}
-              </p>
-              <div className="flex shrink-0 items-center gap-2">
-                {viewingOriginal ? (
-                  <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setViewingOriginal(false)}>
-                    View draft
-                  </Button>
-                ) : (
-                  <>
-                    <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setViewingOriginal(true)}>
-                      View original
-                    </Button>
-                    <Button type="button" variant="link" size="sm" className="px-0 text-destructive" onClick={() => setDiscardOpen(true)}>
-                      Discard draft
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : null}
-          <Input
-            key={`${displayed.id}:${displayed.label ?? ''}`}
-            defaultValue={displayed.label ?? ''}
-            placeholder="Label (optional)"
-            aria-label="Resume label"
-            onBlur={(event) => {
-              const next = event.target.value;
-              if (normalizeResumeLabel(next) === normalizeResumeLabel(displayed.label)) {
-                return;
-              }
-              requestEdit({ label: next });
-            }}
-          />
-        </div>
-        <ResumeEditor
-          className={hasFamily ? 'border-r border-input' : 'col-span-2'}
-          resume={displayed}
-          level={'senior'}
-          templates={templates}
-          mode="template"
-          readOnly={readOnly}
-          issues={issues}
-          onChange={({ data, template: nextTemplate }) => {
-            if (data) {
-              setIssues([]);
-            }
-            requestEdit({
-              metadata: data,
-              template: nextTemplate,
-            });
-          }}
-        />
+  if (isLoadingResume) {
+    return <Loading message="Loading resume..." />;
+  }
+
+  if (!displayed) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <h1 className="text-2xl font-bold">Resume not found</h1>
       </div>
-      <ResumePreview
-        className="col-span-3 pt-16"
-        template={template?.template || null}
-        resume={displayed.metadata}
-        fontSize={displayed.fontSize}
-        color={displayed.color}
+    );
+  }
+
+  if (!editorDocument) {
+    return <Loading message="Loading resume..." />;
+  }
+
+  return (
+    <>
+      <ResumeEditorShell
+        document={editorDocument}
+        formKey={`${viewingOriginal ? 'original' : 'draft'}:${displayed.id}:${formRevision}`}
+        issues={issues}
         readOnly={readOnly}
-        onDownload={() => {
+        isGenerated={isGeneratedResume(displayed)}
+        downloadPending={generatePdf.isPending}
+        family={hasFamily ? {
+          viewingOriginal,
+          onViewOriginal: () => setViewingOriginal(true),
+          onViewDraft: () => setViewingOriginal(false),
+          onDiscard: () => setDiscardOpen(true),
+        } : null}
+        onChange={handleChange}
+        onDownload={async (name, label) => {
           if (isGeneratedResume(displayed)) {
-            void downloadCurrent();
-            return;
+            return downloadCurrent();
           }
-          setDownloadName(displayed.name);
-          setDownloadOpen(true);
+          const named = name.trim() && (name !== displayed.name || label !== displayed.label)
+            ? (await persistEdit({ name, label })).resume
+            : displayed;
+          apply({ name, label });
+          return downloadCurrent(named);
         }}
-        handleChange={(key, value) => {
-          requestEdit({
-            [key]: value,
-          });
-        }}
-      />
-      <DownloadResumeModal
-        isOpen={downloadOpen}
-        filename={downloadName}
-        isGenerating={generatePdf.isPending}
-        setFilename={setDownloadName}
-        generateResume={() => {
-          void (async () => {
-            const named = downloadName.trim() && downloadName !== displayed.name
-              ? (await persistEdit({ name: downloadName })).resume
-              : displayed;
-            const ok = await downloadCurrent(named);
-            if (ok) {
-              setDownloadOpen(false);
-            }
-          })();
-        }}
-        onClose={() => setDownloadOpen(false)}
       />
       <ConfirmModal
         isOpen={forkOpen}
@@ -263,19 +310,20 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         description="This deletes the unpublished draft. The generated PDF stays downloadable."
         onClose={() => setDiscardOpen(false)}
         onConfirm={() => {
-          if (!draft) {
+          if (!draft || !original || !userId) {
             return;
           }
           void submitWrapper({
             fn: async () => {
               await deleteResume.mutateAsync(draft.id);
-              if (original && resumeId === draft.id) {
+              writerRef.current?.cancel();
+              clearDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, draft.id));
+              if (resumeId === draft.id) {
                 router.push(`/resume/${original.id}`);
               }
               await queryClient.invalidateQueries({ queryKey: ['resume-family', resumeId] });
-              if (original) {
-                await queryClient.invalidateQueries({ queryKey: ['resume-family', original.id] });
-              }
+              await queryClient.invalidateQueries({ queryKey: ['resume-family', original.id] });
+              replaceDocument(resumeToEditorDocument(original));
               setViewingOriginal(true);
               return { id: draft.id };
             },
@@ -283,6 +331,6 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           });
         }}
       />
-    </section>
+    </>
   );
 }

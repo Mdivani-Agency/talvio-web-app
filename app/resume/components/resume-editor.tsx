@@ -10,7 +10,7 @@ import TemplatesView from '../views/templates-view';
 
 type ResumeEditorProps = {
   resume: Resume;
-  mode: 'edit' | 'template';
+  mode: 'form' | 'templates';
   level: 'entry' | 'mid' | 'senior';
   templates: TemplateList;
   className?: string;
@@ -19,7 +19,7 @@ type ResumeEditorProps = {
   onChange: (state: Partial<{ template: TemplateKey; data: ResumeForm }>) => void;
 };
 
-export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange, className, readOnly = false, issues }: ResumeEditorProps) {
+export function ResumeEditor({ mode = 'form', resume, level, templates, onChange, className, readOnly = false, issues }: ResumeEditorProps) {
   const components = useMemo(() => {
     return [
       <TemplatesView
@@ -47,9 +47,9 @@ export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange
           readOnly && "pointer-events-none opacity-60",
           className,
         )}
-        current={mode === 'edit' ? 0 : 1}
+        current={mode === 'templates' ? 0 : 1}
       >
-        {mode === 'edit' ? components[0] : components[1]}
+        {mode === 'templates' ? components[0] : components[1]}
       </AnimatedTransition>
   );
 }
