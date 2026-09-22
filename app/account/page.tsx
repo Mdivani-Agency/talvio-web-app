@@ -1,61 +1,58 @@
 'use client';
 
-import { useAccountContext } from "./providers/state-provider";
-import { Loading } from "@components/views";
-import { fetchProfile } from "@app/account/query/use-profile";
-import { useQuery } from "@tanstack/react-query";
-import { redirect, useRouter } from "next/navigation";
-import { Dashboard } from "./dashboard";
-import ErrorPage from "@app/auth/error/page";
-import { useUserSession } from "@lib/providers/session-provider";
-import { shouldRetryGraphqlQuery } from "@/lib/graphql-client";
-import { shouldSeedAccountFromQuery } from "@lib/drafts";
+import { useQuery } from '@tanstack/react-query';
+import { redirect } from 'next/navigation';
+import { useEffect } from 'react';
+
+import { fetchProfile } from '@app/account/query/use-profile';
+import { Loading } from '@components/views';
+import { useUserSession } from '@lib/providers/session-provider';
+import { shouldRetryGraphqlQuery } from '@/lib/graphql-client';
+
+import { accountLookupFromQuery, resolveAccountEntry } from './hooks/resolve-account-entry';
+import { useAccountContext } from './providers/state-provider';
+import { Dashboard } from './dashboard';
+import { AccountLookupError } from './views/lookup-error';
 
 export default function AccountPage() {
-  const router = useRouter();
   const { session } = useUserSession();
-  const { state, userId, send, actorRef, clearAccountDraft } = useAccountContext();
+  const { userId, step, accountDto, clearAccountDraft } = useAccountContext();
 
-  const { isLoading, isError, data: account } = useQuery({
+  const { isLoading, isError, data: account, refetch } = useQuery({
     queryKey: ['account', userId],
     enabled: !!userId,
     retry: shouldRetryGraphqlQuery,
-    queryFn: async () => {
-      if (shouldSeedAccountFromQuery(actorRef.getSnapshot().value)) {
-        send({ type: 'INITIALIZE' });
-      }
-
-      const nextAccount = await fetchProfile(userId);
-      if (nextAccount) {
-        send({ type: 'INITIALIZE' });
-        clearAccountDraft();
-        send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: nextAccount });
-        return nextAccount;
-      }
-
-      if (shouldSeedAccountFromQuery(actorRef.getSnapshot().value)) {
-        send({ type: 'FETCHING_ACCOUNT_FAILURE' });
-        router.push('/account/create');
-      }
-      return null;
-    },
+    queryFn: () => fetchProfile(userId),
   });
 
-  if (isLoading) {
+  useEffect(() => {
+    if (account) {
+      clearAccountDraft();
+    }
+  }, [account, clearAccountDraft]);
+
+  const view = resolveAccountEntry({
+    surface: 'account',
+    lookup: accountLookupFromQuery({ isLoading, isError, account }),
+    step,
+    hasSubmittedProfile: Boolean(accountDto),
+  });
+
+  if (view === 'loading') {
     return <Loading message="Fetching account details..." />;
   }
 
-  if (state.matches('newAccount')) {
+  if (view === 'lookup-error') {
+    return <AccountLookupError onRetry={() => { void refetch(); }} />;
+  }
+
+  if (view === 'dashboard' && account && session?.user) {
+    return <Dashboard account={account} sessionUser={session.user} />;
+  }
+
+  if (view === 'redirect-create') {
     return redirect('/account/create');
   }
 
-  if (isError) {
-    return <ErrorPage />;
-  }
-
-  if (account && session?.user) {
-    return <Dashboard account={account} sessionUser={session?.user} />;
-  }
-
-  return <ErrorPage />;
+  return <AccountLookupError onRetry={() => { void refetch(); }} />;
 }

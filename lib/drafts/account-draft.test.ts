@@ -1,44 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { createActor } from 'xstate';
 
-import { accountState } from '@app/account/state/machine';
-import { FLOW_USER_ID, fullAccountDto, savedAccount, versionedAccountDraft } from '../../test/fixtures/flow';
-import type { AccountContext } from '@app/account/state/types';
+import { FLOW_USER_ID, fullAccountDto, versionedAccountDraft } from '../../test/fixtures/flow';
 
 import {
-  accountDraftRestoreEvents,
-  accountProgressFromState,
+  accountProgressFromStep,
   buildAccountDraft,
+  emptyAccountDraftFields,
+  hasOnboardingWork,
+  hydrateAccountDraft,
   parseAccountDraft,
-  shouldSeedAccountFromQuery,
+  shouldConfirmImport,
 } from './account-draft';
-
-const emptyContext: AccountContext = {
-  scrapedResume: null,
-  account: null,
-  accountDto: null,
-  tailoredAccount: null,
-  partialDto: null,
-  questions: null,
-  answers: null,
-  parsingError: null,
-  questionIndex: null,
-  unsentAnswer: null,
-};
 
 describe('account drafts', () => {
   it('builds and parses onboarding progress including question cursor', () => {
     const draft = buildAccountDraft({
       owner: { kind: 'user', userId: FLOW_USER_ID },
-      context: {
-        ...emptyContext,
+      fields: {
+        ...emptyAccountDraftFields(),
+        step: 'questions',
         accountDto: fullAccountDto,
         questions: [{ question: 'Which system?', example: 'PDF' }],
         answers: ['Preview pipeline'],
         questionIndex: 1,
         unsentAnswer: 'Cut render time',
       },
-      stateValue: { newAccount: 'accountQuestions' },
     });
 
     expect(draft).not.toBeNull();
@@ -53,60 +39,43 @@ describe('account drafts', () => {
     });
   });
 
-  it('does not persist fetching or existing-account states, or guest owners', () => {
-    expect(accountProgressFromState('fetchingAccount')).toBeUndefined();
-    expect(accountProgressFromState('existingAccount')).toBeUndefined();
-    expect(shouldSeedAccountFromQuery('fetchingAccount')).toBe(true);
-    expect(shouldSeedAccountFromQuery({ newAccount: 'accountForm' })).toBe(false);
+  it('does not persist guest owners and maps steps without machine states', () => {
+    expect(accountProgressFromStep('form')).toEqual({ step: 'accountForm' });
+    expect(accountProgressFromStep('questions')).toEqual({ step: 'accountQuestions' });
     expect(buildAccountDraft({
       owner: { kind: 'guest', guestId: 'guest-1' },
-      context: emptyContext,
-      stateValue: { newAccount: 'accountForm' },
+      fields: emptyAccountDraftFields(),
     })).toBeNull();
   });
 
-  it('replays machine events instead of a snapshot', () => {
+  it('hydrates a versioned draft into hook fields without XState events', () => {
     const parsed = parseAccountDraft(versionedAccountDraft);
     expect(parsed).not.toBeNull();
-    const events = accountDraftRestoreEvents(parsed!.content, parsed!.progress);
+    const fields = hydrateAccountDraft(parsed!.content, parsed!.progress);
 
-    expect(events[0]).toEqual({ type: 'FETCHING_ACCOUNT_FAILURE' });
-    expect(events).toContainEqual({
-      type: 'SET_ACCOUNT_DTO',
-      value: fullAccountDto,
-    });
-    expect(events).toContainEqual({
-      type: 'SET_QUESTION_PROGRESS',
-      value: { questionIndex: 1, unsentAnswer: 'Cut render time' },
-    });
-    expect(events.some((event) => 'status' in event)).toBe(false);
-
-    const actor = createActor(accountState);
-    actor.start();
-    for (const event of events) {
-      actor.send(event);
-    }
-    const snapshot = actor.getSnapshot();
-    expect(snapshot.matches({ newAccount: 'accountQuestions' })).toBe(true);
-    expect(snapshot.context.questionIndex).toBe(1);
-    expect(snapshot.context.unsentAnswer).toBe('Cut render time');
-    expect(snapshot.context.accountDto?.profile.firstName).toBe('Ada');
-    actor.stop();
+    expect(fields.step).toBe('questions');
+    expect(fields.accountDto?.profile.firstName).toBe('Ada');
+    expect(fields.questionIndex).toBe(1);
+    expect(fields.unsentAnswer).toBe('Cut render time');
+    expect(fields).not.toHaveProperty('status');
   });
 
-  it('reaches existingAccount from a restored draft when a saved profile is found', () => {
+  it('returns to the form when questions progress has no submitted profile', () => {
     const parsed = parseAccountDraft(versionedAccountDraft);
-    const actor = createActor(accountState);
-    actor.start();
-    for (const event of accountDraftRestoreEvents(parsed!.content, parsed!.progress)) {
-      actor.send(event);
-    }
-    expect(actor.getSnapshot().matches('newAccount')).toBe(true);
+    const fields = hydrateAccountDraft(
+      { ...parsed!.content, accountDto: null },
+      parsed!.progress,
+    );
+    expect(fields.step).toBe('form');
+    expect(fields.accountDto).toBeNull();
+  });
 
-    actor.send({ type: 'INITIALIZE' });
-    actor.send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: savedAccount });
-    expect(actor.getSnapshot().matches('existingAccount')).toBe(true);
-    expect(actor.getSnapshot().context.account?.id).toBe(savedAccount.id);
-    actor.stop();
+  it('asks for import confirmation only when current work exists', () => {
+    expect(hasOnboardingWork(null)).toBe(false);
+    expect(hasOnboardingWork({ profile: { firstName: '', lastName: '' } })).toBe(false);
+    expect(hasOnboardingWork({ profile: { firstName: 'Ada' } })).toBe(true);
+    expect(hasOnboardingWork({ experience: [{ company: 'Talvio' }] as never })).toBe(true);
+    expect(shouldConfirmImport({ profile: { firstName: 'Ada' } })).toBe(true);
+    expect(shouldConfirmImport(null)).toBe(false);
   });
 });

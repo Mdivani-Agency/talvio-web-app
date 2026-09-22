@@ -1,43 +1,58 @@
 'use client';
+
 import { memo, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { useMutation, useQuery } from '@tanstack/react-query';
+
 import { useAccountContext } from '@app/account/providers/state-provider';
 import { saveProfile } from '@app/account/query/use-save-profile';
-import { fetchQuestions, fetchTailoredAccount } from '@lib/clients/llm.client';
-import { ResumeQuestions } from './forms/resume-questions';
-import { useRouter } from 'next/navigation';
+import { Button } from '@components/ui';
 import { Loading } from '@components/views';
+import { fetchQuestions, fetchTailoredAccount } from '@lib/clients/llm.client';
 import { accountSchema } from '@lib/schema/account.schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { AccountDto, FeedbackQuestions } from '@lib/types';
+
+import { ResumeQuestions } from './forms/resume-questions';
 
 type QuestionsProps = {
   userId: string;
 };
 
 export const AccountQuestions = memo(function Questions({ userId }: QuestionsProps) {
-  const { send, state, clearAccountDraft } = useAccountContext();
+  const {
+    accountDto,
+    answers: storedAnswers,
+    completeSave,
+    goBackToForm,
+    questionIndex,
+    questions: storedQuestions,
+    setAnswers,
+    setQuestionProgress,
+    setQuestions,
+    setTailoredAccount,
+    tailoredAccount,
+    unsentAnswer,
+  } = useAccountContext();
   const router = useRouter();
-  const recoveredIndex = state.context.questionIndex;
+  const recoveredIndex = questionIndex;
   const fallbackIndex =
-    state.context.answers?.length && state.context.answers.length > 1 ? state.context.answers.length - 1 : 0;
+    storedAnswers?.length && storedAnswers.length > 1 ? storedAnswers.length - 1 : 0;
   const initialIndex = recoveredIndex ?? fallbackIndex;
 
   const [current, setCurrent] = useState(initialIndex);
-  const [input, setInput] = useState(state.context.unsentAnswer ?? state.context.answers?.[initialIndex] ?? '');
-  const tailoredAccount = state.context.tailoredAccount;
-  const answers = state.context.answers || [];
-  const questions = state.context.questions;
-  const accountDto = state.context.accountDto;
+  const [input, setInput] = useState(unsentAnswer ?? storedAnswers?.[initialIndex] ?? '');
+  const answers = storedAnswers || [];
+  const questions = storedQuestions;
 
   const { isLoading: isFetchingQuestions } = useQuery({
     queryKey: ['questions', userId],
     queryFn: async () => {
       const qs = await fetchQuestions(JSON.stringify(accountDto));
-      send({ type: 'SET_QUESTIONS', value: qs.slice(0, 5) });
+      setQuestions(qs.slice(0, 5));
       return qs;
     },
-    enabled: !state.context.questions?.length,
+    enabled: !storedQuestions?.length,
   });
 
   const { mutate: tailorAccount, isPending: isTailoringAccount } = useMutation({
@@ -64,7 +79,7 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
           languages: data.languages,
         };
 
-        send({ type: 'SET_TAILOR_ACCOUNT', value: dto });
+        setTailoredAccount(dto);
       }
 
       const { success, data: tailoredAccountData, error } = accountSchema.safeParse(dto);
@@ -76,8 +91,7 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
       throw new Error('Failed to tailor account');
     },
     onSuccess(data) {
-      send({ type: 'CREATE_ACCOUNT_SUCCESS', value: data });
-      clearAccountDraft();
+      completeSave(data);
       router.push('/account');
     },
     onError(error) {
@@ -86,7 +100,7 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
   });
 
   const handleNext = () => {
-    send({ type: 'SET_ANSWERS', value: [...answers, input] });
+    setAnswers([...answers, input]);
     const next = current + 1;
     setInput('');
     setCurrent(next);
@@ -102,36 +116,46 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
   };
 
   useEffect(() => {
-    send({
-      type: 'SET_QUESTION_PROGRESS',
-      value: { questionIndex: current, unsentAnswer: input },
-    });
-  }, [current, input, send]);
+    setQuestionProgress(current, input);
+  }, [current, input, setQuestionProgress]);
+
+  const backButton = (
+    <div className="container mx-auto flex justify-start pt-8">
+      <Button variant="secondary" type="button" onClick={goBackToForm}>
+        Back to profile
+      </Button>
+    </div>
+  );
 
   if (isFetchingQuestions || !questions)
     return (
-      <Loading
-        message={'Reviewing your account details...'}
-      />
+      <>
+        {backButton}
+        <Loading message="Reviewing your account details..." />
+      </>
     );
 
   if (isTailoringAccount)
     return (
-      <Loading
-        message={'Tailoring your account details...'}
-      />
+      <>
+        {backButton}
+        <Loading message="Tailoring your account details..." />
+      </>
     );
 
   return (
-    <ResumeQuestions
-      questions={questions}
-      answers={answers}
-      current={current}
-      input={input}
-      setInput={setInput}
-      handleSkip={handleSkip}
-      handleNext={handleNext}
-      onSubmit={() => accountDto && tailorAccount({ questions, accountDto })}
-    />
+    <>
+      {backButton}
+      <ResumeQuestions
+        questions={questions}
+        answers={answers}
+        current={current}
+        input={input}
+        setInput={setInput}
+        handleSkip={handleSkip}
+        handleNext={handleNext}
+        onSubmit={() => accountDto && tailorAccount({ questions, accountDto })}
+      />
+    </>
   );
 });

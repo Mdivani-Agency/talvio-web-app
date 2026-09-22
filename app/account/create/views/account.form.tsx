@@ -22,8 +22,8 @@ interface AccountFormProps {
 }
 
 export const AccountForm = ({ onSubmit }: AccountFormProps) => {
-  const { state, send } = useAccountContext();
-  const values = state.context.accountDto || state.context.partialDto || {};
+  const { accountDto, partialDto, setPartialDto } = useAccountContext();
+  const values = accountDto || partialDto || {};
 
   const form = useAppForm<AccountDto>({
     defaultValues: {
@@ -51,7 +51,7 @@ export const AccountForm = ({ onSubmit }: AccountFormProps) => {
     validateOn: 'submit',
     onSubmit,
     onValuesChange: (data) => {
-      send({ type: 'SET_PARTIAL_DTO', value: data });
+      setPartialDto(data);
     },
   });
 

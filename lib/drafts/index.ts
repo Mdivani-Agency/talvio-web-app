@@ -23,16 +23,17 @@ export {
   readDraft,
   writeDraft,
 } from './storage';
+export type { AccountDraftFields, OnboardingStep } from './account-draft';
 export {
-  accountContentFromContext,
-  accountDraftRestoreEvents,
-  accountDraftToSnapshot,
-  accountProgressFromState,
+  accountContentFromFields,
+  accountProgressFromStep,
   buildAccountDraft,
+  emptyAccountDraftFields,
+  hasOnboardingWork,
+  hydrateAccountDraft,
   parseAccountDraft,
   readParsedAccountDraft,
-  restoreAccountDraft,
-  shouldSeedAccountFromQuery,
+  shouldConfirmImport,
 } from './account-draft';
 export {
   buildResumeDraft,

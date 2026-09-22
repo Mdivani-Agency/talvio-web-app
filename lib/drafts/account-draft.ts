@@ -1,4 +1,3 @@
-import type { AccountContext, AccountEvents } from '@app/account/state/types';
 import type { AccountDto, FeedbackQuestions } from '@lib/types';
 
 import {
@@ -12,24 +11,67 @@ import {
 } from './schema';
 import { createVersionedDraft, readDraft, type DraftStorage } from './storage';
 
-export function accountProgressFromState(stateValue: unknown): AccountProgress | undefined {
-  if (typeof stateValue === 'object' && stateValue && 'newAccount' in stateValue) {
-    const step = (stateValue as { newAccount: string }).newAccount;
-    if (step === 'accountForm' || step === 'accountQuestions') {
-      return { step };
-    }
+export type OnboardingStep = 'form' | 'questions';
+
+export type AccountDraftFields = {
+  step: OnboardingStep;
+  scrapedResume: string | null;
+  partialDto: Partial<AccountDto> | null;
+  accountDto: AccountDto | null;
+  tailoredAccount: AccountDto | null;
+  questions: FeedbackQuestions | null;
+  answers: string[] | null;
+  questionIndex: number | null;
+  unsentAnswer: string | null;
+};
+
+const PROFILE_TEXT_KEYS = [
+  'firstName',
+  'lastName',
+  'role',
+  'email',
+  'phone',
+  'website',
+  'tagline',
+  'city',
+  'country',
+] as const;
+
+export function hasOnboardingWork(dto: Partial<AccountDto> | null | undefined) {
+  if (!dto) {
+    return false;
   }
-  return undefined;
+  const profile = dto.profile;
+  if (profile && PROFILE_TEXT_KEYS.some((key) => Boolean(profile[key]))) {
+    return true;
+  }
+  return Boolean(
+    dto.experience?.length
+    || dto.education?.length
+    || dto.projects?.length
+    || dto.skills?.length
+    || dto.tools?.length
+    || dto.languages?.length
+    || dto.links?.length,
+  );
 }
 
-export function accountContentFromContext(context: AccountContext): AccountDraftContent {
+export function shouldConfirmImport(current: Partial<AccountDto> | null | undefined) {
+  return hasOnboardingWork(current);
+}
+
+export function accountProgressFromStep(step: OnboardingStep): AccountProgress {
+  return { step: step === 'questions' ? 'accountQuestions' : 'accountForm' };
+}
+
+export function accountContentFromFields(fields: AccountDraftFields): AccountDraftContent {
   return {
-    scrapedResume: context.scrapedResume,
-    partialDto: context.partialDto as AccountDraftContent['partialDto'],
-    accountDto: context.accountDto as AccountDraftContent['accountDto'],
-    tailoredAccount: context.tailoredAccount as AccountDraftContent['tailoredAccount'],
-    questions: context.questions,
-    answers: context.answers,
+    scrapedResume: fields.scrapedResume,
+    partialDto: fields.partialDto as AccountDraftContent['partialDto'],
+    accountDto: fields.accountDto as AccountDraftContent['accountDto'],
+    tailoredAccount: fields.tailoredAccount as AccountDraftContent['tailoredAccount'],
+    questions: fields.questions,
+    answers: fields.answers,
   };
 }
 
@@ -54,110 +96,59 @@ export function readParsedAccountDraft(storage: DraftStorage | null, key: string
   return { draft: result.draft, parsed, status: result.status };
 }
 
-export function shouldSeedAccountFromQuery(stateValue: unknown) {
-  return stateValue === 'fetchingAccount';
-}
-
-export function accountDraftRestoreEvents(
+export function hydrateAccountDraft(
   content: AccountDraftContent,
   progress: AccountProgress,
-): AccountEvents[] {
-  const events: AccountEvents[] = [{ type: 'FETCHING_ACCOUNT_FAILURE' }];
-
-  if (content.partialDto) {
-    events.push({
-      type: 'SET_PARTIAL_DTO',
-      value: content.partialDto as AccountContext['partialDto'],
-    });
-  }
-  if (content.scrapedResume) {
-    events.push({ type: 'SET_RESUME_TEXT', value: content.scrapedResume });
-  }
-  if (progress.step === 'accountQuestions' && content.accountDto) {
-    events.push({ type: 'SET_ACCOUNT_DTO', value: content.accountDto as AccountDto });
-  }
-  if (content.questions?.length) {
-    events.push({ type: 'SET_QUESTIONS', value: content.questions as FeedbackQuestions });
-  }
-  if (content.answers) {
-    events.push({ type: 'SET_ANSWERS', value: content.answers });
-  }
-  if (content.tailoredAccount) {
-    events.push({ type: 'SET_TAILOR_ACCOUNT', value: content.tailoredAccount as AccountDto });
-  }
-  if (progress.questionIndex != null || progress.unsentAnswer != null) {
-    events.push({
-      type: 'SET_QUESTION_PROGRESS',
-      value: {
-        questionIndex: progress.questionIndex ?? 0,
-        unsentAnswer: progress.unsentAnswer ?? '',
-      },
-    });
-  }
-
-  return events;
+): AccountDraftFields {
+  return {
+    step: progress.step === 'accountQuestions' && content.accountDto ? 'questions' : 'form',
+    scrapedResume: content.scrapedResume ?? null,
+    partialDto: (content.partialDto ?? null) as AccountDraftFields['partialDto'],
+    accountDto: (content.accountDto ?? null) as AccountDraftFields['accountDto'],
+    tailoredAccount: (content.tailoredAccount ?? null) as AccountDraftFields['tailoredAccount'],
+    questions: (content.questions ?? null) as AccountDraftFields['questions'],
+    answers: content.answers ?? null,
+    questionIndex: progress.questionIndex ?? null,
+    unsentAnswer: progress.unsentAnswer ?? null,
+  };
 }
 
-export function restoreAccountDraft(
-  send: (event: AccountEvents) => void,
-  content: AccountDraftContent,
-  progress: AccountProgress,
-) {
-  for (const event of accountDraftRestoreEvents(content, progress)) {
-    send(event);
-  }
+export function emptyAccountDraftFields(): AccountDraftFields {
+  return {
+    step: 'form',
+    scrapedResume: null,
+    partialDto: null,
+    accountDto: null,
+    tailoredAccount: null,
+    questions: null,
+    answers: null,
+    questionIndex: null,
+    unsentAnswer: null,
+  };
 }
 
 export function buildAccountDraft(input: {
   owner: DraftOwner;
-  context: AccountContext;
-  stateValue: unknown;
+  fields: AccountDraftFields;
   existing?: VersionedDraft | null;
+  baseUpdatedAt?: string;
 }): VersionedDraft | null {
   if (input.owner.kind !== 'user') {
     return null;
   }
-  const progress = accountProgressFromState(input.stateValue);
-  if (!progress) {
-    return null;
-  }
-  progress.questionIndex = input.context.questionIndex ?? undefined;
-  progress.unsentAnswer = input.context.unsentAnswer ?? undefined;
+
+  const progress = accountProgressFromStep(input.fields.step);
+  progress.questionIndex = input.fields.questionIndex ?? undefined;
+  progress.unsentAnswer = input.fields.unsentAnswer ?? undefined;
 
   return createVersionedDraft({
     kind: 'account',
     owner: input.owner,
-    content: accountContentFromContext(input.context),
+    content: accountContentFromFields(input.fields),
     progress,
     documentId: 'profile',
     draftId: input.existing?.draftId,
     createdAt: input.existing?.createdAt,
-    baseUpdatedAt: input.existing?.baseUpdatedAt ?? input.context.account?.updatedAt,
+    baseUpdatedAt: input.baseUpdatedAt ?? input.existing?.baseUpdatedAt,
   });
-}
-
-export function accountDraftToSnapshot(draft: VersionedDraft) {
-  const parsed = parseAccountDraft(draft);
-  if (!parsed) {
-    return undefined;
-  }
-
-  return {
-    status: 'active' as const,
-    value: { newAccount: parsed.progress.step },
-    context: {
-      scrapedResume: parsed.content.scrapedResume ?? null,
-      partialDto: (parsed.content.partialDto ?? null) as AccountContext['partialDto'],
-      accountDto: (parsed.content.accountDto ?? null) as AccountContext['accountDto'],
-      tailoredAccount: (parsed.content.tailoredAccount ?? null) as AccountContext['tailoredAccount'],
-      questions: (parsed.content.questions ?? null) as AccountContext['questions'],
-      answers: parsed.content.answers ?? null,
-      parsingError: null,
-      account: null,
-      questionIndex: parsed.progress.questionIndex ?? null,
-      unsentAnswer: parsed.progress.unsentAnswer ?? null,
-    } satisfies AccountContext,
-    children: {},
-    historyValue: {},
-  };
 }
