@@ -28,6 +28,7 @@ import { formatResumeFieldIssues, resumeSubmissionIssues, type ResumeFieldIssue 
 import {
   displayedFamilyResume,
   readMatchingResumeRecovery,
+  recoveryDocumentIds,
   resumeToEditorDocument,
 } from '@lib/resume/resolve-editor';
 import { useUserSession } from '@lib/providers';
@@ -76,11 +77,15 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     if (!userId) {
       return null;
     }
-    return readMatchingResumeRecovery(storage, { kind: 'user', userId }, [
-      resumeId,
-      draft?.id,
-      original?.id,
-    ]);
+    return readMatchingResumeRecovery(
+      storage,
+      { kind: 'user', userId },
+      recoveryDocumentIds({
+        resumeId,
+        draftId: draft?.id,
+        originalId: original?.id,
+      }),
+    );
   }, [draft?.id, original?.id, resumeId, storage, userId]);
 
   useEffect(() => {
@@ -99,21 +104,37 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       return;
     }
     const writer = createDebouncedWriter((next: VersionedDraft | null) => {
-      const key = resumeDraftStorageKey({ kind: 'user', userId }, draft?.id ?? displayed?.id ?? resumeId);
+      const documentId = draft?.id ?? displayed?.id ?? resumeId;
+      const key = resumeDraftStorageKey({ kind: 'user', userId }, documentId);
       if (!next) {
         clearDraft(storage, key);
         return;
       }
       writeDraft(storage, key, next);
+      if (original?.id && original.id !== documentId) {
+        clearDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, original.id));
+      }
     });
     writerRef.current = writer;
+
+    const flush = () => writer.flush();
+    const onVisibility = () => {
+      if (window.document.visibilityState === 'hidden') {
+        flush();
+      }
+    };
+    window.addEventListener('pagehide', flush);
+    window.document.addEventListener('visibilitychange', onVisibility);
+
     return () => {
-      writer.flush();
+      flush();
+      window.removeEventListener('pagehide', flush);
+      window.document.removeEventListener('visibilitychange', onVisibility);
       if (writerRef.current === writer) {
         writerRef.current = null;
       }
     };
-  }, [displayed?.id, draft?.id, resumeId, storage, userId]);
+  }, [displayed?.id, draft?.id, original?.id, resumeId, storage, userId]);
 
   useEffect(() => {
     if (!userId || !document || viewingOriginal) {
@@ -151,6 +172,9 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       }
       if (result.created) {
         setViewingOriginal(false);
+        if (original && userId) {
+          clearDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, original.id));
+        }
       }
     },
   });

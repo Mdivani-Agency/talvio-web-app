@@ -107,7 +107,6 @@ export function ResumeEditorShell({
             defaultValue={document.label ?? ''}
             placeholder="Label (optional)"
             aria-label="Resume label"
-            disabled={readOnly}
             onBlur={(event) => {
               const next = event.target.value;
               if (normalizeResumeLabel(next) === normalizeResumeLabel(document.label)) {

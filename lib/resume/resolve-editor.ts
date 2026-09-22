@@ -77,6 +77,17 @@ export function filenameFromDocument(document: PreviewDto) {
   return fromProfile || document.name || 'my resume';
 }
 
+export function recoveryDocumentIds(input: {
+  resumeId: string;
+  draftId?: string | null;
+  originalId?: string | null;
+}): string[] {
+  if (input.draftId) {
+    return [input.draftId];
+  }
+  return [...new Set([input.resumeId, input.originalId].filter((id): id is string => Boolean(id)))];
+}
+
 export function readMatchingResumeRecovery(
   storage: DraftStorage | null,
   owner: Extract<DraftOwner, { kind: 'user' }>,

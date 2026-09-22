@@ -12,6 +12,7 @@ import {
   displayedFamilyResume,
   filenameFromDocument,
   readMatchingResumeRecovery,
+  recoveryDocumentIds,
   resolveAvailableTemplate,
   resolveResumeEditorDocument,
   resumeToEditorDocument,
@@ -107,6 +108,21 @@ describe('family display and filename', () => {
     expect(document.template).toBe(original.template);
   });
 
+  it('prefers the active draft recovery over the route or original id', () => {
+    expect(recoveryDocumentIds({
+      resumeId: 'original-1',
+      draftId: 'draft-1',
+      originalId: 'original-1',
+    })).toEqual(['draft-1']);
+    expect(recoveryDocumentIds({
+      resumeId: 'original-1',
+      originalId: 'original-1',
+    })).toEqual(['original-1']);
+    expect(recoveryDocumentIds({
+      resumeId: 'standalone-1',
+    })).toEqual(['standalone-1']);
+  });
+
   it('reads recovery only for matching document ids', () => {
     const values = new Map<string, string>();
     const storage = {
@@ -127,9 +143,21 @@ describe('family display and filename', () => {
       resumeDraftStorageKey({ kind: 'user', userId: FLOW_USER_ID }, 'draft-1'),
       JSON.stringify(userDraft),
     );
+    storage.setItem(
+      resumeDraftStorageKey({ kind: 'user', userId: FLOW_USER_ID }, 'original-1'),
+      JSON.stringify({
+        ...userDraft,
+        documentId: 'original-1',
+        content: { ...(userDraft.content as Record<string, unknown>), name: 'Stale original' },
+      }),
+    );
 
     expect(readMatchingResumeRecovery(storage, { kind: 'user', userId: FLOW_USER_ID }, ['missing'])).toBeNull();
-    expect(readMatchingResumeRecovery(storage, { kind: 'user', userId: FLOW_USER_ID }, ['original-1', 'draft-1'])?.name).toBe('Ada Owner');
+    expect(readMatchingResumeRecovery(
+      storage,
+      { kind: 'user', userId: FLOW_USER_ID },
+      recoveryDocumentIds({ resumeId: 'original-1', draftId: 'draft-1', originalId: 'original-1' }),
+    )?.name).toBe('Ada Owner');
   });
 
   it('builds a filename from profile names without losing a custom name fallback', () => {
