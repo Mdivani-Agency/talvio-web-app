@@ -1,10 +1,14 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { accountDtoToSavePayload } from '@/lib/adapters/profile.adapter';
 import { getGraphqlSdk, parseGraphqlError } from '@/lib/graphql-client';
 import type { Account, AccountDto } from '@lib/types';
 
 import { fetchProfile } from './use-profile';
+
+export function seedAccountQuery(queryClient: QueryClient, userId: string, account: Account) {
+  queryClient.setQueryData(['account', userId], account);
+}
 
 export async function saveProfile(userId: string, accountDto: AccountDto): Promise<Account> {
   const sdk = await getGraphqlSdk();
@@ -33,8 +37,10 @@ export function useSaveProfile(userId?: string) {
       }
       return saveProfile(userId, accountDto);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['account', userId] });
+    onSuccess: (account) => {
+      if (userId) {
+        seedAccountQuery(queryClient, userId, account);
+      }
     },
   });
 }

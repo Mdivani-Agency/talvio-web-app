@@ -149,21 +149,32 @@ export function copyDraftForRecovery(draft: VersionedDraft): VersionedDraft {
   };
 }
 
+export type DebouncedWriter<T> = {
+  schedule(value: T): void;
+  flush(): void;
+  cancel(): void;
+};
+
 export function createDebouncedWriter<T>(
   write: (value: T) => void,
   wait = 400,
-) {
+): DebouncedWriter<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let pending: T | undefined;
   let hasPending = false;
+
+  const clearTimer = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = undefined;
+    }
+  };
 
   return {
     schedule(value: T) {
       pending = value;
       hasPending = true;
-      if (timer) {
-        clearTimeout(timer);
-      }
+      clearTimer();
       timer = setTimeout(() => {
         if (hasPending) {
           write(pending as T);
@@ -172,14 +183,16 @@ export function createDebouncedWriter<T>(
       }, wait);
     },
     flush() {
-      if (timer) {
-        clearTimeout(timer);
-        timer = undefined;
-      }
+      clearTimer();
       if (hasPending) {
         write(pending as T);
         hasPending = false;
       }
+    },
+    cancel() {
+      clearTimer();
+      hasPending = false;
+      pending = undefined;
     },
   };
 }
