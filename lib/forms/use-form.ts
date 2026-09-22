@@ -10,9 +10,7 @@ export type AppForm = ReactFormExtendedApi<any, any, any, any, any, any, any, an
 
 type UseAppFormOptions<TFormData> = {
   defaultValues: TFormData;
-  // Zod preprocess (e.g. persisted list ids) can widen input beyond TFormData.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- schema input need not equal form values
-  schema?: StandardSchemaV1<any, any>;
+  schema?: StandardSchemaV1<TFormData, unknown>;
   onSubmit?: (value: TFormData) => void | Promise<void>;
   onValuesChange?: (value: TFormData) => void;
   validateOn?: 'change' | 'submit';
