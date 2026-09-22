@@ -23,7 +23,7 @@ interface AccountFormProps {
 
 export const AccountForm = ({ onSubmit }: AccountFormProps) => {
   const { accountDto, partialDto, setPartialDto } = useAccountContext();
-  const values = accountDto || partialDto || {};
+  const values = partialDto || accountDto || {};
 
   const form = useAppForm<AccountDto>({
     defaultValues: {

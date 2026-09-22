@@ -23,6 +23,7 @@ export {
   readDraft,
   writeDraft,
 } from './storage';
+export type { DebouncedWriter } from './storage';
 export type { AccountDraftFields, OnboardingStep } from './account-draft';
 export {
   accountContentFromFields,

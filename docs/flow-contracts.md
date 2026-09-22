@@ -61,7 +61,8 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 - `useAccountOnboarding` hydrates `form` or `questions` from the versioned draft. Questions restore only when progress is `accountQuestions` and `accountDto` exists.
 - One `AccountForm` handles manual input and applied PDF imports. The form stays mounted while parsing.
 - `offerImport` reads live typed values. Current work opens replace/cancel. Cancel and parse errors leave prior input. Apply remounts through `formRevision`.
-- Valid submit writes `accountDto` and moves to questions. Back returns to the same values. `completeSave` clears the draft.
+- Valid submit writes `accountDto` and moves to questions. Back returns to the same values. Applying an import replaces `accountDto` so the form remounts from the imported values.
+- `completeSave` cancels pending draft writes and clears storage. A successful save seeds `['account', userId]` before routing so `/account` does not treat the cached missing profile as a new account.
 - Account UI no longer sends machine events. `app/account/state/machine.ts` is unused until MDI-201.
 
 ## Generated documents and credits

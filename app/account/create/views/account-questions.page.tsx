@@ -3,10 +3,10 @@
 import { memo, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAccountContext } from '@app/account/providers/state-provider';
-import { saveProfile } from '@app/account/query/use-save-profile';
+import { saveProfile, seedAccountQuery } from '@app/account/query/use-save-profile';
 import { Button } from '@components/ui';
 import { Loading } from '@components/views';
 import { fetchQuestions, fetchTailoredAccount } from '@lib/clients/llm.client';
@@ -34,6 +34,7 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
     tailoredAccount,
     unsentAnswer,
   } = useAccountContext();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const recoveredIndex = questionIndex;
   const fallbackIndex =
@@ -90,7 +91,8 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
 
       throw new Error('Failed to tailor account');
     },
-    onSuccess() {
+    onSuccess(account) {
+      seedAccountQuery(queryClient, userId, account);
       completeSave();
       router.push('/account');
     },

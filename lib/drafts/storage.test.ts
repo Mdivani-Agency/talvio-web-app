@@ -127,6 +127,18 @@ describe('createDebouncedWriter', () => {
     expect(write).toHaveBeenLastCalledWith('three');
     expect(write).toHaveBeenCalledTimes(2);
   });
+
+  it('cancels a pending write without flushing', () => {
+    const write = vi.fn();
+    const writer = createDebouncedWriter(write, 400);
+
+    writer.schedule('stale');
+    writer.cancel();
+    vi.advanceTimersByTime(400);
+    writer.flush();
+
+    expect(write).not.toHaveBeenCalled();
+  });
 });
 
 describe('guest identity', () => {

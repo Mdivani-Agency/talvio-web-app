@@ -1,5 +1,5 @@
 import { act } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   ACCOUNT_DRAFT_STORAGE_KEY,
@@ -26,6 +26,7 @@ describe('useAccountOnboarding', () => {
 
   afterEach(() => {
     window.localStorage.clear();
+    vi.useRealTimers();
   });
 
   it('starts from defaults and hydrates a stored draft', () => {
@@ -85,6 +86,7 @@ describe('useAccountOnboarding', () => {
     });
     expect(result.current.pendingImport).toBeNull();
     expect(result.current.partialDto).toEqual(importedWork);
+    expect(result.current.accountDto).toBeNull();
     expect(result.current.formRevision).toBe(1);
     unmount();
   });
@@ -118,6 +120,69 @@ describe('useAccountOnboarding', () => {
     expect(result.current.accountDto).toEqual(fullAccountDto);
     expect(result.current.partialDto).toEqual(fullAccountDto);
     unmount();
+  });
+
+  it('replaces the submitted profile when an import is applied after back', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.goBackToForm();
+    });
+    act(() => {
+      result.current.offerImport(importedWork);
+    });
+    act(() => {
+      result.current.applyImport();
+    });
+
+    expect(result.current.accountDto).toBeNull();
+    expect(result.current.partialDto).toEqual(importedWork);
+    expect(result.current.formRevision).toBe(1);
+    unmount();
+  });
+
+  it('does not rewrite a cleared draft after a pending persist', () => {
+    vi.useFakeTimers();
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.setPartialDto(typedWork);
+    });
+    act(() => {
+      result.current.completeSave();
+    });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY)).toBeNull();
+    unmount();
+    vi.useRealTimers();
+  });
+
+  it('keeps one debounced write across field updates', () => {
+    vi.useFakeTimers();
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.setPartialDto({ profile: { firstName: 'A' } });
+    });
+    act(() => {
+      result.current.setPartialDto({ profile: { firstName: 'Ada' } });
+    });
+    expect(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY)).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+
+    const stored = JSON.parse(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY) ?? 'null');
+    expect(stored?.content.partialDto).toEqual({ profile: { firstName: 'Ada' } });
+    unmount();
+    vi.useRealTimers();
   });
 
   it('clears the stored draft after a successful save', () => {

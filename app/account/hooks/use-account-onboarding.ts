@@ -14,6 +14,7 @@ import {
   shouldConfirmImport,
   writeDraft,
   type AccountDraftFields,
+  type DebouncedWriter,
   type DraftPersistStatus,
   type OnboardingStep,
   type VersionedDraft,
@@ -39,6 +40,7 @@ export function useAccountOnboarding(userId: string) {
   const lastStepRef = useRef<OnboardingStep>(fields.step);
   const clearedRef = useRef(false);
   const liveValuesRef = useRef<DeepPartial<AccountDto> | null>(fields.partialDto ?? fields.accountDto);
+  const writerRef = useRef<DebouncedWriter<VersionedDraft | null> | null>(null);
 
   const updateFields = useCallback((patch: Partial<AccountDraftFields>) => {
     setFields((current) => {
@@ -50,8 +52,16 @@ export function useAccountOnboarding(userId: string) {
     });
   }, []);
 
+  const applyParsed = useCallback((parsed: DeepPartial<AccountDto>) => {
+    liveValuesRef.current = parsed;
+    updateFields({ partialDto: parsed, accountDto: null });
+    setPendingImport(null);
+    setFormRevision((value) => value + 1);
+  }, [updateFields]);
+
   const clearAccountDraft = useCallback(() => {
     clearedRef.current = true;
+    writerRef.current?.cancel();
     draftRef.current = null;
     setPendingImport(null);
     setPersistStatus(clearDraft(storage, key));
@@ -100,21 +110,15 @@ export function useAccountOnboarding(userId: string) {
       setPendingImport(parsed);
       return;
     }
-    liveValuesRef.current = parsed;
-    updateFields({ partialDto: parsed });
-    setPendingImport(null);
-    setFormRevision((value) => value + 1);
-  }, [fields.accountDto, fields.partialDto, updateFields]);
+    applyParsed(parsed);
+  }, [applyParsed, fields.accountDto, fields.partialDto]);
 
   const applyImport = useCallback(() => {
     if (!pendingImport) {
       return;
     }
-    liveValuesRef.current = pendingImport;
-    updateFields({ partialDto: pendingImport });
-    setPendingImport(null);
-    setFormRevision((value) => value + 1);
-  }, [pendingImport, updateFields]);
+    applyParsed(pendingImport);
+  }, [applyParsed, pendingImport]);
 
   const cancelImport = useCallback(() => {
     setPendingImport(null);
@@ -122,15 +126,46 @@ export function useAccountOnboarding(userId: string) {
 
   useEffect(() => {
     const writer = createDebouncedWriter((draft: VersionedDraft | null) => {
+      if (clearedRef.current) {
+        return;
+      }
       if (!draft) {
         setPersistStatus(clearDraft(storage, key));
         return;
       }
       setPersistStatus(writeDraft(storage, key, draft));
     });
+    writerRef.current = writer;
 
+    const persistOrCancel = () => {
+      if (clearedRef.current) {
+        writer.cancel();
+        return;
+      }
+      writer.flush();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        persistOrCancel();
+      }
+    };
+    window.addEventListener('pagehide', persistOrCancel);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      persistOrCancel();
+      if (writerRef.current === writer) {
+        writerRef.current = null;
+      }
+      window.removeEventListener('pagehide', persistOrCancel);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [key, storage]);
+
+  useEffect(() => {
     if (clearedRef.current) {
-      return () => writer.flush();
+      writerRef.current?.cancel();
+      return;
     }
 
     const nextDraft = buildAccountDraft({
@@ -138,31 +173,18 @@ export function useAccountOnboarding(userId: string) {
       fields,
       existing: draftRef.current,
     });
-    if (nextDraft) {
-      const stepChanged = lastStepRef.current !== fields.step;
-      lastStepRef.current = fields.step;
-      draftRef.current = nextDraft;
-      writer.schedule(nextDraft);
-      if (stepChanged) {
-        writer.flush();
-      }
+    if (!nextDraft || !writerRef.current) {
+      return;
     }
 
-    const flush = () => writer.flush();
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') {
-        flush();
-      }
-    };
-    window.addEventListener('pagehide', flush);
-    document.addEventListener('visibilitychange', onVisibility);
-
-    return () => {
-      flush();
-      window.removeEventListener('pagehide', flush);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [fields, key, owner, storage]);
+    const stepChanged = lastStepRef.current !== fields.step;
+    lastStepRef.current = fields.step;
+    draftRef.current = nextDraft;
+    writerRef.current.schedule(nextDraft);
+    if (stepChanged) {
+      writerRef.current.flush();
+    }
+  }, [fields, owner]);
 
   return {
     userId,
