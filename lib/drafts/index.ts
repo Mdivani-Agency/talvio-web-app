@@ -38,6 +38,7 @@ export {
   shouldConfirmImport,
 } from './account-draft';
 export {
+  buildResumeDocumentDraft,
   buildResumeDraft,
   DEFAULT_RESUME_TEMPLATE,
   EMPTY_RESUME_PREVIEW,

@@ -4,6 +4,7 @@ import { createActor } from 'xstate';
 import { resumeState } from '@app/resume/state/machine';
 
 import {
+  FLOW_DRAFT_ID,
   FLOW_GUEST_ID,
   FLOW_USER_ID,
   fullResumeContent,
@@ -14,6 +15,7 @@ import { EMPTY_RESUME_DOCUMENT } from '@lib/models/resume-document';
 import { RESUME_COLORS_MAP } from '@lib/utils';
 
 import {
+  buildResumeDocumentDraft,
   buildResumeDraft,
   DEFAULT_RESUME_TEMPLATE,
   normalizeResumeTemplate,
@@ -123,6 +125,30 @@ describe('resume drafts', () => {
 
     expect(draft).not.toBeNull();
     expect(parseResumeDraft(draft!)?.content.template).toBe(DEFAULT_RESUME_TEMPLATE);
+  });
+
+  it('builds a saved-document draft without machine context', () => {
+    const draft = buildResumeDocumentDraft({
+      owner: { kind: 'user', userId: FLOW_USER_ID },
+      document: {
+        resume: fullResumeContent,
+        name: 'Ada Owner',
+        label: 'Open draft',
+        template: 'senior-level-talvio',
+        color: '#1B1B1B',
+        fontSize: 'md',
+      },
+      documentId: FLOW_DRAFT_ID,
+    });
+
+    expect(draft).not.toBeNull();
+    expect(parseResumeDraft(draft!)?.progress.step).toBe('existingResume');
+    expect(parseResumeDraft(draft!)?.content.name).toBe('Ada Owner');
+    expect(buildResumeDocumentDraft({
+      owner: { kind: 'guest', guestId: FLOW_GUEST_ID },
+      document: emptyContext.resumeDto,
+      documentId: FLOW_DRAFT_ID,
+    })).toBeNull();
   });
 
   it('does not persist the fetching state', () => {
