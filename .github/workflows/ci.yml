@@ -105,9 +105,20 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID || vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID || vars.VERCEL_PROJECT_ID }}
+      # vercel build installs with the packageManager pin (Yarn 4). Without this
+      # it shells out to Yarn 1 and exits before compile.
+      ENABLE_EXPERIMENTAL_COREPACK: "1"
     steps:
       - name: Check out
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Require Vercel credentials
         run: |
