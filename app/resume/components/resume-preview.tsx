@@ -1,76 +1,60 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 
-import { usePdfImage } from '@hooks/use-pdf-image';
-import { resumeService } from '@lib/services/resume.service';
-import { cn, debounce } from '@lib/utils';
-import { ResumeDto, ResumeForm } from '@lib/types';
+import { Button } from '@components/ui';
+import { FullSizeResumeModal } from '@components/modals';
+import { cn } from '@lib/utils';
+import type { ResumeForm, TemplateKey } from '@lib/types';
+
+import { useResumePreview } from '../hooks/use-resume-preview';
 import { ResumeActionBar } from './resume-actions';
 import { ResumeImageCarousel } from './resume-image-carousel';
-import { FullSizeResumeModal } from '@components/modals';
-import { Template } from '@pdf-tlv/resume';
 
 interface ResumePreviewProps {
   action?: React.ReactNode;
   className?: string;
-  template: Template | null;
+  templateKey: TemplateKey;
   resume: ResumeForm
   fontSize: 'sm' | 'md' | 'lg';
   color: string;
-  handleChange: (key: 'color' | 'fontSize' | 'name', value: string) => void;
+  handleChange: (key: 'color' | 'fontSize', value: string) => void;
   onDownload: () => void;
   readOnly?: boolean;
 }
 
-export type RenderPreviewParams = Omit<ResumeDto, 'template' | 'resume'> & {
-  metadata: ResumeForm;
-}
-
-export function ResumePreview({ className, action, template, resume, fontSize, color, onDownload, handleChange, readOnly = false }: ResumePreviewProps) {
+export function ResumePreview({
+  className,
+  action,
+  templateKey,
+  resume,
+  fontSize,
+  color,
+  onDownload,
+  handleChange,
+  readOnly = false,
+}: ResumePreviewProps) {
   const [isFullSizeResumeModalOpen, setIsFullSizeResumeModalOpen] = useState(false);
-  const { images, renderPDF } = usePdfImage();
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const goToNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex < images.length - 1 ? prevIndex + 1 : 0));
-  };
-  const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : images.length - 1));
-  };
-
-  const renderPreview = useCallback(async (dto: RenderPreviewParams) => {
-    if (!template) return;
-
-    const { metadata, color, fontSize } = dto;
-
-    const response = await resumeService.generate(metadata, template, {
-      color,
-      fontSize,
-      isPreview: true,
-    });
-
-    const blob = new Blob([response as unknown as BlobPart], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    renderPDF(url);
-  }, [template, renderPDF]);
-
-  const debouncedFetchPdf = useMemo(
-    () =>
-      debounce((params: RenderPreviewParams) => {
-        renderPreview(params);
-      }, 300),
-    [renderPreview],
-  );
-
-  useEffect(() => {
-    debouncedFetchPdf({ metadata: resume, color, fontSize, name: 'resume' });
-  }, [resume, template, color, fontSize, debouncedFetchPdf]);
+  const { images, isLoading, error, pageIndex, retry, goToNext, goToPrevious } = useResumePreview({
+    resume,
+    templateKey,
+    color,
+    fontSize,
+  });
 
   return (
     <section className={cn('h-full flex', className)}>
       <section className={'relative w-full h-full overflow-y-auto'}>
-        <ResumeImageCarousel isLoading={false} images={images} currentIndex={currentIndex} />
+        <ResumeImageCarousel isLoading={isLoading} images={images} currentIndex={pageIndex} />
+        {error ? (
+          <div className="absolute top-4 left-0 right-0 z-20 flex justify-center px-4">
+            <div className="flex items-center gap-2 rounded-md bg-popover px-3 py-2 text-sm shadow-md">
+              <span>{error}</span>
+              <Button type="button" variant="link" size="sm" className="px-0" onClick={retry}>
+                Retry
+              </Button>
+            </div>
+          </div>
+        ) : null}
         <ResumeActionBar
           className="absolute bottom-10 left-0 right-0 z-30"
           color={color}
@@ -81,7 +65,7 @@ export function ResumePreview({ className, action, template, resume, fontSize, c
             }
           }}
           imageCount={images.length}
-          currentIndex={currentIndex}
+          currentIndex={pageIndex}
           goToPrevious={goToPrevious}
           goToNext={goToNext}
           fontSize={fontSize}
