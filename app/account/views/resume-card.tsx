@@ -54,9 +54,15 @@ export const ResumeCard = ({
     <>
       <Card className="gap-0">
         <CardHeader>
-          <CardTitle className="flex flex-col gap-6">
-            <Icon type="Document" className="size-8" />
-            <span className="text-lg font-medium">My Resumes</span>
+          <CardTitle className="flex items-start justify-between gap-4">
+            <span className="flex flex-col gap-6">
+              <Icon type="Document" className="size-8" />
+              <span className="text-lg font-medium">My Resumes</span>
+            </span>
+            <Link href="/resume" className="flex items-center gap-1 text-sm">
+              <Icon type="Add" className="size-4" />
+              Create Resume
+            </Link>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

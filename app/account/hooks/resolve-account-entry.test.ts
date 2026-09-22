@@ -77,5 +77,11 @@ describe('resolveAccountEntry', () => {
       step: 'questions',
       hasSubmittedProfile: true,
     })).toBe('questions');
+    expect(resolveAccountEntry({
+      surface: 'create',
+      lookup: 'missing',
+      step: 'profileReview',
+      hasSubmittedProfile: true,
+    })).toBe('questions');
   });
 });

@@ -1,4 +1,11 @@
-import type { AccountDto, DeepPartial, FeedbackQuestions } from '@lib/types';
+import type { AccountDto, DeepPartial } from '@lib/types';
+import {
+  assignQuestionIds,
+  normalizeStoredAnswers,
+  type OnboardingQuestion,
+  type OnboardingRevision,
+  type QuestionAnswer,
+} from '@lib/onboarding/questions';
 
 import {
   accountDraftContentSchema,
@@ -11,7 +18,7 @@ import {
 } from './schema';
 import { createVersionedDraft, readDraft, type DraftStorage } from './storage';
 
-export type OnboardingStep = 'form' | 'questions';
+export type OnboardingStep = 'form' | 'questions' | 'answerReview' | 'proposalReview' | 'profileReview';
 
 export type AccountDraftFields = {
   step: OnboardingStep;
@@ -19,10 +26,30 @@ export type AccountDraftFields = {
   partialDto: DeepPartial<AccountDto> | null;
   accountDto: AccountDto | null;
   tailoredAccount: AccountDto | null;
-  questions: FeedbackQuestions | null;
-  answers: string[] | null;
-  questionIndex: number | null;
+  reviewedAccount: AccountDto | null;
+  questions: OnboardingQuestion[] | null;
+  answers: QuestionAnswer[];
+  currentQuestionId: string | null;
   unsentAnswer: string | null;
+  profileRevision: number;
+  answerRevision: number;
+  proposalFor: OnboardingRevision | null;
+};
+
+const STEP_TO_PROGRESS: Record<OnboardingStep, AccountProgress['step']> = {
+  form: 'accountForm',
+  questions: 'accountQuestions',
+  answerReview: 'accountAnswerReview',
+  proposalReview: 'accountProposalReview',
+  profileReview: 'accountProfileReview',
+};
+
+const PROGRESS_TO_STEP: Record<AccountProgress['step'], OnboardingStep> = {
+  accountForm: 'form',
+  accountQuestions: 'questions',
+  accountAnswerReview: 'answerReview',
+  accountProposalReview: 'proposalReview',
+  accountProfileReview: 'profileReview',
 };
 
 const PROFILE_TEXT_KEYS = [
@@ -60,8 +87,12 @@ export function shouldConfirmImport(current: DeepPartial<AccountDto> | null | un
   return hasOnboardingWork(current);
 }
 
+export function isPostFormStep(step: OnboardingStep) {
+  return step !== 'form';
+}
+
 export function accountProgressFromStep(step: OnboardingStep): AccountProgress {
-  return { step: step === 'questions' ? 'accountQuestions' : 'accountForm' };
+  return { step: STEP_TO_PROGRESS[step] };
 }
 
 export function accountContentFromFields(fields: AccountDraftFields): AccountDraftContent {
@@ -70,8 +101,10 @@ export function accountContentFromFields(fields: AccountDraftFields): AccountDra
     partialDto: fields.partialDto as AccountDraftContent['partialDto'],
     accountDto: fields.accountDto as AccountDraftContent['accountDto'],
     tailoredAccount: fields.tailoredAccount as AccountDraftContent['tailoredAccount'],
+    reviewedAccount: fields.reviewedAccount as AccountDraftContent['reviewedAccount'],
     questions: fields.questions,
     answers: fields.answers,
+    proposalFor: fields.proposalFor,
   };
 }
 
@@ -100,16 +133,26 @@ export function hydrateAccountDraft(
   content: AccountDraftContent,
   progress: AccountProgress,
 ): AccountDraftFields {
+  const questions = content.questions ? assignQuestionIds(content.questions as OnboardingQuestion[]) : null;
+  const answers = normalizeStoredAnswers(content.answers, questions ?? []);
+  const currentQuestionId = progress.questionId
+    ?? (progress.questionIndex != null ? questions?.[progress.questionIndex]?.id ?? null : null);
+  const restoredStep = PROGRESS_TO_STEP[progress.step];
+
   return {
-    step: progress.step === 'accountQuestions' && content.accountDto ? 'questions' : 'form',
+    step: content.accountDto && restoredStep !== 'form' ? restoredStep : 'form',
     scrapedResume: content.scrapedResume ?? null,
     partialDto: (content.partialDto ?? null) as AccountDraftFields['partialDto'],
     accountDto: (content.accountDto ?? null) as AccountDraftFields['accountDto'],
     tailoredAccount: (content.tailoredAccount ?? null) as AccountDraftFields['tailoredAccount'],
-    questions: (content.questions ?? null) as AccountDraftFields['questions'],
-    answers: content.answers ?? null,
-    questionIndex: progress.questionIndex ?? null,
+    reviewedAccount: (content.reviewedAccount ?? null) as AccountDraftFields['reviewedAccount'],
+    questions,
+    answers,
+    currentQuestionId,
     unsentAnswer: progress.unsentAnswer ?? null,
+    profileRevision: progress.profileRevision ?? 0,
+    answerRevision: progress.answerRevision ?? 0,
+    proposalFor: content.proposalFor ?? null,
   };
 }
 
@@ -120,10 +163,14 @@ export function emptyAccountDraftFields(): AccountDraftFields {
     partialDto: null,
     accountDto: null,
     tailoredAccount: null,
+    reviewedAccount: null,
     questions: null,
-    answers: null,
-    questionIndex: null,
+    answers: [],
+    currentQuestionId: null,
     unsentAnswer: null,
+    profileRevision: 0,
+    answerRevision: 0,
+    proposalFor: null,
   };
 }
 
@@ -138,8 +185,14 @@ export function buildAccountDraft(input: {
   }
 
   const progress = accountProgressFromStep(input.fields.step);
-  progress.questionIndex = input.fields.questionIndex ?? undefined;
+  progress.questionId = input.fields.currentQuestionId ?? undefined;
   progress.unsentAnswer = input.fields.unsentAnswer ?? undefined;
+  progress.profileRevision = input.fields.profileRevision;
+  progress.answerRevision = input.fields.answerRevision;
+  if (input.fields.currentQuestionId && input.fields.questions) {
+    const index = input.fields.questions.findIndex((question) => question.id === input.fields.currentQuestionId);
+    progress.questionIndex = index >= 0 ? index : undefined;
+  }
 
   return createVersionedDraft({
     kind: 'account',

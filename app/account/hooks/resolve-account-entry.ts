@@ -1,4 +1,4 @@
-import type { OnboardingStep } from '@lib/drafts';
+import { isPostFormStep, type OnboardingStep } from '@lib/drafts';
 
 export type AccountLookupStatus = 'loading' | 'error' | 'found' | 'missing';
 
@@ -49,7 +49,7 @@ export function resolveAccountEntry(input: {
   if (input.surface === 'account') {
     return 'redirect-create';
   }
-  if (input.step === 'questions' && input.hasSubmittedProfile) {
+  if (isPostFormStep(input.step) && input.hasSubmittedProfile) {
     return 'questions';
   }
   return 'form';

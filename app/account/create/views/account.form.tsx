@@ -19,11 +19,19 @@ export { DEFAULT_ACCOUNT_DTO };
 
 interface AccountFormProps {
   onSubmit: (data: AccountDto) => void;
+  submitLabel?: string;
+  valuesOverride?: Partial<AccountDto> | null;
+  onValuesChange?: (data: AccountDto) => void;
 }
 
-export const AccountForm = ({ onSubmit }: AccountFormProps) => {
+export const AccountForm = ({
+  onSubmit,
+  submitLabel = 'Continue',
+  valuesOverride,
+  onValuesChange,
+}: AccountFormProps) => {
   const { accountDto, partialDto, setPartialDto } = useAccountContext();
-  const values = partialDto || accountDto || {};
+  const values = valuesOverride || partialDto || accountDto || {};
 
   const form = useAppForm<AccountDto>({
     defaultValues: {
@@ -51,7 +59,7 @@ export const AccountForm = ({ onSubmit }: AccountFormProps) => {
     validateOn: 'submit',
     onSubmit,
     onValuesChange: (data) => {
-      setPartialDto(data);
+      (onValuesChange ?? setPartialDto)(data);
     },
   });
 
@@ -74,7 +82,7 @@ export const AccountForm = ({ onSubmit }: AccountFormProps) => {
       <ProjectsView form={form} />
       <div className="flex justify-end gap-2">
         <Button className="w-64" onClick={() => void handleSubmit()} type="button">
-          Continue
+          {submitLabel}
         </Button>
       </div>
     </div>

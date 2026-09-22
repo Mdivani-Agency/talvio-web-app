@@ -19,7 +19,15 @@ import {
   type OnboardingStep,
   type VersionedDraft,
 } from '@lib/drafts';
-import type { AccountDto, DeepPartial, FeedbackQuestions } from '@lib/types';
+import {
+  nextQuestionId,
+  previousQuestionId,
+  sameRevision,
+  upsertAnswer,
+  type OnboardingQuestion,
+  type OnboardingRevision,
+} from '@lib/onboarding/questions';
+import type { AccountDto, DeepPartial } from '@lib/types';
 
 export type { OnboardingStep };
 
@@ -73,31 +81,145 @@ export function useAccountOnboarding(userId: string) {
   }, [updateFields]);
 
   const submitProfile = useCallback((accountDto: AccountDto) => {
-    updateFields({
-      accountDto,
-      partialDto: accountDto,
-      step: 'questions',
+    setFields((current) => {
+      liveValuesRef.current = accountDto;
+      return {
+        ...current,
+        accountDto,
+        partialDto: accountDto,
+        step: 'questions',
+        profileRevision: current.profileRevision + 1,
+        answerRevision: 0,
+        questions: null,
+        answers: [],
+        currentQuestionId: null,
+        unsentAnswer: '',
+        tailoredAccount: null,
+        reviewedAccount: null,
+        proposalFor: null,
+      };
     });
-  }, [updateFields]);
+  }, []);
 
   const goBackToForm = useCallback(() => {
     updateFields({ step: 'form' });
   }, [updateFields]);
 
-  const setQuestions = useCallback((questions: FeedbackQuestions) => {
-    updateFields({ questions });
+  const receiveQuestions = useCallback((questions: OnboardingQuestion[], profileRevision: number) => {
+    setFields((current) => {
+      if (current.profileRevision !== profileRevision) {
+        return current;
+      }
+      if (questions.length === 0) {
+        return {
+          ...current,
+          questions,
+          currentQuestionId: null,
+          unsentAnswer: '',
+          step: 'answerReview',
+        };
+      }
+      return {
+        ...current,
+        questions,
+        currentQuestionId: current.currentQuestionId ?? questions[0].id,
+        unsentAnswer: current.unsentAnswer ?? '',
+      };
+    });
+  }, []);
+
+  const setUnsentAnswer = useCallback((unsentAnswer: string) => {
+    updateFields({ unsentAnswer });
   }, [updateFields]);
 
-  const setAnswers = useCallback((answers: string[]) => {
-    updateFields({ answers });
+  const answerCurrent = useCallback((status: 'answered' | 'skipped', value: string) => {
+    setFields((current) => {
+      const questionId = current.currentQuestionId;
+      if (!questionId || !current.questions) {
+        return current;
+      }
+      const answers = upsertAnswer(current.answers, { questionId, status, value });
+      const nextId = nextQuestionId(current.questions, questionId);
+      return {
+        ...current,
+        answers,
+        answerRevision: current.answerRevision + 1,
+        proposalFor: null,
+        tailoredAccount: null,
+        currentQuestionId: nextId,
+        unsentAnswer: nextId
+          ? current.answers.find((answer) => answer.questionId === nextId)?.value ?? ''
+          : '',
+        step: nextId ? 'questions' : 'answerReview',
+      };
+    });
+  }, []);
+
+  const goToPreviousQuestion = useCallback(() => {
+    setFields((current) => {
+      if (!current.questions) {
+        return current;
+      }
+      const previousId = previousQuestionId(current.questions, current.currentQuestionId);
+      if (!previousId) {
+        return current;
+      }
+      return {
+        ...current,
+        currentQuestionId: previousId,
+        unsentAnswer: current.answers.find((answer) => answer.questionId === previousId)?.value ?? '',
+      };
+    });
+  }, []);
+
+  const continueWithoutAi = useCallback(() => {
+    setFields((current) => ({
+      ...current,
+      tailoredAccount: null,
+      reviewedAccount: current.accountDto,
+      step: 'profileReview',
+    }));
+  }, []);
+
+  const receiveProposal = useCallback((proposal: AccountDto, revision: OnboardingRevision) => {
+    setFields((current) => {
+      if (!sameRevision({
+        profileRevision: current.profileRevision,
+        answerRevision: current.answerRevision,
+      }, revision)) {
+        return current;
+      }
+      return {
+        ...current,
+        tailoredAccount: proposal,
+        proposalFor: revision,
+        step: 'proposalReview',
+      };
+    });
+  }, []);
+
+  const acceptProposal = useCallback(() => {
+    setFields((current) => ({
+      ...current,
+      reviewedAccount: current.tailoredAccount ?? current.accountDto,
+      step: 'profileReview',
+    }));
+  }, []);
+
+  const rejectProposal = useCallback(() => {
+    setFields((current) => ({
+      ...current,
+      reviewedAccount: current.accountDto,
+      step: 'profileReview',
+    }));
+  }, []);
+
+  const setReviewedAccount = useCallback((reviewedAccount: AccountDto) => {
+    updateFields({ reviewedAccount });
   }, [updateFields]);
 
-  const setQuestionProgress = useCallback((questionIndex: number, unsentAnswer: string) => {
-    updateFields({ questionIndex, unsentAnswer });
-  }, [updateFields]);
-
-  const setTailoredAccount = useCallback((tailoredAccount: AccountDto) => {
-    updateFields({ tailoredAccount });
+  const goToAnswerReview = useCallback(() => {
+    updateFields({ step: 'answerReview' });
   }, [updateFields]);
 
   const completeSave = useCallback(() => {
@@ -195,18 +317,27 @@ export function useAccountOnboarding(userId: string) {
     scrapedResume: fields.scrapedResume,
     questions: fields.questions,
     answers: fields.answers,
-    questionIndex: fields.questionIndex,
+    currentQuestionId: fields.currentQuestionId,
     unsentAnswer: fields.unsentAnswer,
     tailoredAccount: fields.tailoredAccount,
+    reviewedAccount: fields.reviewedAccount,
+    profileRevision: fields.profileRevision,
+    answerRevision: fields.answerRevision,
     pendingImport,
     formRevision,
     setPartialDto,
     submitProfile,
     goBackToForm,
-    setQuestions,
-    setAnswers,
-    setQuestionProgress,
-    setTailoredAccount,
+    receiveQuestions,
+    setUnsentAnswer,
+    answerCurrent,
+    goToPreviousQuestion,
+    continueWithoutAi,
+    receiveProposal,
+    acceptProposal,
+    rejectProposal,
+    setReviewedAccount,
+    goToAnswerReview,
     completeSave,
     offerImport,
     applyImport,

@@ -40,7 +40,7 @@ describe('useAccountOnboarding', () => {
     const restored = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
     expect(restored.result.current.step).toBe('questions');
     expect(restored.result.current.accountDto?.profile.firstName).toBe('Ada');
-    expect(restored.result.current.questionIndex).toBe(1);
+    expect(restored.result.current.currentQuestionId).toBe('question-2');
     expect(restored.result.current.unsentAnswer).toBe('Cut render time');
     restored.unmount();
   });
@@ -194,6 +194,77 @@ describe('useAccountOnboarding', () => {
     });
 
     expect(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY)).toBeNull();
+    unmount();
+  });
+
+  it('records skip and back by question id and opens review on the last next', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+    const questions = [
+      { id: 'question-1', question: 'Which system?', example: 'PDF' },
+      { id: 'question-2', question: 'What was the result?', example: 'Faster' },
+    ];
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions(questions, result.current.profileRevision);
+    });
+    act(() => {
+      result.current.answerCurrent('skipped', '');
+    });
+    expect(result.current.currentQuestionId).toBe('question-2');
+    expect(result.current.answers[0]).toMatchObject({ questionId: 'question-1', status: 'skipped' });
+
+    act(() => {
+      result.current.goToPreviousQuestion();
+    });
+    expect(result.current.currentQuestionId).toBe('question-1');
+    act(() => {
+      result.current.answerCurrent('answered', 'Preview pipeline');
+    });
+    expect(result.current.answers[0].value).toBe('Preview pipeline');
+    expect(result.current.answers).toHaveLength(1);
+
+    act(() => {
+      result.current.answerCurrent('answered', 'Faster renders');
+    });
+    expect(result.current.step).toBe('answerReview');
+    unmount();
+  });
+
+  it('ignores a stale proposal and lets the user continue without AI', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions([
+        { id: 'question-1', question: 'Which system?', example: 'PDF' },
+      ], result.current.profileRevision);
+    });
+    const revision = {
+      profileRevision: result.current.profileRevision,
+      answerRevision: result.current.answerRevision,
+    };
+    act(() => {
+      result.current.answerCurrent('answered', 'Later edit');
+    });
+    act(() => {
+      result.current.receiveProposal({
+        ...fullAccountDto,
+        profile: { ...fullAccountDto.profile, tagline: 'Stale' },
+      }, revision);
+    });
+    expect(result.current.step).toBe('answerReview');
+    expect(result.current.tailoredAccount).toBeNull();
+
+    act(() => {
+      result.current.continueWithoutAi();
+    });
+    expect(result.current.step).toBe('profileReview');
+    expect(result.current.reviewedAccount).toEqual(fullAccountDto);
     unmount();
   });
 });
