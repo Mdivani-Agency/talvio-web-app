@@ -1,4 +1,4 @@
-import type { AccountDto, FeedbackQuestions } from '@lib/types';
+import type { AccountDto, DeepPartial, FeedbackQuestions } from '@lib/types';
 
 import {
   accountDraftContentSchema,
@@ -16,7 +16,7 @@ export type OnboardingStep = 'form' | 'questions';
 export type AccountDraftFields = {
   step: OnboardingStep;
   scrapedResume: string | null;
-  partialDto: Partial<AccountDto> | null;
+  partialDto: DeepPartial<AccountDto> | null;
   accountDto: AccountDto | null;
   tailoredAccount: AccountDto | null;
   questions: FeedbackQuestions | null;
@@ -37,7 +37,7 @@ const PROFILE_TEXT_KEYS = [
   'country',
 ] as const;
 
-export function hasOnboardingWork(dto: Partial<AccountDto> | null | undefined) {
+export function hasOnboardingWork(dto: DeepPartial<AccountDto> | null | undefined) {
   if (!dto) {
     return false;
   }
@@ -56,7 +56,7 @@ export function hasOnboardingWork(dto: Partial<AccountDto> | null | undefined) {
   );
 }
 
-export function shouldConfirmImport(current: Partial<AccountDto> | null | undefined) {
+export function shouldConfirmImport(current: DeepPartial<AccountDto> | null | undefined) {
   return hasOnboardingWork(current);
 }
 

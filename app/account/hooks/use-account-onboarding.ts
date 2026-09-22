@@ -18,7 +18,7 @@ import {
   type OnboardingStep,
   type VersionedDraft,
 } from '@lib/drafts';
-import type { Account, AccountDto, FeedbackQuestions } from '@lib/types';
+import type { AccountDto, DeepPartial, FeedbackQuestions } from '@lib/types';
 
 export type { OnboardingStep };
 
@@ -33,12 +33,12 @@ export function useAccountOnboarding(userId: string) {
       ? hydrateAccountDraft(initialRead.parsed.content, initialRead.parsed.progress)
       : emptyAccountDraftFields()
   ));
-  const [pendingImport, setPendingImport] = useState<Partial<AccountDto> | null>(null);
+  const [pendingImport, setPendingImport] = useState<DeepPartial<AccountDto> | null>(null);
   const [formRevision, setFormRevision] = useState(0);
   const draftRef = useRef<VersionedDraft | null>(initialRead.parsed ? initialRead.draft : null);
   const lastStepRef = useRef<OnboardingStep>(fields.step);
   const clearedRef = useRef(false);
-  const liveValuesRef = useRef<Partial<AccountDto> | null>(fields.partialDto ?? fields.accountDto);
+  const liveValuesRef = useRef<DeepPartial<AccountDto> | null>(fields.partialDto ?? fields.accountDto);
 
   const updateFields = useCallback((patch: Partial<AccountDraftFields>) => {
     setFields((current) => {
@@ -57,7 +57,7 @@ export function useAccountOnboarding(userId: string) {
     setPersistStatus(clearDraft(storage, key));
   }, [key, storage]);
 
-  const setPartialDto = useCallback((partialDto: Partial<AccountDto> | null) => {
+  const setPartialDto = useCallback((partialDto: DeepPartial<AccountDto> | null) => {
     liveValuesRef.current = partialDto;
     updateFields({ partialDto });
   }, [updateFields]);
@@ -90,11 +90,11 @@ export function useAccountOnboarding(userId: string) {
     updateFields({ tailoredAccount });
   }, [updateFields]);
 
-  const completeSave = useCallback((_account: Account) => {
+  const completeSave = useCallback(() => {
     clearAccountDraft();
   }, [clearAccountDraft]);
 
-  const offerImport = useCallback((parsed: Partial<AccountDto>) => {
+  const offerImport = useCallback((parsed: DeepPartial<AccountDto>) => {
     const current = liveValuesRef.current ?? fields.partialDto ?? fields.accountDto;
     if (shouldConfirmImport(current)) {
       setPendingImport(parsed);

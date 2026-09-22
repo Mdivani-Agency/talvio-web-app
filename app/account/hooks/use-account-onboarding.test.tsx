@@ -125,7 +125,7 @@ describe('useAccountOnboarding', () => {
     const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
 
     act(() => {
-      result.current.completeSave({ id: 'account-1' } as never);
+      result.current.completeSave();
     });
 
     expect(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY)).toBeNull();

@@ -90,8 +90,8 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
 
       throw new Error('Failed to tailor account');
     },
-    onSuccess(data) {
-      completeSave(data);
+    onSuccess() {
+      completeSave();
       router.push('/account');
     },
     onError(error) {
