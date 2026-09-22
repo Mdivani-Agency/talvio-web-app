@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,11 +8,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAccountContext } from '@app/account/providers/state-provider';
 import { saveProfile, seedAccountQuery } from '@app/account/query/use-save-profile';
 import { Button } from '@components/ui';
-import { Loading } from '@components/views';
+import { Card, CardContent, CardFooter } from '@components/ui';
+import { ErrorView, Loading } from '@components/views';
 import { fetchQuestions, fetchTailoredAccount } from '@lib/clients/llm.client';
+import { mergeAccountProposal } from '@lib/onboarding/proposal';
+import { assignQuestionIds, previousQuestionId, tailorPayload } from '@lib/onboarding/questions';
 import { accountSchema } from '@lib/schema/account.schema';
-import { AccountDto, FeedbackQuestions } from '@lib/types';
+import { AccountDto } from '@lib/types';
 
+import { AccountForm } from './account.form';
 import { ResumeQuestions } from './forms/resume-questions';
 
 type QuestionsProps = {
@@ -21,75 +25,76 @@ type QuestionsProps = {
 
 export const AccountQuestions = memo(function Questions({ userId }: QuestionsProps) {
   const {
+    acceptProposal,
     accountDto,
-    answers: storedAnswers,
+    answerCurrent,
+    answerRevision,
+    answers,
     completeSave,
+    continueWithoutAi,
+    currentQuestionId,
     goBackToForm,
-    questionIndex,
-    questions: storedQuestions,
-    setAnswers,
-    setQuestionProgress,
-    setQuestions,
-    setTailoredAccount,
+    goToAnswerReview,
+    goToPreviousQuestion,
+    profileRevision,
+    questions,
+    receiveProposal,
+    receiveQuestions,
+    rejectProposal,
+    reviewedAccount,
+    setReviewedAccount,
+    setUnsentAnswer,
+    step,
     tailoredAccount,
     unsentAnswer,
   } = useAccountContext();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const recoveredIndex = questionIndex;
-  const fallbackIndex =
-    storedAnswers?.length && storedAnswers.length > 1 ? storedAnswers.length - 1 : 0;
-  const initialIndex = recoveredIndex ?? fallbackIndex;
 
-  const [current, setCurrent] = useState(initialIndex);
-  const [input, setInput] = useState(unsentAnswer ?? storedAnswers?.[initialIndex] ?? '');
-  const answers = storedAnswers || [];
-  const questions = storedQuestions;
-
-  const { isLoading: isFetchingQuestions } = useQuery({
-    queryKey: ['questions', userId],
+  const questionsQuery = useQuery({
+    queryKey: ['questions', userId, profileRevision],
     queryFn: async () => {
-      const qs = await fetchQuestions(JSON.stringify(accountDto));
-      setQuestions(qs.slice(0, 5));
-      return qs;
+      const raw = await fetchQuestions(JSON.stringify(accountDto));
+      const next = assignQuestionIds(raw ?? []);
+      receiveQuestions(next, profileRevision);
+      return next;
     },
-    enabled: !storedQuestions?.length,
+    enabled: step === 'questions' && !questions && !!accountDto,
+    retry: false,
   });
 
-  const { mutate: tailorAccount, isPending: isTailoringAccount } = useMutation({
-    mutationFn: async ({ questions, accountDto }: { questions: FeedbackQuestions; accountDto: AccountDto }) => {
-      let dto = tailoredAccount;
-
-      if (!dto) {
-        const data = await fetchTailoredAccount(
-          JSON.stringify(accountDto),
-          questions.map((q) => q.question),
-          answers,
-        );
-
-        dto = {
-          ...accountDto,
-          profile: {
-            ...accountDto.profile,
-            tagline: data.profile.tagline,
-            seniority: data.profile.seniority,
-          },
-          experience: data.experience,
-          skills: data.skills,
-          tools: data.tools,
-          languages: data.languages,
-        };
-
-        setTailoredAccount(dto);
+  const tailorMutation = useMutation({
+    mutationFn: async () => {
+      if (!accountDto || !questions) {
+        throw new Error('Profile is not ready for AI');
       }
+      const revision = { profileRevision, answerRevision };
+      const payload = tailorPayload(questions, answers);
+      const proposal = await fetchTailoredAccount(
+        JSON.stringify(accountDto),
+        payload.questions,
+        payload.answers,
+      );
+      return {
+        proposal: mergeAccountProposal(accountDto, proposal),
+        revision,
+      };
+    },
+    onSuccess({ proposal, revision }) {
+      receiveProposal(proposal, revision);
+    },
+    onError(error) {
+      toast.error(`Could not improve your profile: ${error instanceof Error ? error.message : 'Server error'}`);
+    },
+  });
 
-      const { success, data: tailoredAccountData, error } = accountSchema.safeParse(dto);
-      if (success && tailoredAccountData) {
-        return saveProfile(userId, tailoredAccountData);
+  const saveMutation = useMutation({
+    mutationFn: async (dto: AccountDto) => {
+      const parsed = accountSchema.safeParse(dto);
+      if (!parsed.success || !parsed.data) {
+        throw new Error('Profile is not valid');
       }
-      console.error('error', error);
-
-      throw new Error('Failed to tailor account');
+      return saveProfile(userId, parsed.data);
     },
     onSuccess(account) {
       seedAccountQuery(queryClient, userId, account);
@@ -97,31 +102,26 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
       router.push('/account');
     },
     onError(error) {
-      toast.error(`Failed to tailor your account: ${error instanceof Error ? error.message : 'Server error'}`);
+      toast.error(`Failed to save your profile: ${error instanceof Error ? error.message : 'Server error'}`);
     },
   });
 
-  const handleNext = () => {
-    setAnswers([...answers, input]);
-    const next = current + 1;
-    setInput('');
-    setCurrent(next);
-
-    if ((next === questions?.length && questions.length > 0) && accountDto) {
-      tailorAccount({ questions, accountDto });
-    }
-  };
-
-  const handleSkip = () => {
-    setInput('Skipped');
-    handleNext();
-  };
+  const currentQuestion = questions?.find((question) => question.id === currentQuestionId) ?? questions?.[0];
+  const currentIndex = currentQuestion && questions
+    ? questions.findIndex((question) => question.id === currentQuestion.id)
+    : 0;
+  const canGoBackQuestion = Boolean(questions && previousQuestionId(questions, currentQuestionId));
 
   useEffect(() => {
-    setQuestionProgress(current, input);
-  }, [current, input, setQuestionProgress]);
+    if (step === 'questions' && currentQuestion) {
+      const stored = answers.find((answer) => answer.questionId === currentQuestion.id);
+      if (unsentAnswer == null && stored) {
+        setUnsentAnswer(stored.value);
+      }
+    }
+  }, [answers, currentQuestion, setUnsentAnswer, step, unsentAnswer]);
 
-  const backButton = (
+  const backToProfile = (
     <div className="container mx-auto flex justify-start pt-8">
       <Button variant="secondary" type="button" onClick={goBackToForm}>
         Back to profile
@@ -129,35 +129,153 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
     </div>
   );
 
-  if (isFetchingQuestions || !questions)
+  if (questionsQuery.isError && !questions) {
     return (
       <>
-        {backButton}
+        {backToProfile}
+        <ErrorView
+          title="Could not load questions"
+          error="The AI question request failed."
+          errorDescription="You can retry or continue and save your profile without AI."
+          reset={() => {
+            void questionsQuery.refetch();
+          }}
+        />
+        <div className="flex justify-center pb-8">
+          <Button type="button" variant="secondary" onClick={continueWithoutAi}>
+            Continue without AI
+          </Button>
+        </div>
+      </>
+    );
+  }
+
+  if ((questionsQuery.isLoading || questionsQuery.isFetching) && !questions && step === 'questions') {
+    return (
+      <>
+        {backToProfile}
         <Loading message="Reviewing your account details..." />
       </>
     );
+  }
 
-  if (isTailoringAccount)
+  if (step === 'questions' && currentQuestion && questions) {
     return (
       <>
-        {backButton}
-        <Loading message="Tailoring your account details..." />
+        {backToProfile}
+        <ResumeQuestions
+          questions={questions}
+          answers={questions.map((question) => answers.find((answer) => answer.questionId === question.id)?.value ?? '')}
+          current={currentIndex}
+          input={unsentAnswer ?? ''}
+          setInput={setUnsentAnswer}
+          handleSkip={() => answerCurrent('skipped', unsentAnswer ?? '')}
+          handleNext={() => answerCurrent('answered', unsentAnswer ?? '')}
+          onBack={canGoBackQuestion ? goToPreviousQuestion : undefined}
+          onSubmit={goToAnswerReview}
+        />
       </>
     );
+  }
+
+  if (step === 'answerReview') {
+    return (
+      <section className="container mx-auto flex flex-col gap-6 pt-8">
+        {backToProfile}
+        <h1 className="text-2xl font-bold">Review your answers</h1>
+        {questions?.length ? (
+          <Card>
+            <CardContent className="flex flex-col gap-4 pt-6">
+              {questions.map((question) => {
+                const answer = answers.find((item) => item.questionId === question.id);
+                return (
+                  <div key={question.id}>
+                    <p className="text-md font-medium mb-2">{question.question}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {answer?.status === 'skipped' ? 'Skipped' : answer?.value || 'No answer'}
+                    </p>
+                  </div>
+                );
+              })}
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={continueWithoutAi}>
+                Continue without AI
+              </Button>
+              <Button type="button" loading={tailorMutation.isPending} onClick={() => tailorMutation.mutate()}>
+                Improve with AI
+              </Button>
+            </CardFooter>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">
+                There are no extra questions for this profile. Continue to review and save it.
+              </p>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button type="button" onClick={continueWithoutAi}>
+                Continue without AI
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+      </section>
+    );
+  }
+
+  if (step === 'proposalReview') {
+    return (
+      <section className="container mx-auto flex flex-col gap-6 pt-8">
+        {backToProfile}
+        <h1 className="text-2xl font-bold">AI suggested updates</h1>
+        <p className="text-sm text-muted-foreground">
+          The source profile is unchanged until you accept or edit these suggestions.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={rejectProposal}>
+            Reject
+          </Button>
+          <Button type="button" variant="secondary" onClick={acceptProposal}>
+            Edit
+          </Button>
+          <Button type="button" onClick={acceptProposal}>
+            Accept
+          </Button>
+        </div>
+        {tailoredAccount?.profile.tagline ? (
+          <p className="text-sm">Suggested tagline: {tailoredAccount.profile.tagline}</p>
+        ) : null}
+      </section>
+    );
+  }
 
   return (
-    <>
-      {backButton}
-      <ResumeQuestions
-        questions={questions}
-        answers={answers}
-        current={current}
-        input={input}
-        setInput={setInput}
-        handleSkip={handleSkip}
-        handleNext={handleNext}
-        onSubmit={() => accountDto && tailorAccount({ questions, accountDto })}
+    <section className="container mx-auto flex flex-col gap-4">
+      {backToProfile}
+      <h1 className="text-2xl font-bold mt-4">Review your profile</h1>
+      <p className="text-sm text-muted-foreground">
+        Save this version. A failed save keeps your work here and does not run AI again.
+      </p>
+      <div className="flex justify-end">
+        <Button type="button" variant="secondary" onClick={goToAnswerReview}>
+          Back to answers
+        </Button>
+      </div>
+      <AccountForm
+        key={`${profileRevision}-${answerRevision}-${reviewedAccount ? 'reviewed' : 'source'}`}
+        submitLabel={saveMutation.isPending ? 'Saving...' : 'Save profile'}
+        valuesOverride={reviewedAccount ?? accountDto}
+        onValuesChange={setReviewedAccount}
+        submitting={saveMutation.isPending}
+        onSubmit={(data) => {
+          if (saveMutation.isPending) {
+            return;
+          }
+          saveMutation.mutate(data);
+        }}
       />
-    </>
+    </section>
   );
 });

@@ -11,9 +11,18 @@ export const draftOwnerSchema = z.discriminatedUnion('kind', [
 ]);
 
 export const accountProgressSchema = z.object({
-  step: z.enum(['accountForm', 'accountQuestions']),
+  step: z.enum([
+    'accountForm',
+    'accountQuestions',
+    'accountAnswerReview',
+    'accountProposalReview',
+    'accountProfileReview',
+  ]),
   questionIndex: z.number().int().min(0).optional(),
+  questionId: z.string().optional(),
   unsentAnswer: z.string().optional(),
+  profileRevision: z.number().int().min(0).optional(),
+  answerRevision: z.number().int().min(0).optional(),
 });
 
 export const resumeProgressSchema = z.object({
@@ -38,8 +47,13 @@ export const accountDraftContentSchema = z.object({
   partialDto: z.record(z.string(), z.unknown()).nullable().optional(),
   accountDto: z.record(z.string(), z.unknown()).nullable().optional(),
   tailoredAccount: z.record(z.string(), z.unknown()).nullable().optional(),
+  reviewedAccount: z.record(z.string(), z.unknown()).nullable().optional(),
   questions: z.array(z.unknown()).nullable().optional(),
-  answers: z.array(z.string()).nullable().optional(),
+  answers: z.array(z.unknown()).nullable().optional(),
+  proposalFor: z.object({
+    profileRevision: z.number(),
+    answerRevision: z.number(),
+  }).nullable().optional(),
 });
 
 export const resumeDraftContentSchema = z.object({

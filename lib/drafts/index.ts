@@ -32,6 +32,7 @@ export {
   emptyAccountDraftFields,
   hasOnboardingWork,
   hydrateAccountDraft,
+  isPostFormStep,
   parseAccountDraft,
   readParsedAccountDraft,
   shouldConfirmImport,

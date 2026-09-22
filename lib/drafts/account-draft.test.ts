@@ -20,19 +20,24 @@ describe('account drafts', () => {
         ...emptyAccountDraftFields(),
         step: 'questions',
         accountDto: fullAccountDto,
-        questions: [{ question: 'Which system?', example: 'PDF' }],
-        answers: ['Preview pipeline'],
-        questionIndex: 1,
+        questions: [{ id: 'question-1', question: 'Which system?', example: 'PDF' }],
+        answers: [{ questionId: 'question-1', status: 'answered', value: 'Preview pipeline' }],
+        currentQuestionId: 'question-1',
         unsentAnswer: 'Cut render time',
+        profileRevision: 1,
+        answerRevision: 1,
       },
     });
 
     expect(draft).not.toBeNull();
     const parsed = parseAccountDraft(draft!);
-    expect(parsed?.progress).toEqual({
+    expect(parsed?.progress).toMatchObject({
       step: 'accountQuestions',
-      questionIndex: 1,
+      questionId: 'question-1',
+      questionIndex: 0,
       unsentAnswer: 'Cut render time',
+      profileRevision: 1,
+      answerRevision: 1,
     });
     expect(parsed?.content.accountDto).toMatchObject({
       profile: { firstName: 'Ada', lastName: 'Owner' },
@@ -42,21 +47,28 @@ describe('account drafts', () => {
   it('does not persist guest owners and maps steps without machine states', () => {
     expect(accountProgressFromStep('form')).toEqual({ step: 'accountForm' });
     expect(accountProgressFromStep('questions')).toEqual({ step: 'accountQuestions' });
+    expect(accountProgressFromStep('answerReview')).toEqual({ step: 'accountAnswerReview' });
     expect(buildAccountDraft({
       owner: { kind: 'guest', guestId: 'guest-1' },
       fields: emptyAccountDraftFields(),
     })).toBeNull();
   });
 
-  it('hydrates a versioned draft into hook fields without XState events', () => {
+  it('hydrates a versioned draft into keyed answers without XState events', () => {
     const parsed = parseAccountDraft(versionedAccountDraft);
     expect(parsed).not.toBeNull();
     const fields = hydrateAccountDraft(parsed!.content, parsed!.progress);
 
     expect(fields.step).toBe('questions');
     expect(fields.accountDto?.profile.firstName).toBe('Ada');
-    expect(fields.questionIndex).toBe(1);
+    expect(fields.questions?.[0].id).toBe('question-1');
+    expect(fields.currentQuestionId).toBe('question-2');
     expect(fields.unsentAnswer).toBe('Cut render time');
+    expect(fields.answers[0]).toEqual({
+      questionId: 'question-1',
+      status: 'answered',
+      value: 'Preview pipeline',
+    });
     expect(fields).not.toHaveProperty('status');
   });
 
@@ -68,6 +80,20 @@ describe('account drafts', () => {
     );
     expect(fields.step).toBe('form');
     expect(fields.accountDto).toBeNull();
+  });
+
+  it('restores a finished legacy question cursor as answer review', () => {
+    const parsed = parseAccountDraft(versionedAccountDraft);
+    const fields = hydrateAccountDraft(parsed!.content, {
+      ...parsed!.progress,
+      step: 'accountQuestions',
+      questionIndex: parsed!.content.questions!.length,
+      questionId: undefined,
+    });
+
+    expect(fields.step).toBe('answerReview');
+    expect(fields.currentQuestionId).toBeNull();
+    expect(fields.questions).toHaveLength(2);
   });
 
   it('asks for import confirmation only when current work exists', () => {
