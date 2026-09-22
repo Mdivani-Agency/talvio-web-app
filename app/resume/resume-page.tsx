@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useMemo, useState } from 'react';
 import { AnimatedTransition, Button, Tooltip, TooltipContent, TooltipTrigger } from '@components/ui';
+import { formatResumeFieldIssues, resumeSubmissionIssues, type ResumeFieldIssue } from '@lib/models/resume-document';
 import { PreviewDto, TemplateKey } from '@lib/types';
 import { Icon } from '@components/icons';
 
@@ -27,6 +28,7 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
   const { session } = useUserSession();
   const router = useRouter();
   const [current, setCurrent] = useState(initialMode === 'edit' ? 1 : 0);
+  const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
   const { state, send } = useResumeContext();
 
   const resume = state.context.resumeDto;
@@ -60,6 +62,12 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
       }
 
       const body = state.context.resumeDto;
+      const fieldIssues = resumeSubmissionIssues(body.resume);
+      if (fieldIssues.length > 0) {
+        setIssues(fieldIssues);
+        throw new Error(formatResumeFieldIssues(fieldIssues));
+      }
+      setIssues([]);
       const saved = createdResume
         ? await updateResume(createdResume.id, {
           name: body.name,
@@ -112,9 +120,18 @@ export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreview
         selectedTemplate={resume.template}
         onChange={(template, key) => handleStateUpdate({ template, key })}
       />,
-      <EditResumeView key="form" className="h-screen pt-16" onSubmit={(dto) => handleStateUpdate({ data: dto })} defaultValues={resume.resume} />,
+      <EditResumeView
+        key="form"
+        className="h-screen pt-16"
+        issues={issues}
+        onSubmit={(document) => {
+          setIssues([]);
+          handleStateUpdate({ data: document });
+        }}
+        defaultValues={resume.resume}
+      />,
     ];
-  }, [level, resume.resume, resume.template, handleStateUpdate, templates]);
+  }, [issues, level, resume.resume, resume.template, handleStateUpdate, templates]);
 
   return (
     <section className="grid grid-cols-5">

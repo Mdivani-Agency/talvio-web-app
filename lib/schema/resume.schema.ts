@@ -7,18 +7,18 @@ import {
   TemplateKeyEnum,
 } from './enums';
 import { MarkType } from '@lib/types';
-import {languageSchema, linkSchema, skillSchema, toolSchema } from './account.schema';
+import { languageSchema, linkSchema, persistedIdSchema, skillSchema, toolSchema } from './account.schema';
 
-export const markValueSchema: z.ZodType<MarkType> = z.object({
-  attrs: z.record(z.string(), z.any()).optional(),
+export const markValueSchema: z.ZodType<MarkType, MarkType> = z.looseObject({
+  attrs: z.record(z.string(), z.unknown()).optional(),
   type: z.string(),
 });
 
-export const textContentSchema: z.ZodType<JSONContent> = z.lazy(() =>
-  z.object({
+export const textContentSchema: z.ZodType<JSONContent, JSONContent> = z.lazy(() =>
+  z.looseObject({
     type: z.string(),
     text: z.string().optional(),
-    attrs: z.object({}).optional(),
+    attrs: z.record(z.string(), z.unknown()).optional(),
     marks: z.array(markValueSchema).optional(),
     content: z.array(textContentSchema).optional(),
   }),
@@ -84,6 +84,7 @@ export const formProjectSchema = z.object({
 });
 
 export const resumeExperienceSchema = z.object({
+  id: persistedIdSchema,
   ...experienceSchema.shape,
   description: textContentSchema.optional(),
 });
@@ -113,19 +114,30 @@ export const resumeFormSchema = z.object({
   experience: z.array(resumeExperienceSchema).optional(),
   education: z
     .array(
-      formEducationSchema.partial({
-        isPresent: true,
-        endDate: true,
-        description: true,
-      }),
+      formEducationSchema
+        .extend({ id: persistedIdSchema })
+        .partial({
+          isPresent: true,
+          endDate: true,
+          description: true,
+        }),
     )
     .optional(),
-  recommendations: z.array(formRecommendationSchema).optional(),
-  projects: z.array(formProjectSchema.partial({ url: true })).optional(),
+  recommendations: z.array(formRecommendationSchema.extend({ id: persistedIdSchema })).optional(),
+  projects: z.array(formProjectSchema.extend({ id: persistedIdSchema }).partial({ url: true })).optional(),
+});
+
+/** Load and edit schema. Email may be empty so an incomplete draft stays editable. */
+export const resumeDraftSchema = resumeFormSchema.extend({
+  contacts: z.object({
+    email: z.string(),
+    phone: z.string().optional(),
+    url: z.string().optional(),
+  }),
 });
 
 export const resumeSchema = z.object({
-  metadata: resumeFormSchema,
+  metadata: resumeDraftSchema,
   name: z.string(),
   label: z.string().optional(),
   template: TemplateKeyEnum,
@@ -134,4 +146,4 @@ export const resumeSchema = z.object({
   fontFamily: z.string().optional(),
 });
 
-export const resumeContentSchema = resumeFormSchema;
+export const resumeContentSchema = resumeDraftSchema;

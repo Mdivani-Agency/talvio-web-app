@@ -1,11 +1,12 @@
 'use client';
 import { useMemo } from 'react';
 import { AnimatedTransition } from '@components/ui';
+import type { ResumeFieldIssue } from '@lib/models/resume-document';
 import { Resume, ResumeForm, TemplateKey, TemplateList } from '@lib/types';
+import { cn } from '@lib/utils';
 
 import { EditResumeView } from '../views/edit-resume-view';
 import TemplatesView from '../views/templates-view';
-import { accountToResume, cn, resumeToAccount } from '@lib/utils';
 
 type ResumeEditorProps = {
   resume: Resume;
@@ -14,10 +15,11 @@ type ResumeEditorProps = {
   templates: TemplateList;
   className?: string;
   readOnly?: boolean;
+  issues?: ResumeFieldIssue[];
   onChange: (state: Partial<{ template: TemplateKey; data: ResumeForm }>) => void;
 };
 
-export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange, className, readOnly = false }: ResumeEditorProps) {
+export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange, className, readOnly = false, issues }: ResumeEditorProps) {
   const components = useMemo(() => {
     return [
       <TemplatesView
@@ -27,9 +29,15 @@ export function ResumeEditor({ mode = 'edit', resume, level, templates, onChange
         selectedTemplate={resume.template}
         onChange={(_, key) => onChange({ template: key })}
       />,
-      <EditResumeView key="form" className="h-screen pt-16" onSubmit={(dto) => onChange({ data: accountToResume(dto) })} defaultValues={resumeToAccount(resume.metadata)} />,
+      <EditResumeView
+        key="form"
+        className="h-screen pt-16"
+        issues={issues}
+        onSubmit={(document) => onChange({ data: document })}
+        defaultValues={resume.metadata}
+      />,
     ];
-  }, [level, resume.metadata, resume.template, onChange, templates]);
+  }, [issues, level, resume.metadata, resume.template, onChange, templates]);
 
   return (
       <AnimatedTransition

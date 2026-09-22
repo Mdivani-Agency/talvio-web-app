@@ -8,6 +8,7 @@ import { EducationForm } from './forms/education.form';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
+import { preserveDocumentFields } from '@lib/models/resume-document';
 
 type EducationViewProps = {
   className?: string;
@@ -27,9 +28,9 @@ export const EducationView = ({ className, form }: EducationViewProps) => {
 
   const handleUpdateEducation = useCallback(
     (index: number, education: Education) => {
-      update(index, education);
+      update(index, preserveDocumentFields(fields[index], education));
     },
-    [update],
+    [fields, update],
   );
 
   const handleRemoveEducation = useCallback(

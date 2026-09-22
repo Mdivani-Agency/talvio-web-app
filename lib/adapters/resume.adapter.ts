@@ -1,6 +1,8 @@
-import { resumeFormSchema } from '@lib/schema/resume.schema';
-import type { AccountDto, PreviewDto, Resume, ResumeForm, TemplateKey } from '@lib/types';
-import { accountToResume, resumeToAccount } from '@lib/utils/resume';
+import { EMPTY_RESUME_DOCUMENT, normalizeResumeDocument } from '@lib/models/resume-document';
+import { resumeDraftSchema } from '@lib/schema/resume.schema';
+import type { PreviewDto, Resume, ResumeForm, TemplateKey } from '@lib/types';
+
+export type ResumeContentPatch = Partial<Resume> & { resume?: ResumeForm };
 
 export const RESUME_PAGE_SIZE = 10;
 
@@ -30,11 +32,6 @@ export type ResumeRow = {
   updated_at: string;
 };
 
-const EMPTY_RESUME_METADATA: ResumeForm = {
-  profile: { firstName: '', lastName: '', role: '' },
-  contacts: { email: '' },
-};
-
 export function resumeTypeToDb(
   type: 'GENERAL' | 'JOB_SPECIFIC' = 'GENERAL',
 ): 'general' | 'job_specific' {
@@ -57,7 +54,7 @@ export function encodeGraphqlJson(value: unknown): string {
 }
 
 export function parseResumeContent(content: unknown): ResumeForm | undefined {
-  const parsed = resumeFormSchema.safeParse(decodeGraphqlJson(content));
+  const parsed = resumeDraftSchema.safeParse(normalizeResumeDocument(decodeGraphqlJson(content)));
   return parsed.success ? parsed.data : undefined;
 }
 
@@ -75,7 +72,7 @@ export function toResume(row: ResumeRow): Resume {
     color: row.color,
     fontSize: row.font_size as Resume['fontSize'],
     fontFamily: row.font_family ?? undefined,
-    metadata: (metadata ?? EMPTY_RESUME_METADATA) as Resume['metadata'],
+    metadata: metadata ?? EMPTY_RESUME_DOCUMENT,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     sourceResumeId: row.source_resume_id ?? null,
@@ -86,7 +83,7 @@ export function toResume(row: ResumeRow): Resume {
 }
 
 export function previewToResumeContent(body: PreviewDto): ResumeForm {
-  return accountToResume(body.resume);
+  return normalizeResumeDocument(body.resume);
 }
 
 export function toResumeInsertInput(input: {
@@ -118,10 +115,9 @@ export function isGeneratedResume(resume?: Pick<Resume, 'media'> | null): boolea
 
 export function resumeToPreviewDto(
   resume: Resume,
-  patch: Partial<Resume> & { resume?: AccountDto } = {},
+  patch: ResumeContentPatch = {},
 ): PreviewDto {
-  const metadata = patch.metadata
-    ?? (patch.resume ? accountToResume(patch.resume) : resume.metadata);
+  const metadata = normalizeResumeDocument(patch.metadata ?? patch.resume ?? resume.metadata);
 
   return {
     name: patch.name ?? resume.name,
@@ -130,13 +126,12 @@ export function resumeToPreviewDto(
     color: patch.color ?? resume.color,
     fontSize: patch.fontSize ?? resume.fontSize,
     fontFamily: patch.fontFamily ?? resume.fontFamily,
-    resume: patch.resume ?? resumeToAccount(metadata),
+    resume: metadata,
   };
 }
 
-export function toResumeUpdateSet(patch: Partial<Resume> & { resume?: AccountDto }) {
-  const content = patch.metadata
-    ?? (patch.resume ? accountToResume(patch.resume) : undefined);
+export function toResumeUpdateSet(patch: ResumeContentPatch) {
+  const content = patch.metadata ?? patch.resume;
 
   return {
     ...(patch.name ? { name: patch.name } : {}),
@@ -145,7 +140,7 @@ export function toResumeUpdateSet(patch: Partial<Resume> & { resume?: AccountDto
     ...(patch.color ? { color: patch.color } : {}),
     ...(patch.fontSize ? { font_size: patch.fontSize } : {}),
     ...(patch.fontFamily ? { font_family: patch.fontFamily } : {}),
-    ...(content ? { content: encodeGraphqlJson(content) } : {}),
+    ...(content ? { content: encodeGraphqlJson(normalizeResumeDocument(content)) } : {}),
   };
 }
 

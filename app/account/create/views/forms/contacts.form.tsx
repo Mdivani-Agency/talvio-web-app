@@ -4,17 +4,42 @@ import { cn } from '@lib/utils';
 import type { AppForm } from '@lib/forms/use-form';
 import { fieldErrorMessage } from '@lib/forms/errors';
 
+export const ACCOUNT_CONTACT_FIELDS = {
+  email: 'profile.email',
+  phone: 'profile.phone',
+  url: 'profile.website',
+  city: 'profile.city',
+  country: 'profile.country',
+} as const;
+
+export const RESUME_CONTACT_FIELDS = {
+  email: 'contacts.email',
+  phone: 'contacts.phone',
+  url: 'contacts.url',
+  city: 'location.city',
+  country: 'location.country',
+} as const;
+
+type ContactFields = {
+  email: string;
+  phone: string;
+  url: string;
+  city: string;
+  country: string;
+};
+
 type ContactsFormProps = {
   className?: string;
   form: AppForm;
+  fields?: ContactFields;
 };
 
-export const ContactsForm = ({ className, form }: ContactsFormProps) => {
+export const ContactsForm = ({ className, form, fields = ACCOUNT_CONTACT_FIELDS }: ContactsFormProps) => {
   return (
     <Form className={cn('space-y-6', className)}>
       <Label size="lg">Contact Information</Label>
       <div className="grid grid-cols-2 gap-4">
-        <FormField form={form} name="profile.email">
+        <FormField form={form} name={fields.email}>
           {(field) => (
             <FormItem>
               <FormControl>
@@ -30,7 +55,7 @@ export const ContactsForm = ({ className, form }: ContactsFormProps) => {
             </FormItem>
           )}
         </FormField>
-        <FormField form={form} name="profile.phone">
+        <FormField form={form} name={fields.phone}>
           {(field) => (
             <FormItem>
               <FormControl>
@@ -47,7 +72,7 @@ export const ContactsForm = ({ className, form }: ContactsFormProps) => {
           )}
         </FormField>
       </div>
-      <FormField form={form} name="profile.website">
+      <FormField form={form} name={fields.url}>
         {(field) => (
           <FormItem>
             <FormControl>
@@ -69,7 +94,7 @@ export const ContactsForm = ({ className, form }: ContactsFormProps) => {
           Location
         </Label>
         <div className="grid grid-cols-2 gap-4">
-          <FormField form={form} name="profile.city">
+          <FormField form={form} name={fields.city}>
             {(field) => (
               <FormItem>
                 <FormControl>
@@ -85,7 +110,7 @@ export const ContactsForm = ({ className, form }: ContactsFormProps) => {
               </FormItem>
             )}
           </FormField>
-          <FormField form={form} name="profile.country">
+          <FormField form={form} name={fields.country}>
             {(field) => (
               <FormItem>
                 <FormControl>

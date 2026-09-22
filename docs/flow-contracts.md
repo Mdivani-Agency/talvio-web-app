@@ -1,6 +1,6 @@
 # Account and resume flow contracts
 
-Baseline for [MDI-193](https://linear.app/mdivani/issue/MDI-193), recorded on `development` after [MDI-173](https://linear.app/mdivani/issue/MDI-173) (Supabase Auth), [MDI-175](https://linear.app/mdivani/issue/MDI-175) (GraphQL data API), and [MDI-174](https://linear.app/mdivani/issue/MDI-174) (immutable generated PDFs). Later flow-refactor issues change behavior. Update this file when they do.
+Baseline for [MDI-193](https://linear.app/mdivani/issue/MDI-193), recorded on `development` after [MDI-173](https://linear.app/mdivani/issue/MDI-173) (Supabase Auth), [MDI-175](https://linear.app/mdivani/issue/MDI-175) (GraphQL data API), and [MDI-174](https://linear.app/mdivani/issue/MDI-174) (immutable generated PDFs). [MDI-194](https://linear.app/mdivani/issue/MDI-194) makes the live resume draft a `ResumeForm`: a profile is converted once, and preview plus both editors save that document. Later flow-refactor issues change behavior. Update this file when they do.
 
 Fixtures live in `test/fixtures/flow/` and are checked by `test/fixtures/flow/fixtures.test.ts`.
 
@@ -18,7 +18,7 @@ Current code does not follow this split yet. XState actors in `app/account/state
 | Recovery copy | Versioned plain JSON in storage | Schema version, draft id, owner, optional document id, timestamps, base server revision, content, and onboarding progress. Never `status`, `historyValue`, `children`, or template class instances. |
 | Preview images | Derived hook | Document + template key + style in, images out. Preview never writes source values. |
 
-Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in `resumes.content`) stay separate models. Convert a profile once when a resume is created. Edit that resume document directly.
+Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in `resumes.content`) stay separate models. Convert a profile once when a resume is created. Edit that resume document directly. `resumeDraftSchema` loads and edits a document, including an empty email. `resumeFormSchema` is the generate check. `resumeSubmissionIssues` returns `{ path, message }` for that check. Seniority stays on the account and selects the template gallery level.
 
 ## Route and API matrix
 
@@ -34,7 +34,7 @@ Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in
 | Resume create | `createResume` | Session | `InsertResume` | Always inserts. No idempotency key. |
 | Resume edit | `saveResumeEdit` | Session | `UpdateResume`, or insert with `source_resume_id` | Generated content forks to the open draft. Unique violation reuses that draft. Label-only patches update in place. |
 | Final PDF | `POST /api/resume/generate-pdf` | `requireApiUser` | `generate_pdf` then `finalize_pdf` | See generation below. |
-| Preview | `app/resume/views/resume-preview.tsx` | None | `resumeService.generate(..., { isPreview: true })` | Free. Does not call `generate_pdf`. |
+| Preview | `app/resume/views/resume-preview.tsx` and `app/resume/components/resume-preview.tsx` | None | `resumeService.generate(..., { isPreview: true })` | Free. Renders `ResumeForm` directly. Does not send `CHANGE_RESUME` after render and does not call `generate_pdf`. |
 | Import | `useResumeParser` | None for parse | `POST /api/resume/parse` | Writes `SET_PARTIAL_DTO` on success. Cancel closes the modal. A thrown parse toasts and leaves the current partial DTO. |
 | Questions / tailor | `AccountQuestions` | Session | `POST /api/resume/qa`, `POST /api/resume/account` | OpenAI routes in the Next app. Not the LLM service. |
 
@@ -68,6 +68,8 @@ Preserved from MDI-174. Do not rebuild them.
 | Saved resume has no download | `/resume/[resumeId]` calls `downloadResumePdf`. |
 | Editing a generated row clears `pdf_url` | Blocked by `resumes_validate_source`. Edits fork via `saveResumeEdit`. |
 | `generate_pdf` debits before upload | It only checks balance. `finalize_pdf` debits after upload, once, under a row lock. |
+| Account/resume conversion drops fields | `profileToResumeDocument` copies contacts, links, location, skills, tools, languages, education, recommendations, projects, ids, categorized experience arrays, and a rich-text `description`. `normalizeResumeDocument` adjusts dates and `isPresent` and strips non-UUID ids. It does not rebuild rich text. There is no conversion back to `AccountDto` on preview or save. |
+| Preview writes its inputs | Preview renders the document it was given. `renderPreview` does not send `CHANGE_RESUME`. |
 | Two tabs insert two open drafts for one generated resume | Unique index plus the `23505` branch in `saveResumeEdit`. |
 
 ### Still open
@@ -82,11 +84,9 @@ Preserved from MDI-174. Do not rebuild them.
 | Stale AI input | Questions query key is `['questions', userId]` and it is disabled once `questions.length` is set. Editing the profile does not refetch. |
 | Question errors spin forever | The page treats `!questions` as loading. A failed `fetchQuestions` leaves `questions` null. |
 | AI failure blocks a valid profile | `tailorAccount` saves only the tailored DTO. There is no save of `accountDto` when tailoring throws. The toast is the only recovery. |
-| Account/resume conversion drops fields | `accountToResume` omits location, seniority, links, and ids. `resumeToAccount` omits skills, tools, languages, and links, copies education unchanged, and reads bullet marks from the wrong node, so contribution arrays come back empty. `fixtures.test.ts` locks this. |
-| Preview writes its inputs | `renderPreview` sends `CHANGE_RESUME` with `resumeToAccount(metadata)` after each preview render. |
 | Shared resume storage | `app/resume/layout.tsx` mounts `ResumeProvider` without a resume id, so the key is `resume-state-snapshot-new_resume` for every user on that browser. Account keys are `account-state-snapshot-${userId}`. |
 | Auth return URLs disagree | Account layout always uses `/account`. Resume download uses `callbackUrl`. Import uses `callbackURL=/resume`. |
-| Two editors | `/resume` edits a `PreviewDto` through `EditResumeView`. `/resume/[resumeId]` edits via `ResumeEditor`, which converts through `resumeToAccount` / `accountToResume` on every change. |
+| Two editor shells | `/resume` and `/resume/[resumeId]` both edit `ResumeForm` through `ResumeDocumentForm`. The page shells, draft recovery, and question flow are still separate. |
 | Duplicate standalone resumes | `createResume` always inserts. `createdResume` in `ResumePreviewPage` is memory only. A timeout after the insert, a refresh, or a second click before `setCreatedResume` inserts another row. Each row can then be generated and charged. |
 | Draft updates have no revision check | `toResumeUpdateSet` does not filter on `updated_at`. Last write wins. |
 | Profile child retries duplicate rows | `save_profile` inserts experience, education, projects, recommendations, and links when the payload has no persisted id. It never deletes omitted children. Skills and tools dedupe by lowercased name. Languages upsert on `(user_id, language)`. Primary email, phone, and URL contacts are already retry-safe for the payload `accountDtoToSavePayload` sends: they sit on `profile`, and the RPC updates the primary row for that kind, inserting only when none exists. |
@@ -148,8 +148,8 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [ ] A question-request failure shows an error with retry, not an infinite loader. (Open gap today.)
 - [ ] Profile refetch and resume refetch do not replace unsaved form values.
 - [ ] Guest resume recovery stays on its own draft id. Signing in does not merge another user’s `new_resume` snapshot into the account. (Open gap today.)
-- [ ] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, dates, enums, and TipTap documents. Resume content has no ids on experience, education, recommendations, or projects today (`ResumeForm`). Those ids must survive once the document model is explicit.
-- [ ] Experience and education rich text reload as TipTap documents, not flattened strings and not empty contribution arrays.
+- [ ] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, persisted ids, dates, enums, and TipTap documents.
+- [ ] Experience and education rich text reload as TipTap documents, including unknown node attrs and marks. Categorized experience arrays stay on the document created from a profile.
 - [ ] Preview render does not call `CHANGE_RESUME` or otherwise write source fields.
 - [ ] `/resume` and `/resume/[resumeId]` share one editor over the resume document.
 - [ ] Changing color, font, filename, or label does not by itself rerun preview. Template key and content do.
@@ -169,6 +169,6 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 | `app/account/state/` | Same directory. Machine, types, `storage.ts` (`account-state-snapshot-${userId}`), and `app/account/providers/state-provider.tsx`. |
 | `app/resume/state/` | Same directory. Machine, types, `storage.ts` (`resume-state-snapshot-${resumeId}`, default id `new_resume`), and `app/resume/providers/state-provider.tsx`. |
 | `lib/clients/` | `llm.client.ts` (Next AI routes), `openai.client.ts`, `media.client.ts`, `media-presign.ts`, `fonts.client.ts`. Profile and resume CRUD are GraphQL, not this folder. |
-| `lib/utils/resume.ts` | Same file. Lossy `accountToResume` / `resumeToAccount`. |
+| `lib/models/resume-document.ts` | `profileToResumeDocument`, `normalizeResumeDocument`, `preserveDocumentFields`, `resumeSubmissionIssues`. `lib/utils/resume.ts` is removed. |
 | REST account/resume clients | Removed. Use `lib/graphql-client.ts` and `app/account/query/*`, `app/resume/query/*`. |
 | better-auth | Removed. Use `lib/supabase/*` and `app/auth/*`. |

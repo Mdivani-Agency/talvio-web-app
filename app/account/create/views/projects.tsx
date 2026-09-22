@@ -8,6 +8,7 @@ import { ProjectForm } from './forms/project.form';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
+import { preserveDocumentFields } from '@lib/models/resume-document';
 
 type ProjectsViewProps = {
   className?: string;
@@ -27,9 +28,9 @@ export const ProjectsView = ({ className, form }: ProjectsViewProps) => {
 
   const handleUpdateProject = useCallback(
     (index: number, project: Project) => {
-      update(index, project);
+      update(index, preserveDocumentFields(fields[index], project));
     },
-    [update],
+    [fields, update],
   );
 
   const handleRemoveProject = useCallback(

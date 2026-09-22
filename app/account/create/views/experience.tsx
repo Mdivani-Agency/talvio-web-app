@@ -8,6 +8,7 @@ import { Label } from '@components/ui';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
+import { preserveDocumentFields } from '@lib/models/resume-document';
 
 type ExperienceViewProps = {
   className?: string;
@@ -27,9 +28,9 @@ export const ExperienceView = ({ className, form }: ExperienceViewProps) => {
 
   const handleUpdateExperience = useCallback(
     (index: number, experience: Experience) => {
-      update(index, experience);
+      update(index, preserveDocumentFields(fields[index], experience));
     },
-    [update],
+    [fields, update],
   );
 
   const handleRemoveExperience = useCallback(

@@ -118,6 +118,8 @@ describe('write adapters', () => {
           firstName: 'Ann',
           lastName: 'Owner',
           role: 'Engineer',
+        },
+        contacts: {
           email: 'ann@talvio.test',
         },
       },

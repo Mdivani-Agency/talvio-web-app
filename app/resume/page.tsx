@@ -3,12 +3,33 @@ import { Loading } from '@components/views';
 import { fetchProfile } from '@app/account/query/use-profile';
 import { useUserSession } from '@lib/providers';
 import { useQuery } from '@tanstack/react-query';
-import { DEFAULT_ACCOUNT_DTO } from '@app/account/create/views/account.form';
+import { EMPTY_RESUME_DOCUMENT, profileToResumeDocument } from '@lib/models/resume-document';
 import { ResumePreviewPage } from './resume-page';
 import { useSearchParams } from 'next/navigation';
-import { TemplateKey } from '@lib/types';
+import type { AccountDto, PreviewDto, TemplateKey } from '@lib/types';
 import { useResumeContext } from './providers/state-provider';
 import { RESUME_COLORS_MAP } from '@lib/utils';
+
+function previewSeed(account: AccountDto | null, template: TemplateKey): PreviewDto {
+  if (!account) {
+    return {
+      resume: EMPTY_RESUME_DOCUMENT,
+      name: 'my resume',
+      template,
+      color: RESUME_COLORS_MAP.black,
+      fontSize: 'md',
+    };
+  }
+
+  const name = `${account.profile.firstName} ${account.profile.lastName}`.trim() || 'my resume';
+  return {
+    resume: profileToResumeDocument(account),
+    name,
+    template,
+    color: RESUME_COLORS_MAP.black,
+    fontSize: 'md',
+  };
+}
 import OptionsView from './views/options-view';
 import ImportResumePage from './views/import-page';
 
@@ -27,13 +48,7 @@ export default function ResumePage() {
         if (!userId) {
           send({
             type: 'FETCHING_RESUME_FAILURE',
-            value: {
-              resume: DEFAULT_ACCOUNT_DTO,
-              name: `${DEFAULT_ACCOUNT_DTO.profile.firstName} ${DEFAULT_ACCOUNT_DTO.profile.lastName}`,
-              template: templatekey,
-              color: RESUME_COLORS_MAP.black,
-              fontSize: 'md',
-            },
+            value: previewSeed(null, templatekey),
           });
           return null;
         }
@@ -45,13 +60,7 @@ export default function ResumePage() {
 
         send({
           type: 'FETCHING_RESUME_FAILURE',
-          value: {
-            resume: account,
-            name: `${account.profile.firstName} ${account.profile.lastName}`,
-            template: templatekey,
-            color: RESUME_COLORS_MAP.black,
-            fontSize: 'md',
-          },
+          value: previewSeed(account, templatekey),
         });
 
         return account;
@@ -59,13 +68,7 @@ export default function ResumePage() {
         console.error('Error fetching account', error);
         send({
           type: 'FETCHING_RESUME_FAILURE',
-          value: {
-            resume: DEFAULT_ACCOUNT_DTO,
-            name: `my resume`,
-            template: templatekey,
-            color: RESUME_COLORS_MAP.black,
-            fontSize: 'md',
-          },
+          value: previewSeed(null, templatekey),
         });
         return null;
       }

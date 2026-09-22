@@ -8,7 +8,6 @@ import { Resume, ResumeDto, ResumeForm } from '@lib/types';
 import { ResumeActionBar } from '../components/resume-actions';
 import { ResumeImageCarousel } from '../components/resume-image-carousel';
 import { useResumeContext } from '../providers/state-provider';
-import { accountToResume, resumeToAccount } from '@lib/utils';
 import { submitWrapper } from '@app/actions/action.utils';
 import { DownloadResumeModal, FullSizeResumeModal } from '@components/modals';
 
@@ -29,7 +28,7 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
   const { images, renderPDF } = usePdfImage();
   const { state, send } = useResumeContext();
   const { resumeDto, template } = state.context;
-  const { resume, color, fontSize, template: templateKey } = resumeDto
+  const { resume, color, fontSize } = resumeDto
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -73,8 +72,7 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
     const blob = new Blob([response as unknown as BlobPart], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     renderPDF(url);
-    send({ type: 'CHANGE_RESUME', value: { ...dto, resume: resumeToAccount(metadata), template: templateKey } });
-  }, [template, templateKey, send, renderPDF]);
+  }, [template, renderPDF]);
 
   const debouncedFetchPdf = useMemo(
     () =>
@@ -85,7 +83,7 @@ export function Preview({ className, action, onDownload }: PreviewProps) {
   );
 
   useEffect(() => {
-    debouncedFetchPdf({ metadata: accountToResume(resume), color, fontSize, name: 'resume' });
+    debouncedFetchPdf({ metadata: resume, color, fontSize, name: 'resume' });
   }, [resume, template, color, fontSize, debouncedFetchPdf]);
 
   return (
