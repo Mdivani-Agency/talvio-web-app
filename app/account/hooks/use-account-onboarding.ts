@@ -176,13 +176,16 @@ export function useAccountOnboarding(userId: string) {
     setFields((current) => ({
       ...current,
       tailoredAccount: null,
-      reviewedAccount: current.accountDto,
+      reviewedAccount: current.reviewedAccount ?? current.accountDto,
       step: 'profileReview',
     }));
   }, []);
 
   const receiveProposal = useCallback((proposal: AccountDto, revision: OnboardingRevision) => {
     setFields((current) => {
+      if (current.step !== 'answerReview') {
+        return current;
+      }
       if (!sameRevision({
         profileRevision: current.profileRevision,
         answerRevision: current.answerRevision,

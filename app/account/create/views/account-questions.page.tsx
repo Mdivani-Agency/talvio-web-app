@@ -268,7 +268,13 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
         submitLabel={saveMutation.isPending ? 'Saving...' : 'Save profile'}
         valuesOverride={reviewedAccount ?? accountDto}
         onValuesChange={setReviewedAccount}
-        onSubmit={(data) => saveMutation.mutate(data)}
+        submitting={saveMutation.isPending}
+        onSubmit={(data) => {
+          if (saveMutation.isPending) {
+            return;
+          }
+          saveMutation.mutate(data);
+        }}
       />
     </section>
   );

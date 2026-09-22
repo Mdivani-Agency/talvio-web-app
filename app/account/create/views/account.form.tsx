@@ -22,6 +22,7 @@ interface AccountFormProps {
   submitLabel?: string;
   valuesOverride?: Partial<AccountDto> | null;
   onValuesChange?: (data: AccountDto) => void;
+  submitting?: boolean;
 }
 
 export const AccountForm = ({
@@ -29,6 +30,7 @@ export const AccountForm = ({
   submitLabel = 'Continue',
   valuesOverride,
   onValuesChange,
+  submitting = false,
 }: AccountFormProps) => {
   const { accountDto, partialDto, setPartialDto } = useAccountContext();
   const values = valuesOverride || partialDto || accountDto || {};
@@ -64,6 +66,9 @@ export const AccountForm = ({
   });
 
   const handleSubmit = async () => {
+    if (submitting) {
+      return;
+    }
     await form.handleSubmit();
     if (!form.state.isValid) {
       toast.error('Failed to create account', {
@@ -81,7 +86,12 @@ export const AccountForm = ({
       <EducationView form={form} />
       <ProjectsView form={form} />
       <div className="flex justify-end gap-2">
-        <Button className="w-64" onClick={() => void handleSubmit()} type="button">
+        <Button
+          className="w-64"
+          onClick={() => void handleSubmit()}
+          type="button"
+          loading={submitting}
+        >
           {submitLabel}
         </Button>
       </div>

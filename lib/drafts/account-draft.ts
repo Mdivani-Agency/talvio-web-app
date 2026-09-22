@@ -137,7 +137,11 @@ export function hydrateAccountDraft(
   const answers = normalizeStoredAnswers(content.answers, questions ?? []);
   const currentQuestionId = progress.questionId
     ?? (progress.questionIndex != null ? questions?.[progress.questionIndex]?.id ?? null : null);
-  const restoredStep = PROGRESS_TO_STEP[progress.step];
+  const finishedLegacyCursor = progress.step === 'accountQuestions'
+    && questions != null
+    && progress.questionIndex === questions.length
+    && currentQuestionId == null;
+  const restoredStep = finishedLegacyCursor ? 'answerReview' : PROGRESS_TO_STEP[progress.step];
 
   return {
     step: content.accountDto && restoredStep !== 'form' ? restoredStep : 'form',

@@ -267,4 +267,91 @@ describe('useAccountOnboarding', () => {
     expect(result.current.reviewedAccount).toEqual(fullAccountDto);
     unmount();
   });
+
+  it('keeps profile review edits when continuing without AI again', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+    const reviewed = {
+      ...fullAccountDto,
+      profile: { ...fullAccountDto.profile, tagline: 'Edited on review' },
+    };
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions([], result.current.profileRevision);
+    });
+    act(() => {
+      result.current.continueWithoutAi();
+    });
+    act(() => {
+      result.current.setReviewedAccount(reviewed);
+    });
+    act(() => {
+      result.current.goToAnswerReview();
+    });
+    act(() => {
+      result.current.continueWithoutAi();
+    });
+
+    expect(result.current.step).toBe('profileReview');
+    expect(result.current.reviewedAccount).toEqual(reviewed);
+    unmount();
+  });
+
+  it('accepts a matching proposal only while still on answer review', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+    const proposal = {
+      ...fullAccountDto,
+      profile: { ...fullAccountDto.profile, tagline: 'Tailored' },
+    };
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions([
+        { id: 'question-1', question: 'Which system?', example: 'PDF' },
+      ], result.current.profileRevision);
+    });
+    act(() => {
+      result.current.answerCurrent('answered', 'Preview pipeline');
+    });
+
+    const revision = {
+      profileRevision: result.current.profileRevision,
+      answerRevision: result.current.answerRevision,
+    };
+
+    act(() => {
+      result.current.goBackToForm();
+    });
+    act(() => {
+      result.current.receiveProposal(proposal, revision);
+    });
+    expect(result.current.step).toBe('form');
+    expect(result.current.tailoredAccount).toBeNull();
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions([
+        { id: 'question-1', question: 'Which system?', example: 'PDF' },
+      ], result.current.profileRevision);
+    });
+    act(() => {
+      result.current.answerCurrent('answered', 'Preview pipeline');
+    });
+    const acceptedRevision = {
+      profileRevision: result.current.profileRevision,
+      answerRevision: result.current.answerRevision,
+    };
+    act(() => {
+      result.current.receiveProposal(proposal, acceptedRevision);
+    });
+    expect(result.current.step).toBe('proposalReview');
+    expect(result.current.tailoredAccount).toEqual(proposal);
+    unmount();
+  });
 });

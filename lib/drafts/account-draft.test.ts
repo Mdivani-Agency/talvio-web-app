@@ -82,6 +82,20 @@ describe('account drafts', () => {
     expect(fields.accountDto).toBeNull();
   });
 
+  it('restores a finished legacy question cursor as answer review', () => {
+    const parsed = parseAccountDraft(versionedAccountDraft);
+    const fields = hydrateAccountDraft(parsed!.content, {
+      ...parsed!.progress,
+      step: 'accountQuestions',
+      questionIndex: parsed!.content.questions!.length,
+      questionId: undefined,
+    });
+
+    expect(fields.step).toBe('answerReview');
+    expect(fields.currentQuestionId).toBeNull();
+    expect(fields.questions).toHaveLength(2);
+  });
+
   it('asks for import confirmation only when current work exists', () => {
     expect(hasOnboardingWork(null)).toBe(false);
     expect(hasOnboardingWork({ profile: { firstName: '', lastName: '' } })).toBe(false);
