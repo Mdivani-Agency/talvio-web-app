@@ -4,11 +4,13 @@ name: CI
 # Push to main / development: quality → db push → Vercel CLI deploy.
 # Vercel Git auto-deploys for those branches are off (see vercel.json).
 #
-# GitHub Environments (same secret names, different values):
+# Vercel CLI credentials are repository-scoped (same project for main and
+# development): VERCEL_TOKEN is a secret; VERCEL_ORG_ID and VERCEL_PROJECT_ID
+# may be secrets or variables.
+# Supabase db push still uses GitHub Environments when refs differ:
 #   development ← branch development
 #   production  ← branch main
-# Secrets: SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF,
-#          VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+#   SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF
 
 on:
   pull_request:
@@ -97,22 +99,21 @@ jobs:
     name: Deploy to Vercel
     needs: [quality, db-push]
     if: github.event_name == 'push'
-    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID || vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID || vars.VERCEL_PROJECT_ID }}
     steps:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Require Vercel secrets
+      - name: Require Vercel credentials
         run: |
           set -euo pipefail
           if [ -z "${VERCEL_TOKEN}" ] || [ -z "${VERCEL_ORG_ID}" ] || [ -z "${VERCEL_PROJECT_ID}" ]; then
-            echo "::error::Set environment secrets VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID."
+            echo "::error::Set repository secret VERCEL_TOKEN and repository secrets or variables VERCEL_ORG_ID and VERCEL_PROJECT_ID."
             exit 1
           fi
 

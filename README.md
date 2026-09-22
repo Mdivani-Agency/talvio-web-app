@@ -62,7 +62,15 @@ Copy [`.env.example`](.env.example) to `.env.local`. Set the same names in the V
 
 ## GitHub Actions
 
-Create two GitHub Environments and put the **same secret names** on each (values differ):
+Vercel deploy uses **repository** credentials (same values for `main` and `development`):
+
+| Name | Store as | Used for |
+| --- | --- | --- |
+| `VERCEL_TOKEN` | repository secret | Vercel CLI deploy |
+| `VERCEL_ORG_ID` | repository secret or variable | Vercel team / org |
+| `VERCEL_PROJECT_ID` | repository secret or variable | Vercel project |
+
+Supabase `db push` still reads GitHub Environment secrets when the hosted project differs per branch:
 
 | Environment | Branch | Hosted Supabase |
 | --- | --- | --- |
@@ -73,11 +81,8 @@ Create two GitHub Environments and put the **same secret names** on each (values
 | --- | --- |
 | `SUPABASE_ACCESS_TOKEN` | Supabase CLI `db push` |
 | `SUPABASE_PROJECT_REF` | Target project ref for that environment |
-| `VERCEL_TOKEN` | Vercel CLI deploy |
-| `VERCEL_ORG_ID` | Vercel team / org |
-| `VERCEL_PROJECT_ID` | Vercel project for that environment |
 
-`db push` skips until the Supabase secrets are set. Deploy fails until the Vercel secrets are set.
+`db push` skips until the Supabase secrets are set. Deploy fails until `VERCEL_TOKEN` is a repository secret and the Vercel org/project IDs are repository secrets or variables.
 
 ## Deploy on Vercel
 
