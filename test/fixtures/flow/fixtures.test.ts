@@ -18,10 +18,19 @@ import {
 import { accountSchema } from '@lib/schema/account.schema';
 import { resumeFormSchema, resumeSchema } from '@lib/schema/resume.schema';
 import { profileToResumeDocument } from '@lib/models/resume-document';
+import {
+  accountDraftStorageKey,
+  parseAccountDraft,
+  parseResumeDraft,
+  resumeDraftStorageKey,
+} from '@lib/drafts';
 
 import {
+  ACCOUNT_DRAFT_STORAGE_KEY,
   EDUCATION_ID,
   EXPERIENCE_ID,
+  FLOW_GUEST_ID,
+  FLOW_USER_ID,
   fullAccountDto,
   fullResumeContent,
   generatedResumeRow,
@@ -35,10 +44,15 @@ import {
   persistedExperienceDates,
   PROJECT_ID,
   RECOMMENDATION_ID,
+  RESUME_GUEST_DRAFT_STORAGE_KEY,
+  RESUME_SAVED_DRAFT_STORAGE_KEY,
+  RESUME_USER_DRAFT_STORAGE_KEY,
   savedAccount,
   SKILL_ID,
   standaloneDraftRow,
   TOOL_ID,
+  versionedAccountDraft,
+  versionedResumeDraft,
 } from './index';
 
 describe('flow baseline fixtures', () => {
@@ -140,6 +154,28 @@ describe('flow baseline fixtures', () => {
     expect(legacyAccountSnapshot.context.questions[0]).not.toHaveProperty('id');
     expect(legacyResumeSnapshot.context.resumeDto.template).toBe('mid-level-ember');
     expect(legacyResumeSnapshot.context.template).toEqual({ kind: 'runtime-template-object' });
+  });
+
+  it('namespaces versioned drafts by user, guest, and document', () => {
+    expect(ACCOUNT_DRAFT_STORAGE_KEY).toBe(
+      accountDraftStorageKey({ kind: 'user', userId: FLOW_USER_ID }),
+    );
+    expect(RESUME_USER_DRAFT_STORAGE_KEY).toBe(
+      resumeDraftStorageKey({ kind: 'user', userId: FLOW_USER_ID }, 'new'),
+    );
+    expect(RESUME_SAVED_DRAFT_STORAGE_KEY).not.toBe(RESUME_USER_DRAFT_STORAGE_KEY);
+    expect(RESUME_GUEST_DRAFT_STORAGE_KEY).toBe(
+      resumeDraftStorageKey({ kind: 'guest', guestId: FLOW_GUEST_ID }),
+    );
+    expect(parseAccountDraft(versionedAccountDraft)?.progress).toEqual({
+      step: 'accountQuestions',
+      questionIndex: 1,
+      unsentAnswer: 'Cut render time',
+    });
+    expect(parseResumeDraft(versionedResumeDraft)?.content.template).toBe('mid-level-ember');
+    expect(versionedResumeDraft).not.toHaveProperty('status');
+    expect(versionedResumeDraft).not.toHaveProperty('historyValue');
+    expect(versionedResumeDraft).not.toHaveProperty('children');
   });
 
   it('converts a profile once and keeps every previously dropped field', () => {

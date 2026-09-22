@@ -1,75 +1,139 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMachine } from '@xstate/react';
-import { createContext, PropsWithChildren, useContext, useEffect } from 'react';
-import { ActorRef, AnyActorRef, MachineSnapshot, Snapshot, StateSchema } from 'xstate';
-import { AccountContext, AccountEvents, AccountState, MetaKey } from '../state/types';
+import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { accountState } from '../state/machine';
-import { accountSnapshotStorageKey } from '../state/storage';
+import { Loading } from '@components/views';
+import { DraftStatusBanner } from '@components/views/draft-status';
+import {
+  accountDraftStorageKey,
+  accountProgressFromState,
+  browserStorage,
+  buildAccountDraft,
+  clearDraft,
+  createDebouncedWriter,
+  readParsedAccountDraft,
+  restoreAccountDraft,
+  writeDraft,
+  type DraftOwner,
+  type DraftPersistStatus,
+  type VersionedDraft,
+} from '@lib/drafts';
 import { useUserSession } from '@lib/providers';
 
-type State = MachineSnapshot<
-  AccountContext,
-  AccountEvents,
-  Record<string, AnyActorRef | undefined>,
-  AccountState,
-  string,
-  unknown,
-  Record<MetaKey, any>,
-  StateSchema
->;
+type AccountMachine = ReturnType<typeof useMachine<typeof accountState>>;
 
 type ContextState = {
   userId: string;
-  state: State;
-  actorRef: ActorRef<Snapshot<State>, AccountEvents>;
-  send: (event: AccountEvents) => void;
+  state: AccountMachine[0];
+  actorRef: AccountMachine[2];
+  send: AccountMachine[1];
+  persistStatus: DraftPersistStatus;
+  clearAccountDraft: () => void;
 };
-
-function getSnapshot(userId: string) {
-  if (typeof window !== 'undefined') {
-    const snapshot = localStorage.getItem(accountSnapshotStorageKey(userId));
-    return snapshot ? JSON.parse(snapshot) : undefined;
-  }
-
-  return undefined;
-}
 
 const MachineContext = createContext<ContextState>({} as ContextState);
 
-const PersistState = ({ children, userId }: PropsWithChildren<{ userId: string }>) => {
-  const { actorRef } = useAccountContext();
+function AccountMachine({ children, userId }: PropsWithChildren<{ userId: string }>) {
+  const owner = useMemo<DraftOwner>(() => ({ kind: 'user', userId }), [userId]);
+  const storage = useMemo(() => browserStorage(), []);
+  const key = accountDraftStorageKey({ kind: 'user', userId });
+  const initialRead = useMemo(() => readParsedAccountDraft(storage, key), [key, storage]);
+  const [persistStatus, setPersistStatus] = useState<DraftPersistStatus>(initialRead.status);
+  const draftRef = useRef<VersionedDraft | null>(initialRead.parsed ? initialRead.draft : null);
+  const lastStepRef = useRef<string | undefined>(undefined);
+  const hydratedRef = useRef(false);
+  const [state, send, actorRef] = useMachine(accountState);
+
+  const clearAccountDraft = () => {
+    draftRef.current = null;
+    setPersistStatus(clearDraft(storage, key));
+  };
 
   useEffect(() => {
-    const subscription = actorRef.subscribe((snapshot) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(accountSnapshotStorageKey(userId), JSON.stringify(snapshot));
+    if (hydratedRef.current) {
+      return;
+    }
+    if (initialRead.parsed) {
+      restoreAccountDraft(send, initialRead.parsed.content, initialRead.parsed.progress);
+    }
+    hydratedRef.current = true;
+  }, [initialRead.parsed, send]);
+
+  useEffect(() => {
+    const writer = createDebouncedWriter((draft: VersionedDraft | null) => {
+      if (!draft) {
+        setPersistStatus(clearDraft(storage, key));
+        return;
+      }
+      setPersistStatus(writeDraft(storage, key, draft));
+    });
+
+    const subscription = actorRef.subscribe((next) => {
+      if (!hydratedRef.current) {
+        return;
+      }
+      if (next.matches('existingAccount')) {
+        draftRef.current = null;
+        writer.schedule(null);
+        writer.flush();
+        return;
+      }
+      const nextDraft = buildAccountDraft({
+        owner,
+        context: next.context,
+        stateValue: next.value,
+        existing: draftRef.current,
+      });
+      if (!nextDraft) {
+        return;
+      }
+      const step = accountProgressFromState(next.value)?.step;
+      const stepChanged = lastStepRef.current !== undefined && lastStepRef.current !== step;
+      lastStepRef.current = step;
+      draftRef.current = nextDraft;
+      writer.schedule(nextDraft);
+      if (stepChanged) {
+        writer.flush();
       }
     });
 
-    return subscription.unsubscribe;
-  }, [actorRef, userId]);
+    const flush = () => writer.flush();
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        flush();
+      }
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', onVisibility);
 
-  return children;
-};
+    return () => {
+      subscription.unsubscribe();
+      flush();
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [actorRef, key, owner, storage]);
+
+  return (
+    <MachineContext.Provider value={{ state, actorRef, userId, send, persistStatus, clearAccountDraft }}>
+      <DraftStatusBanner status={persistStatus} />
+      {children}
+    </MachineContext.Provider>
+  );
+}
 
 export const AccountProvider = ({ children }: PropsWithChildren) => {
-  const { session } = useUserSession();
+  const { session, isPending } = useUserSession();
 
-  if (!session || !session.user) {
+  if (isPending) {
+    return <Loading message="Restoring account draft..." />;
+  }
+
+  if (!session?.user) {
     throw new Error('User not found');
   }
 
-  const { user } = session;
-
-  const [state, send, actorRef] = useMachine(accountState, { snapshot: getSnapshot(user.id) });
-
-  return (
-    // @ts-expect-error - TODO: fix this
-    <MachineContext.Provider value={{ state, actorRef, userId: user.id, send }}>
-      <PersistState userId={user.id}>{children}</PersistState>
-    </MachineContext.Provider>
-  );
+  return <AccountMachine userId={session.user.id}>{children}</AccountMachine>;
 };
 
 export const useAccountContext = () => {

@@ -19,6 +19,16 @@ export {
   legacyResumeSnapshot,
   legacyUnscopedResumeStorageKey,
 } from './legacy-snapshots';
+export {
+  ACCOUNT_DRAFT_STORAGE_KEY,
+  FLOW_DRAFT_ID,
+  FLOW_GUEST_ID,
+  RESUME_GUEST_DRAFT_STORAGE_KEY,
+  RESUME_SAVED_DRAFT_STORAGE_KEY,
+  RESUME_USER_DRAFT_STORAGE_KEY,
+  versionedAccountDraft,
+  versionedResumeDraft,
+} from './versioned-drafts';
 export { fullAccountDto, persistedExperienceDates, savedAccount } from './profile';
 export { fullResumeContent } from './resume-document';
 export {

@@ -9,26 +9,38 @@ import { Dashboard } from "./dashboard";
 import ErrorPage from "@app/auth/error/page";
 import { useUserSession } from "@lib/providers/session-provider";
 import { shouldRetryGraphqlQuery } from "@/lib/graphql-client";
+import { shouldSeedAccountFromQuery } from "@lib/drafts";
+import { useRef } from "react";
 
 export default function AccountPage() {
   const router = useRouter();
   const { session } = useUserSession();
-  const { state, userId, send } = useAccountContext();
+  const { state, userId, send, clearAccountDraft } = useAccountContext();
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const { isLoading, isError, data: account } = useQuery({
     queryKey: ['account', userId],
     enabled: !!userId,
     retry: shouldRetryGraphqlQuery,
     queryFn: async () => {
-      send({ type: 'INITIALIZE' });
+      const shouldSeed = shouldSeedAccountFromQuery(stateRef.current.value);
+      if (shouldSeed) {
+        send({ type: 'INITIALIZE' });
+      }
+
       const nextAccount = await fetchProfile(userId);
-      if (!nextAccount) {
+      if (nextAccount) {
+        clearAccountDraft();
+        send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: nextAccount });
+        return nextAccount;
+      }
+
+      if (shouldSeed) {
         send({ type: 'FETCHING_ACCOUNT_FAILURE' });
         router.push('/account/create');
-        return null;
       }
-      send({ type: 'FETCHING_ACCOUNT_SUCCESS', value: nextAccount });
-      return nextAccount;
+      return null;
     },
   });
 

@@ -12,7 +12,7 @@ export type ResumeState =
       existingResume: 'updateResume';
   }
   | {
-      newResume: 'resumeForm' | 'resumePreview';
+      newResume: 'resumeForm' | 'resumePreview' | 'downloadResume';
     };
 
 export type ResumeContext = {

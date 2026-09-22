@@ -1,15 +1,12 @@
 import { Header } from "@components/views";
 import { SessionProvider } from "@lib/providers";
-import { ResumeProvider } from "./providers/state-provider";
 
 export default async function ResumeLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="font-(family-var(--font-montserrat))">
       <SessionProvider>
-        <ResumeProvider>
-          <Header className="bg-popover" />
-          {children}
-        </ResumeProvider>
+        <Header className="bg-popover" />
+        {children}
       </SessionProvider>
     </div>
   );
