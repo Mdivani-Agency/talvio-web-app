@@ -167,6 +167,7 @@ Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format
 | `20260101000700_profile_rls.sql` | RLS + grants for profiles + 9 children; enum `USAGE` |
 | `20260101000800_resumes_rls.sql` | RLS + grants for `resumes` and `user_credits` |
 | `20260101000900_auth_hooks.sql` | `handle_new_user` → 300 signup credits |
+| `20260923060000_resume_save_idempotency.sql` | `client_draft_id`, generation lock, `release_resume_generation` |
 
 Constraint / RLS smokes: `supabase/tests/schema_constraints.sql` and
 `supabase/tests/rls.test.sql` (`yarn db:test` after `yarn db:reset`).

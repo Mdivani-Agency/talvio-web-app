@@ -13,6 +13,15 @@ export async function fetchResume(resumeId: string): Promise<Resume> {
   return toResume(row);
 }
 
+export async function fetchResumeByClientDraft(
+  userId: string,
+  clientDraftId: string,
+): Promise<Resume | undefined> {
+  const sdk = await getGraphqlSdk();
+  const data = await sdk.ResumeByClientDraft({ userId, clientDraftId });
+  return unwrapCollection(data.resumesCollection).map(toResume)[0];
+}
+
 export async function fetchDraftBySource(sourceResumeId: string): Promise<Resume | undefined> {
   const sdk = await getGraphqlSdk();
   const data = await sdk.ResumesBySource({ sourceId: sourceResumeId, first: 1 });

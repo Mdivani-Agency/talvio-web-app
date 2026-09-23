@@ -55,8 +55,8 @@ mutation InsertResume($objects: [resumesInsertInput!]!) {
   }
 }
 
-mutation UpdateResume($id: UUID!, $set: resumesUpdateInput!, $atMost: Int) {
-  updateresumesCollection(set: $set, filter: { id: { eq: $id } }, atMost: $atMost) {
+mutation UpdateResume($filter: resumesFilter!, $set: resumesUpdateInput!, $atMost: Int) {
+  updateresumesCollection(set: $set, filter: $filter, atMost: $atMost) {
     affectedCount
     records {
       ...ListResume
@@ -70,6 +70,20 @@ mutation DeleteResume($id: UUID!, $atMost: Int) {
     affectedCount
     records {
       id
+    }
+  }
+}
+
+query ResumeByClientDraft($userId: UUID!, $clientDraftId: UUID!) {
+  resumesCollection(
+    filter: { user_id: { eq: $userId }, client_draft_id: { eq: $clientDraftId } }
+    first: 1
+  ) {
+    edges {
+      node {
+        ...ListResume
+        content
+      }
     }
   }
 }

@@ -149,14 +149,53 @@ describe('generateAndChargeResumePdf', () => {
     expect(rpc).toHaveBeenCalledTimes(1);
   });
 
-  it('does not charge when upload fails after a successful balance check', async () => {
+  it('returns a stored url from generate_pdf without rendering or releasing', async () => {
+    rpc.mockResolvedValueOnce({ data: 'https://media.talvio.co/ann.pdf', error: null });
+
+    await expect(generateAndChargeResumePdf(resume.id, context)).resolves.toEqual({
+      url: 'https://media.talvio.co/ann.pdf',
+      key: '',
+    });
+    expect(generateResumePdfBytes).not.toHaveBeenCalled();
+    expect(uploadResumePdfBytes).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('reloads the locked resume before rendering', async () => {
+    rpc
+      .mockResolvedValueOnce({ data: '', error: null })
+      .mockResolvedValueOnce({ data: 'https://media.talvio.co/new.pdf', error: null });
+    resumeById
+      .mockResolvedValueOnce(resumeCollection(resumeRow({ name: 'Stale Name' })))
+      .mockResolvedValueOnce(resumeCollection(resumeRow({ name: 'Ann Owner' })));
+
+    await generateAndChargeResumePdf(resume.id, context);
+
+    expect(resumeById).toHaveBeenCalledTimes(2);
+    expect(uploadResumePdfBytes).toHaveBeenCalledWith(userId, 'Ann Owner.pdf', expect.any(Uint8Array));
+  });
+
+  it('releases the generation lock when upload fails and does not finalize', async () => {
     rpc.mockResolvedValueOnce({ data: '', error: null });
     uploadResumePdfBytes.mockRejectedValue(
       Object.assign(new Error('Failed to upload resume PDF'), { status: 502 }),
     );
 
     await expect(generateAndChargeResumePdf(resume.id, context)).rejects.toThrow('Failed to upload resume PDF');
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith('generate_pdf', { p_resume_id: resume.id });
+    expect(rpc).toHaveBeenNthCalledWith(1, 'generate_pdf', { p_resume_id: resume.id });
+    expect(rpc).toHaveBeenNthCalledWith(2, 'release_resume_generation', { p_resume_id: resume.id });
+    expect(rpc).toHaveBeenCalledTimes(2);
+  });
+
+  it('releases the lock when finalize reports the revision changed', async () => {
+    rpc
+      .mockResolvedValueOnce({ data: '', error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: 'resume_changed' } });
+
+    await expect(generateAndChargeResumePdf(resume.id, context)).rejects.toMatchObject({
+      message: 'This resume changed before the PDF was saved',
+      status: 409,
+    });
+    expect(rpc).toHaveBeenNthCalledWith(3, 'release_resume_generation', { p_resume_id: resume.id });
   });
 });

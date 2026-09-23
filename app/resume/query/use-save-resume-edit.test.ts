@@ -57,7 +57,9 @@ describe('saveResumeEdit', () => {
     });
 
     expect(result.created).toBe(false);
-    expect(updateResume).toHaveBeenCalledWith(draft.id, { color: '#005BA2' });
+    expect(updateResume).toHaveBeenCalledWith(draft.id, { color: '#005BA2' }, {
+      baseUpdatedAt: draft.updatedAt,
+    });
     expect(createResume).not.toHaveBeenCalled();
   });
 
@@ -75,7 +77,9 @@ describe('saveResumeEdit', () => {
     });
 
     expect(result.created).toBe(false);
-    expect(updateResume).toHaveBeenCalledWith(generated.id, { label: 'Frontend' });
+    expect(updateResume).toHaveBeenCalledWith(generated.id, { label: 'Frontend' }, {
+      baseUpdatedAt: generated.updatedAt,
+    });
     expect(createResume).not.toHaveBeenCalled();
     expect(fetchDraftBySource).not.toHaveBeenCalled();
   });
@@ -129,7 +133,65 @@ describe('saveResumeEdit', () => {
     });
 
     expect(result.created).toBe(false);
-    expect(updateResume).toHaveBeenCalledWith(existingDraft.id, { color: '#005BA2' });
+    expect(updateResume).toHaveBeenCalledWith(existingDraft.id, { color: '#005BA2' }, {
+      baseUpdatedAt: existingDraft.updatedAt,
+    });
     expect(createResume).not.toHaveBeenCalled();
+  });
+
+  it('passes the client draft id when forking a generated resume', async () => {
+    const generated = {
+      ...draft,
+      media: { url: 'https://media.talvio.co/ann.pdf', key: 'ann.pdf' },
+    };
+    vi.mocked(fetchDraftBySource).mockResolvedValue(undefined);
+    vi.mocked(createResume).mockResolvedValue({
+      ...draft,
+      id: '22222222-2222-4222-8222-222222222222',
+      sourceResumeId: generated.id,
+    });
+
+    await saveResumeEdit({
+      userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      existing: generated,
+      patch: { color: '#005BA2' },
+      clientDraftId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      baseUpdatedAt: generated.updatedAt,
+      serverId: generated.id,
+    });
+
+    expect(createResume).toHaveBeenCalledWith({
+      userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      body: expect.objectContaining({ color: '#005BA2' }),
+      sourceResumeId: generated.id,
+      clientDraftId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    });
+  });
+
+  it('uses the queued revision when updating the open draft the queue already owns', async () => {
+    const generated = {
+      ...draft,
+      media: { url: 'https://media.talvio.co/ann.pdf', key: 'ann.pdf' },
+    };
+    const existingDraft = {
+      ...draft,
+      id: '22222222-2222-4222-8222-222222222222',
+      sourceResumeId: generated.id,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    vi.mocked(fetchDraftBySource).mockResolvedValue(existingDraft);
+    vi.mocked(updateResume).mockResolvedValue(existingDraft);
+
+    await saveResumeEdit({
+      userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      existing: generated,
+      patch: { color: '#005BA2' },
+      serverId: existingDraft.id,
+      baseUpdatedAt: '2026-02-01T00:00:00.000Z',
+    });
+
+    expect(updateResume).toHaveBeenCalledWith(existingDraft.id, { color: '#005BA2' }, {
+      baseUpdatedAt: '2026-02-01T00:00:00.000Z',
+    });
   });
 });

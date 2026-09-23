@@ -141,8 +141,8 @@ Preserved from MDI-174. Do not rebuild them.
 | Shared resume storage | Closed in MDI-195 for live writes. New keys are `talvio-draft-v1:account:user:${userId}:profile`, `talvio-draft-v1:resume:user:${userId}:${documentId}`, and `talvio-draft-v1:resume:guest:${guestId}`. `/resume` mounts `ResumeProvider` with document id `new`. Guest drafts are offered for adoption after sign-in and are never loaded silently into another user. Legacy `account-state-snapshot-*` / `resume-state-snapshot-*` conversion is MDI-201. |
 | Auth return URLs disagree | Resume download and import now share `signInHref`. Account layout still always uses `/account`, so `/account/documents` deep links still lose the subpath. |
 | Two editor shells | Closed in MDI-198. `/resume` and `/resume/[resumeId]` share `ResumeEditorShell`: content tabs, template gallery, color/font, label/filename, preview, and download. |
-| Duplicate standalone resumes | `createResume` always inserts. `createdResume` in `ResumePreviewPage` is memory only. A timeout after the insert, a refresh, or a second click before `setCreatedResume` inserts another row. Each row can then be generated and charged. |
-| Draft updates have no revision check | `toResumeUpdateSet` does not filter on `updated_at`. Last write wins. |
+| Duplicate standalone resumes | Closed in MDI-200. `client_draft_id` is stored in the recovery blob before insert. A retry with the same id updates that row. `/resume` joins an in-flight download instead of inserting again. |
+| Draft updates have no revision check | Closed in MDI-200 for resume drafts. Mutable updates match `id` and `updated_at`. Zero rows is a conflict and does not overwrite the editor. Profile saves still have no revision token. |
 | Profile child retries duplicate rows | `save_profile` inserts experience, education, projects, recommendations, and links when the payload has no persisted id. It never deletes omitted children. Skills and tools dedupe by lowercased name. Languages upsert on `(user_id, language)`. Primary email, phone, and URL contacts are already retry-safe for the payload `accountDtoToSavePayload` sends: they sit on `profile`, and the RPC updates the primary row for that kind, inserting only when none exists. |
 | Snapshot and type drift | Machine state `previewResume` / `downloadResume` is not in the TypeScript unions. Unions still name `accountPreview`, `accountReady`, `uploadResume`, and `resumeForm`, which the machines do not use. Persisted snapshots include actor metadata. |
 | Dead navigation | Nothing routes to `/account/resume`. |
@@ -164,29 +164,34 @@ This is the contract MDI-200 implements. Disabling a button is only a UX guard. 
 
 ### Resume create and update
 
-Required schema change, not implemented here:
+Implemented in `20260923060000_resume_save_idempotency.sql`. Apply that migration before the client draft id or generation lock is used.
 
-- Add nullable `resumes.client_draft_id uuid`.
+- `resumes.client_draft_id uuid` is nullable.
 - Unique `(user_id, client_draft_id)` where `client_draft_id` is not null.
-- One save RPC, or insert-then-update with that key: the first call inserts; a retry with the same id updates that mutable row and returns it. It must not insert a second standalone draft.
+- Insert-then-update: the first call inserts. A retry with the same id updates that mutable row and returns it. A generated row is returned unchanged.
 - The browser stores `client_draft_id` in the versioned recovery blob before the request, and stores the server resume id as soon as the response arrives.
-- If the response is lost, the retry uses the same `client_draft_id`. It does not call a blind insert, and it does not mint a new id because the button was pressed twice.
+- If the response is lost, the retry uses the same `client_draft_id`. It does not mint a new id because the button was pressed twice.
+- Autosave runs one revision at a time. Edits made while that write is in flight stay pending and save next, using the `updated_at` from the response. The response is not copied back onto the editor.
 
-Updates to a mutable draft (`pdf_url` is null) send `base_updated_at`. The update matches `id` and `updated_at`. Zero rows is a conflict: refetch, show the conflict, and do not overwrite. Generated rows stay on the trigger rules above; content edits go to the open draft, not into a conflict update of the generated row.
+Updates to a mutable draft (`pdf_url` is null) send `base_updated_at`. The update matches `id` and `updated_at`. Zero rows is a conflict: refetch the revision, show the conflict, and do not overwrite local values. Generated rows stay on the trigger rules above; content edits go to the open draft, not into a conflict update of the generated row.
 
 `saveResumeEdit`’s unique-violation reuse stays the rule for “one open draft per generated resume”. `client_draft_id` does not replace `source_resume_id`.
 
 ### PDF generation
 
-Keep the current two-step RPC. Do not debit in `generate_pdf`. Do not add a second charge path.
+Keep the two-step RPC. Do not debit in `generate_pdf`. Do not add a second charge path.
 
-- Generate only the resume id returned by the idempotent save. A duplicate row is what charges twice; `finalize_pdf` already charges a given row once.
-- Lost response after `finalize_pdf` commits: retry calls `generate_pdf`, receives the stored URL, and does not debit.
-- Upload failure before `finalize_pdf`: no debit. Retry may upload another object, then finalize once. Orphan media objects are acceptable. A second debit is not.
+- `generate_pdf` returns an existing `pdf_url` with no debit. Otherwise it checks the catalog balance, sets `generation_updated_at` to the current `updated_at`, and returns `''`.
+- `resumes_zz_keep_revision_clock` runs after `resumes_set_updated_at` and restores `updated_at` when the only change is the lock, so the revision token still matches.
+- Content, template, color, and font edits while that lock is held raise `resume_generation_in_progress`.
+- The route reloads the resume after the lock and renders that revision. `finalize_pdf` debits only when `updated_at` still equals `generation_updated_at`. A moved revision raises `resume_changed` with no debit.
+- Generate only the resume id returned by the idempotent save.
+- Lost response after `finalize_pdf` commits: retry calls `generate_pdf`, receives the stored URL, and does not debit. The client also refetches after a generate error and keeps that URL when the row is already generated.
+- Upload or render failure before `finalize_pdf`: `release_resume_generation` clears the lock and does not debit. Retry may upload another object, then finalize once. Orphan media objects are acceptable. A second debit is not.
 - Concurrent tabs: the row lock in `finalize_pdf` makes one debit win. The other call returns the stored URL.
-- `insufficient_credits` still renders and uploads nothing.
+- `insufficient_credits` still renders and uploads nothing. `require_credits` runs before the lock is written.
 
-No further credit RPC is required for retry safety. The missing piece is the client draft id that stops a second resume row.
+No further credit RPC is required. Apply the migration before relying on the column or the release RPC.
 
 ## Regression checklist
 
@@ -207,8 +212,8 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [x] Preview render does not call `CHANGE_RESUME` or otherwise write source fields.
 - [x] `/resume` and `/resume/[resumeId]` share one editor over the resume document.
 - [x] Filename or label edits do not regenerate preview. Color, font, template key, and content do.
-- [ ] Download of a new resume creates one row, then generates. A second click or a lost response updates that row and does not insert or charge another.
-- [ ] First final PDF debits once. An existing `pdf_url` downloads with no debit at balance 0.
+- [x] Download of a new resume creates one row, then generates. A second click or a lost response updates that row and does not insert or charge another.
+- [x] First final PDF debits once. An existing `pdf_url` downloads with no debit at balance 0.
 - [ ] Insufficient credits shows the buy-credits path and does not upload.
 - [ ] Editing a generated resume reuses its open draft. View original is read-only. Discard deletes only the draft. The original URL still downloads.
 - [ ] A second edit does not insert a second open draft.

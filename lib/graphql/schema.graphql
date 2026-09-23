@@ -449,6 +449,8 @@ type resumes {
   pdf_url: String
   pdf_media_key: String
   source_resume_id: UUID
+  client_draft_id: UUID
+  generation_updated_at: Datetime
   created_at: Datetime!
   updated_at: Datetime!
 }
@@ -468,7 +470,9 @@ input resumesFilter {
   user_id: UUIDFilter
   type: resume_typeFilter
   source_resume_id: UUIDFilter
+  client_draft_id: UUIDFilter
   pdf_url: StringFilter
+  updated_at: DatetimeFilter
 }
 
 input resumesOrderBy {
@@ -625,6 +629,7 @@ input resumesInsertInput {
   pdf_url: String
   pdf_media_key: String
   source_resume_id: UUID
+  client_draft_id: UUID
 }
 
 input resumesUpdateInput {
@@ -659,6 +664,7 @@ type Mutation {
   save_profile(p_payload: JSON): String
   generate_pdf(p_resume_id: UUID): String
   finalize_pdf(p_resume_id: UUID, p_pdf_url: String, p_pdf_media_key: String): String
+  release_resume_generation(p_resume_id: UUID): Opaque
   insertIntoresumesCollection(objects: [resumesInsertInput!]!): resumesInsertResponse
   updateresumesCollection(
     set: resumesUpdateInput!

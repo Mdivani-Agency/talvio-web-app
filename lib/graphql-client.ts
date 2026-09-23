@@ -93,6 +93,12 @@ export function parseGraphqlError(error: unknown): string {
   if (haystack.includes('invalid_pdf')) {
     return 'Resume PDF was not created';
   }
+  if (haystack.includes('resume_changed')) {
+    return 'This resume changed before the PDF was saved';
+  }
+  if (haystack.includes('resume_generation_in_progress')) {
+    return 'A PDF is already being created for this resume';
+  }
   if (haystack.includes('not authenticated') || haystack.includes('invalid_user')) {
     return 'Please sign in';
   }

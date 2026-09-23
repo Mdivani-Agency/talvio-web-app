@@ -209,6 +209,8 @@ Owned by `auth.users` (not `profiles`) so a user can build a resume before onboa
 | `pdf_url` | `text` | media-service URL |
 | `pdf_media_key` | `text` | media-service key |
 | `source_resume_id` | `uuid` | open draft / lineage → parent `resumes.id`; `on delete set null` |
+| `client_draft_id` | `uuid` | browser recovery id; unique per user when set (`20260923060000`) |
+| `generation_updated_at` | `timestamptz` | revision pinned by `generate_pdf`; null when idle |
 | `created_at` | `timestamptz not null default now()` | |
 | `updated_at` | `timestamptz not null default now()` | trigger `resumes_set_updated_at` |
 
@@ -218,6 +220,7 @@ Indexes:
 - `resumes_user_type_idx (user_id, type)`
 - `resumes_source_resume_id_idx (source_resume_id) where source_resume_id is not null`
 - `resumes_one_open_draft_per_source_idx` unique on `source_resume_id` where `source_resume_id is not null and pdf_url is null`
+- `resumes_client_draft_id_idx` unique on `(user_id, client_draft_id)` where `client_draft_id is not null`
 
 Checks / triggers:
 
@@ -227,6 +230,13 @@ Checks / triggers:
 - `resumes_validate_source` — source is same-user and already generated;
   `source_resume_id` cannot be re-pointed (detach/`NULL` is allowed);
   generated content/style/PDF pointers are immutable
+- `resumes_zz_keep_revision_clock` — after `resumes_set_updated_at`. Restores
+  `updated_at` when an update only changes `generation_updated_at`. Raises
+  `resume_generation_in_progress` for content or style edits while that lock
+  is held and `pdf_url` is null
+
+Authenticated may insert `client_draft_id`. `generation_updated_at` is written
+only by `generate_pdf`, `finalize_pdf`, and `release_resume_generation`.
 
 A generated resume has 0 or 1 **open** draft (`pdf_url` null + `source_resume_id`).
 Standalone `/resume` builder drafts leave `source_resume_id` null. After a draft

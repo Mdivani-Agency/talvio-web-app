@@ -35,6 +35,7 @@ type ContextState = {
   adoptGuestDraft: () => void;
   discardGuestDraft: () => void;
   clearResumeDraft: () => void;
+  ensureDraftId: () => string;
 };
 
 const MachineContext = createContext<ContextState>({} as ContextState);
@@ -77,6 +78,29 @@ function ResumeMachine({
   };
 
   const clearResumeDraft = () => persistCurrent(null);
+
+  const ensureDraftId = () => {
+    const snapshot = actorRef.getSnapshot();
+    const existing = draftRef.current;
+    const built = buildResumeDraft({
+      owner,
+      context: snapshot.context,
+      stateValue: snapshot.value,
+      existing,
+      documentId,
+    }) ?? buildResumeDraft({
+      owner,
+      context: snapshot.context,
+      stateValue: { newResume: 'resumePreview' },
+      existing,
+      documentId,
+    });
+    if (!built) {
+      throw new Error('Resume draft is not ready to save');
+    }
+    persistCurrent(built);
+    return built.draftId;
+  };
 
   const adoptGuestDraft = () => {
     if (!guestDraft) {
@@ -176,6 +200,7 @@ function ResumeMachine({
         adoptGuestDraft,
         discardGuestDraft,
         clearResumeDraft,
+        ensureDraftId,
       }}
     >
       <DraftStatusBanner

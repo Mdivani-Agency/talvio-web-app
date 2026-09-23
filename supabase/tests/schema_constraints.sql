@@ -335,6 +335,48 @@ select throws_ok(
   'source resume must belong to the same user'
 );
 
+insert into public.resumes (
+  id, user_id, name, template_key, client_draft_id
+) values (
+  'abababab-abab-4aba-8aba-abababababab',
+  '11111111-1111-4111-8111-111111111111',
+  'Client draft',
+  'senior-level-talvio',
+  'cdcdcdcd-cdcd-4cdc-8cdc-cdcdcdcdcdcd'
+);
+
+select throws_ok(
+  $$
+    insert into public.resumes (
+      user_id, name, template_key, client_draft_id
+    ) values (
+      '11111111-1111-4111-8111-111111111111',
+      'Client draft again',
+      'senior-level-talvio',
+      'cdcdcdcd-cdcd-4cdc-8cdc-cdcdcdcdcdcd'
+    );
+  $$,
+  '23505',
+  null,
+  'client_draft_id is unique per user'
+);
+
+insert into public.resumes (
+  user_id, name, template_key, client_draft_id
+) values (
+  '22222222-2222-4222-8222-222222222222',
+  'Other user same client id',
+  'senior-level-talvio',
+  'cdcdcdcd-cdcd-4cdc-8cdc-cdcdcdcdcdcd'
+);
+
+select is(
+  (select count(*)::int from public.resumes
+    where client_draft_id = 'cdcdcdcd-cdcd-4cdc-8cdc-cdcdcdcdcdcd'),
+  2,
+  'the same client_draft_id can exist for two users'
+);
+
 select * from finish();
 
 rollback;

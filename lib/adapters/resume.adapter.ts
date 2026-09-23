@@ -91,6 +91,7 @@ export function toResumeInsertInput(input: {
   type?: 'GENERAL' | 'JOB_SPECIFIC';
   body: PreviewDto;
   sourceResumeId?: string | null;
+  clientDraftId?: string | null;
 }) {
   const content = previewToResumeContent(input.body);
   const label = normalizeResumeLabel(input.body.label);
@@ -106,6 +107,7 @@ export function toResumeInsertInput(input: {
     font_family: input.body.fontFamily,
     content: encodeGraphqlJson(content),
     ...(input.sourceResumeId ? { source_resume_id: input.sourceResumeId } : {}),
+    ...(input.clientDraftId ? { client_draft_id: input.clientDraftId } : {}),
   };
 }
 

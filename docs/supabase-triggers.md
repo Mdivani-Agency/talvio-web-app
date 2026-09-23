@@ -39,6 +39,11 @@ Inserts `public.user_credits (user_id, balance)` with **300** credits for
   previous URL stays downloadable. Generating that draft is a new paid event
   and keeps lineage so the parent can get another open draft later.
 
+No profile row is created here. Onboarding inserts `profiles` with real values.
+
+Defined in `20260101000900_auth_hooks.sql`. Execute is revoked from
+`public` / `anon` / `authenticated` — trigger-only.
+
 ## `resumes_validate_source`
 
 `public.resumes_validate_source()` — `BEFORE INSERT OR UPDATE` on `resumes`.
@@ -49,7 +54,14 @@ the same `user_id`, and already have a `pdf_url`. Generated rows
 type, and PDF pointers; `label` and `name` stay writable.
 Execute is revoked from `public` / `anon` / `authenticated` — trigger-only.
 
-No profile row is created here. Onboarding inserts `profiles` with real values.
+## `resumes_zz_keep_revision_clock`
 
-Defined in `20260101000900_auth_hooks.sql`. Execute is revoked from
-`public` / `anon` / `authenticated` — trigger-only.
+`public.resumes_keep_revision_clock()` — `BEFORE UPDATE` on `resumes`, named
+so it runs after `resumes_set_updated_at`. A lock or release that changes only
+`generation_updated_at` keeps the previous `updated_at`, and a new lock stores
+that same timestamp. Content, template, color, font, or type changes while
+`generation_updated_at` is set and `pdf_url` is null raise
+`resume_generation_in_progress`.
+
+Defined in `20260923060000_resume_save_idempotency.sql`. Execute is revoked
+from `public` / `anon` / `authenticated` — trigger-only.
