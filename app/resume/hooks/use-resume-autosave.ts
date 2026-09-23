@@ -146,8 +146,9 @@ export function useResumeAutosave(options: AutosaveOptions) {
     return savedRef.current ?? optionsRef.current.getExisting();
   }, []);
 
-  const retry = useCallback(() => {
-    void runtime.current?.runner.retry();
+  const retry = useCallback(async () => {
+    await runtime.current?.runner.retry();
+    return runtime.current?.runner.getState();
   }, []);
 
   const beginGenerating = useCallback(() => {

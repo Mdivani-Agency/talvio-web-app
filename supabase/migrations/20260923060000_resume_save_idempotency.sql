@@ -96,8 +96,10 @@ create trigger resumes_zz_keep_revision_clock
 before update on public.resumes
 for each row execute function public.resumes_keep_revision_clock();
 
--- Existing pdf_url is free. Otherwise confirm the catalog balance, pin
--- the current revision, and return '' so the route can render. No debit.
+-- Existing pdf_url is free. An existing lock is rejected so a second
+-- caller cannot adopt it and later release it. Otherwise confirm the
+-- catalog balance, pin the current revision, and return '' so the route
+-- can render. No debit.
 create or replace function public.generate_pdf(p_resume_id uuid)
 returns text
 language plpgsql
@@ -108,6 +110,7 @@ as $$
 declare
   v_uid uuid := auth.uid();
   v_pdf_url text;
+  v_generation_updated_at timestamptz;
 begin
   if v_uid is null then
     raise exception 'not authenticated';
@@ -116,7 +119,8 @@ begin
     raise exception 'resume_not_found';
   end if;
 
-  select pdf_url into v_pdf_url
+  select pdf_url, generation_updated_at
+    into v_pdf_url, v_generation_updated_at
   from public.resumes
   where id = p_resume_id
     and user_id = v_uid
@@ -130,13 +134,22 @@ begin
     return v_pdf_url;
   end if;
 
+  if v_generation_updated_at is not null then
+    raise exception 'resume_generation_in_progress';
+  end if;
+
   perform public.require_credits(v_uid, 'generate_pdf');
 
   update public.resumes
   set generation_updated_at = updated_at
   where id = p_resume_id
     and user_id = v_uid
-    and pdf_url is null;
+    and pdf_url is null
+    and generation_updated_at is null;
+
+  if not found then
+    raise exception 'resume_generation_in_progress';
+  end if;
 
   return '';
 end;

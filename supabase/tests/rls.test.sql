@@ -479,6 +479,13 @@ select is(
 );
 
 select throws_ok(
+  $$ select public.generate_pdf('ffffffff-ffff-4fff-8fff-ffffffffffff'); $$,
+  'P0001',
+  'resume_generation_in_progress',
+  'a second generate_pdf does not take an existing lock'
+);
+
+select throws_ok(
   $$
     update public.resumes
     set color = '#005BA2'

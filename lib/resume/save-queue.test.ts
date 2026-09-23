@@ -108,6 +108,53 @@ describe('createSaveRunner', () => {
     expect(runner.getState().status).toBe('saved');
   });
 
+  it('saves a retry that starts while conflict refresh is still running', async () => {
+    const firstRefresh = deferred<string>();
+    const secondRefresh = deferred<string>();
+    const refreshes = [firstRefresh, secondRefresh];
+    const save = vi.fn()
+      .mockRejectedValueOnce(new Error('This resume changed in another session'))
+      .mockResolvedValueOnce({ serverId: 'resume-1', baseUpdatedAt: '2026-04-01T00:00:00.000Z' });
+    const runner = createSaveRunner({
+      merge: mergeResumePatch,
+      save,
+      isConflict: () => true,
+      onConflict: () => {
+        const next = refreshes.shift();
+        if (!next) {
+          throw new Error('unexpected refresh');
+        }
+        return next.promise;
+      },
+    });
+    runner.seed({ serverId: 'resume-1', baseUpdatedAt: '2026-01-01T00:00:00.000Z' });
+    runner.enqueue({ label: 'Frontend' });
+    await vi.waitFor(() => {
+      expect(refreshes).toHaveLength(1);
+    });
+
+    const retrying = runner.retry();
+    await vi.waitFor(() => {
+      expect(refreshes).toHaveLength(0);
+    });
+    secondRefresh.resolve('2026-03-02T00:00:00.000Z');
+    await vi.waitFor(() => {
+      expect(runner.getState().status).toBe('saving');
+    });
+    expect(runner.getState().inflight).toEqual({ label: 'Frontend' });
+
+    firstRefresh.resolve('2026-03-01T00:00:00.000Z');
+    await retrying;
+    await runner.whenIdle();
+
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenLastCalledWith(
+      { label: 'Frontend' },
+      { serverId: 'resume-1', baseUpdatedAt: '2026-03-02T00:00:00.000Z' },
+    );
+    expect(runner.getState().status).toBe('saved');
+  });
+
   it('holds edits made while a PDF is generating and saves them afterwards', async () => {
     const save = vi.fn().mockResolvedValue({
       serverId: 'resume-1',

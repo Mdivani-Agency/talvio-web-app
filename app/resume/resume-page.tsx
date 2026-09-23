@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { createResume } from '@app/resume/query/use-create-resume';
-import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { triggerBrowserDownload, useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { fetchResume } from '@app/resume/query/use-resume';
 import { saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
 import { ResumeConflictError, updateResume } from '@app/resume/query/use-update-resume';
@@ -151,7 +151,8 @@ export function ResumePreviewPage({ level }: ResumePreviewPageProps) {
         } catch (error) {
           try {
             const fresh = await fetchResume(saved.id);
-            if (isGeneratedResume(fresh)) {
+            if (isGeneratedResume(fresh) && fresh.media?.url) {
+              triggerBrowserDownload(fresh.media.url, fresh.name);
               createdRef.current = fresh;
               generatedKeyRef.current = previewRevisionKey(body);
               setSaveStatus('saved');

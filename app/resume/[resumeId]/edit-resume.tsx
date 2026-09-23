@@ -54,6 +54,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
   const draftRef = useRef<VersionedDraft | null>(null);
   const writerRef = useRef<DebouncedWriter<VersionedDraft | null> | null>(null);
+  const failedGenerationRef = useRef<Resume | null>(null);
   const { document, formRevision, initialize, apply, replaceDocument } = useResumeEditorDocument();
 
   const { data: family, isLoading: isLoadingResume } = useQuery({
@@ -223,6 +224,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   }, [autosave, displayed, document, recovery, viewingOriginal]);
 
   const requestEdit = (patch: Partial<Resume>) => {
+    failedGenerationRef.current = null;
     if (readOnly && !isLabelOnlyPatch(patch)) {
       return;
     }
@@ -271,6 +273,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         try {
           const result = await generatePdf.mutateAsync(resume);
           if (!alreadyGenerated) {
+            failedGenerationRef.current = null;
             autosave.remember(result);
             await autosave.finishGenerating(true);
           }
@@ -280,6 +283,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           return { id: result.id };
         } catch (error) {
           if (!alreadyGenerated) {
+            failedGenerationRef.current = resume;
             const message = error instanceof Error ? error.message : 'Failed to generate PDF';
             await autosave.finishGenerating(false, message);
           }
@@ -315,7 +319,24 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         downloadPending={generatePdf.isPending || autosave.status === 'saving' || autosave.status === 'generating'}
         saveStatus={autosave.status}
         saveMessage={autosave.message}
-        onRetrySave={() => autosave.retry()}
+        onRetrySave={() => {
+          const failed = failedGenerationRef.current;
+          if (!failed) {
+            void autosave.retry();
+            return;
+          }
+          void (async () => {
+            const state = await autosave.retry();
+            if (
+              state
+              && (state.status === 'failed' || state.status === 'conflict')
+              && state.pending
+            ) {
+              return;
+            }
+            await generateSaved(failed);
+          })();
+        }}
         family={hasFamily ? {
           viewingOriginal,
           onViewOriginal: () => setViewingOriginal(true),
@@ -357,6 +378,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
               try {
                 const result = await generatePdf.mutateAsync(saved);
                 if (!alreadyGenerated) {
+                  failedGenerationRef.current = null;
                   autosave.remember(result);
                   await autosave.finishGenerating(true);
                 }
@@ -366,6 +388,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
                 return { id: result.id };
               } catch (error) {
                 if (!alreadyGenerated) {
+                  failedGenerationRef.current = saved;
                   const message = error instanceof Error ? error.message : 'Failed to generate PDF';
                   await autosave.finishGenerating(false, message);
                 }

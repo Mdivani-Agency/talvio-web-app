@@ -181,14 +181,14 @@ Updates to a mutable draft (`pdf_url` is null) send `base_updated_at`. The updat
 
 Keep the two-step RPC. Do not debit in `generate_pdf`. Do not add a second charge path.
 
-- `generate_pdf` returns an existing `pdf_url` with no debit. Otherwise it checks the catalog balance, sets `generation_updated_at` to the current `updated_at`, and returns `''`.
+- `generate_pdf` returns an existing `pdf_url` with no debit. If `generation_updated_at` is already set, it raises `resume_generation_in_progress` and leaves that lock in place. Otherwise it checks the catalog balance, sets `generation_updated_at` to the current `updated_at`, and returns `''`.
 - `resumes_zz_keep_revision_clock` runs after `resumes_set_updated_at` and restores `updated_at` when the only change is the lock, so the revision token still matches.
 - Content, template, color, and font edits while that lock is held raise `resume_generation_in_progress`.
 - The route reloads the resume after the lock and renders that revision. `finalize_pdf` debits only when `updated_at` still equals `generation_updated_at`. A moved revision raises `resume_changed` with no debit.
 - Generate only the resume id returned by the idempotent save.
-- Lost response after `finalize_pdf` commits: retry calls `generate_pdf`, receives the stored URL, and does not debit. The client also refetches after a generate error and keeps that URL when the row is already generated.
+- Lost response after `finalize_pdf` commits: retry calls `generate_pdf`, receives the stored URL, and does not debit. The client also refetches after a generate error. When that row is already generated, it downloads the stored URL before treating the attempt as successful.
 - Upload or render failure before `finalize_pdf`: `release_resume_generation` clears the lock and does not debit. Retry may upload another object, then finalize once. Orphan media objects are acceptable. A second debit is not.
-- Concurrent tabs: the row lock in `finalize_pdf` makes one debit win. The other call returns the stored URL.
+- Concurrent tabs: a second `generate_pdf` while the lock is held raises `resume_generation_in_progress` and does not call `release_resume_generation`. After the owner stores `pdf_url`, a retry returns that URL with no second debit. `finalize_pdf` still locks the row so only one debit can land.
 - `insufficient_credits` still renders and uploads nothing. `require_credits` runs before the lock is written.
 
 No further credit RPC is required. Apply the migration before relying on the column or the release RPC.

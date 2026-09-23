@@ -237,6 +237,7 @@ Checks / triggers:
 
 Authenticated may insert `client_draft_id`. `generation_updated_at` is written
 only by `generate_pdf`, `finalize_pdf`, and `release_resume_generation`.
+`generate_pdf` raises `resume_generation_in_progress` when that lock is already set.
 
 A generated resume has 0 or 1 **open** draft (`pdf_url` null + `source_resume_id`).
 Standalone `/resume` builder drafts leave `source_resume_id` null. After a draft

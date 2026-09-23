@@ -175,6 +175,21 @@ describe('generateAndChargeResumePdf', () => {
     expect(uploadResumePdfBytes).toHaveBeenCalledWith(userId, 'Ann Owner.pdf', expect.any(Uint8Array));
   });
 
+  it('does not release a lock it failed to acquire', async () => {
+    rpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'resume_generation_in_progress' },
+    });
+
+    await expect(generateAndChargeResumePdf(resume.id, context)).rejects.toMatchObject({
+      message: 'A PDF is already being created for this resume',
+      status: 409,
+    });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('generate_pdf', { p_resume_id: resume.id });
+    expect(generateResumePdfBytes).not.toHaveBeenCalled();
+  });
+
   it('releases the generation lock when upload fails and does not finalize', async () => {
     rpc.mockResolvedValueOnce({ data: '', error: null });
     uploadResumePdfBytes.mockRejectedValue(

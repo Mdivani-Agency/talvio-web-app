@@ -182,6 +182,7 @@ export function createSaveRunner<T>(options: {
 }) {
   const queue = createSaveQueue(options.merge);
   let running = false;
+  let resumeRequested = false;
   const idleWaiters: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
 
   const notifyWaiters = () => {
@@ -200,36 +201,52 @@ export function createSaveRunner<T>(options: {
 
   async function pump() {
     if (running) {
+      resumeRequested = true;
       return;
     }
     running = true;
     try {
-      while (queue.getState().inflight && queue.getState().status === 'saving') {
-        const patch = queue.getState().inflight as T;
-        const { serverId, baseUpdatedAt } = queue.getState();
-        try {
-          const saved = await options.save(patch, { serverId, baseUpdatedAt });
-          queue.succeed(saved);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Failed to save resume';
-          if (options.isConflict(error)) {
-            queue.fail('conflict', message);
-            try {
-              const base = await options.onConflict?.(queue.getState().serverId);
-              if (base) {
-                queue.rebase(base);
+      do {
+        resumeRequested = false;
+        while (queue.getState().inflight && queue.getState().status === 'saving') {
+          const patch = queue.getState().inflight as T;
+          const { serverId, baseUpdatedAt } = queue.getState();
+          try {
+            const saved = await options.save(patch, { serverId, baseUpdatedAt });
+            queue.succeed(saved);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to save resume';
+            if (options.isConflict(error)) {
+              queue.fail('conflict', message);
+              try {
+                const base = await options.onConflict?.(queue.getState().serverId);
+                if (base && queue.getState().status === 'conflict') {
+                  queue.rebase(base);
+                }
+              } catch {
+                // Keep the previous revision. The next retry conflicts again.
               }
-            } catch {
-              // Keep the previous revision. The next retry conflicts again.
+            } else {
+              queue.fail('failed', message);
             }
-          } else {
-            queue.fail('failed', message);
+            break;
           }
-          break;
         }
-      }
+      } while (
+        resumeRequested
+        && queue.getState().inflight
+        && queue.getState().status === 'saving'
+      );
     } finally {
       running = false;
+      if (
+        resumeRequested
+        && queue.getState().inflight
+        && queue.getState().status === 'saving'
+      ) {
+        void pump();
+        return;
+      }
       notifyWaiters();
     }
   }
