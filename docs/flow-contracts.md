@@ -35,7 +35,7 @@ Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in
 | Resume create | `createResume` | Session | `InsertResume` | Always inserts. No idempotency key. |
 | Resume edit | `saveResumeEdit` | Session | `UpdateResume`, or insert with `source_resume_id` | Generated content forks to the open draft. Unique violation reuses that draft. Label-only patches update in place. |
 | Final PDF | `POST /api/resume/generate-pdf` | `requireApiUser` | `generate_pdf` then `finalize_pdf` | See generation below. |
-| Preview | `useResumePreview` in `app/resume/hooks/use-resume-preview.ts` | None | `generateResumePreview` → `resumeService.generate(..., { isPreview: true })` | Free and one-way. Debounces resume + template key + color + font size. Filename and label do not regenerate. A generation token discards stale PDF and image work. Last good images stay visible with loading, error, and retry. Blob URLs, pdf.js documents, and timers are released. Does not call `generate_pdf`. The unused XState `Preview` view stays until MDI-201. |
+| Preview | `useResumePreview` in `app/resume/hooks/use-resume-preview.ts` | None | `loadPreviewImages` → `generateResumePreview` | Free and one-way. TanStack Query derives page images from resume + template key + color + font size. Filename and label do not regenerate. A newer key aborts the previous query. Last good images stay visible with loading, error, and retry. Blob URLs, pdf.js documents, and the debounce timer are released. Does not call `generate_pdf`. The unused XState `Preview` view stays until MDI-201. |
 | Import | `useResumeParser` + `offerImport` | None for parse | `POST /api/resume/parse` | Parse stays on the mounted form. Success stages a temporary DTO. Current work prompts replace/cancel. Failed or cancelled import leaves prior input. Applying remounts the form via `formRevision`. |
 | Questions / tailor | `AccountQuestions` | Session | `POST /api/resume/qa`, `POST /api/resume/account` | Up to five questions with stable ids. Answers are keyed by question id. Final Next opens answer review. AI is optional. Save uses the reviewed profile and does not rerun AI. |
 
@@ -89,8 +89,8 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 
 - `ResumeEditorShell` passes the stored template key. `resolveAvailableTemplate` loads the catalogue class. The draft never stores a template instance.
 - `useResumePreview` is derived: `ResumeForm` + template key + color + font size in, page images out. It never writes the document, form, or account.
-- Debounce is 300ms and only those render inputs. Filename and label are not in `previewInputKey`.
-- Each schedule increments a generation token. Cleanup cancels the timer and increments again so a slower older generate or `pdfUrlToImage` cannot replace a newer preview.
+- Debounce is 300ms, inside the query function, and only those render inputs. Filename and label are not in `previewInputKey`.
+- The query key is the render input. Changing it removes the previous observer, aborts that request, and ignores its PDF or page images. The hook does not copy the result into state from an effect.
 - A failed render keeps the last successful images, surfaces the error, and offers retry. The editor stays usable.
 - Selected page is clamped when the page count shrinks.
 - Temporary blob URLs are revoked after conversion or on replacement/unmount. `pdfUrlToImage` destroys the pdf.js document, loading task, and page after rendering.

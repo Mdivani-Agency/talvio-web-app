@@ -1,3 +1,4 @@
+import { notifyManager } from '@tanstack/react-query';
 import { act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,6 +16,12 @@ const baseInput: PreviewRenderInputs = {
   fontSize: 'md',
 };
 
+async function settlePreview(ms = 300) {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(ms);
+  });
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
@@ -28,9 +35,15 @@ function deferred<T>() {
 describe('useResumePreview', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    notifyManager.setScheduler((callback) => {
+      callback();
+    });
   });
 
   afterEach(() => {
+    notifyManager.setScheduler((callback) => {
+      setTimeout(callback, 0);
+    });
     vi.useRealTimers();
   });
 
@@ -63,9 +76,7 @@ describe('useResumePreview', () => {
 
   it('does not regenerate when only the filename or label would change', async () => {
     const first = renderPreview();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(first.generatePreview).toHaveBeenCalledTimes(1);
     first.unmount();
 
@@ -90,9 +101,7 @@ describe('useResumePreview', () => {
       });
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(generatePreview).toHaveBeenCalledTimes(1);
     expect(result.current.images).toEqual(['page-1']);
     unmount();
@@ -111,18 +120,14 @@ describe('useResumePreview', () => {
       imagesFromPdfUrl,
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
 
     rerender({
       ...baseInput,
       color: '#005BA2',
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
 
     await act(async () => {
       older.resolve('old-pdf');
@@ -154,18 +159,14 @@ describe('useResumePreview', () => {
       imagesFromPdfUrl,
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
 
     rerender({
       ...baseInput,
       color: '#005BA2',
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
 
     await act(async () => {
       olderImages.resolve(['old-page']);
@@ -188,9 +189,7 @@ describe('useResumePreview', () => {
 
     const { result, rerender, unmount } = renderPreview(baseInput, { generatePreview });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(result.current.images).toEqual(['page-1']);
 
     rerender({
@@ -198,9 +197,7 @@ describe('useResumePreview', () => {
       fontSize: 'lg',
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(result.current.images).toEqual(['page-1']);
     expect(result.current.error).toBe('render exploded');
     expect(result.current.isLoading).toBe(false);
@@ -214,18 +211,14 @@ describe('useResumePreview', () => {
 
     const { result, unmount } = renderPreview(baseInput, { generatePreview });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(result.current.error).toBe('offline');
     expect(result.current.images).toEqual([]);
 
     await act(async () => {
       result.current.retry();
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(result.current.images).toEqual(['page-1']);
     expect(result.current.error).toBeNull();
     expect(generatePreview).toHaveBeenCalledTimes(2);
@@ -272,9 +265,7 @@ describe('useResumePreview', () => {
       imagesFromPdfUrl,
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     await act(async () => {
       result.current.goToNext();
       result.current.goToNext();
@@ -286,9 +277,7 @@ describe('useResumePreview', () => {
       templateKey: 'senior-level-talvio',
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(result.current.images).toEqual(['only']);
     expect(result.current.pageIndex).toBe(0);
     unmount();
@@ -305,9 +294,7 @@ describe('useResumePreview', () => {
       revokeObjectUrl,
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(revokeObjectUrl).toHaveBeenCalledWith('blob:preview-1');
 
     createObjectUrl.mockReturnValueOnce('blob:preview-2');
@@ -315,9 +302,7 @@ describe('useResumePreview', () => {
       ...baseInput,
       color: '#ffffff',
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    await settlePreview();
     expect(revokeObjectUrl).toHaveBeenCalledWith('blob:preview-2');
     unmount();
   });
