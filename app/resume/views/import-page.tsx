@@ -12,23 +12,22 @@ import { signInHref } from "@lib/auth/sign-in-href";
 
 export default function ImportResumePage() {
   const { session, isPending: isAuthenticating } = useUserSession();
-  const { send, state } = useResumeContext();
-  const { resumeDto } = state.context;
+  const { applyImportedResume, resume } = useResumeContext();
   const searchParams = useSearchParams();
 
   const { parseResumeText, loading } = useResumeParser({
     onResumeParsed: (parsedResume) => {
       const transformed = transformFromParsedToAccount(parsedResume);
-      const resume = profileToResumeDocument(transformed);
+      const document = profileToResumeDocument(transformed);
       const name = `${transformed.profile.firstName} ${transformed.profile.lastName}`.trim() || 'my resume';
 
-      send({ type: 'UPLOAD_RESUME', value: {
-        resume,
+      applyImportedResume({
+        resume: document,
         name,
-        template: resumeDto.template,
-        color: resumeDto.color,
-        fontSize: resumeDto.fontSize,
-      } });
+        template: resume.template,
+        color: resume.color,
+        fontSize: resume.fontSize,
+      });
     },
     onError: (error) => {
       toast.error(error.message);

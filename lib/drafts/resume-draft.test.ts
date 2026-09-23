@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createActor } from 'xstate';
 
-import { resumeState } from '@app/resume/state/machine';
+import { EMPTY_RESUME_DOCUMENT } from '@lib/models/resume-document';
+import { RESUME_COLORS_MAP } from '@lib/utils';
 
 import {
   FLOW_DRAFT_ID,
@@ -10,9 +10,6 @@ import {
   fullResumeContent,
   versionedResumeDraft,
 } from '../../test/fixtures/flow';
-import type { ResumeContext } from '@app/resume/state/types';
-import { EMPTY_RESUME_DOCUMENT } from '@lib/models/resume-document';
-import { RESUME_COLORS_MAP } from '@lib/utils';
 
 import {
   buildResumeDocumentDraft,
@@ -20,22 +17,18 @@ import {
   DEFAULT_RESUME_TEMPLATE,
   normalizeResumeTemplate,
   parseResumeDraft,
-  resumeDraftRestoreEvents,
   resumeDraftToPreview,
+  resumeFlowStep,
   shouldSeedResumeFromQuery,
 } from './resume-draft';
 import { resumeDraftStorageKey } from './keys';
 
-const emptyContext: ResumeContext = {
-  resumeId: null,
-  resumeDto: {
-    resume: EMPTY_RESUME_DOCUMENT,
-    name: 'my resume',
-    template: 'senior-level-modern',
-    color: RESUME_COLORS_MAP.black,
-    fontSize: 'md',
-  },
-  template: null,
+const emptyDocument = {
+  resume: EMPTY_RESUME_DOCUMENT,
+  name: 'my resume',
+  template: 'senior-level-modern' as const,
+  color: RESUME_COLORS_MAP.black,
+  fontSize: 'md' as const,
 };
 
 describe('resume drafts', () => {
@@ -54,18 +47,15 @@ describe('resume drafts', () => {
   it('persists appearance without a template class instance', () => {
     const draft = buildResumeDraft({
       owner: { kind: 'guest', guestId: FLOW_GUEST_ID },
-      context: {
-        ...emptyContext,
-        resumeDto: {
-          resume: fullResumeContent,
-          name: 'Ada Owner',
-          label: 'Draft',
-          template: 'mid-level-ember',
-          color: '#1B1B1B',
-          fontSize: 'sm',
-        },
+      document: {
+        resume: fullResumeContent,
+        name: 'Ada Owner',
+        label: 'Draft',
+        template: 'mid-level-ember',
+        color: '#1B1B1B',
+        fontSize: 'sm',
       },
-      stateValue: { newResume: 'resumePreview' },
+      step: 'resumePreview',
       documentId: 'new',
     });
 
@@ -81,29 +71,17 @@ describe('resume drafts', () => {
     expect(JSON.stringify(draft)).not.toContain('runtime-template-object');
   });
 
-  it('only seeds the query while fetching and restores via events', () => {
+  it('only seeds while fetching and restores the editor step from the draft', () => {
     expect(shouldSeedResumeFromQuery('fetchingResume')).toBe(true);
     expect(shouldSeedResumeFromQuery('options')).toBe(false);
-    expect(shouldSeedResumeFromQuery({ newResume: 'resumePreview' })).toBe(false);
+    expect(shouldSeedResumeFromQuery('resumePreview')).toBe(false);
 
-    const events = resumeDraftRestoreEvents(versionedResumeDraft);
-    expect(events[0]).toEqual({
-      type: 'FETCHING_RESUME_FAILURE',
-      value: resumeDraftToPreview(versionedResumeDraft),
-    });
-    expect(events[1]).toEqual({ type: 'SELECT_MANUAL_INPUT' });
-
-    const actor = createActor(resumeState);
-    actor.start();
-    for (const event of events) {
-      actor.send(event);
-    }
-    const snapshot = actor.getSnapshot();
-    expect(snapshot.matches({ newResume: 'resumePreview' })).toBe(true);
-    expect(snapshot.context.resumeDto.template).toBe('mid-level-ember');
-    expect(snapshot.context.resumeDto.color).toBe('#1B1B1B');
-    expect(snapshot.context.template).toBeNull();
-    actor.stop();
+    const preview = resumeDraftToPreview(versionedResumeDraft);
+    expect(preview?.template).toBe('mid-level-ember');
+    expect(preview?.color).toBe('#1B1B1B');
+    expect(resumeFlowStep('resumePreview')).toBe('resumePreview');
+    expect(resumeFlowStep('existingResume')).toBe('resumePreview');
+    expect(resumeFlowStep('importResume')).toBe('importResume');
   });
 
   it('defaults a missing template so the draft can be restored', () => {
@@ -112,14 +90,11 @@ describe('resume drafts', () => {
 
     const draft = buildResumeDraft({
       owner: { kind: 'guest', guestId: FLOW_GUEST_ID },
-      context: {
-        ...emptyContext,
-        resumeDto: {
-          ...emptyContext.resumeDto,
-          template: null as unknown as ResumeContext['resumeDto']['template'],
-        },
+      document: {
+        ...emptyDocument,
+        template: null as unknown as typeof emptyDocument.template,
       },
-      stateValue: 'options',
+      step: 'options',
       documentId: 'new',
     });
 
@@ -146,16 +121,16 @@ describe('resume drafts', () => {
     expect(parseResumeDraft(draft!)?.content.name).toBe('Ada Owner');
     expect(buildResumeDocumentDraft({
       owner: { kind: 'guest', guestId: FLOW_GUEST_ID },
-      document: emptyContext.resumeDto,
+      document: emptyDocument,
       documentId: FLOW_DRAFT_ID,
     })).toBeNull();
   });
 
-  it('does not persist the fetching state', () => {
+  it('rejects a step that is not part of the draft schema', () => {
     expect(buildResumeDraft({
       owner: { kind: 'user', userId: FLOW_USER_ID },
-      context: emptyContext,
-      stateValue: 'fetchingResume',
+      document: emptyDocument,
+      step: 'fetchingResume' as 'options',
       documentId: 'new',
     })).toBeNull();
   });

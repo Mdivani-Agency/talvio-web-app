@@ -2,7 +2,6 @@ import { EMPTY_RESUME_DOCUMENT } from '@lib/models/resume-document';
 import { TemplateKeyEnum } from '@lib/schema/enums';
 import { RESUME_COLORS_MAP } from '@lib/utils';
 import type { PreviewDto, TemplateKey } from '@lib/types';
-import type { ResumeContext, ResumeEvents } from '@app/resume/state/types';
 
 import {
   resumeDraftContentSchema,
@@ -14,16 +13,6 @@ import {
   type VersionedDraft,
 } from './schema';
 import { createVersionedDraft, readDraft, type DraftStorage } from './storage';
-
-export function resumeProgressFromState(stateValue: unknown): ResumeProgress | undefined {
-  if (stateValue === 'options' || stateValue === 'importResume' || stateValue === 'existingResume') {
-    return { step: stateValue };
-  }
-  if (typeof stateValue === 'object' && stateValue && 'newResume' in stateValue) {
-    return { step: 'resumePreview' };
-  }
-  return undefined;
-}
 
 export const DEFAULT_RESUME_TEMPLATE: TemplateKey = 'senior-level-modern';
 
@@ -88,21 +77,21 @@ export function buildResumeDocumentDraft(input: {
 
 export function buildResumeDraft(input: {
   owner: DraftOwner;
-  context: ResumeContext;
-  stateValue: unknown;
+  document: PreviewDto;
+  step: ResumeProgress['step'];
   existing?: VersionedDraft | null;
   documentId?: string;
 }): VersionedDraft | null {
-  const progress = resumeProgressFromState(input.stateValue);
-  if (!progress) {
+  const progress = resumeProgressSchema.safeParse({ step: input.step });
+  if (!progress.success) {
     return null;
   }
 
   return createVersionedDraft({
     kind: 'resume',
     owner: input.owner,
-    content: resumeContentFromDto(input.context.resumeDto),
-    progress,
+    content: resumeContentFromDto(input.document),
+    progress: progress.data,
     documentId: input.documentId,
     draftId: input.existing?.draftId,
     createdAt: input.existing?.createdAt,
@@ -125,39 +114,6 @@ export function resumeDraftToPreview(draft: VersionedDraft): PreviewDto | undefi
   };
 }
 
-export function resumeDraftToSnapshot(draft: VersionedDraft) {
-  const parsed = parseResumeDraft(draft);
-  if (!parsed) {
-    return undefined;
-  }
-
-  const resumeDto: PreviewDto = {
-    resume: parsed.content.resume,
-    name: parsed.content.name,
-    label: parsed.content.label,
-    template: parsed.content.template,
-    color: parsed.content.color,
-    fontSize: parsed.content.fontSize,
-  };
-
-  const value =
-    parsed.progress.step === 'resumePreview'
-      ? { newResume: 'resumePreview' }
-      : parsed.progress.step;
-
-  return {
-    status: 'active' as const,
-    value,
-    context: {
-      resumeId: draft.documentId && draft.documentId !== 'new' ? draft.documentId : null,
-      resumeDto,
-      template: null,
-    } satisfies ResumeContext,
-    children: {},
-    historyValue: parsed.progress.step === 'resumePreview' ? { newResume: 'resumePreview' } : {},
-  };
-}
-
 export const EMPTY_RESUME_PREVIEW: PreviewDto = {
   resume: EMPTY_RESUME_DOCUMENT,
   name: 'my resume',
@@ -166,31 +122,16 @@ export const EMPTY_RESUME_PREVIEW: PreviewDto = {
   fontSize: 'md',
 };
 
-export function shouldSeedResumeFromQuery(stateValue: unknown) {
-  return stateValue === 'fetchingResume';
+export function shouldSeedResumeFromQuery(step: string) {
+  return step === 'fetchingResume';
 }
 
-export function resumeDraftRestoreEvents(draft: VersionedDraft): ResumeEvents[] {
-  const parsed = parseResumeDraft(draft);
-  const preview = resumeDraftToPreview(draft);
-  if (!parsed || !preview) {
-    return [];
+export function resumeFlowStep(step: ResumeProgress['step']): 'options' | 'importResume' | 'resumePreview' {
+  if (step === 'importResume') {
+    return 'importResume';
   }
-
-  const events: ResumeEvents[] = [{ type: 'FETCHING_RESUME_FAILURE', value: preview }];
-  if (parsed.progress.step === 'resumePreview' || parsed.progress.step === 'existingResume') {
-    events.push({ type: 'SELECT_MANUAL_INPUT' });
-  } else if (parsed.progress.step === 'importResume') {
-    events.push({ type: 'SELECT_IMPORT_RESUME' });
+  if (step === 'options') {
+    return 'options';
   }
-  return events;
-}
-
-export function restoreResumeDraft(
-  send: (event: ResumeEvents) => void,
-  draft: VersionedDraft,
-) {
-  for (const event of resumeDraftRestoreEvents(draft)) {
-    send(event);
-  }
+  return 'resumePreview';
 }

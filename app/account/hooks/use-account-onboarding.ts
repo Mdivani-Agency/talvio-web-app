@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   accountDraftStorageKey,
   browserStorage,
+  migrateLegacyAccount,
   buildAccountDraft,
   clearDraft,
   createDebouncedWriter,
@@ -35,7 +36,17 @@ export function useAccountOnboarding(userId: string) {
   const owner = useMemo(() => ({ kind: 'user' as const, userId }), [userId]);
   const storage = useMemo(() => browserStorage(), []);
   const key = accountDraftStorageKey(owner);
-  const initialRead = useMemo(() => readParsedAccountDraft(storage, key), [key, storage]);
+  const initialRead = useMemo(() => {
+    const migrated = migrateLegacyAccount(storage, owner, key);
+    if (migrated.status === 'invalid' || migrated.status === 'quota' || migrated.status === 'unavailable') {
+      const current = readParsedAccountDraft(storage, key);
+      if (current.draft) {
+        return current;
+      }
+      return { draft: null, parsed: null, status: migrated.status };
+    }
+    return readParsedAccountDraft(storage, key);
+  }, [key, owner, storage]);
   const [persistStatus, setPersistStatus] = useState<DraftPersistStatus>(initialRead.status);
   const [fields, setFields] = useState<AccountDraftFields>(() => (
     initialRead.parsed

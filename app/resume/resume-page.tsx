@@ -40,8 +40,7 @@ export function ResumePreviewPage({ level }: ResumePreviewPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
-  const { state, send, clearResumeDraft, ensureDraftId } = useResumeContext();
-  const resume = state.context.resumeDto;
+  const { resume, changeResume, clearResumeDraft, ensureDraftId } = useResumeContext();
   const createdRef = useRef<Resume | null>(null);
   const generatedKeyRef = useRef<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved-locally');
@@ -189,8 +188,8 @@ export function ResumePreviewPage({ level }: ResumePreviewPageProps) {
     if (patch.resume) {
       next.name = filenameFromDocument(next);
     }
-    send({ type: 'CHANGE_RESUME', value: next });
-  }, [resume, send]);
+    changeResume(next);
+  }, [changeResume, resume]);
 
   return (
     <ResumeEditorShell
@@ -212,7 +211,7 @@ export function ResumePreviewPage({ level }: ResumePreviewPageProps) {
       }}
       onDownload={async (name, label) => {
         const body = { ...resume, name, label };
-        send({ type: 'CHANGE_RESUME', value: body });
+        changeResume(body);
         try {
           await createAndDownload(body);
           return true;

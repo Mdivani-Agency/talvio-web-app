@@ -8,7 +8,7 @@ This document does not reintroduce REST profile/resume clients or better-auth. T
 
 ## Ownership
 
-[MDI-196](https://linear.app/mdivani/issue/MDI-196) moved account onboarding off XState. `useAccountOnboarding` owns `form` / `questions`, import staging, and draft persist. The unused account machine stays in `app/account/state/` until [MDI-201](https://linear.app/mdivani/issue/MDI-201). Resume still uses the XState actor in `app/resume/state/machine.ts`. Form values remain the live source of truth; storage is a recovery copy. Do not add another global store or workflow engine.
+[MDI-201](https://linear.app/mdivani/issue/MDI-201) removed XState. `useAccountOnboarding` owns account `form` / `questions`, import staging, and draft persist. `ResumeProvider` owns the new-resume step (`fetchingResume`, `options`, `importResume`, `resumePreview`) and the preview document. Form values remain the live source of truth; storage is a recovery copy. Do not add another global store or workflow engine.
 
 | Concern | Owner | Notes |
 | --- | --- | --- |
@@ -28,14 +28,14 @@ Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in
 | `/account` | `app/account/page.tsx` | Required by `app/account/layout.tsx` | Independent `useQuery(['account', userId], fetchProfile)` | `null` profile redirects to `/account/create`. A thrown query renders `AccountLookupError` and never opens create. An existing profile shows the dashboard and clears the onboarding draft. |
 | `/account/create` | `app/account/create/page.tsx` | Same layout | Independent `useQuery(['account', userId], fetchProfile)` | Fetches itself. Existing profile redirects to `/account`. `null` profile restores a draft or opens the form. Lookup failures render `AccountLookupError`, not the create form. Questions render only after an explicit valid submit (`step === 'questions'` and `accountDto`). |
 | `/account/documents` | `app/account/documents/page.tsx` | Same layout, `callbackURL` is always `/account` | Media list | Unauthenticated deep links lose the subpath. See `debt.md`. |
-| `/resume` | `app/resume/page.tsx` | Optional. Layout does not redirect. | `fetchProfile` when a session exists | Seeds from the query only while the machine is still `fetchingResume`. A recovered or dirty draft is not replaced by a later refetch. The editor is `ResumeEditorShell`. |
+| `/resume` | `app/resume/page.tsx` | Optional. Layout does not redirect. | `fetchProfile` when a session exists | Seeds from the query only while the step is still `fetchingResume`. A recovered or dirty draft is not replaced by a later refetch. The editor is `ResumeEditorShell`. |
 | `/resume/[resumeId]` | `app/resume/[resumeId]/edit-resume.tsx` | Optional until a mutation | `fetchResumeFamily` | Initializes from matching recovery, then the saved draft/original. Draft by default when a family exists. Original is read-only. Query refetch does not replace live edits. The editor is `ResumeEditorShell`. |
 | Sign-in return | `app/auth/sign-in/page.tsx` | Supabase OTP, Google, LinkedIn | `callbackURL`, `callbackUrl`, or `next`, then `/auth/callback?next=` | `signInSearchParams` + `safeRedirectPath` fall back to `/account`. Resume download and import write `callbackURL` through `signInHref`, including a selected template query. Account layout still uses `/account`. |
 | Profile save | `saveProfile` | Session | `Save_Profile` → `save_profile(jsonb)` | Upsert profile by `auth.uid()`, then insert or update children. Refetch is the mutation result. |
 | Resume create | `createResume` | Session | `InsertResume` | Always inserts. No idempotency key. |
 | Resume edit | `saveResumeEdit` | Session | `UpdateResume`, or insert with `source_resume_id` | Generated content forks to the open draft. Unique violation reuses that draft. Label-only patches update in place. |
 | Final PDF | `POST /api/resume/generate-pdf` | `requireApiUser` | `generate_pdf` then `finalize_pdf` | See generation below. |
-| Preview | `useResumePreview` in `app/resume/hooks/use-resume-preview.ts` | None | `loadPreviewImages` → `generateResumePreview` | Free and one-way. TanStack Query derives page images from resume + template key + color + font size. Filename and label do not regenerate. A newer key aborts the previous query. Last good images stay visible with loading, error, and retry. Blob URLs, pdf.js documents, and the debounce timer are released. Does not call `generate_pdf`. The unused XState `Preview` view stays until MDI-201. |
+| Preview | `useResumePreview` in `app/resume/hooks/use-resume-preview.ts` | None | `loadPreviewImages` → `generateResumePreview` | Free and one-way. TanStack Query derives page images from resume + template key + color + font size. Filename and label do not regenerate. A newer key aborts the previous query. Last good images stay visible with loading, error, and retry. Blob URLs, pdf.js documents, and the debounce timer are released. Does not call `generate_pdf`. |
 | Import | `useResumeParser` + `offerImport` | None for parse | `POST /api/resume/parse` | Parse stays on the mounted form. Success stages a temporary DTO. Current work prompts replace/cancel. Failed or cancelled import leaves prior input. Applying remounts the form via `formRevision`. |
 | Questions / tailor | `AccountQuestions` | Session | `POST /api/resume/qa`, `POST /api/resume/account` | Up to five questions with stable ids. Answers are keyed by question id. Final Next opens answer review. AI is optional. Save uses the reviewed profile and does not rerun AI. |
 
@@ -47,12 +47,12 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 
 - Schema version `1`. Keys: `talvio-draft-v1:account:user:${userId}:profile`, `talvio-draft-v1:resume:user:${userId}:${documentId}`, `talvio-draft-v1:resume:guest:${guestId}`. Guest id lives in `talvio-guest-id`.
 - Blob fields: `schemaVersion`, `draftId`, `owner`, `kind`, optional `documentId`, `createdAt`, `updatedAt`, optional `baseUpdatedAt`, `content`, `progress`. Never `status`, `historyValue`, `children`, or template class instances.
-- Hydrate after `useUserSession` is ready, once per draft identity. Account drafts become hook fields via `hydrateAccountDraft`. Resume still replays machine events. Do not pass an XState snapshot into `useMachine`.
+- Hydrate after `useUserSession` is ready, once per draft identity. Account drafts become hook fields via `hydrateAccountDraft`. Resume drafts become the provider step and preview document. Do not persist actor snapshots.
 - Writes are debounced (400ms) and flushed on step changes, `pagehide`, and `visibilitychange` hidden.
 - Account drafts persist only while onboarding (`form` / `questions` / review steps) and clear after a successful save or when `/account` finds an existing profile.
 - Resume `/resume` drafts persist options / import / preview. They clear after a successful create-and-download. A guest draft is offered for adoption after sign-in when the signed-in user has no resume draft.
 - Quota, unavailable, invalid, and newer-server conflict statuses render `DraftStatusBanner`. Editing stays available.
-- Legacy actor snapshots stay on disk until MDI-201.
+- Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values migrate once into the versioned draft. The source snapshot stays until that write succeeds, and a marker blocks a later load from overwriting a newer draft. `resume-state-snapshot-new_resume` migrates as a guest draft and is not assigned to the signed-in user. Malformed snapshots stay on disk and the screen opens empty.
 
 ## Onboarding routing (MDI-196)
 
@@ -64,7 +64,7 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 - `offerImport` reads live typed values. Current work opens replace/cancel. Cancel and parse errors leave prior input. Apply remounts through `formRevision`.
 - Valid submit writes `accountDto` and moves to questions. Back returns to the same values. Applying an import replaces `accountDto` so the form remounts from the imported values.
 - `completeSave` cancels pending draft writes and clears storage. A successful save seeds `['account', userId]` before routing so `/account` does not treat the cached missing profile as a new account.
-- Account UI no longer sends machine events. `app/account/state/machine.ts` is unused until MDI-201.
+- Account UI does not send workflow events. The account machine is removed.
 
 ## Questions, review, and save (MDI-197)
 
@@ -83,7 +83,7 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 - Initialize from matching recovery, then the saved document, then the explicitly selected source. `useResumeEditorDocument` does not reseed on query refetch.
 - Generated families still follow MDI-174: draft by default, read-only original, discard deletes only the draft, and content edits reuse or create the open draft.
 - Field controls take `ResumeForm` only. They do not read account onboarding context. Account data is copied once through `profileToResumeDocument`.
-- Resume routing/options/import still use the XState machine until MDI-201. `client_draft_id` stays on MDI-200.
+- `/resume` options, import, and preview are explicit provider actions. `client_draft_id` is the MDI-200 recovery id.
 
 ## PDF preview (MDI-199)
 
@@ -131,21 +131,21 @@ Preserved from MDI-174. Do not rebuild them.
 | Gap | Evidence |
 | --- | --- |
 | Direct `/account/create` can stall | Closed in MDI-196. Create fetches `['account', userId]` itself and resolves through `resolveAccountEntry`. |
-| `/resume` collapses missing profile and real errors | `app/resume/page.tsx` still uses `FETCHING_RESUME_FAILURE` as the seed event for guests, missing profiles, and fetch errors. It no longer reseeds after a draft is restored. |
-| Refetch replaces the resume draft | Closed in MDI-195. `shouldSeedResumeFromQuery` only allows the first `fetchingResume` seed. Account `INITIALIZE` is skipped when onboarding was already restored. |
+| `/resume` collapses missing profile and real errors | `app/resume/page.tsx` still seeds an empty document for guests, missing profiles, and fetch errors. It no longer reseeds after a draft is restored. |
+| Refetch replaces the resume draft | Closed in MDI-195. `seedIfFetching` only replaces the document while the step is `fetchingResume`. |
 | Question progress is positional and lossy | Closed in MDI-197. Answers are keyed by question id. Back edits the same answer. Final Next opens review. |
 | Skip records the previous input | Closed in MDI-197. Skip writes `status: 'skipped'` through `answerCurrent`. |
 | Stale AI input | Closed in MDI-197. Questions key includes `profileRevision`. Proposals must match the current profile and answer revisions. |
 | Question errors spin forever | Closed in MDI-197. A failed fetch renders retry plus Continue without AI. |
 | AI failure blocks a valid profile | Closed in MDI-197. Continue without AI and profile-review save use the source or reviewed profile. |
-| Shared resume storage | Closed in MDI-195 for live writes. New keys are `talvio-draft-v1:account:user:${userId}:profile`, `talvio-draft-v1:resume:user:${userId}:${documentId}`, and `talvio-draft-v1:resume:guest:${guestId}`. `/resume` mounts `ResumeProvider` with document id `new`. Guest drafts are offered for adoption after sign-in and are never loaded silently into another user. Legacy `account-state-snapshot-*` / `resume-state-snapshot-*` conversion is MDI-201. |
+| Shared resume storage | Closed in MDI-195 for live writes and in MDI-201 for legacy keys. New keys are `talvio-draft-v1:account:user:${userId}:profile`, `talvio-draft-v1:resume:user:${userId}:${documentId}`, and `talvio-draft-v1:resume:guest:${guestId}`. `/resume` mounts `ResumeProvider` with document id `new`. Guest drafts are offered for adoption after sign-in and are never loaded silently into another user. `resume-state-snapshot-new_resume` migrates into the guest key only. |
 | Auth return URLs disagree | Resume download and import now share `signInHref`. Account layout still always uses `/account`, so `/account/documents` deep links still lose the subpath. |
 | Two editor shells | Closed in MDI-198. `/resume` and `/resume/[resumeId]` share `ResumeEditorShell`: content tabs, template gallery, color/font, label/filename, preview, and download. |
 | Duplicate standalone resumes | Closed in MDI-200. `client_draft_id` is stored in the recovery blob before insert. A retry with the same id updates that row. `/resume` joins an in-flight download instead of inserting again. |
 | Draft updates have no revision check | Closed in MDI-200 for resume drafts. Mutable updates match `id` and `updated_at`. Zero rows is a conflict and does not overwrite the editor. Profile saves still have no revision token. |
 | Profile child retries duplicate rows | `save_profile` inserts experience, education, projects, recommendations, and links when the payload has no persisted id. It never deletes omitted children. Skills and tools dedupe by lowercased name. Languages upsert on `(user_id, language)`. Primary email, phone, and URL contacts are already retry-safe for the payload `accountDtoToSavePayload` sends: they sit on `profile`, and the RPC updates the primary row for that kind, inserting only when none exists. |
-| Snapshot and type drift | Machine state `previewResume` / `downloadResume` is not in the TypeScript unions. Unions still name `accountPreview`, `accountReady`, `uploadResume`, and `resumeForm`, which the machines do not use. Persisted snapshots include actor metadata. |
-| Dead navigation | Nothing routes to `/account/resume`. |
+| Snapshot and type drift | Closed in MDI-201. Legacy `previewResume`, `downloadResume`, `accountPreview`, `accountReady`, `uploadResume`, and `resumeForm` map onto live draft steps. New writes do not store actor metadata. |
+| Dead navigation | Nothing routes to `/account/resume`. The duplicate XState preview view is removed. |
 
 ## Idempotency and conflict contract
 
@@ -209,7 +209,7 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [ ] Guest resume recovery stays on its own draft id. Signing in offers adoption and does not merge another user’s draft into the account.
 - [ ] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, persisted ids, dates, enums, and TipTap documents.
 - [ ] Experience and education rich text reload as TipTap documents, including unknown node attrs and marks. Categorized experience arrays stay on the document created from a profile.
-- [x] Preview render does not call `CHANGE_RESUME` or otherwise write source fields.
+- [x] Preview render does not write source fields.
 - [x] `/resume` and `/resume/[resumeId]` share one editor over the resume document.
 - [x] Filename or label edits do not regenerate preview. Color, font, template key, and content do.
 - [x] Download of a new resume creates one row, then generates. A second click or a lost response updates that row and does not insert or charge another.
@@ -218,16 +218,16 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [ ] Editing a generated resume reuses its open draft. View original is read-only. Discard deletes only the draft. The original URL still downloads.
 - [ ] A second edit does not insert a second open draft.
 - [ ] Label edits on a generated row do not fork and do not change `content`.
-- [ ] Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values restore content and step once, then the app writes only the versioned plain draft.
+- [x] Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values restore content and step once, then the app writes only the versioned plain draft.
 - [x] Stale preview results cannot replace a newer preview. Stale tailoring responses remain covered by MDI-197.
 
 ## Source map
 
 | Reviewed path | Current equivalent |
 | --- | --- |
-| `app/account/state/` | Unused machine and types remain until MDI-201. Live path is `app/account/hooks/use-account-onboarding.ts` plus `resolve-account-entry.ts`. Provider writes `talvio-draft-v1` account drafts. |
-| `app/resume/state/` | Same directory. Machine, types, legacy `storage.ts` (`resume-state-snapshot-${resumeId}`), and `app/resume/providers/state-provider.tsx` writing `talvio-draft-v1` resume drafts. `/resume` still uses the machine for options/import. Both editor routes render `app/resume/views/resume-editor-shell.tsx`. Live preview is `useResumePreview`. The unused XState `Preview` view stays until MDI-201. |
-| `lib/drafts/` | Versioned draft schema, namespaced keys, guest id, storage adapter, account field hydrate, and resume restore event replay. |
+| `app/account/state/` | Removed in MDI-201. Live path is `app/account/hooks/use-account-onboarding.ts` plus `resolve-account-entry.ts`. Provider writes `talvio-draft-v1` account drafts. |
+| `app/resume/state/` | Removed in MDI-201. `app/resume/providers/state-provider.tsx` owns the new-resume step and writes `talvio-draft-v1` resume drafts. Both editor routes render `app/resume/views/resume-editor-shell.tsx`. Live preview is `useResumePreview`. |
+| `lib/drafts/` | Versioned draft schema, namespaced keys, guest id, storage adapter, account field hydrate, and one-time legacy snapshot migration. |
 | `lib/auth/sign-in-href.ts` | Consistent `callbackURL` builder and `callbackUrl` / `next` aliases. |
 | `lib/clients/` | `llm.client.ts` (Next AI routes), `openai.client.ts`, `media.client.ts`, `media-presign.ts`, `fonts.client.ts`. Profile and resume CRUD are GraphQL, not this folder. |
 | `lib/resume/` | `resolve-editor.ts` for document/template resolution. `preview-inputs.ts` for the render key and page clamp. `generate-preview.ts` for the free watermarked PDF. |
