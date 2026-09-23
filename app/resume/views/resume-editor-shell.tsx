@@ -141,7 +141,7 @@ export function ResumeEditorShell({
       </div>
       <ResumePreview
         className="col-span-3 pt-16"
-        template={templateItem.template}
+        templateKey={document.template}
         resume={document.resume}
         fontSize={document.fontSize}
         color={document.color}

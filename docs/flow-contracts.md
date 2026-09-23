@@ -35,7 +35,7 @@ Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in
 | Resume create | `createResume` | Session | `InsertResume` | Always inserts. No idempotency key. |
 | Resume edit | `saveResumeEdit` | Session | `UpdateResume`, or insert with `source_resume_id` | Generated content forks to the open draft. Unique violation reuses that draft. Label-only patches update in place. |
 | Final PDF | `POST /api/resume/generate-pdf` | `requireApiUser` | `generate_pdf` then `finalize_pdf` | See generation below. |
-| Preview | `app/resume/views/resume-preview.tsx` and `app/resume/components/resume-preview.tsx` | None | `resumeService.generate(..., { isPreview: true })` | Free. Renders `ResumeForm` directly. Does not send `CHANGE_RESUME` after render and does not call `generate_pdf`. |
+| Preview | `useResumePreview` in `app/resume/hooks/use-resume-preview.ts` | None | `loadPreviewImages` → `generateResumePreview` | Free and one-way. TanStack Query derives page images from resume + template key + color + font size. Filename and label do not regenerate. A newer key aborts the previous query. Last good images stay visible with loading, error, and retry. Blob URLs, pdf.js documents, and the debounce timer are released. Does not call `generate_pdf`. The unused XState `Preview` view stays until MDI-201. |
 | Import | `useResumeParser` + `offerImport` | None for parse | `POST /api/resume/parse` | Parse stays on the mounted form. Success stages a temporary DTO. Current work prompts replace/cancel. Failed or cancelled import leaves prior input. Applying remounts the form via `formRevision`. |
 | Questions / tailor | `AccountQuestions` | Session | `POST /api/resume/qa`, `POST /api/resume/account` | Up to five questions with stable ids. Answers are keyed by question id. Final Next opens answer review. AI is optional. Save uses the reviewed profile and does not rerun AI. |
 
@@ -83,7 +83,18 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 - Initialize from matching recovery, then the saved document, then the explicitly selected source. `useResumeEditorDocument` does not reseed on query refetch.
 - Generated families still follow MDI-174: draft by default, read-only original, discard deletes only the draft, and content edits reuse or create the open draft.
 - Field controls take `ResumeForm` only. They do not read account onboarding context. Account data is copied once through `profileToResumeDocument`.
-- Resume routing/options/import still use the XState machine until MDI-201. Preview race-safety stays on MDI-199. `client_draft_id` stays on MDI-200.
+- Resume routing/options/import still use the XState machine until MDI-201. `client_draft_id` stays on MDI-200.
+
+## PDF preview (MDI-199)
+
+- `ResumeEditorShell` passes the stored template key. `resolveAvailableTemplate` loads the catalogue class. The draft never stores a template instance.
+- `useResumePreview` is derived: `ResumeForm` + template key + color + font size in, page images out. It never writes the document, form, or account.
+- Debounce is 300ms, inside the query function, and only those render inputs. Filename and label are not in `previewInputKey`.
+- The query key is the render input. Changing it removes the previous observer, aborts that request, and ignores its PDF or page images. The hook does not copy the result into state from an effect.
+- A failed render keeps the last successful images, surfaces the error, and offers retry. The editor stays usable.
+- Selected page is clamped when the page count shrinks.
+- Temporary blob URLs are revoked after conversion or on replacement/unmount. `pdfUrlToImage` destroys the pdf.js document, loading task, and page after rendering.
+- Preview stays free and watermarked. It never calls `/api/resume/generate-pdf` or `finalize_pdf`.
 
 ## Generated documents and credits
 
@@ -112,7 +123,7 @@ Preserved from MDI-174. Do not rebuild them.
 | Editing a generated row clears `pdf_url` | Blocked by `resumes_validate_source`. Edits fork via `saveResumeEdit`. |
 | `generate_pdf` debits before upload | It only checks balance. `finalize_pdf` debits after upload, once, under a row lock. |
 | Account/resume conversion drops fields | `profileToResumeDocument` copies contacts, links, location, skills, tools, languages, education, recommendations, projects, ids, categorized experience arrays, and a rich-text `description`. `normalizeResumeDocument` adjusts dates and `isPresent` and strips non-UUID ids. It does not rebuild rich text. There is no conversion back to `AccountDto` on preview or save. |
-| Preview writes its inputs | Preview renders the document it was given. `renderPreview` does not send `CHANGE_RESUME`. |
+| Preview writes its inputs | Closed in MDI-199. `useResumePreview` only reads the document. Color and font controls write through the parent `onChange`, not through render. |
 | Two tabs insert two open drafts for one generated resume | Unique index plus the `23505` branch in `saveResumeEdit`. |
 
 ### Still open
@@ -193,9 +204,9 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [ ] Guest resume recovery stays on its own draft id. Signing in offers adoption and does not merge another user’s draft into the account.
 - [ ] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, persisted ids, dates, enums, and TipTap documents.
 - [ ] Experience and education rich text reload as TipTap documents, including unknown node attrs and marks. Categorized experience arrays stay on the document created from a profile.
-- [ ] Preview render does not call `CHANGE_RESUME` or otherwise write source fields.
+- [x] Preview render does not call `CHANGE_RESUME` or otherwise write source fields.
 - [x] `/resume` and `/resume/[resumeId]` share one editor over the resume document.
-- [ ] Changing color, font, filename, or label does not by itself rerun preview. Template key and content do.
+- [x] Filename or label edits do not regenerate preview. Color, font, template key, and content do.
 - [ ] Download of a new resume creates one row, then generates. A second click or a lost response updates that row and does not insert or charge another.
 - [ ] First final PDF debits once. An existing `pdf_url` downloads with no debit at balance 0.
 - [ ] Insufficient credits shows the buy-credits path and does not upload.
@@ -203,17 +214,18 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [ ] A second edit does not insert a second open draft.
 - [ ] Label edits on a generated row do not fork and do not change `content`.
 - [ ] Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values restore content and step once, then the app writes only the versioned plain draft.
-- [ ] Stale preview and tailoring responses cannot replace a newer draft.
+- [x] Stale preview results cannot replace a newer preview. Stale tailoring responses remain covered by MDI-197.
 
 ## Source map
 
 | Reviewed path | Current equivalent |
 | --- | --- |
 | `app/account/state/` | Unused machine and types remain until MDI-201. Live path is `app/account/hooks/use-account-onboarding.ts` plus `resolve-account-entry.ts`. Provider writes `talvio-draft-v1` account drafts. |
-| `app/resume/state/` | Same directory. Machine, types, legacy `storage.ts` (`resume-state-snapshot-${resumeId}`), and `app/resume/providers/state-provider.tsx` writing `talvio-draft-v1` resume drafts. `/resume` still uses the machine for options/import. Both editor routes render `app/resume/views/resume-editor-shell.tsx`. |
+| `app/resume/state/` | Same directory. Machine, types, legacy `storage.ts` (`resume-state-snapshot-${resumeId}`), and `app/resume/providers/state-provider.tsx` writing `talvio-draft-v1` resume drafts. `/resume` still uses the machine for options/import. Both editor routes render `app/resume/views/resume-editor-shell.tsx`. Live preview is `useResumePreview`. The unused XState `Preview` view stays until MDI-201. |
 | `lib/drafts/` | Versioned draft schema, namespaced keys, guest id, storage adapter, account field hydrate, and resume restore event replay. |
 | `lib/auth/sign-in-href.ts` | Consistent `callbackURL` builder and `callbackUrl` / `next` aliases. |
 | `lib/clients/` | `llm.client.ts` (Next AI routes), `openai.client.ts`, `media.client.ts`, `media-presign.ts`, `fonts.client.ts`. Profile and resume CRUD are GraphQL, not this folder. |
+| `lib/resume/` | `resolve-editor.ts` for document/template resolution. `preview-inputs.ts` for the render key and page clamp. `generate-preview.ts` for the free watermarked PDF. |
 | `lib/models/resume-document.ts` | `profileToResumeDocument`, `normalizeResumeDocument`, `preserveDocumentFields`, `resumeSubmissionIssues`. `lib/utils/resume.ts` is removed. |
 | REST account/resume clients | Removed. Use `lib/graphql-client.ts` and `app/account/query/*`, `app/resume/query/*`. |
 | better-auth | Removed. Use `lib/supabase/*` and `app/auth/*`. |
