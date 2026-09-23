@@ -1,15 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 import { submitWrapper } from '@app/actions/action.utils';
 import { useResumeEditorDocument } from '@app/resume/hooks/use-resume-editor-document';
+import { useResumeAutosave } from '@app/resume/hooks/use-resume-autosave';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { fetchResumeFamily } from '@app/resume/query/use-resume';
-import { isLabelOnlyPatch, saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
+import { isLabelOnlyPatch } from '@app/resume/query/use-save-resume-edit';
 import { ConfirmModal } from '@components/modals';
 import { Loading } from '@components/views';
 import { isGeneratedResume } from '@lib/adapters/resume.adapter';
@@ -53,6 +54,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
   const draftRef = useRef<VersionedDraft | null>(null);
   const writerRef = useRef<DebouncedWriter<VersionedDraft | null> | null>(null);
+  const failedGenerationRef = useRef<Resume | null>(null);
   const { document, formRevision, initialize, apply, replaceDocument } = useResumeEditorDocument();
 
   const { data: family, isLoading: isLoadingResume } = useQuery({
@@ -68,11 +70,6 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const draft = family?.draft;
   const hasFamily = Boolean(original && draft);
   const displayed = displayedFamilyResume({ original, draft, viewingOriginal });
-  const readOnly = Boolean(hasFamily && viewingOriginal);
-  const editorDocument = viewingOriginal && original
-    ? resumeToEditorDocument(original)
-    : document;
-
   const recovery = useMemo(() => {
     if (!userId) {
       return null;
@@ -87,6 +84,59 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       }),
     );
   }, [draft?.id, original?.id, resumeId, storage, userId]);
+  const readOnly = Boolean(hasFamily && viewingOriginal);
+  const editorDocument = viewingOriginal && original
+    ? resumeToEditorDocument(original)
+    : document;
+  const autosave = useResumeAutosave({
+    userId,
+    seed: displayed
+      ? { serverId: displayed.id, baseUpdatedAt: displayed.updatedAt }
+      : undefined,
+    markSaved: !recovery,
+    getExisting: () => displayed,
+    getClientDraftId: () => {
+      if (!userId || !document) {
+        return undefined;
+      }
+      const documentId = draft?.id ?? displayed?.id ?? resumeId;
+      const stored = draftRef.current
+        ?? readDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, documentId)).draft;
+      const next = buildResumeDocumentDraft({
+        owner: { kind: 'user', userId },
+        document,
+        existing: stored,
+        documentId,
+      });
+      if (!next) {
+        return undefined;
+      }
+      draftRef.current = next;
+      writeDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, documentId), next);
+      return next.draftId;
+    },
+    onSaved: async (result) => {
+      if (draftRef.current) {
+        draftRef.current = {
+          ...draftRef.current,
+          baseUpdatedAt: result.resume.updatedAt,
+        };
+      }
+      await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
+      await queryClient.invalidateQueries({ queryKey: ['resume-family', resumeId] });
+      await queryClient.invalidateQueries({ queryKey: ['resume', result.resume.id] });
+      if (original) {
+        await queryClient.invalidateQueries({ queryKey: ['resume-family', original.id] });
+      }
+      if (result.created) {
+        setViewingOriginal(false);
+        if (original && userId) {
+          clearDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, original.id));
+        }
+      }
+    },
+  });
+  const flushedRecovery = useRef(false);
 
   useEffect(() => {
     const saved = displayedFamilyResume({ original, draft, viewingOriginal: false }) ?? original ?? draft;
@@ -155,31 +205,26 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     writerRef.current.schedule(next);
   }, [displayed?.id, document, draft?.id, resumeId, storage, userId, viewingOriginal]);
 
-  const { mutateAsync: persistEdit } = useMutation({
-    mutationFn: async (patch: Partial<Resume>) => {
-      if (!userId || !displayed) {
-        throw new Error('Sign in to edit a resume');
-      }
-      const existing = !viewingOriginal && draft ? draft : displayed;
-      return saveResumeEdit({ userId, existing, patch });
-    },
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
-      await queryClient.invalidateQueries({ queryKey: ['resume-family', resumeId] });
-      await queryClient.invalidateQueries({ queryKey: ['resume', result.resume.id] });
-      if (original) {
-        await queryClient.invalidateQueries({ queryKey: ['resume-family', original.id] });
-      }
-      if (result.created) {
-        setViewingOriginal(false);
-        if (original && userId) {
-          clearDraft(storage, resumeDraftStorageKey({ kind: 'user', userId }, original.id));
-        }
-      }
-    },
-  });
+  useEffect(() => {
+    if (flushedRecovery.current || viewingOriginal || !document || !recovery || !displayed) {
+      return;
+    }
+    if (isGeneratedResume(displayed)) {
+      return;
+    }
+    flushedRecovery.current = true;
+    autosave.schedule({
+      metadata: document.resume,
+      template: document.template,
+      color: document.color,
+      fontSize: document.fontSize,
+      name: document.name,
+      label: document.label,
+    });
+  }, [autosave, displayed, document, recovery, viewingOriginal]);
 
   const requestEdit = (patch: Partial<Resume>) => {
+    failedGenerationRef.current = null;
     if (readOnly && !isLabelOnlyPatch(patch)) {
       return;
     }
@@ -188,13 +233,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       setForkOpen(true);
       return;
     }
-
-    void submitWrapper({
-      fn: async () => {
-        const result = await persistEdit(patch);
-        return { id: result.resume.id };
-      },
-    });
+    autosave.schedule(patch);
   };
 
   const handleChange = (patch: Partial<PreviewDto>) => {
@@ -217,13 +256,11 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     });
   };
 
-  const downloadCurrent = (resume = displayed) =>
+  const generateSaved = (resume: Resume) =>
     submitWrapper({
       fn: async () => {
-        if (!resume) {
-          throw new Error('Resume not found');
-        }
-        if (!isGeneratedResume(resume)) {
+        const alreadyGenerated = isGeneratedResume(resume);
+        if (!alreadyGenerated) {
           const source = editorDocument ?? resumeToEditorDocument(resume);
           const fieldIssues = resumeSubmissionIssues(source.resume);
           if (fieldIssues.length > 0) {
@@ -231,12 +268,27 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
             throw new Error(formatResumeFieldIssues(fieldIssues));
           }
           setIssues([]);
+          autosave.beginGenerating();
         }
-        const result = await generatePdf.mutateAsync(resume);
-        if (resume.sourceResumeId && result.media?.url && result.id !== resumeId) {
-          router.push(`/resume/${result.id}`);
+        try {
+          const result = await generatePdf.mutateAsync(resume);
+          if (!alreadyGenerated) {
+            failedGenerationRef.current = null;
+            autosave.remember(result);
+            await autosave.finishGenerating(true);
+          }
+          if (resume.sourceResumeId && result.media?.url && result.id !== resumeId) {
+            router.push(`/resume/${result.id}`);
+          }
+          return { id: result.id };
+        } catch (error) {
+          if (!alreadyGenerated) {
+            failedGenerationRef.current = resume;
+            const message = error instanceof Error ? error.message : 'Failed to generate PDF';
+            await autosave.finishGenerating(false, message);
+          }
+          throw error;
         }
-        return { id: result.id };
       },
     });
 
@@ -264,7 +316,27 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         issues={issues}
         readOnly={readOnly}
         isGenerated={isGeneratedResume(displayed)}
-        downloadPending={generatePdf.isPending}
+        downloadPending={generatePdf.isPending || autosave.status === 'saving' || autosave.status === 'generating'}
+        saveStatus={autosave.status}
+        saveMessage={autosave.message}
+        onRetrySave={() => {
+          const failed = failedGenerationRef.current;
+          if (!failed) {
+            void autosave.retry();
+            return;
+          }
+          void (async () => {
+            const state = await autosave.retry();
+            if (
+              state
+              && (state.status === 'failed' || state.status === 'conflict')
+              && state.pending
+            ) {
+              return;
+            }
+            await generateSaved(failed);
+          })();
+        }}
         family={hasFamily ? {
           viewingOriginal,
           onViewOriginal: () => setViewingOriginal(true),
@@ -273,14 +345,57 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         } : null}
         onChange={handleChange}
         onDownload={async (name, label) => {
-          if (isGeneratedResume(displayed)) {
-            return downloadCurrent();
+          if (viewingOriginal && original) {
+            return generateSaved(original);
           }
-          const named = name.trim() && (name !== displayed.name || label !== displayed.label)
-            ? (await persistEdit({ name, label })).resume
-            : displayed;
-          apply({ name, label });
-          return downloadCurrent(named);
+          if (isGeneratedResume(displayed)) {
+            return generateSaved(displayed);
+          }
+          return submitWrapper({
+            fn: async () => {
+              const saved = await autosave.flush({
+                metadata: editorDocument.resume,
+                template: editorDocument.template,
+                color: editorDocument.color,
+                fontSize: editorDocument.fontSize,
+                name,
+                label,
+              });
+              if (!saved) {
+                throw new Error('Resume not found');
+              }
+              apply({ name, label });
+              const alreadyGenerated = isGeneratedResume(saved);
+              if (!alreadyGenerated) {
+                const fieldIssues = resumeSubmissionIssues(editorDocument.resume);
+                if (fieldIssues.length > 0) {
+                  setIssues(fieldIssues);
+                  throw new Error(formatResumeFieldIssues(fieldIssues));
+                }
+                setIssues([]);
+                autosave.beginGenerating();
+              }
+              try {
+                const result = await generatePdf.mutateAsync(saved);
+                if (!alreadyGenerated) {
+                  failedGenerationRef.current = null;
+                  autosave.remember(result);
+                  await autosave.finishGenerating(true);
+                }
+                if (saved.sourceResumeId && result.media?.url && result.id !== resumeId) {
+                  router.push(`/resume/${result.id}`);
+                }
+                return { id: result.id };
+              } catch (error) {
+                if (!alreadyGenerated) {
+                  failedGenerationRef.current = saved;
+                  const message = error instanceof Error ? error.message : 'Failed to generate PDF';
+                  await autosave.finishGenerating(false, message);
+                }
+                throw error;
+              }
+            },
+          });
         }}
       />
       <ConfirmModal
@@ -297,8 +412,11 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           }
           void submitWrapper({
             fn: async () => {
-              const result = await persistEdit(pendingPatch);
-              return { id: result.resume.id };
+              const saved = await autosave.flush(pendingPatch);
+              if (!saved) {
+                throw new Error('Resume not found');
+              }
+              return { id: saved.id };
             },
             successMessage: 'Draft created',
           });

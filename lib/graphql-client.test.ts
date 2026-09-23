@@ -37,6 +37,15 @@ describe('parseGraphqlError', () => {
     ).toBe("You don't have permission to do that");
   });
 
+  it('maps resume revision errors', () => {
+    expect(parseGraphqlError(graphqlError('resume_changed'))).toBe(
+      'This resume changed before the PDF was saved',
+    );
+    expect(parseGraphqlError(graphqlError('resume_generation_in_progress'))).toBe(
+      'A PDF is already being created for this resume',
+    );
+  });
+
   it('maps 23505 unique_violation', () => {
     expect(
       parseGraphqlError(graphqlError('duplicate key value violates unique constraint', '23505')),

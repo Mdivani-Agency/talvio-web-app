@@ -9,6 +9,7 @@ import { AnimatedTransition, Button, Input, Tooltip, TooltipContent, TooltipTrig
 import { normalizeResumeLabel } from '@lib/adapters/resume.adapter';
 import type { ResumeFieldIssue } from '@lib/models/resume-document';
 import { resolveAvailableTemplate, templateLevelFromKey, type TemplateLevel } from '@lib/resume/resolve-editor';
+import { SAVE_STATUS_LABEL, type SaveStatus } from '@lib/resume/save-queue';
 import { listResumeTemplates } from '@lib/templates';
 import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
@@ -33,6 +34,9 @@ type ResumeEditorShellProps = {
   family?: ResumeFamilyControls | null;
   downloadPending?: boolean;
   isGenerated?: boolean;
+  saveStatus?: SaveStatus;
+  saveMessage?: string;
+  onRetrySave?: () => void;
   onChange: (patch: Partial<PreviewDto>) => void;
   onDownload: (filename: string, label?: string) => boolean | void | Promise<boolean | void>;
 };
@@ -46,6 +50,9 @@ export function ResumeEditorShell({
   family,
   downloadPending = false,
   isGenerated = false,
+  saveStatus,
+  saveMessage,
+  onRetrySave,
   onChange,
   onDownload,
 }: ResumeEditorShellProps) {
@@ -115,6 +122,17 @@ export function ResumeEditorShell({
               onChange({ label: next });
             }}
           />
+          {saveStatus ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{SAVE_STATUS_LABEL[saveStatus]}</span>
+              {saveMessage ? <span>{saveMessage}</span> : null}
+              {onRetrySave && (saveStatus === 'failed' || saveStatus === 'conflict') ? (
+                <Button type="button" variant="link" size="sm" className="h-auto px-0" onClick={onRetrySave}>
+                  Retry
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <AnimatedTransition
           direction="left"

@@ -458,6 +458,112 @@ select is(
   'a freshly created auth.users row receives 300 credits'
 );
 
+insert into public.resumes (id, user_id, name, template_key)
+values (
+  'ffffffff-ffff-4fff-8fff-ffffffffffff',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  'Lock target',
+  'senior-level-talvio'
+);
+
+update public.user_credits
+set balance = 50
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.generate_pdf('ffffffff-ffff-4fff-8fff-ffffffffffff'),
+  '',
+  'generate_pdf locks a mutable resume without debiting'
+);
+
+select throws_ok(
+  $$ select public.generate_pdf('ffffffff-ffff-4fff-8fff-ffffffffffff'); $$,
+  'P0001',
+  'resume_generation_in_progress',
+  'a second generate_pdf does not take an existing lock'
+);
+
+select throws_ok(
+  $$
+    update public.resumes
+    set color = '#005BA2'
+    where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+  $$,
+  'P0001',
+  'resume_generation_in_progress',
+  'content edits are rejected while generation is locked'
+);
+
+select pg_temp.logout();
+
+select is(
+  (select generation_updated_at = updated_at
+   from public.resumes
+   where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff'),
+  true,
+  'generation lock stores the current revision'
+);
+
+update public.resumes
+set name = 'Lock target renamed'
+where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select throws_ok(
+  $$
+    select public.finalize_pdf(
+      'ffffffff-ffff-4fff-8fff-ffffffffffff',
+      'https://media.example/lock.pdf',
+      'resume/lock.pdf'
+    );
+  $$,
+  'P0001',
+  'resume_changed',
+  'finalize_pdf does not debit when the revision moved'
+);
+
+select pg_temp.logout();
+
+select is(
+  (select balance from public.user_credits
+   where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+  50,
+  'resume_changed does not consume credits'
+);
+
+select is(
+  (select pdf_url from public.resumes
+   where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff'),
+  null,
+  'resume_changed does not store a pdf'
+);
+
+create temp table revision_capture as
+select updated_at
+from public.resumes
+where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+select public.release_resume_generation('ffffffff-ffff-4fff-8fff-ffffffffffff');
+select pg_temp.logout();
+
+select is(
+  (select generation_updated_at from public.resumes
+   where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff'),
+  null,
+  'release clears the generation lock'
+);
+
+select is(
+  (select updated_at from public.resumes
+   where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff'),
+  (select updated_at from revision_capture),
+  'release keeps the revision clock'
+);
+
 select * from finish();
 
 rollback;

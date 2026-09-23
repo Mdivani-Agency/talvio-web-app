@@ -62,6 +62,7 @@ export type Mutation = {
   finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
   insertIntoresumesCollection?: Maybe<ResumesInsertResponse>;
+  release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
   updateresumesCollection?: Maybe<ResumesUpdateResponse>;
 };
@@ -83,6 +84,10 @@ export type MutationGenerate_PdfArgs = {
 
 export type MutationInsertIntoresumesCollectionArgs = {
   objects: Array<ResumesInsertInput>;
+};
+
+export type MutationRelease_Resume_GenerationArgs = {
+  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 export type MutationSave_ProfileArgs = {
@@ -580,11 +585,13 @@ export type Resume_TypeFilter = {
 
 export type Resumes = {
   __typename?: 'resumes';
+  client_draft_id?: Maybe<Scalars['UUID']['output']>;
   color: Scalars['String']['output'];
   content: Scalars['JSON']['output'];
   created_at: Scalars['Datetime']['output'];
   font_family?: Maybe<Scalars['String']['output']>;
   font_size: Resume_Font_Size;
+  generation_updated_at?: Maybe<Scalars['Datetime']['output']>;
   id: Scalars['UUID']['output'];
   label?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
@@ -616,14 +623,17 @@ export type ResumesEdge = {
 };
 
 export type ResumesFilter = {
+  client_draft_id?: InputMaybe<UuidFilter>;
   id?: InputMaybe<UuidFilter>;
   pdf_url?: InputMaybe<StringFilter>;
   source_resume_id?: InputMaybe<UuidFilter>;
   type?: InputMaybe<Resume_TypeFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
 export type ResumesInsertInput = {
+  client_draft_id?: InputMaybe<Scalars['UUID']['input']>;
   color?: InputMaybe<Scalars['String']['input']>;
   content?: InputMaybe<Scalars['JSON']['input']>;
   font_family?: InputMaybe<Scalars['String']['input']>;
@@ -799,7 +809,7 @@ export type InsertResumeMutationVariables = Exact<{
 export type InsertResumeMutation = { insertIntoresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
 
 export type UpdateResumeMutationVariables = Exact<{
-  id: string;
+  filter: ResumesFilter;
   set: ResumesUpdateInput;
   atMost?: number | null | undefined;
 }>;
@@ -812,6 +822,13 @@ export type DeleteResumeMutationVariables = Exact<{
 }>;
 
 export type DeleteResumeMutation = { deleteFromresumesCollection: { affectedCount: number, records: Array<{ id: string }> } | null };
+
+export type ResumeByClientDraftQueryVariables = Exact<{
+  userId: string;
+  clientDraftId: string;
+}>;
+
+export type ResumeByClientDraftQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
 
 export type ResumesBySourceQueryVariables = Exact<{
   sourceId: string;
@@ -1081,8 +1098,8 @@ export const InsertResumeDocument = gql`
 }
     ${ListResumeFragmentDoc}`;
 export const UpdateResumeDocument = gql`
-    mutation UpdateResume($id: UUID!, $set: resumesUpdateInput!, $atMost: Int) {
-  updateresumesCollection(set: $set, filter: {id: {eq: $id}}, atMost: $atMost) {
+    mutation UpdateResume($filter: resumesFilter!, $set: resumesUpdateInput!, $atMost: Int) {
+  updateresumesCollection(set: $set, filter: $filter, atMost: $atMost) {
     affectedCount
     records {
       ...ListResume
@@ -1101,6 +1118,21 @@ export const DeleteResumeDocument = gql`
   }
 }
     `;
+export const ResumeByClientDraftDocument = gql`
+    query ResumeByClientDraft($userId: UUID!, $clientDraftId: UUID!) {
+  resumesCollection(
+    filter: {user_id: {eq: $userId}, client_draft_id: {eq: $clientDraftId}}
+    first: 1
+  ) {
+    edges {
+      node {
+        ...ListResume
+        content
+      }
+    }
+  }
+}
+    ${ListResumeFragmentDoc}`;
 export const ResumesBySourceDocument = gql`
     query ResumesBySource($sourceId: UUID!, $first: Int) {
   resumesCollection(
@@ -1176,6 +1208,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     DeleteResume(variables: DeleteResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteResumeMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<DeleteResumeMutation>({ document: DeleteResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteResume', 'mutation', variables);
+    },
+    ResumeByClientDraft(variables: ResumeByClientDraftQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumeByClientDraftQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ResumeByClientDraftQuery>({ document: ResumeByClientDraftDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumeByClientDraft', 'query', variables);
     },
     ResumesBySource(variables: ResumesBySourceQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesBySourceQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ResumesBySourceQuery>({ document: ResumesBySourceDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesBySource', 'query', variables);

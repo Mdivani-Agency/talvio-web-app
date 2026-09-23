@@ -77,10 +77,13 @@ Query: `profilesCollection`, `contactsCollection`, `experiencesCollection`,
 `skillsCollection`, `toolsCollection`, `linksCollection`,
 `languagesCollection`, `resumesCollection`, `user_creditsCollection`.
 
-Mutation: `save_profile`, `generate_pdf`, `finalize_pdf`, `insertIntoresumesCollection`,
+Mutation: `save_profile`, `generate_pdf`, `finalize_pdf`, `release_resume_generation`,
+`insertIntoresumesCollection`,
 `updateresumesCollection`, `deleteFromresumesCollection` (and the matching
 profile-child collection mutations). `consume_credits` is **not** a Mutation
 field — authenticated has no `EXECUTE`. `credit_pricesCollection` is absent.
+`release_resume_generation` returns `void` (`Opaque`). It clears
+`generation_updated_at` only when `pdf_url` is still null.
 
 The same introspection with the **anon** key lists none of the domain
 collections — there are no `anon` grants.
