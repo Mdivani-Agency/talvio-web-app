@@ -62,6 +62,7 @@ export type Mutation = {
   finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
   insertIntoresumesCollection?: Maybe<ResumesInsertResponse>;
+  release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
   updateresumesCollection?: Maybe<ResumesUpdateResponse>;
 };
@@ -83,6 +84,10 @@ export type MutationGenerate_PdfArgs = {
 
 export type MutationInsertIntoresumesCollectionArgs = {
   objects: Array<ResumesInsertInput>;
+};
+
+export type MutationRelease_Resume_GenerationArgs = {
+  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 export type MutationSave_ProfileArgs = {
@@ -809,13 +814,6 @@ export type UpdateResumeMutationVariables = Exact<{
   atMost?: number | null | undefined;
 }>;
 
-export type ResumeByClientDraftQueryVariables = Exact<{
-  userId: string;
-  clientDraftId: string;
-}>;
-
-export type ResumeByClientDraftQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
-
 export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
 
 export type DeleteResumeMutationVariables = Exact<{
@@ -824,6 +822,13 @@ export type DeleteResumeMutationVariables = Exact<{
 }>;
 
 export type DeleteResumeMutation = { deleteFromresumesCollection: { affectedCount: number, records: Array<{ id: string }> } | null };
+
+export type ResumeByClientDraftQueryVariables = Exact<{
+  userId: string;
+  clientDraftId: string;
+}>;
+
+export type ResumeByClientDraftQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
 
 export type ResumesBySourceQueryVariables = Exact<{
   sourceId: string;
@@ -1201,11 +1206,11 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     UpdateResume(variables: UpdateResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<UpdateResumeMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<UpdateResumeMutation>({ document: UpdateResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'UpdateResume', 'mutation', variables);
     },
-    ResumeByClientDraft(variables: ResumeByClientDraftQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumeByClientDraftQuery> {
-      return withWrapper((wrappedRequestHeaders) => client.request<ResumeByClientDraftQuery>({ document: ResumeByClientDraftDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumeByClientDraft', 'query', variables);
-    },
     DeleteResume(variables: DeleteResumeMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteResumeMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<DeleteResumeMutation>({ document: DeleteResumeDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteResume', 'mutation', variables);
+    },
+    ResumeByClientDraft(variables: ResumeByClientDraftQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumeByClientDraftQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ResumeByClientDraftQuery>({ document: ResumeByClientDraftDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumeByClientDraft', 'query', variables);
     },
     ResumesBySource(variables: ResumesBySourceQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesBySourceQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ResumesBySourceQuery>({ document: ResumesBySourceDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesBySource', 'query', variables);
