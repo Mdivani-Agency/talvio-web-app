@@ -11,7 +11,7 @@ import { ResumeProvider, useResumeContext } from './providers/state-provider';
 import { RESUME_COLORS_MAP } from '@lib/utils';
 import OptionsView from './views/options-view';
 import ImportResumePage from './views/import-page';
-import { normalizeResumeTemplate, shouldSeedResumeFromQuery } from '@lib/drafts';
+import { normalizeResumeTemplate } from '@lib/drafts';
 
 function previewSeed(account: AccountDto | null, template: TemplateKey): PreviewDto {
   if (!account) {
@@ -38,7 +38,7 @@ function ResumeFlow() {
   const searchParams = useSearchParams();
   const templatekey = normalizeResumeTemplate(searchParams.get('template'));
   const { session, isPending: isAuthenticating } = useUserSession();
-  const { send, state, actorRef } = useResumeContext();
+  const { seedIfFetching, step } = useResumeContext();
 
   const userId = session?.user.id;
 
@@ -46,12 +46,7 @@ function ResumeFlow() {
     queryKey: ['account', userId],
     queryFn: async () => {
       const seedIfNeeded = (value: PreviewDto) => {
-        if (shouldSeedResumeFromQuery(actorRef.getSnapshot().value)) {
-          send({
-            type: 'FETCHING_RESUME_FAILURE',
-            value,
-          });
-        }
+        seedIfFetching(value);
       };
 
       try {
@@ -76,15 +71,15 @@ function ResumeFlow() {
     enabled: !isAuthenticating,
   });
 
-  if (isAuthenticating || (isLoading && shouldSeedResumeFromQuery(state.value))) {
+  if (isAuthenticating || (isLoading && step === 'fetchingResume')) {
     return <Loading message="Preparing resume..." />;
   }
 
-  if (state.matches('options')) {
+  if (step === 'options') {
     return <OptionsView />;
   }
 
-  if (state.matches('importResume')) {
+  if (step === 'importResume') {
     return <ImportResumePage />;
   }
 

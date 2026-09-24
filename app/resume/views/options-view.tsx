@@ -3,7 +3,7 @@ import { Card, CardTitle, CardHeader, CardContent } from "@components/ui";
 import { useResumeContext } from "../providers/state-provider";
 
 export default function OptionsView() {
-  const { send } = useResumeContext();
+  const { selectImport, selectManual } = useResumeContext();
 
   return (
     <section className="flex flex-col items-center justify-center gap-4 h-screen">
@@ -14,7 +14,7 @@ export default function OptionsView() {
         Choose a method to get started effortlessly.
       </p>
       <div className="flex flex-col md:flex-row justify-center gap-4 my-14">
-        <Card className="flex flex-col gap-4 p-8 w-96 cursor-pointer hover:opacity-80" onClick={() => send({ type: 'SELECT_IMPORT_RESUME' })}>
+        <Card className="flex flex-col gap-4 p-8 w-96 cursor-pointer hover:opacity-80" onClick={selectImport}>
           <CardHeader className="text-center">
             <Icon type={'Document'} className="size-10 mx-auto" />
             <CardTitle className="text-lg font-semibold">
@@ -27,7 +27,7 @@ export default function OptionsView() {
             </p>
           </CardContent>
         </Card>
-        <Card className="flex flex-col gap-4 p-8 w-96 cursor-pointer hover:opacity-80" onClick={() => send({ type: 'SELECT_MANUAL_INPUT' })}>
+        <Card className="flex flex-col gap-4 p-8 w-96 cursor-pointer hover:opacity-80" onClick={selectManual}>
           <CardHeader className="text-center">
             <Icon type={'Pencil'} className="size-10 mx-auto" />
             <CardTitle className="text-lg font-semibold">

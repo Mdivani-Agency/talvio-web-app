@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { ACCOUNT_SNAPSHOT_KEY } from '@app/account/state/storage';
-import { RESUME_SNAPSHOT_KEY } from '@app/resume/state/storage';
+import {
+  LEGACY_ACCOUNT_SNAPSHOT_PREFIX as ACCOUNT_SNAPSHOT_KEY,
+  LEGACY_RESUME_SNAPSHOT_PREFIX as RESUME_SNAPSHOT_KEY,
+  LEGACY_UNSCOPED_RESUME_KEY,
+} from '@lib/drafts';
 import {
   isGeneratedResume,
   isOpenDraft,
@@ -147,7 +150,8 @@ describe('flow baseline fixtures', () => {
 
   it('keeps legacy snapshot content and matches the live storage keys', () => {
     expect(LEGACY_ACCOUNT_SNAPSHOT_PREFIX).toBe(ACCOUNT_SNAPSHOT_KEY);
-    expect(LEGACY_RESUME_SNAPSHOT_KEY).toBe(`${RESUME_SNAPSHOT_KEY}-new_resume`);
+    expect(LEGACY_RESUME_SNAPSHOT_KEY).toBe(LEGACY_UNSCOPED_RESUME_KEY);
+    expect(LEGACY_UNSCOPED_RESUME_KEY).toBe(`${RESUME_SNAPSHOT_KEY}-new_resume`);
     expect(accountSchema.safeParse(legacyAccountSnapshot.context.accountDto).success).toBe(true);
     expect(legacyAccountSnapshot.context.questions).toHaveLength(2);
     expect(legacyAccountSnapshot.context.answers).toEqual(['Preview pipeline', 'Skipped']);

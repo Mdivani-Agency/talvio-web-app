@@ -21,7 +21,6 @@
   replace them with event handlers, derived state, or TanStack store
   subscriptions unless the work is a true external subscription (auth
   listener, `matchMedia`, IntersectionObserver). Current call sites:
-  `app/resume/views/resume-preview.tsx`,
   `app/resume/components/resume-preview.tsx`,
   `app/resume/providers/state-provider.tsx`,
   `app/account/providers/state-provider.tsx`,
