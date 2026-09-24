@@ -41,6 +41,73 @@ type MigrationResult = {
   migrated: boolean;
 };
 
+const PERSIST_STATUS_RANK: Record<DraftPersistStatus, number> = {
+  ok: 0,
+  conflict: 1,
+  invalid: 2,
+  quota: 3,
+  unavailable: 4,
+};
+
+export function worsePersistStatus(...statuses: DraftPersistStatus[]): DraftPersistStatus {
+  return statuses.reduce((worst, status) => (
+    PERSIST_STATUS_RANK[status] > PERSIST_STATUS_RANK[worst] ? status : worst
+  ));
+}
+
+export function resumeInitialPersistStatus(input: {
+  hasDraft: boolean;
+  current: DraftPersistStatus;
+  scoped: DraftPersistStatus;
+  unscoped: DraftPersistStatus;
+}): DraftPersistStatus {
+  if (input.hasDraft) {
+    return worsePersistStatus(input.current, input.scoped);
+  }
+  return worsePersistStatus(input.current, input.scoped, input.unscoped);
+}
+
+function persistErrorStatus(error: unknown): DraftPersistStatus {
+  return error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)
+    ? 'quota'
+    : 'unavailable';
+}
+
+function writeMigrationMarker(storage: DraftStorage, legacyKey: string, draftId: string): DraftPersistStatus {
+  try {
+    storage.setItem(legacyMigrationMarkerKey(legacyKey), draftId);
+    return 'ok';
+  } catch (error) {
+    return persistErrorStatus(error);
+  }
+}
+
+function repairMissingMarker(
+  storage: DraftStorage,
+  legacyKey: string,
+  draft: VersionedDraft,
+): MigrationResult | null {
+  const marker = readRaw(storage, legacyMigrationMarkerKey(legacyKey));
+  if (marker.failed) {
+    return { draft, status: 'unavailable', migrated: false };
+  }
+  if (marker.raw) {
+    return null;
+  }
+  const legacy = readRaw(storage, legacyKey);
+  if (legacy.failed) {
+    return { draft, status: 'unavailable', migrated: false };
+  }
+  if (!legacy.raw) {
+    return null;
+  }
+  const marked = writeMigrationMarker(storage, legacyKey, draft.draftId);
+  if (marked === 'ok') {
+    return null;
+  }
+  return { draft, status: marked, migrated: false };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -217,6 +284,10 @@ export function migrateLegacySnapshot(input: {
 
   const existing = readDraft(input.storage, input.versionedKey);
   if (existing.draft) {
+    const repaired = repairMissingMarker(input.storage, input.legacyKey, existing.draft);
+    if (repaired) {
+      return repaired;
+    }
     return { draft: existing.draft, status: existing.status, migrated: false };
   }
   if (existing.status === 'invalid') {
@@ -261,10 +332,14 @@ export function migrateLegacySnapshot(input: {
     return { draft: null, status: written, migrated: false };
   }
 
-  try {
-    input.storage.setItem(legacyMigrationMarkerKey(input.legacyKey), draft.draftId);
-  } catch {
-    // The versioned draft is already stored, so a later load will not overwrite it.
+  const marked = writeMigrationMarker(input.storage, input.legacyKey, draft.draftId);
+  if (marked !== 'ok') {
+    try {
+      input.storage.removeItem(input.versionedKey);
+    } catch {
+      // The versioned copy could not be removed. The failure status still blocks a successful migration.
+    }
+    return { draft: null, status: marked, migrated: false };
   }
   return { draft, status: 'ok', migrated: true };
 }

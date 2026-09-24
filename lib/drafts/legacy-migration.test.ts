@@ -11,6 +11,7 @@ import {
   migrateLegacyResume,
   migrateUnscopedResumeToGuest,
   resumeDraftFromLegacySnapshot,
+  resumeInitialPersistStatus,
 } from './legacy-migration';
 import { parseAccountDraft } from './account-draft';
 import { parseResumeDraft } from './resume-draft';
@@ -160,5 +161,54 @@ describe('legacy snapshot migration', () => {
     });
     expect(scoped.migrated).toBe(false);
     expect(storage.getItem(legacyResumeSnapshotKey('new'))).toBeNull();
+  });
+
+  it('rolls back the versioned draft when the marker cannot be stored', () => {
+    const owner = { kind: 'user' as const, userId: FLOW_USER_ID };
+    const legacyKey = legacyAccountSnapshotKey(FLOW_USER_ID);
+    const versionedKey = accountDraftStorageKey(owner);
+    const markerKey = legacyMigrationMarkerKey(legacyKey);
+    const storage = memoryStorage({
+      [legacyKey]: JSON.stringify(legacyAccountSnapshot),
+    });
+    const quota = new DOMException('quota', 'QuotaExceededError');
+    const setItem = storage.setItem;
+    storage.setItem = (key, value) => {
+      if (key === markerKey) {
+        throw quota;
+      }
+      setItem(key, value);
+    };
+
+    const result = migrateLegacyAccount(storage, owner, versionedKey);
+
+    expect(result).toMatchObject({ draft: null, status: 'quota', migrated: false });
+    expect(storage.getItem(versionedKey)).toBeNull();
+    expect(storage.getItem(markerKey)).toBeNull();
+    expect(storage.getItem(legacyKey)).toBe(JSON.stringify(legacyAccountSnapshot));
+  });
+
+  it('reports an unscoped snapshot failure when the current resume draft is empty', () => {
+    const storage = memoryStorage({
+      [LEGACY_UNSCOPED_RESUME_KEY]: '{not json',
+      'talvio-guest-id': FLOW_GUEST_ID,
+    });
+
+    const unscoped = migrateUnscopedResumeToGuest(storage);
+
+    expect(unscoped).toMatchObject({ draft: null, status: 'invalid', migrated: false });
+    expect(storage.getItem(LEGACY_UNSCOPED_RESUME_KEY)).toBe('{not json');
+    expect(resumeInitialPersistStatus({
+      hasDraft: false,
+      current: 'ok',
+      scoped: 'ok',
+      unscoped: unscoped.status,
+    })).toBe('invalid');
+    expect(resumeInitialPersistStatus({
+      hasDraft: true,
+      current: 'ok',
+      scoped: 'ok',
+      unscoped: 'invalid',
+    })).toBe('ok');
   });
 });

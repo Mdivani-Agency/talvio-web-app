@@ -14,6 +14,7 @@ import {
   migrateLegacyResume,
   migrateUnscopedResumeToGuest,
   parseResumeDraft,
+  resumeInitialPersistStatus,
   readParsedResumeDraft,
   resumeDraftStorageKey,
   resumeDraftToPreview,
@@ -86,13 +87,19 @@ function ResumeMachine({
   }, [owner, storage]);
   const [initialRead] = useState(() => {
     const migrated = migrateLegacyResume({ storage, owner, documentId, versionedKey: key });
-    migrateUnscopedResumeToGuest(storage);
+    const unscoped = migrateUnscopedResumeToGuest(storage);
     const current = readParsedResumeDraft(storage, key);
+    const status = resumeInitialPersistStatus({
+      hasDraft: Boolean(current.draft),
+      current: current.status,
+      scoped: migrated.status,
+      unscoped: unscoped.status,
+    });
     if (current.draft) {
-      return current;
+      return { ...current, status };
     }
-    if (migrated.status === 'invalid' || migrated.status === 'quota' || migrated.status === 'unavailable') {
-      return { draft: null, parsed: null, status: migrated.status };
+    if (status === 'invalid' || status === 'quota' || status === 'unavailable') {
+      return { draft: null, parsed: null, status };
     }
     return current;
   });

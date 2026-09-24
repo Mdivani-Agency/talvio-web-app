@@ -59,4 +59,6 @@ export {
   migrateLegacyAccount,
   migrateLegacyResume,
   migrateUnscopedResumeToGuest,
+  resumeInitialPersistStatus,
+  worsePersistStatus,
 } from './legacy-migration';

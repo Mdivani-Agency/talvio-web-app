@@ -52,7 +52,7 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 - Account drafts persist only while onboarding (`form` / `questions` / review steps) and clear after a successful save or when `/account` finds an existing profile.
 - Resume `/resume` drafts persist options / import / preview. They clear after a successful create-and-download. A guest draft is offered for adoption after sign-in when the signed-in user has no resume draft.
 - Quota, unavailable, invalid, and newer-server conflict statuses render `DraftStatusBanner`. Editing stays available.
-- Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values migrate once into the versioned draft. The source snapshot stays until that write succeeds, and a marker blocks a later load from overwriting a newer draft. `resume-state-snapshot-new_resume` migrates as a guest draft and is not assigned to the signed-in user. Malformed snapshots stay on disk and the screen opens empty.
+- Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values migrate once into the versioned draft. The source snapshot stays on disk. A marker is required for the migration to count; if that write fails, the versioned copy is removed and the screen reports quota or unavailable. `resume-state-snapshot-new_resume` migrates as a guest draft and is not assigned to the signed-in user. A failed unscoped migration is included in the resume banner when the current draft is empty. Malformed snapshots stay on disk and the screen opens empty.
 
 ## Onboarding routing (MDI-196)
 
