@@ -33,6 +33,8 @@ yarn db:diff     # generate a migration from the shadow DB
 yarn db:push     # apply pending migrations to a linked remote
 ```
 
+`yarn test:e2e:local` starts that stack, builds the production app, serves it on port 3002, and runs Playwright. It refuses hosted Supabase or media origins. `yarn test:e2e` expects that stack and build to already be running.
+
 Copy URL and keys from `supabase status` into `.env.local`. GraphQL smoke test:
 
 ```bash
