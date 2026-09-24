@@ -201,25 +201,33 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [x] PDF import stages a temporary DTO. Cancel, and a failed parse, leave typed edits in place. Applying requires confirm when current work exists.
 - [x] `/account` with no profile row opens create. A profile query error stays on `AccountLookupError` and does not open create.
 - [x] Direct `/account/create` with an existing account reaches the dashboard. With no account, it opens the form. It does not sit on the loading message.
-- [ ] Expired auth from `/account/documents` returns to that path. Resume download returns to `/resume`, including a selected template. (`/account/documents` is still open; resume return is implemented in MDI-195.)
+- [x] Expired auth from `/account/documents` returns to that path. Resume download returns to `/resume`, including a selected template. `signInHref` writes both callbacks. A signed-in browser session was not available to click the expired-session redirect.
 - [x] Next stores the submitted answer by question id. Skip stores an explicit skipped status. Back edits the same answer. Refresh restores the cursor and the unfinished text.
 - [x] The last answer opens review. Save of a valid profile still works when tailoring fails.
 - [x] A question-request failure shows an error with retry, not an infinite loader.
-- [ ] Profile refetch and resume refetch do not replace unsaved form values.
-- [ ] Guest resume recovery stays on its own draft id. Signing in offers adoption and does not merge another user’s draft into the account.
-- [ ] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, persisted ids, dates, enums, and TipTap documents.
-- [ ] Experience and education rich text reload as TipTap documents, including unknown node attrs and marks. Categorized experience arrays stay on the document created from a profile.
+- [x] Profile refetch and resume refetch do not replace unsaved form values. Onboarding ignores a stale proposal. The resume editor initializes once from recovery.
+- [x] Guest resume recovery stays on its own draft id. Signing in offers adoption and does not merge another user’s draft into the account.
+- [x] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, persisted ids, dates, enums, and TipTap documents.
+- [x] Experience and education rich text reload as TipTap documents, including unknown node attrs and marks. Categorized experience arrays stay on the document created from a profile.
 - [x] Preview render does not write source fields.
 - [x] `/resume` and `/resume/[resumeId]` share one editor over the resume document.
 - [x] Filename or label edits do not regenerate preview. Color, font, template key, and content do.
 - [x] Download of a new resume creates one row, then generates. A second click or a lost response updates that row and does not insert or charge another.
 - [x] First final PDF debits once. An existing `pdf_url` downloads with no debit at balance 0.
-- [ ] Insufficient credits shows the buy-credits path and does not upload.
-- [ ] Editing a generated resume reuses its open draft. View original is read-only. Discard deletes only the draft. The original URL still downloads.
-- [ ] A second edit does not insert a second open draft.
-- [ ] Label edits on a generated row do not fork and do not change `content`.
+- [x] Insufficient credits shows the buy-credits path and does not upload. `generateAndChargeResumePdf` returns 402 before render, and `submitWrapper` links to `/account/credits`.
+- [x] Editing a generated resume reuses its open draft. View original is read-only. Discard deletes only the draft. The original URL still downloads. Browser discard was not clicked; `deleteResume` targets the draft id, and the generated row keeps `pdf_url`.
+- [x] A second edit does not insert a second open draft.
+- [x] Label edits on a generated row do not fork and do not change `content`.
 - [x] Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values restore content and step once, then the app writes only the versioned plain draft.
 - [x] Stale preview results cannot replace a newer preview. Stale tailoring responses remain covered by MDI-197.
+
+## Verification limits (MDI-202)
+
+Checked items above are covered by the repository tests, including `test/fixtures/flow/journeys.test.ts`. These limits stay open because this environment has no Supabase project and no signed-in browser session:
+
+- Manual clicks through onboarding, resume editing, guest adoption, and download were not run.
+- `supabase/tests/rls.test.sql` was not executed. Apply `20260923060000_resume_save_idempotency.sql` if an older copy is already on the database.
+- Dashboard and document lists invalidate `['resumes']`, `['resume-family']`, `['documents']`, and `['account']` after save, delete, and generate. Those cache updates were not watched in a browser.
 
 ## Source map
 
