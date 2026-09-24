@@ -10,7 +10,8 @@ name: CI
 # Supabase db push still uses GitHub Environments when refs differ:
 #   development ← branch development
 #   production  ← branch main
-#   SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF
+#   SUPABASE_ACCESS_TOKEN is an environment secret.
+#   SUPABASE_PROJECT_REF is an environment variable (secret also accepted).
 
 on:
   pull_request:
@@ -75,25 +76,26 @@ jobs:
     timeout-minutes: 10
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
     steps:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Skip when hosted project is not configured
-        if: env.SUPABASE_ACCESS_TOKEN == '' || env.SUPABASE_PROJECT_REF == ''
+      - name: Require Supabase credentials
         run: |
-          echo "::notice::Skipping db push — set environment secrets SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF."
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN}" ] || [ -z "${SUPABASE_PROJECT_REF}" ]; then
+            echo "::error::Set environment secret SUPABASE_ACCESS_TOKEN and environment variable SUPABASE_PROJECT_REF."
+            exit 1
+          fi
 
       - name: Set up Supabase CLI
-        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
         uses: supabase/setup-cli@v3
         with:
           version: 2.117.0
 
       - name: Push pending migrations
-        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
-        run: supabase db push --yes --project-ref "${{ env.SUPABASE_PROJECT_REF }}"
+        run: supabase db push --yes --project-ref "${SUPABASE_PROJECT_REF}"
 
   deploy:
     name: Deploy to Vercel
