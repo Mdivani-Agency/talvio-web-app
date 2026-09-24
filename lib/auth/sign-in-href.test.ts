@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { signInHref, signInSearchParams } from './sign-in-href';
+import { accountSignInRedirect, signInHref, signInSearchParams } from './sign-in-href';
 
 describe('signInSearchParams', () => {
   it('prefers callbackURL, then callbackUrl, then next', () => {
@@ -19,5 +19,20 @@ describe('signInHref', () => {
       '/auth/sign-in?callbackURL=%2Fresume%3Ftemplate%3Dmid-level-ember',
     );
     expect(signInHref('https://evil.com')).toBe('/auth/sign-in?callbackURL=%2Faccount');
+  });
+});
+
+describe('accountSignInRedirect', () => {
+  it('keeps an account subpath and drops anything outside /account', () => {
+    expect(accountSignInRedirect('/account/documents')).toBe(
+      '/auth/sign-in?callbackURL=%2Faccount%2Fdocuments',
+    );
+    expect(accountSignInRedirect('/account/documents?tab=1')).toBe(
+      '/auth/sign-in?callbackURL=%2Faccount%2Fdocuments%3Ftab%3D1',
+    );
+    expect(accountSignInRedirect('/resume?template=mid-level-ember')).toBe(
+      '/auth/sign-in?callbackURL=%2Faccount',
+    );
+    expect(accountSignInRedirect(null)).toBe('/auth/sign-in?callbackURL=%2Faccount');
   });
 });

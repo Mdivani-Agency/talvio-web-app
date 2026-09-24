@@ -1,6 +1,7 @@
 'use client';
 
 import { Loading } from '@components/views';
+import { accountReturnPath, signInHref } from '@lib/auth/sign-in-href';
 import { mapAuthUser } from '@lib/auth/map-auth-user';
 import { createSupabaseBrowserClient } from '@lib/supabase/client';
 import { clearLegacyBearerToken } from '@lib/supabase/legacy-token';
@@ -22,10 +23,11 @@ export const SessionContext = createContext<{
 
 type SessionProviderProps = {
   fallbackURL?: string;
+  returnToCurrentPath?: boolean;
   children: React.ReactNode;
 };
 
-export const SessionProvider = ({ children, fallbackURL }: SessionProviderProps) => {
+export const SessionProvider = ({ children, fallbackURL, returnToCurrentPath = false }: SessionProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isPending, setIsPending] = useState(true);
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
@@ -58,7 +60,10 @@ export const SessionProvider = ({ children, fallbackURL }: SessionProviderProps)
     if (authEvent === 'SIGNED_OUT') {
       return <Loading message={'Signing out...'} />;
     }
-    redirect(fallbackURL);
+    const currentPath = returnToCurrentPath && typeof window !== 'undefined'
+      ? `${window.location.pathname}${window.location.search}`
+      : null;
+    redirect(currentPath ? signInHref(accountReturnPath(currentPath)) : fallbackURL);
   }
 
   return (

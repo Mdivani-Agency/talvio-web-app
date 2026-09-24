@@ -27,10 +27,10 @@ Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in
 | --- | --- | --- | --- | --- |
 | `/account` | `app/account/page.tsx` | Required by `app/account/layout.tsx` | Independent `useQuery(['account', userId], fetchProfile)` | `null` profile redirects to `/account/create`. A thrown query renders `AccountLookupError` and never opens create. An existing profile shows the dashboard and clears the onboarding draft. |
 | `/account/create` | `app/account/create/page.tsx` | Same layout | Independent `useQuery(['account', userId], fetchProfile)` | Fetches itself. Existing profile redirects to `/account`. `null` profile restores a draft or opens the form. Lookup failures render `AccountLookupError`, not the create form. Questions render only after an explicit valid submit (`step === 'questions'` and `accountDto`). |
-| `/account/documents` | `app/account/documents/page.tsx` | Same layout, `callbackURL` is always `/account` | Media list | Unauthenticated deep links lose the subpath. See `debt.md`. |
+| `/account/documents` | `app/account/documents/page.tsx` | Same layout. The gate uses `x-talvio-pathname` through `accountSignInRedirect`. | Media list | An expired session returns to the requested account path, including the query string. |
 | `/resume` | `app/resume/page.tsx` | Optional. Layout does not redirect. | `fetchProfile` when a session exists | Seeds from the query only while the step is still `fetchingResume`. A recovered or dirty draft is not replaced by a later refetch. The editor is `ResumeEditorShell`. |
 | `/resume/[resumeId]` | `app/resume/[resumeId]/edit-resume.tsx` | Optional until a mutation | `fetchResumeFamily` | Initializes from matching recovery, then the saved draft/original. Draft by default when a family exists. Original is read-only. Query refetch does not replace live edits. The editor is `ResumeEditorShell`. |
-| Sign-in return | `app/auth/sign-in/page.tsx` | Supabase OTP, Google, LinkedIn | `callbackURL`, `callbackUrl`, or `next`, then `/auth/callback?next=` | `signInSearchParams` + `safeRedirectPath` fall back to `/account`. Resume download and import write `callbackURL` through `signInHref`, including a selected template query. Account layout still uses `/account`. |
+| Sign-in return | `app/auth/sign-in/page.tsx` | Supabase OTP, Google, LinkedIn | `callbackURL`, `callbackUrl`, or `next`, then `/auth/callback?next=` | `signInSearchParams` + `safeRedirectPath` fall back to `/account`. Resume download and import write `callbackURL` through `signInHref`, including a selected template query. The account layout returns to the requested `/account` path. |
 | Profile save | `saveProfile` | Session | `Save_Profile` → `save_profile(jsonb)` | Upsert profile by `auth.uid()`, then insert or update children. Refetch is the mutation result. |
 | Resume create | `createResume` | Session | `InsertResume` | Always inserts. No idempotency key. |
 | Resume edit | `saveResumeEdit` | Session | `UpdateResume`, or insert with `source_resume_id` | Generated content forks to the open draft. Unique violation reuses that draft. Label-only patches update in place. |
@@ -139,7 +139,7 @@ Preserved from MDI-174. Do not rebuild them.
 | Question errors spin forever | Closed in MDI-197. A failed fetch renders retry plus Continue without AI. |
 | AI failure blocks a valid profile | Closed in MDI-197. Continue without AI and profile-review save use the source or reviewed profile. |
 | Shared resume storage | Closed in MDI-195 for live writes and in MDI-201 for legacy keys. New keys are `talvio-draft-v1:account:user:${userId}:profile`, `talvio-draft-v1:resume:user:${userId}:${documentId}`, and `talvio-draft-v1:resume:guest:${guestId}`. `/resume` mounts `ResumeProvider` with document id `new`. Guest drafts are offered for adoption after sign-in and are never loaded silently into another user. `resume-state-snapshot-new_resume` migrates into the guest key only. |
-| Auth return URLs disagree | Resume download and import now share `signInHref`. Account layout still always uses `/account`, so `/account/documents` deep links still lose the subpath. |
+| Auth return URLs disagree | Closed in MDI-202. Resume download and import share `signInHref`. The account layout reads `x-talvio-pathname` and returns to that `/account` path. |
 | Two editor shells | Closed in MDI-198. `/resume` and `/resume/[resumeId]` share `ResumeEditorShell`: content tabs, template gallery, color/font, label/filename, preview, and download. |
 | Duplicate standalone resumes | Closed in MDI-200. `client_draft_id` is stored in the recovery blob before insert. A retry with the same id updates that row. `/resume` joins an in-flight download instead of inserting again. |
 | Draft updates have no revision check | Closed in MDI-200 for resume drafts. Mutable updates match `id` and `updated_at`. Zero rows is a conflict and does not overwrite the editor. Profile saves still have no revision token. |
@@ -201,25 +201,33 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [x] PDF import stages a temporary DTO. Cancel, and a failed parse, leave typed edits in place. Applying requires confirm when current work exists.
 - [x] `/account` with no profile row opens create. A profile query error stays on `AccountLookupError` and does not open create.
 - [x] Direct `/account/create` with an existing account reaches the dashboard. With no account, it opens the form. It does not sit on the loading message.
-- [ ] Expired auth from `/account/documents` returns to that path. Resume download returns to `/resume`, including a selected template. (`/account/documents` is still open; resume return is implemented in MDI-195.)
+- [x] Expired auth from `/account/documents` returns to that path. Resume download returns to `/resume`, including a selected template. The account layout calls `accountSignInRedirect` with the forwarded path. A signed-in browser session was not available to click the redirect.
 - [x] Next stores the submitted answer by question id. Skip stores an explicit skipped status. Back edits the same answer. Refresh restores the cursor and the unfinished text.
 - [x] The last answer opens review. Save of a valid profile still works when tailoring fails.
 - [x] A question-request failure shows an error with retry, not an infinite loader.
-- [ ] Profile refetch and resume refetch do not replace unsaved form values.
-- [ ] Guest resume recovery stays on its own draft id. Signing in offers adoption and does not merge another user’s draft into the account.
-- [ ] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, persisted ids, dates, enums, and TipTap documents.
-- [ ] Experience and education rich text reload as TipTap documents, including unknown node attrs and marks. Categorized experience arrays stay on the document created from a profile.
+- [x] Profile refetch and resume refetch do not replace unsaved form values. Onboarding ignores a stale proposal. The resume editor initializes once from recovery.
+- [x] Guest resume recovery stays on its own draft id. Signing in offers adoption and does not merge another user’s draft into the account.
+- [x] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, persisted ids, dates, enums, and TipTap documents.
+- [x] Experience and education rich text reload as TipTap documents, including unknown node attrs and marks. Categorized experience arrays stay on the document created from a profile.
 - [x] Preview render does not write source fields.
 - [x] `/resume` and `/resume/[resumeId]` share one editor over the resume document.
 - [x] Filename or label edits do not regenerate preview. Color, font, template key, and content do.
 - [x] Download of a new resume creates one row, then generates. A second click or a lost response updates that row and does not insert or charge another.
 - [x] First final PDF debits once. An existing `pdf_url` downloads with no debit at balance 0.
-- [ ] Insufficient credits shows the buy-credits path and does not upload.
-- [ ] Editing a generated resume reuses its open draft. View original is read-only. Discard deletes only the draft. The original URL still downloads.
-- [ ] A second edit does not insert a second open draft.
-- [ ] Label edits on a generated row do not fork and do not change `content`.
+- [x] Insufficient credits shows the buy-credits path and does not upload. `generateAndChargeResumePdf` returns 402 before render, and `submitWrapper` links to `/account/credits`.
+- [x] Editing a generated resume reuses its open draft. View original is read-only. Discard deletes only the draft. The original URL still downloads. Browser discard was not clicked; `deleteResume` targets the draft id, and the generated row keeps `pdf_url`.
+- [x] A second edit does not insert a second open draft.
+- [x] Label edits on a generated row do not fork and do not change `content`.
 - [x] Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values restore content and step once, then the app writes only the versioned plain draft.
 - [x] Stale preview results cannot replace a newer preview. Stale tailoring responses remain covered by MDI-197.
+
+## Verification limits (MDI-202)
+
+Checked items above are covered by the repository tests, including `test/fixtures/flow/journeys.test.ts`. These limits stay open because this environment has no Supabase project and no signed-in browser session:
+
+- Manual clicks through onboarding, resume editing, guest adoption, and download were not run.
+- `supabase/tests/rls.test.sql` was not executed. Apply `20260923060000_resume_save_idempotency.sql` if an older copy is already on the database.
+- Dashboard and document lists invalidate `['resumes']`, `['resume-family']`, `['documents']`, and `['account']` after save, delete, and generate. Those cache updates were not watched in a browser.
 
 ## Source map
 
