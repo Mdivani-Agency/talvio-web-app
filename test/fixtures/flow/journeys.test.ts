@@ -7,7 +7,7 @@ import {
   toResume,
 } from '@/lib/adapters/resume.adapter';
 import { isLabelOnlyPatch } from '@app/resume/query/use-save-resume-edit';
-import { signInHref } from '@lib/auth/sign-in-href';
+import { accountSignInRedirect, signInHref } from '@lib/auth/sign-in-href';
 import {
   adoptDraft,
   resumeDraftStorageKey,
@@ -75,7 +75,7 @@ describe('cross-flow journeys', () => {
     expect(signInHref('/resume?template=mid-level-ember')).toBe(
       '/auth/sign-in?callbackURL=%2Fresume%3Ftemplate%3Dmid-level-ember',
     );
-    expect(signInHref('/account/documents')).toBe(
+    expect(accountSignInRedirect('/account/documents')).toBe(
       '/auth/sign-in?callbackURL=%2Faccount%2Fdocuments',
     );
   });
