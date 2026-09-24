@@ -77,12 +77,12 @@ Supabase `db push` still reads GitHub Environment secrets when the hosted projec
 | `development` | `development` | talvio-dev |
 | `production` | `main` | talvio-prod |
 
-| Secret | Used for |
-| --- | --- |
-| `SUPABASE_ACCESS_TOKEN` | Supabase CLI `db push` |
-| `SUPABASE_PROJECT_REF` | Target project ref for that environment |
+| Name | Store as | Used for |
+| --- | --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | environment secret | Supabase CLI `db push` |
+| `SUPABASE_PROJECT_REF` | environment variable (secret also accepted) | Target project ref for that environment |
 
-`db push` fails until both Supabase environment secrets are set. Deploy fails until `VERCEL_TOKEN` is a repository secret and the Vercel org/project IDs are repository secrets or variables.
+`db push` fails until the access token secret and the project ref variable are set. Deploy fails until `VERCEL_TOKEN` is a repository secret and the Vercel org/project IDs are repository secrets or variables.
 
 ## Deploy on Vercel
 
