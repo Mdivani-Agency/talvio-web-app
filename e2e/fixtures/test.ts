@@ -7,7 +7,7 @@ type HarnessFixtures = {
 };
 
 export const test = base.extend<HarnessFixtures>({
-  personas: async ({}, use, testInfo) => {
+  personas: async ({}, runTest, testInfo) => {
     const personas = await provisionPersonas({
       project: testInfo.project.name,
       worker: testInfo.workerIndex,
@@ -15,7 +15,7 @@ export const test = base.extend<HarnessFixtures>({
     });
     let cleanupError: unknown;
     try {
-      await use(personas);
+      await runTest(personas);
     } finally {
       try {
         await deletePersonas(personas);

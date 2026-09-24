@@ -81,10 +81,9 @@ async function main() {
       throw new Error(`Supabase auth health check failed: ${health.status}`);
     }
     testCode = await run('yarn', ['build'], { env });
-    if (testCode !== 0) {
-      return;
+    if (testCode === 0) {
+      testCode = await run('yarn', ['playwright', 'test'], { env });
     }
-    testCode = await run('yarn', ['playwright', 'test'], { env });
   } finally {
     if (started) {
       try {

@@ -135,53 +135,71 @@ async function setCredits(client: SupabaseClient, userId: string, balance: numbe
   }
 }
 
+function trackUser(personas: Persona[], kind: PersonaKind, email: string, userId: string) {
+  const persona: Persona = { kind, email, userId };
+  personas.push(persona);
+  return persona;
+}
+
 export async function provisionPersonas(identity: Identity): Promise<Persona[]> {
   const client = serviceClient();
   const personas: Persona[] = [];
 
-  const emptyId = await createUser(client, emailFor(identity, 'empty'));
-  personas.push({ kind: 'empty', email: emailFor(identity, 'empty'), userId: emptyId });
+  try {
+    const emptyEmail = emailFor(identity, 'empty');
+    trackUser(personas, 'empty', emptyEmail, await createUser(client, emptyEmail));
 
-  const completeEmail = emailFor(identity, 'complete');
-  const completeId = await createUser(client, completeEmail);
-  await insertProfile(client, completeId, completeEmail);
-  personas.push({ kind: 'complete', email: completeEmail, userId: completeId });
+    const completeEmail = emailFor(identity, 'complete');
+    const complete = trackUser(
+      personas,
+      'complete',
+      completeEmail,
+      await createUser(client, completeEmail),
+    );
+    await insertProfile(client, complete.userId, completeEmail);
 
-  const draftEmail = emailFor(identity, 'draft');
-  const draftUser = await createUser(client, draftEmail);
-  const draftId = await insertResume(client, draftUser, 'Draft resume', null);
-  personas.push({ kind: 'draft', email: draftEmail, userId: draftUser, resumeId: draftId });
+    const draftEmail = emailFor(identity, 'draft');
+    const draft = trackUser(personas, 'draft', draftEmail, await createUser(client, draftEmail));
+    draft.resumeId = await insertResume(client, draft.userId, 'Draft resume', null);
 
-  const generatedEmail = emailFor(identity, 'generated');
-  const generatedUser = await createUser(client, generatedEmail);
-  const originalId = await insertResume(
-    client,
-    generatedUser,
-    'Generated resume',
-    'http://127.0.0.1:3999/resume/generated.pdf',
-  );
-  const openDraftId = await insertResume(client, generatedUser, 'Open draft', null, originalId);
-  personas.push({
-    kind: 'generated',
-    email: generatedEmail,
-    userId: generatedUser,
-    resumeId: openDraftId,
-  });
+    const generatedEmail = emailFor(identity, 'generated');
+    const generated = trackUser(
+      personas,
+      'generated',
+      generatedEmail,
+      await createUser(client, generatedEmail),
+    );
+    const originalId = await insertResume(
+      client,
+      generated.userId,
+      'Generated resume',
+      'http://127.0.0.1:3999/resume/generated.pdf',
+    );
+    generated.resumeId = await insertResume(client, generated.userId, 'Open draft', null, originalId);
 
-  const creditKinds = [
-    ['creditsZero', CREDIT_BOUNDARIES.zero],
-    ['creditsBelow', CREDIT_BOUNDARIES.belowPrice],
-    ['creditsExact', CREDIT_BOUNDARIES.exactPrice],
-    ['creditsAmple', CREDIT_BOUNDARIES.ample],
-  ] as const;
-  for (const [kind, balance] of creditKinds) {
-    const email = emailFor(identity, kind);
-    const userId = await createUser(client, email);
-    await setCredits(client, userId, balance);
-    personas.push({ kind, email, userId });
+    const creditKinds = [
+      ['creditsZero', CREDIT_BOUNDARIES.zero],
+      ['creditsBelow', CREDIT_BOUNDARIES.belowPrice],
+      ['creditsExact', CREDIT_BOUNDARIES.exactPrice],
+      ['creditsAmple', CREDIT_BOUNDARIES.ample],
+    ] as const;
+    for (const [kind, balance] of creditKinds) {
+      const email = emailFor(identity, kind);
+      const persona = trackUser(personas, kind, email, await createUser(client, email));
+      await setCredits(client, persona.userId, balance);
+    }
+
+    return personas;
+  } catch (error) {
+    try {
+      await deletePersonas([...personas]);
+    } catch (cleanupError) {
+      const reason = error instanceof Error ? error.message : String(error);
+      const cleanup = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+      throw new Error(`${reason}; cleanup failed: ${cleanup}`);
+    }
+    throw error;
   }
-
-  return personas;
 }
 
 export async function deletePersonas(personas: Persona[]) {
