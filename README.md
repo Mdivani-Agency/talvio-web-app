@@ -82,7 +82,7 @@ Supabase `db push` still reads GitHub Environment secrets when the hosted projec
 | `SUPABASE_ACCESS_TOKEN` | Supabase CLI `db push` |
 | `SUPABASE_PROJECT_REF` | Target project ref for that environment |
 
-`db push` skips until the Supabase secrets are set. Deploy fails until `VERCEL_TOKEN` is a repository secret and the Vercel org/project IDs are repository secrets or variables.
+`db push` fails until both Supabase environment secrets are set. Deploy fails until `VERCEL_TOKEN` is a repository secret and the Vercel org/project IDs are repository secrets or variables.
 
 ## Deploy on Vercel
 

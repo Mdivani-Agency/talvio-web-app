@@ -56,7 +56,7 @@ After quality checks pass on `development` or `main`, GitHub Actions runs
 `supabase db push` (forward-only, pending migrations) then a Vercel CLI
 deploy. That path does not run on pull requests. Use GitHub Environments
 `development` and `production` with secrets `SUPABASE_ACCESS_TOKEN` and
-`SUPABASE_PROJECT_REF` (one ref per environment). The db-push job skips
+`SUPABASE_PROJECT_REF` (one ref per environment). The db-push job fails
 until those are set.
 
 PR merge gates for db / e2e / unit / integration tests will land later;

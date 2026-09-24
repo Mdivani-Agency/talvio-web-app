@@ -80,20 +80,21 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Skip when hosted project is not configured
-        if: env.SUPABASE_ACCESS_TOKEN == '' || env.SUPABASE_PROJECT_REF == ''
+      - name: Require Supabase credentials
         run: |
-          echo "::notice::Skipping db push — set environment secrets SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF."
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN}" ] || [ -z "${SUPABASE_PROJECT_REF}" ]; then
+            echo "::error::Set environment secrets SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF."
+            exit 1
+          fi
 
       - name: Set up Supabase CLI
-        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
         uses: supabase/setup-cli@v3
         with:
           version: 2.117.0
 
       - name: Push pending migrations
-        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
-        run: supabase db push --yes --project-ref "${{ env.SUPABASE_PROJECT_REF }}"
+        run: supabase db push --yes --project-ref "${SUPABASE_PROJECT_REF}"
 
   deploy:
     name: Deploy to Vercel
