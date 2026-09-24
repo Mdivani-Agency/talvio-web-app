@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 
 import { localE2EEnv } from './e2e-env.mjs';
+import { confirmSimulatorReady } from './e2e-simulator-ready.mjs';
 
 const SIMULATOR_PORT = 3999;
 
@@ -65,9 +67,13 @@ async function supabase(args, options) {
   }
 }
 
-function startSimulator(env) {
+function startSimulator(env, token) {
   const child = spawn(process.execPath, ['e2e/services/simulator.mjs'], {
-    env: { ...env, E2E_SIMULATOR_PORT: String(SIMULATOR_PORT) },
+    env: {
+      ...env,
+      E2E_SIMULATOR_PORT: String(SIMULATOR_PORT),
+      E2E_SIMULATOR_TOKEN: token,
+    },
     stdio: 'inherit',
   });
   return child;
@@ -108,22 +114,13 @@ async function main() {
     if (!health.ok) {
       throw new Error(`Supabase auth health check failed: ${health.status}`);
     }
-    simulator = startSimulator(env);
-    let ready = false;
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const healthCheck = await fetch(`http://127.0.0.1:${SIMULATOR_PORT}/health`).catch(() => null);
-      if (healthCheck?.ok) {
-        ready = true;
-        break;
-      }
-      if (simulator.exitCode != null) {
-        break;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    if (!ready) {
-      throw new Error('Local simulator health check failed');
-    }
+    const simulatorToken = randomUUID();
+    simulator = startSimulator(env, simulatorToken);
+    await confirmSimulatorReady({
+      port: SIMULATOR_PORT,
+      token: simulatorToken,
+      isAlive: () => simulator.exitCode == null && simulator.signalCode == null,
+    });
     testCode = await run('yarn', ['build'], { env });
     if (testCode === 0) {
       testCode = await run('yarn', ['playwright', 'test'], { env });

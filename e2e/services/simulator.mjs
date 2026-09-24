@@ -202,7 +202,7 @@ export function createSimulator() {
       const body = request.method === 'GET' || request.method === 'HEAD' ? Buffer.alloc(0) : await readBody(request);
 
       if (request.method === 'GET' && path === '/health') {
-        send(response, 200, { ok: true });
+        send(response, 200, { ok: true, token: process.env.E2E_SIMULATOR_TOKEN ?? null });
         return;
       }
       if (request.method === 'POST' && path === '/__e2e/reset') {
