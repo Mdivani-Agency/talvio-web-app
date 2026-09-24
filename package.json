@@ -20,7 +20,11 @@
     "codegen": "graphql-codegen --config codegen.ts",
     "codegen:from-supabase": "CODEGEN_FROM_SUPABASE=1 graphql-codegen --config codegen.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:local": "node scripts/e2e-local.mjs",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@headlessui/react": "2.2.10",
@@ -83,6 +87,7 @@
     "@graphql-codegen/typescript-graphql-request": "7.1.0",
     "@graphql-codegen/typescript-operations": "6.1.6",
     "@parcel/watcher": "2.6.0",
+    "@playwright/test": "1.55.1",
     "@svgr/webpack": "8.1.0",
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/dom": "10.4.2",
