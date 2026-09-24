@@ -9,7 +9,10 @@ export async function POST(request: Request) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    const parsed = await textToStructuredResume(resume);
+    const scenario = process.env.OPENAI_BASE_URL
+      ? request.headers.get('x-e2e-scenario')
+      : null;
+    const parsed = await textToStructuredResume(resume, scenario);
     console.log('response raw', parsed);
     return new Response(JSON.stringify(parsed), {
       status: 200,

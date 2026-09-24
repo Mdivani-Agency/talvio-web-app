@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 
 import { localE2EEnv } from './e2e-env.mjs';
 
+const SIMULATOR_PORT = 3999;
+
 const SUPABASE = ['npx', '--yes', 'supabase@2.117.0'];
 
 function run(command, args, { env = process.env, cwd = process.cwd() } = {}) {
@@ -63,8 +65,34 @@ async function supabase(args, options) {
   }
 }
 
+function startSimulator(env) {
+  const child = spawn(process.execPath, ['e2e/services/simulator.mjs'], {
+    env: { ...env, E2E_SIMULATOR_PORT: String(SIMULATOR_PORT) },
+    stdio: 'inherit',
+  });
+  return child;
+}
+
+async function stopSimulator(child) {
+  if (!child || child.exitCode != null || child.signalCode) {
+    return;
+  }
+  child.kill('SIGTERM');
+  await new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      resolve();
+    }, 2000);
+    child.once('exit', () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
 async function main() {
   let started = false;
+  let simulator;
   let testCode = 1;
   try {
     await supabase(['start']);
@@ -80,11 +108,35 @@ async function main() {
     if (!health.ok) {
       throw new Error(`Supabase auth health check failed: ${health.status}`);
     }
+    simulator = startSimulator(env);
+    let ready = false;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const healthCheck = await fetch(`http://127.0.0.1:${SIMULATOR_PORT}/health`).catch(() => null);
+      if (healthCheck?.ok) {
+        ready = true;
+        break;
+      }
+      if (simulator.exitCode != null) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (!ready) {
+      throw new Error('Local simulator health check failed');
+    }
     testCode = await run('yarn', ['build'], { env });
     if (testCode === 0) {
       testCode = await run('yarn', ['playwright', 'test'], { env });
     }
   } finally {
+    try {
+      await stopSimulator(simulator);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : error);
+      if (testCode === 0) {
+        testCode = 1;
+      }
+    }
     if (started) {
       try {
         await supabase(['stop', '--no-backup']);

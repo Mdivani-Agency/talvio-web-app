@@ -59,6 +59,8 @@ export function serviceClient(): SupabaseClient {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: requireEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'),
     SUPABASE_SECRET_KEY: requireEnv('SUPABASE_SECRET_KEY'),
     MEDIA_API_BASE_URL: process.env.MEDIA_API_BASE_URL ?? 'http://127.0.0.1:3999',
+    OPENAI_BASE_URL: requireEnv('OPENAI_BASE_URL'),
+    GOOGLE_FONTS_API_BASE: requireEnv('GOOGLE_FONTS_API_BASE'),
   };
   assertLocalServiceOrigins(env);
   return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY, {
