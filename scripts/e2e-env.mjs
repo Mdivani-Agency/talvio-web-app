@@ -5,6 +5,8 @@ const ORIGIN_KEYS = [
   'NEXT_PUBLIC_API_BASE_URL',
   'NEXT_PUBLIC_SUPABASE_URL',
   'MEDIA_API_BASE_URL',
+  'OPENAI_BASE_URL',
+  'GOOGLE_FONTS_API_BASE',
 ];
 
 export function assertLocalServiceOrigins(env) {
@@ -45,7 +47,9 @@ export function localE2EEnv(status) {
     MEDIA_API_BASE_URL: 'http://127.0.0.1:3999',
     MEDIA_SERVICE_API_KEY: 'local-e2e-dummy',
     OPENAI_API_KEY: 'local-e2e-dummy',
+    OPENAI_BASE_URL: 'http://127.0.0.1:3999/v1',
     GOOGLE_FONTS_API_KEY: 'local-e2e-dummy',
+    GOOGLE_FONTS_API_BASE: 'http://127.0.0.1:3999',
   };
   assertLocalServiceOrigins(env);
   return env;

@@ -9,6 +9,8 @@ const localEnv = {
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable',
   SUPABASE_SECRET_KEY: 'secret',
   MEDIA_API_BASE_URL: 'http://127.0.0.1:3999',
+  OPENAI_BASE_URL: 'http://127.0.0.1:3999/v1',
+  GOOGLE_FONTS_API_BASE: 'http://127.0.0.1:3999',
 };
 
 describe('local E2E origins', () => {
@@ -40,5 +42,18 @@ describe('local E2E origins', () => {
     expect(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).toBe('anon');
     expect(env.SUPABASE_SECRET_KEY).toBe('service');
     expect(env.NEXT_PUBLIC_BASE_URL).toBe('http://localhost:3002');
+    expect(env.OPENAI_BASE_URL).toBe('http://127.0.0.1:3999/v1');
+    expect(env.GOOGLE_FONTS_API_BASE).toBe('http://127.0.0.1:3999');
+  });
+
+  it('rejects a hosted model or font origin', () => {
+    expect(() => assertLocalServiceOrigins({
+      ...localEnv,
+      OPENAI_BASE_URL: 'https://api.openai.com/v1',
+    })).toThrow(/OPENAI_BASE_URL/);
+    expect(() => assertLocalServiceOrigins({
+      ...localEnv,
+      GOOGLE_FONTS_API_BASE: 'https://www.googleapis.com',
+    })).toThrow(/GOOGLE_FONTS_API_BASE/);
   });
 });

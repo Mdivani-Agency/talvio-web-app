@@ -1,6 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 
 import { localE2EEnv } from './e2e-env.mjs';
+import { confirmSimulatorReady } from './e2e-simulator-ready.mjs';
+
+const SIMULATOR_PORT = 3999;
 
 const SUPABASE = ['npx', '--yes', 'supabase@2.117.0'];
 
@@ -63,8 +67,38 @@ async function supabase(args, options) {
   }
 }
 
+function startSimulator(env, token) {
+  const child = spawn(process.execPath, ['e2e/services/simulator.mjs'], {
+    env: {
+      ...env,
+      E2E_SIMULATOR_PORT: String(SIMULATOR_PORT),
+      E2E_SIMULATOR_TOKEN: token,
+    },
+    stdio: 'inherit',
+  });
+  return child;
+}
+
+async function stopSimulator(child) {
+  if (!child || child.exitCode != null || child.signalCode) {
+    return;
+  }
+  child.kill('SIGTERM');
+  await new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      resolve();
+    }, 2000);
+    child.once('exit', () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
 async function main() {
   let started = false;
+  let simulator;
   let testCode = 1;
   try {
     await supabase(['start']);
@@ -80,11 +114,26 @@ async function main() {
     if (!health.ok) {
       throw new Error(`Supabase auth health check failed: ${health.status}`);
     }
+    const simulatorToken = randomUUID();
+    simulator = startSimulator(env, simulatorToken);
+    await confirmSimulatorReady({
+      port: SIMULATOR_PORT,
+      token: simulatorToken,
+      isAlive: () => simulator.exitCode == null && simulator.signalCode == null,
+    });
     testCode = await run('yarn', ['build'], { env });
     if (testCode === 0) {
       testCode = await run('yarn', ['playwright', 'test'], { env });
     }
   } finally {
+    try {
+      await stopSimulator(simulator);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : error);
+      if (testCode === 0) {
+        testCode = 1;
+      }
+    }
     if (started) {
       try {
         await supabase(['stop', '--no-backup']);

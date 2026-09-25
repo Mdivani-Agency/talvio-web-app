@@ -33,7 +33,7 @@ yarn db:diff     # generate a migration from the shadow DB
 yarn db:push     # apply pending migrations to a linked remote
 ```
 
-`yarn test:e2e:local` starts that stack, builds the production app, serves it on port 3002, and runs Playwright. It refuses hosted Supabase or media origins. `yarn test:e2e` expects that stack and build to already be running.
+`yarn test:e2e:local` starts that stack, a loopback media/AI/font simulator on `127.0.0.1:3999`, builds the production app, serves it on port 3002, and runs Playwright. It refuses hosted Supabase, media, OpenAI, or Google Fonts origins. `OPENAI_BASE_URL` and `GOOGLE_FONTS_API_BASE` stay unset in production, so those clients keep `api.openai.com` and `googleapis.com`. `yarn test:e2e` expects that stack and build to already be running.
 
 Copy URL and keys from `supabase status` into `.env.local`. GraphQL smoke test:
 
