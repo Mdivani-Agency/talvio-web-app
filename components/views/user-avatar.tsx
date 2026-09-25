@@ -51,7 +51,7 @@ export function UserAvatar({ className, user }: UserAvatarProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Avatar className={cn('size-8', className)}>
+          <Avatar aria-label="Account menu" data-testid="account-menu" className={cn('size-8', className)}>
             <AvatarImage src={user?.image || ''} />
             <AvatarFallback>
               {user?.name?.charAt(0) || 'A'}
