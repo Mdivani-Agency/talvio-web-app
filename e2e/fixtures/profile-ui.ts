@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 import { serviceClient } from './data';
 
@@ -59,13 +59,32 @@ export async function fillIdentity(page: Page, values: {
   }
 }
 
+async function chooseOpenOption(page: Page, name: string) {
+  await page.waitForFunction((label) => {
+    return [...document.querySelectorAll('[role="listbox"] [role="option"]')].some((option) => option.textContent?.trim() === label);
+  }, name);
+  await page.evaluate((label) => {
+    const listbox = [...document.querySelectorAll<HTMLElement>('[role="listbox"]')].reverse().find((box) => {
+      return [...box.querySelectorAll('[role="option"]')].some((option) => option.textContent?.trim() === label);
+    });
+    const option = [...(listbox?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])].find((item) => item.textContent?.trim() === label);
+    if (!listbox || !option) {
+      throw new Error(`Could not choose ${label}`);
+    }
+    listbox.scrollTop += option.getBoundingClientRect().top - listbox.getBoundingClientRect().top;
+    option.click();
+  }, name);
+}
+
 export async function chooseDate(page: Page, scope: Locator, label: string, month: string, year: string) {
   const block = scope.getByText(label, { exact: true }).locator('xpath=..').last();
   await block.scrollIntoViewIfNeeded();
   await block.getByRole('button').nth(0).click();
-  await page.getByRole('option', { name: month, exact: true }).click({ force: true });
+  await chooseOpenOption(page, month);
+  await expect(block.getByRole('button').nth(0)).toContainText(month);
   await block.getByRole('button').nth(1).click();
-  await page.getByRole('option', { name: year, exact: true }).click({ force: true });
+  await chooseOpenOption(page, year);
+  await expect(block.getByRole('button').nth(1)).toContainText(year);
 }
 
 export async function chooseOption(page: Page, scope: Locator, index: number, option: string) {
