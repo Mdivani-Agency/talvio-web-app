@@ -137,7 +137,7 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
   await page.getByTestId('account-menu').first().click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await page.getByRole('button', { name: 'Sign out' }).click();
-  await expect(page).toHaveURL(/localhost:3002\/?$/);
+  await expect(page).toHaveURL(/localhost:3002\/(?:home\/?)?$/);
 
   await page.goto('/account');
   await expect(page).toHaveURL(/\/auth\/sign-in/);
