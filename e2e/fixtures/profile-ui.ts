@@ -16,7 +16,15 @@ export async function setScenario(mode: string) {
 }
 
 export function section(page: Page, placeholder: string) {
-  return page.locator('section').filter({ has: page.getByPlaceholder(placeholder) }).first();
+  return page.locator('section').filter({ has: page.getByPlaceholder(placeholder) }).last();
+}
+
+async function fillAutocomplete(page: Page, placeholder: string, value: string) {
+  const input = page.getByPlaceholder(placeholder);
+  await input.click();
+  await page.keyboard.insertText(value);
+  await page.keyboard.press('Escape');
+  await input.blur();
 }
 
 export async function fillIdentity(page: Page, values: {
@@ -44,10 +52,10 @@ export async function fillIdentity(page: Page, values: {
     await page.getByPlaceholder('Personal Website (optional)').fill(values.website);
   }
   if (values.city != null) {
-    await page.getByPlaceholder('City').fill(values.city);
+    await fillAutocomplete(page, 'City', values.city);
   }
   if (values.country != null) {
-    await page.getByPlaceholder('Country').fill(values.country);
+    await fillAutocomplete(page, 'Country', values.country);
   }
 }
 
