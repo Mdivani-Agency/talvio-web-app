@@ -9,15 +9,7 @@ import {
 
 import { getGraphqlSdk, shouldRetryGraphqlQuery, type GraphqlSdk } from '@/lib/graphql-client';
 
-export type Collection<T> = {
-  edges?: Array<{ node?: T | null } | null> | null;
-} | null;
-
-export function unwrapCollection<T>(collection: Collection<T> | undefined): T[] {
-  return (collection?.edges ?? [])
-    .map((edge) => edge?.node)
-    .filter((node): node is T => node != null);
-}
+export { unwrapCollection, type Collection } from './collection';
 
 type GraphqlQueryOptions<T> = Omit<
   UseQueryOptions<T, Error, T, QueryKey>,

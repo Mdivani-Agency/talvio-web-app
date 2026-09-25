@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { unwrapCollection } from './base-query';
+import { unwrapCollection } from './collection';
 
 describe('unwrapCollection', () => {
   it('returns nodes from edges', () => {

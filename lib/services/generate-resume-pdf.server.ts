@@ -1,7 +1,7 @@
 import { toResume } from '@/lib/adapters/resume.adapter';
 import { uploadResumePdfBytes } from '@/lib/clients/media.server';
 import { getServerGraphqlSdk } from '@/lib/graphql/server-sdk';
-import { unwrapCollection } from '@/lib/query/base-query';
+import { unwrapCollection } from '@/lib/query/collection';
 import { resumePdfFilename } from '@/lib/resume-filename';
 import { generateResumePdfBytes } from '@/lib/services/resume-pdf.server';
 import type { ApiUserContext } from '@/lib/supabase/require-api-user';
