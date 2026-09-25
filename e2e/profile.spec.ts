@@ -230,8 +230,9 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   await chooseDate(page, experience, 'End Date', 'Dec', '2019');
   await experience.getByRole('button', { name: 'Add', exact: true }).click();
   await expandEntries(experience, 2);
-  await experience.getByRole('heading', { name: 'Beta Labs' }).locator('xpath=ancestor::div[contains(@class,"justify-between")][1]').getByRole('button', { name: 'Edit entry' }).click();
-  const editor = experience.locator('div').filter({ has: page.getByRole('heading', { name: 'Edit Beta Labs' }) }).last();
+  await experience.getByRole('button', { name: 'Edit entry' }).click();
+  await expect(experience.getByRole('heading', { name: 'Edit Beta Labs' })).toBeVisible();
+  const editor = experience.locator('div').filter({ has: page.getByRole('heading', { name: 'Edit Beta Labs' }) }).filter({ has: page.getByRole('button', { name: 'Save', exact: true }) }).last();
   await editor.getByPlaceholder('Company').fill('Beta Edited');
   await chooseDate(page, editor, 'Start Date', 'Jan', '2020');
   await chooseDate(page, editor, 'End Date', 'Jun', '2022');
