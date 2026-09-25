@@ -127,7 +127,7 @@ test('PROF-01 manual profile answers questions and survives reload', async ({ pa
   await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('AI polished summary for the local profile.');
   await page.getByRole('button', { name: 'Save profile' }).click();
 
-  await expect(page.getByRole('button', { name: 'Create Resume' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Create Resume' })).toBeVisible();
   await expect(page.getByText('Ada Manual')).toBeVisible();
   await expect(page.getByText('Staff Engineer')).toBeVisible();
   await expect(page.getByText('AI polished summary for the local profile.')).toBeVisible();
@@ -164,7 +164,8 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
 
   await page.getByPlaceholder('Email').fill('ada.invalid@talvio.test');
   await addTag(page, 'Other Personal Links (optional)', 'not-a-url');
-  await expect(page.getByText('Enter a valid URL')).toBeVisible();
+  await page.getByPlaceholder('Other Personal Links (optional)').locator('xpath=..').getByRole('button').hover();
+  await expect(page.getByRole('tooltip')).toHaveText('Enter a valid URL');
 
   const experience = section(page, 'Company');
   await experience.getByPlaceholder('Company').fill('Date Check');
@@ -231,8 +232,11 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   await experience.getByRole('button', { name: 'Add', exact: true }).click();
   await expandEntries(experience, 2);
   await experience.getByRole('heading', { name: 'Beta Labs' }).locator('xpath=ancestor::div[contains(@class,"justify-between")][1]').getByRole('button').first().click();
-  await experience.getByPlaceholder('Company').nth(1).fill('Beta Edited');
-  await experience.getByRole('button', { name: 'Save', exact: true }).click();
+  const editor = experience.locator('div').filter({ has: page.getByRole('heading', { name: 'Edit Beta Labs' }) }).last();
+  await editor.getByPlaceholder('Company').fill('Beta Edited');
+  await chooseDate(page, editor, 'Start Date', 'Jan', '2020');
+  await chooseDate(page, editor, 'End Date', 'Jun', '2022');
+  await editor.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(experience.getByRole('heading', { name: 'Beta Edited' })).toBeVisible();
 
   await dragItem(page, 'Beta Edited', 'Alpha Corp');
