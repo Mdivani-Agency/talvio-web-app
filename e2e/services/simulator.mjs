@@ -121,18 +121,105 @@ function responseEnvelope(text) {
   };
 }
 
-function successText() {
-  return `\`\`\`json\n${JSON.stringify(SUCCESS_ACCOUNT)}\n\`\`\``;
+const QUESTIONS = [
+  {
+    question: 'What impact did you deliver in your latest role?',
+    example: 'Reduced downtime by 30%',
+  },
+  {
+    question: 'Which tools mattered most on that work?',
+    example: 'React and Docker',
+  },
+];
+
+const IMPORTED_ACCOUNT = {
+  ...SUCCESS_ACCOUNT,
+  profile: {
+    ...SUCCESS_ACCOUNT.profile,
+    tagline: 'Imported from the local resume.',
+    phone: '+15555550100',
+    website: 'https://ada.talvio.test',
+    city: 'Tbilisi',
+    country: 'Georgia',
+  },
+  experience: [
+    {
+      company: 'Imported Labs',
+      jobTitle: 'Engineer',
+      startDate: '2020-01-01T00:00:00.000Z',
+      endDate: '2022-06-01T00:00:00.000Z',
+      isPresent: null,
+      employmentType: 'full-time',
+      locationType: 'remote',
+      additionalDetails: 'Shipped the import path.',
+      achievements: ['Launched parsing'],
+      responsibilities: ['Reviewed extracted fields'],
+      keyContributions: [],
+    },
+  ],
+  education: [
+    {
+      name: 'Talvio Institute',
+      degreeType: "Bachelor's Degree",
+      startDate: '2016-09-01T00:00:00.000Z',
+      endDate: '2020-06-01T00:00:00.000Z',
+      isPresent: null,
+      additionalDetails: 'Focused on software.',
+    },
+  ],
+  projects: [
+    {
+      name: 'Imported Project',
+      url: 'https://ada.talvio.test/project',
+      additionalDetails: 'Imported project details that are long enough to satisfy the profile form and stay editable after the PDF parse completes.',
+    },
+  ],
+  skills: [{ name: 'Parsing' }],
+  tools: [{ name: 'pdf.js' }],
+  links: [{ value: 'https://ada.talvio.test', type: 'talvio' }],
+  languages: [{ language: 'English', proficiency: 'fluent' }],
+};
+
+function requestKind(body) {
+  const text = body.toString('utf8');
+  if (text.includes('resume reviewer')) {
+    return 'questions';
+  }
+  if (text.includes('resume editor')) {
+    return 'tailor';
+  }
+  return 'parse';
 }
 
-async function handleAi(request, response) {
+function successText(kind, scenario) {
+  if (kind === 'questions') {
+    const questions = scenario === 'zero_questions' ? [] : QUESTIONS;
+    return JSON.stringify({ questions });
+  }
+  if (kind === 'tailor') {
+    return JSON.stringify({
+      profile: { tagline: 'AI polished summary for the local profile.' },
+    });
+  }
+  return JSON.stringify(IMPORTED_ACCOUNT);
+}
+
+function scenarioFails(scenario, kind) {
+  return scenario === 'error'
+    || (scenario === 'parse_error' && kind === 'parse')
+    || (scenario === 'qa_error' && kind === 'questions')
+    || (scenario === 'tailor_error' && kind === 'tailor');
+}
+
+async function handleAi(request, response, body) {
   const scenario = request.headers['x-e2e-scenario'] || state.scenario;
+  const kind = requestKind(body);
   if (scenario === 'timeout') {
     await new Promise((resolve) => setTimeout(resolve, TIMEOUT_MS));
     send(response, 504, { error: { message: 'simulated timeout', type: 'timeout' } });
     return;
   }
-  if (scenario === 'error') {
+  if (scenarioFails(scenario, kind)) {
     send(response, 500, { error: { message: 'simulated upstream error', type: 'server_error' } });
     return;
   }
@@ -140,8 +227,12 @@ async function handleAi(request, response) {
     send(response, 200, responseEnvelope('MALFORMED {{{'));
     return;
   }
-  if (scenario === 'success') {
-    send(response, 200, responseEnvelope(successText()));
+  if (scenario === 'delayed') {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  const known = new Set(['success', 'delayed', 'zero_questions', 'parse_error', 'qa_error', 'tailor_error']);
+  if (known.has(scenario)) {
+    send(response, 200, responseEnvelope(successText(kind, scenario)));
     return;
   }
   state.unexpected.push(`${request.method} ${request.url}`);
@@ -221,7 +312,7 @@ export function createSimulator() {
         return;
       }
       if (request.method === 'POST' && path === '/v1/responses') {
-        await handleAi(request, response);
+        await handleAi(request, response, body);
         return;
       }
       if (request.method === 'GET' && path === '/webfonts/v1/webfonts') {

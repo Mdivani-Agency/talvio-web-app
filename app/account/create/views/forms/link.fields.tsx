@@ -18,7 +18,13 @@ export const LinksFormField = ({ form }: LinksFormFieldProps) => {
   const { fields, append, remove, replace } = useFormArray<Link>(form, 'links');
 
   const addLink = async (link: string) => {
-    const type = getHostname(link);
+    let type = '';
+    try {
+      type = getHostname(link);
+    } catch {
+      setErrorMessage('Enter a valid URL');
+      return;
+    }
     const { error, success } = linkSchema.safeParse({ value: link, type });
 
     if (link && success) {
