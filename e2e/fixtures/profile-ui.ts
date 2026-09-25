@@ -108,14 +108,18 @@ export async function profileCount(userId: string) {
   return count ?? 0;
 }
 
-export async function orderedColumn(table: string, userId: string, column: string) {
+export async function orderedColumn(
+  table: 'experiences' | 'skills' | 'tools' | 'links' | 'projects',
+  userId: string,
+  column: string,
+) {
   const { data, error } = await serviceClient()
     .from(table)
-    .select(`${column}, sort_order`)
+    .select('*')
     .eq('user_id', userId)
     .order('sort_order');
   if (error) {
     throw new Error(error.message);
   }
-  return (data ?? []).map((row) => String((row as Record<string, unknown>)[column] ?? ''));
+  return (data ?? []).map((row) => String((row as unknown as Record<string, unknown>)[column] ?? ''));
 }
