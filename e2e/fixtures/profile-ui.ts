@@ -78,7 +78,6 @@ async function chooseOpenOption(page: Page, name: string) {
 
 export async function chooseDate(page: Page, scope: Locator, label: string, month: string, year: string) {
   const block = scope.getByText(label, { exact: true }).locator('xpath=..').last();
-  await block.scrollIntoViewIfNeeded();
   await block.getByRole('button').nth(0).click();
   await chooseOpenOption(page, month);
   await expect(block.getByRole('button').nth(0)).toContainText(month);
