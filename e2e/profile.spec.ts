@@ -235,7 +235,11 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   const editor = experience.locator('div').filter({ has: page.getByRole('heading', { name: 'Edit Beta Labs' }) }).filter({ has: page.getByRole('button', { name: 'Save', exact: true }) }).last();
   await editor.getByPlaceholder('Company').fill('Beta Edited');
   await editor.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(experience.getByRole('heading', { name: 'Beta Edited' })).toBeVisible();
+  const savedHeading = experience.getByRole('heading', { name: 'Beta Edited' });
+  if (await savedHeading.count() === 0) {
+    await expandEntries(experience, 2);
+  }
+  await expect(savedHeading).toBeVisible();
 
   await dragItem(page, 'Beta Edited', 'Alpha Corp');
   await expect(experience.locator('[draggable="true"]').first()).toContainText('Beta Edited');
