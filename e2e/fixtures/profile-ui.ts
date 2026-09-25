@@ -60,11 +60,12 @@ export async function fillIdentity(page: Page, values: {
 }
 
 export async function chooseDate(page: Page, scope: Locator, label: string, month: string, year: string) {
-  const block = scope.getByText(label, { exact: true }).locator('xpath=..');
+  const block = scope.getByText(label, { exact: true }).locator('xpath=..').last();
+  await block.scrollIntoViewIfNeeded();
   await block.getByRole('button').nth(0).click();
-  await page.getByRole('option', { name: month, exact: true }).click();
+  await page.getByRole('option', { name: month, exact: true }).click({ force: true });
   await block.getByRole('button').nth(1).click();
-  await page.getByRole('option', { name: year, exact: true }).click();
+  await page.getByRole('option', { name: year, exact: true }).click({ force: true });
 }
 
 export async function chooseOption(page: Page, scope: Locator, index: number, option: string) {
