@@ -22,14 +22,24 @@ const ExpandFormLabel = ({ name, isExpanded, onToggle, onDelete }: FormLabelProp
       </h3>
       <div className={'flex items-center gap-2'}>
         <Button
-          onClick={onToggle}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggle();
+          }}
           className={cn('py-1 text-primary cursor-pointer hover:text-primary-300', isExpanded && 'scale-y-[-1]')}
           variant="ghost"
           size="icon"
         >
           <Icon type={isExpanded ? 'ChevronUp'  : 'Edit'} className={cn('size-4 transition-transform text-foreground/50', isExpanded && 'scale-y-[-1]')} />
         </Button>
-        <Button onClick={onDelete} variant="ghost" size="icon">
+        <Button
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+          variant="ghost"
+          size="icon"
+        >
           <Icon type="TrashBin" className="size-4 text-foreground/50" />
         </Button>
       </div>

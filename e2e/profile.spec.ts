@@ -111,7 +111,7 @@ test('PROF-01 manual profile answers questions and survives reload', async ({ pa
   await page.waitForTimeout(600);
   await page.reload();
   await expect(page.getByPlaceholder('Your answer...')).toHaveValue('unfinished tools');
-  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(page.getByText('What impact did you deliver in your latest role?')).toBeVisible();
   await expect(page.getByPlaceholder('Your answer...')).toHaveValue('Cut deploy time in half');
   await page.getByRole('button', { name: 'Next' }).click();
@@ -150,7 +150,7 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
   const empty = persona(personas, 'empty');
   await openCreate(page, empty);
   await continueForm(page);
-  await expect(page.getByText('Invalid email address')).toBeVisible();
+  await expect(page.getByText('Invalid email address').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
 
   await fillIdentity(page, {
@@ -160,7 +160,7 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
     email: 'not-an-email',
   });
   await continueForm(page);
-  await expect(page.getByText('Invalid email address')).toBeVisible();
+  await expect(page.getByText('Invalid email address').first()).toBeVisible();
 
   await page.getByPlaceholder('Email').fill('ada.invalid@talvio.test');
   await addTag(page, 'Other Personal Links (optional)', 'not-a-url');
@@ -288,7 +288,7 @@ test('PROF-03 imported resume stays editable through save', async ({ page, perso
   await expect(page.getByText('Ada Edited')).toBeVisible();
   await expect(page.getByText('Imported Labs')).toBeVisible();
   await expect(page.getByText('Talvio Institute')).toBeVisible();
-  await expect(page.getByText('Imported Project')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Imported Project' })).toBeVisible();
   await page.reload();
   await expect(page.getByText('Ada Edited')).toBeVisible();
   await expect(page.getByText('Imported Labs')).toBeVisible();
