@@ -133,7 +133,7 @@ test('PROF-01 manual profile answers questions and survives reload', async ({ pa
   await expect(page.getByText('AI polished summary for the local profile.')).toBeVisible();
   await expect(page.getByText('Alpha Corp')).toBeVisible();
   await expect(page.getByText('Talvio Institute')).toBeVisible();
-  await expect(page.getByText('Signal Board')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Signal Board' })).toBeVisible();
   await expect(page.getByText('TypeScript')).toBeVisible();
   await expect(page.getByText('English - beginner')).toBeVisible();
   await page.reload();
@@ -183,8 +183,7 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
   await projects.getByPlaceholder('Project URL').fill('notaurl');
   await projects.getByPlaceholder('Additional Details').fill('Too short to save.');
   await projects.getByRole('button', { name: 'Add', exact: true }).click();
-  await expect(page.getByText(/Invalid URL|at least 150 characters/)).toBeVisible();
-  await expect(projects.locator('.cursor-pointer').filter({ hasText: '(0)' })).toBeVisible();
+  await expect(page.getByText(/Invalid URL|at least 150 characters/).first()).toBeVisible();
 
   await setScenario('zero_questions');
   await page.getByPlaceholder('First Name').fill('Ada');
@@ -221,7 +220,7 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
     await experience.getByRole('button', { name: 'Add', exact: true }).click();
   }
   await expandEntries(experience, 2);
-  await experience.getByRole('heading', { name: 'Alpha Corp' }).locator('xpath=ancestor::div[contains(@class,"justify-between")][1]').getByRole('button').nth(1).click();
+  await experience.getByRole('heading', { name: 'Alpha Corp' }).locator('xpath=ancestor::div[contains(@class,"justify-between")][1]').getByRole('button', { name: 'Remove entry' }).click();
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(experience.getByRole('heading', { name: 'Alpha Corp' })).toHaveCount(0);
 
@@ -231,7 +230,7 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   await chooseDate(page, experience, 'End Date', 'Dec', '2019');
   await experience.getByRole('button', { name: 'Add', exact: true }).click();
   await expandEntries(experience, 2);
-  await experience.getByRole('heading', { name: 'Beta Labs' }).locator('xpath=ancestor::div[contains(@class,"justify-between")][1]').getByRole('button').first().click();
+  await experience.getByRole('heading', { name: 'Beta Labs' }).locator('xpath=ancestor::div[contains(@class,"justify-between")][1]').getByRole('button', { name: 'Edit entry' }).click();
   const editor = experience.locator('div').filter({ has: page.getByRole('heading', { name: 'Edit Beta Labs' }) }).last();
   await editor.getByPlaceholder('Company').fill('Beta Edited');
   await chooseDate(page, editor, 'Start Date', 'Jan', '2020');

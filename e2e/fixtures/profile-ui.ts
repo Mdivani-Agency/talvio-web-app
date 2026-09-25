@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import { serviceClient } from './data';
 
-export const PROJECT_DETAILS = 'Built a profile project with enough detail to pass the form, including the outcome, the stack, and the people who used it every week.';
+export const PROJECT_DETAILS = 'Built a profile project with enough detail to pass the form, including the outcome, the stack, and the people who used it every week across several teams.';
 
 export async function setScenario(mode: string) {
   const response = await fetch('http://127.0.0.1:3999/__e2e/scenario', {

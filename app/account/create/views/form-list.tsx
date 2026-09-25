@@ -22,6 +22,7 @@ const ExpandFormLabel = ({ name, isExpanded, onToggle, onDelete }: FormLabelProp
       </h3>
       <div className={'flex items-center gap-2'}>
         <Button
+          aria-label={isExpanded ? 'Close entry' : 'Edit entry'}
           onClick={(event) => {
             event.stopPropagation();
             onToggle();
@@ -33,6 +34,7 @@ const ExpandFormLabel = ({ name, isExpanded, onToggle, onDelete }: FormLabelProp
           <Icon type={isExpanded ? 'ChevronUp'  : 'Edit'} className={cn('size-4 transition-transform text-foreground/50', isExpanded && 'scale-y-[-1]')} />
         </Button>
         <Button
+          aria-label="Remove entry"
           onClick={(event) => {
             event.stopPropagation();
             onDelete();
