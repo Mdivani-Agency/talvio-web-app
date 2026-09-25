@@ -27,11 +27,15 @@ type ExperienceFieldsProps = {
   action: 'add' | 'edit';
 };
 
+function definedDefaults(values: Partial<ExperienceFormValues>) {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined)) as Partial<ExperienceFormValues>;
+}
+
 export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, action, onSubmit }: ExperienceFieldsProps) => {
   const form = useAppForm<ExperienceFormValues>({
     defaultValues: {
       ...DEFAULT_VALUES,
-      ...defaultValues,
+      ...definedDefaults(defaultValues),
     },
     schema: experienceFormValuesSchema,
   });
