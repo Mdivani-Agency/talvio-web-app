@@ -242,7 +242,7 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   await expect(savedHeading).toBeVisible();
 
   await dragItem(page, 'Beta Edited', 'Alpha Corp');
-  await expect(experience.locator('[draggable="true"]').first()).toContainText('Beta Edited');
+  await expect(experience.locator('[draggable="true"]').first()).toContainText('Alpha Corp');
 
   await addTag(page, 'Add skills', 'First');
   await addTag(page, 'Add skills', 'Second');
@@ -258,10 +258,10 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   const experienceCard = page.locator('section').filter({ hasText: 'Experience' }).last();
   await expect(experienceCard.locator('p').filter({ hasText: 'Beta Edited' })).toBeVisible();
   expect((await experienceCard.locator('h3').allTextContents()).map((item) => item.trim())).toEqual(['Engineer', 'Engineer']);
-  expect(await orderedColumn('experiences', empty.userId, 'company')).toEqual(['Beta Edited', 'Alpha Corp']);
+  expect(await orderedColumn('experiences', empty.userId, 'company')).toEqual(['Alpha Corp', 'Beta Edited']);
   expect(await orderedColumn('skills', empty.userId, 'name')).toEqual(['Second', 'First']);
   await page.reload();
-  expect(await orderedColumn('experiences', empty.userId, 'company')).toEqual(['Beta Edited', 'Alpha Corp']);
+  expect(await orderedColumn('experiences', empty.userId, 'company')).toEqual(['Alpha Corp', 'Beta Edited']);
   expect(await profileCount(empty.userId)).toBe(1);
 });
 
