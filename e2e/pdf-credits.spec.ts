@@ -152,8 +152,9 @@ test('PDF-03 re-downloads the stored file without a new charge or upload', async
   expect(generates).toHaveLength(0);
 
   await page.goto('/account');
+  await rememberDownloads(page);
   await resumeRow(page, 'Stored resume').getByRole('button', { name: 'Download' }).click();
-  await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(1);
+  await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(0);
   expect(generates).toHaveLength(0);
   expect(await creditBalance(owner.userId)).toBe(270);
   expect((await mediaStats()).uploads).toBe(1);
@@ -332,8 +333,16 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
     return contentProfile(draft?.content ?? {}).role;
   }).toBe('Edited Family');
 
-  const downloads = await generateFromModal(page, 'Edited family');
-  expect(downloads.at(-1)?.download).toBe('Edited family.pdf');
+  await rememberDownloads(page);
+  await page.getByRole('button', { name: 'Download resume' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Final Review' });
+  await dialog.getByPlaceholder('Enter a resume name').fill('Edited family');
+  await dialog.getByRole('button', { name: 'Generate and Download Resume' }).click();
+  await expect.poll(async () => {
+    const draft = (await listResumes(owner.userId)).find((row) => row.sourceResumeId === originalId);
+    return draft?.pdfUrl ?? '';
+  }, { timeout: 90_000 }).not.toBe('');
+  await expect.poll(async () => (await recordedDownloads(page)).at(-1)?.download).toBe('Edited family.pdf');
 
   const rows = await listResumes(owner.userId);
   const original = rows.find((row) => row.id === originalId);
