@@ -22,11 +22,11 @@ export async function readPdfText(bytes: Uint8Array) {
             return;
           }
           const line = out.trim().split('\n').filter((item) => item.startsWith('{')).at(-1);
-        if (!line) {
-          reject(new Error(err || out || 'PDF reader returned no JSON'));
-          return;
-        }
-        resolve(line);
+          if (!line) {
+            reject(new Error(err || out || 'PDF reader returned no JSON'));
+            return;
+          }
+          resolve(line);
         },
       );
     });

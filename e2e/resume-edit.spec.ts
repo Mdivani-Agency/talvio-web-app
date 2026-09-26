@@ -274,7 +274,7 @@ test('RES-09 renders long Unicode content across preview pages and style changes
   await waitForPreview(page);
   await chooseFontSize(page, 'L');
   await waitForPreview(page);
-  await chooseColor(page, '#015408');
+  await chooseColor(page, '#670000');
   await waitForPreview(page);
 
   const download = page.getByRole('button', { name: 'Download resume' });
