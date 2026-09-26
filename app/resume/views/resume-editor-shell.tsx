@@ -81,8 +81,8 @@ export function ResumeEditorShell({
   };
 
   return (
-    <section className="grid min-w-0 grid-cols-1 md:grid-cols-5">
-      <div className="flex min-w-0 flex-col md:col-span-2">
+    <section className="grid h-dvh min-h-0 min-w-0 grid-cols-1 grid-rows-2 overflow-hidden md:h-auto md:grid-cols-5 md:grid-rows-1 md:overflow-visible">
+      <div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:col-span-2">
         <div className="flex flex-col gap-3 border-b border-input px-4 py-3 pt-16">
           {family ? (
             <div className="flex items-center justify-between gap-2">
@@ -149,7 +149,7 @@ export function ResumeEditorShell({
           ) : (
             <EditResumeView
               key={formKey}
-              className="h-screen pt-4"
+              className="h-full min-h-0 pt-4 md:h-screen"
               issues={issues}
               defaultValues={document.resume}
               onSubmit={(resume) => onChange({ resume })}
@@ -158,7 +158,7 @@ export function ResumeEditorShell({
         </AnimatedTransition>
       </div>
       <ResumePreview
-        className="min-w-0 pt-16 md:col-span-3"
+        className="min-h-0 min-w-0 md:col-span-3 md:pt-16"
         templateKey={document.template}
         resume={document.resume}
         fontSize={document.fontSize}

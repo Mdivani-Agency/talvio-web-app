@@ -41,6 +41,7 @@ test.describe('templates', () => {
       }
     }
 
+    await page.getByRole('button', { name: 'Entry Level', exact: true }).click();
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
     await page.getByRole('button', { name: /Fill Manually/ }).click();
     await waitForPreview(page);

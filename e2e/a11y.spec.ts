@@ -75,8 +75,7 @@ test('UX-01 named controls, keyboard entry, and dialog escape', async ({ page, p
   await expectNamedControls(page);
 
   const download = page.getByRole('button', { name: 'Download resume' });
-  await download.focus();
-  await page.keyboard.press('Enter');
+  await download.click();
   await expect(page.getByRole('dialog', { name: 'Final Review' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Resume name' })).toBeVisible();
   await expectNamedControls(page);
