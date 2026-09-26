@@ -92,7 +92,9 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
     mutationFn: async (dto: AccountDto) => {
       const parsed = accountSchema.safeParse(dto);
       if (!parsed.success || !parsed.data) {
-        throw new Error('Profile is not valid');
+        const issue = parsed.error?.issues[0];
+        const path = issue?.path.join('.') || 'profile';
+        throw new Error(issue ? `${path}: ${issue.message}` : 'Profile is not valid');
       }
       return saveProfile(userId, parsed.data);
     },

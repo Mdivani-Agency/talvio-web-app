@@ -15,7 +15,16 @@ interface CollapsibleProps {
 export function Collapsible({ label, children, open, className, labelClassName, onToggle }: CollapsibleProps) {
   return (
     <div className={className}>
-      <div className={labelClassName} onClick={onToggle} aria-expanded={open}>
+      <div
+        className={labelClassName}
+        onClick={(event) => {
+          if (event.target instanceof Element && event.target.closest('button')) {
+            return;
+          }
+          onToggle?.();
+        }}
+        aria-expanded={open}
+      >
         {label}
       </div>
       <AnimatePresence initial={false}>
