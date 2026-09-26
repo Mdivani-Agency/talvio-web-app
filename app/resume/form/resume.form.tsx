@@ -55,9 +55,7 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
     validateOn: 'submit',
   });
   const values = useStore(form.store, (state) => state.values);
-  const onSubmitRef = useRef(onSubmit);
   const lastSent = useRef<string | null>(null);
-  onSubmitRef.current = onSubmit;
   // List editors call replaceFieldValue, which updates the store without
   // TanStack onChange listeners. Read values here so those edits reach preview and save.
   useLayoutEffect(() => {
@@ -71,8 +69,8 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
     if (isInitial) {
       return;
     }
-    onSubmitRef.current(next);
-  }, [values]);
+    onSubmit(next);
+  }, [onSubmit, values]);
 
   const errorMap = useStore(form.store, (state) => state.errorMap);
   const profileHasError = (Boolean(errorMap) && hasFieldError(form, 'profile')) || issueOn(issues, ['profile']);
