@@ -35,7 +35,7 @@ test.describe('templates', () => {
         await expect(image).toHaveAttribute('src', new RegExp(`${level.id}-level-${style.id}`));
         await image.click();
         await expect(page).toHaveURL(new RegExp(`/resume\\?template=${level.id}-level-${style.id}$`));
-        await page.goBack();
+        await page.goto('/templates');
         await expect(page.getByRole('heading', { name: 'Choose Your Resume Template' })).toBeVisible();
         await page.getByRole('button', { name: level.label, exact: true }).click();
       }

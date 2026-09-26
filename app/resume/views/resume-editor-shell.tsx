@@ -167,22 +167,22 @@ export function ResumeEditorShell({
         handleChange={(key, value) => onChange({ [key]: value })}
         onDownload={requestDownload}
         action={(
-          <Button
-            variant="ghost"
-            className="text-muted-foreground font-medium size-8 hover:cursor-pointer"
-            title={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-            aria-label={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-            onClick={() => setPanel(panel === 'templates' ? 'form' : 'templates')}
-          >
-            <Tooltip>
-              <TooltipTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground font-medium size-8 hover:cursor-pointer"
+                title={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
+                aria-label={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
+                onClick={() => setPanel(panel === 'templates' ? 'form' : 'templates')}
+              >
                 <Icon type={panel === 'templates' ? 'Edit' : 'Switch'} className="size-4" />
-              </TooltipTrigger>
-              <TooltipContent>
-                {panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-              </TooltipContent>
-            </Tooltip>
-          </Button>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
+            </TooltipContent>
+          </Tooltip>
         )}
       />
       <DownloadResumeModal
