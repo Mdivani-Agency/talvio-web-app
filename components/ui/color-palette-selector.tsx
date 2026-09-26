@@ -45,7 +45,7 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
       onOpenChange={setOpen}
       onValueChange={handleSelect}
     >
-      <SelectTrigger style={{ background: color }} className={cn("flex items-center p-2 max-h-8 hover:cursor-pointer", className)}>
+      <SelectTrigger aria-label="Resume color" style={{ background: color }} className={cn("flex items-center p-2 max-h-8 hover:cursor-pointer", className)}>
         <Icon type="Paint" className="size-4 text-muted-foreground" />
       </SelectTrigger>
       <SelectContent className='bg-popover'>

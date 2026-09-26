@@ -171,6 +171,7 @@ export function ResumeEditorShell({
             variant="ghost"
             className="text-muted-foreground font-medium size-8 hover:cursor-pointer"
             title={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
+            aria-label={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
             onClick={() => setPanel(panel === 'templates' ? 'form' : 'templates')}
           >
             <Tooltip>
