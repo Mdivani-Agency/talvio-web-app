@@ -5,6 +5,9 @@ import { pathToFileURL } from 'node:url';
 
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
+console.warn = (...args) => process.stderr.write(`${args.map(String).join(' ')}\n`);
+console.log = (...args) => process.stderr.write(`${args.map(String).join(' ')}\n`);
+
 const require = createRequire(import.meta.url);
 GlobalWorkerOptions.workerSrc = pathToFileURL(require.resolve('pdfjs-dist/build/pdf.worker.mjs')).href;
 const standardFontDataUrl = pathToFileURL(`${dirname(require.resolve('pdfjs-dist/standard_fonts/FoxitSerif.pfb'))}/`).href;

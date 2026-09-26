@@ -206,7 +206,7 @@ test('RES-06 changes a generated label without a draft, render, or charge', asyn
 });
 
 function longResume() {
-  const story = '日本語の経歴 — café, naïve, résumé. ';
+  const story = 'Café résumé — naïve façade, coöperate, Zürich. ';
   const paragraph = (text: string) => ({
     type: 'doc',
     content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
@@ -214,19 +214,19 @@ function longResume() {
   return {
     profile: {
       firstName: 'Ada',
-      lastName: '文',
+      lastName: 'Naïve',
       role: 'Staff Engineer',
-      tagline: story.repeat(12),
+      tagline: story.repeat(20),
     },
     contacts: { email: 'ada@talvio.test' },
-    experience: Array.from({ length: 12 }, (_, index) => ({
-      company: `会社 ${index + 1}`,
+    experience: Array.from({ length: 16 }, (_, index) => ({
+      company: `Café ${index + 1}`,
       jobTitle: 'Engineer',
       startDate: '2020-01-01T00:00:00.000Z',
       endDate: '2022-06-01T00:00:00.000Z',
       employmentType: 'full-time',
       locationType: 'remote',
-      description: paragraph(`${story.repeat(6)} Role ${index + 1}.`),
+      description: paragraph(`${story.repeat(8)} Role ${index + 1}.`),
     })),
   };
 }
@@ -239,7 +239,7 @@ test('RES-09 renders long Unicode content across preview pages and style changes
     content: longResume(),
   });
   await openSignedIn(page, owner, `/resume/${resumeId}`);
-  await expect(page.getByPlaceholder('Last Name')).toHaveValue('文');
+  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Naïve');
   await waitForPreview(page);
 
   const pageCount = async () => {

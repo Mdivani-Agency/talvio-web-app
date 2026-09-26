@@ -1,3 +1,4 @@
+import { expandEntries } from './fixtures/profile-ui';
 import { expect, test } from './fixtures/test';
 import { fetchPdfText } from './fixtures/pdf-text';
 import {
@@ -102,6 +103,7 @@ test('RES-01 guest download returns to the resume and can keep the draft', async
   await page.waitForFunction(() => Object.values(localStorage).some((value) => value?.includes('Guestkeep')));
   await waitForPreview(page);
   await page.getByRole('button', { name: 'Download resume' }).click();
+  await page.getByRole('dialog', { name: 'Final Review' }).getByRole('button', { name: 'Generate and Download Resume' }).click();
   await page.waitForURL(/\/auth\/sign-in/);
   expect(new URL(page.url()).searchParams.get('callbackURL')).toBe('/resume');
   expect(await page.evaluate(() => Object.values(localStorage).some((value) => value?.includes('Guestkeep')))).toBe(true);
@@ -120,6 +122,7 @@ test('RES-01 guest download keeps a template return path', async ({ page }) => {
   await page.getByPlaceholder('First Name').fill('Templated');
   await waitForPreview(page);
   await page.getByRole('button', { name: 'Download resume' }).click();
+  await page.getByRole('dialog', { name: 'Final Review' }).getByRole('button', { name: 'Generate and Download Resume' }).click();
   await page.waitForURL(/\/auth\/sign-in/);
   expect(new URL(page.url()).searchParams.get('callbackURL')).toBe('/resume?template=senior-level-ember');
 });
@@ -136,6 +139,9 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
   await page.getByPlaceholder('First Name').fill('Nia');
   await page.getByPlaceholder('Role').fill('Edited Engineer');
   await page.getByRole('button', { name: 'Experience' }).click();
+  const experience = page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last();
+  await expandEntries(experience, 1);
+  await expect(page.getByRole('heading', { name: 'Imported Labs' })).toBeVisible();
   await page.getByRole('button', { name: 'Edit entry' }).click();
   await expect(page.getByRole('heading', { name: 'Edit Imported Labs' })).toBeVisible();
   await page.getByPlaceholder('Company').last().fill('Edited Labs');
@@ -201,6 +207,8 @@ test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', 
 
   await input.setInputFiles(PDF);
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada', { timeout: 30_000 });
-  await expect(page.getByText('Imported Labs')).toBeVisible();
+  await page.getByRole('button', { name: 'Experience' }).click();
+  await expandEntries(page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last(), 1);
+  await expect(page.getByRole('heading', { name: 'Imported Labs' })).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(0);
 });

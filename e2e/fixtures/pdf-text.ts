@@ -21,7 +21,12 @@ export async function readPdfText(bytes: Uint8Array) {
             reject(new Error(err || error.message));
             return;
           }
-          resolve(out);
+          const line = out.trim().split('\n').filter((item) => item.startsWith('{')).at(-1);
+        if (!line) {
+          reject(new Error(err || out || 'PDF reader returned no JSON'));
+          return;
+        }
+        resolve(line);
         },
       );
     });
