@@ -15,10 +15,8 @@ export default function TemplatesPage() {
   return (
     <Templates
       templatesContainerClassName='grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-      level='senior'
-      onChangeLevel={(level) => {
-        setLevel(level);
-      }}
+      level={level}
+      onChangeLevel={setLevel}
     >
       {templates}
     </Templates>

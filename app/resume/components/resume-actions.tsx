@@ -37,7 +37,7 @@ export const ResumeActionBar = ({
   return (
     <div
       className={cn(
-        'flex justify-between items-center w-4/5 bg-popover shadow-md rounded-sm p-2 px-4 mx-auto transition',
+        'flex w-full max-w-full flex-wrap items-center justify-center gap-2 bg-popover shadow-md rounded-sm p-2 px-4 mx-auto transition md:w-4/5 md:flex-nowrap md:justify-between',
         className,
       )}
     >

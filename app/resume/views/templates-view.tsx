@@ -22,7 +22,13 @@ export default function TemplatesView({ selectedTemplate, initialLevel, template
   return (
     <TemplatesSelector level={currentLevel} templatesContainerClassName="grid-cols-1 md:grid-cols-2 lg:grid-cols-4" onChangeLevel={setCurrentLevel}>
       {templates[currentLevel].map(({ template, name, imageUrl, key }) => (
-        <div key={`${currentLevel} ${selectedTemplate}`} className={'w-full mx-2'} onClick={() => onChange(template, key)}>
+        <button
+          type="button"
+          key={key}
+          aria-pressed={selectedTemplate === key}
+          className={'w-full mx-2'}
+          onClick={() => onChange(template, key)}
+        >
           <div
             className={`relative w-full aspect-[210/297] shadow-md ${
               selectedTemplate === key ? 'border-2 border-blue-500' : ''
@@ -30,7 +36,7 @@ export default function TemplatesView({ selectedTemplate, initialLevel, template
           >
             <Image src={imageUrl} fill alt={`${currentLevel} ${name}`} />
           </div>
-        </div>
+        </button>
       ))}
     </TemplatesSelector>
   );

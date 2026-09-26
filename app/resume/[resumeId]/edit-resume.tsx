@@ -12,7 +12,7 @@ import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { fetchResumeFamily } from '@app/resume/query/use-resume';
 import { isLabelOnlyPatch } from '@app/resume/query/use-save-resume-edit';
 import { ConfirmModal } from '@components/modals';
-import { Loading } from '@components/views';
+import { ErrorView, Loading } from '@components/views';
 import { isGeneratedResume } from '@lib/adapters/resume.adapter';
 import {
   browserStorage,
@@ -32,6 +32,7 @@ import {
   recoveryDocumentIds,
   resumeToEditorDocument,
 } from '@lib/resume/resolve-editor';
+import { shouldRetryGraphqlQuery } from '@/lib/graphql-client';
 import { useUserSession } from '@lib/providers';
 import type { PreviewDto, Resume } from '@lib/types';
 
@@ -57,10 +58,17 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const failedGenerationRef = useRef<Resume | null>(null);
   const { document, formRevision, initialize, apply, replaceDocument } = useResumeEditorDocument();
 
-  const { data: family, isLoading: isLoadingResume } = useQuery({
+  const {
+    data: family,
+    isLoading: isLoadingResume,
+    isError: resumeFailed,
+    error: resumeError,
+    refetch: refetchResume,
+  } = useQuery({
     queryKey: ['resume-family', resumeId],
     queryFn: () => fetchResumeFamily(resumeId),
     enabled: !!userId,
+    retry: shouldRetryGraphqlQuery,
   });
 
   const generatePdf = useGenerateResumePdf(userId);
@@ -294,6 +302,19 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
 
   if (isLoadingResume) {
     return <Loading message="Loading resume..." />;
+  }
+
+  if (resumeFailed && !(resumeError instanceof Error && resumeError.message === 'Resume not found')) {
+    return (
+      <ErrorView
+        title="Could not load this resume"
+        error="The resume lookup failed."
+        errorDescription="This is not a missing resume. Check your connection and try again."
+        reset={() => {
+          void refetchResume();
+        }}
+      />
+    );
   }
 
   if (!displayed) {

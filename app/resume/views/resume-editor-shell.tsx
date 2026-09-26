@@ -81,8 +81,8 @@ export function ResumeEditorShell({
   };
 
   return (
-    <section className="grid grid-cols-5">
-      <div className="col-span-2 flex flex-col">
+    <section className="grid h-dvh min-h-0 min-w-0 grid-cols-1 grid-rows-2 overflow-hidden md:h-auto md:grid-cols-5 md:grid-rows-1 md:overflow-visible">
+      <div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:col-span-2">
         <div className="flex flex-col gap-3 border-b border-input px-4 py-3 pt-16">
           {family ? (
             <div className="flex items-center justify-between gap-2">
@@ -149,7 +149,7 @@ export function ResumeEditorShell({
           ) : (
             <EditResumeView
               key={formKey}
-              className="h-screen pt-4"
+              className="h-full min-h-0 pt-4 md:h-screen"
               issues={issues}
               defaultValues={document.resume}
               onSubmit={(resume) => onChange({ resume })}
@@ -158,7 +158,7 @@ export function ResumeEditorShell({
         </AnimatedTransition>
       </div>
       <ResumePreview
-        className="col-span-3 pt-16"
+        className="min-h-0 min-w-0 md:col-span-3 md:pt-16"
         templateKey={document.template}
         resume={document.resume}
         fontSize={document.fontSize}
@@ -167,22 +167,22 @@ export function ResumeEditorShell({
         handleChange={(key, value) => onChange({ [key]: value })}
         onDownload={requestDownload}
         action={(
-          <Button
-            variant="ghost"
-            className="text-muted-foreground font-medium size-8 hover:cursor-pointer"
-            title={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-            aria-label={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-            onClick={() => setPanel(panel === 'templates' ? 'form' : 'templates')}
-          >
-            <Tooltip>
-              <TooltipTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground font-medium size-8 hover:cursor-pointer"
+                title={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
+                aria-label={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
+                onClick={() => setPanel(panel === 'templates' ? 'form' : 'templates')}
+              >
                 <Icon type={panel === 'templates' ? 'Edit' : 'Switch'} className="size-4" />
-              </TooltipTrigger>
-              <TooltipContent>
-                {panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-              </TooltipContent>
-            </Tooltip>
-          </Button>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
+            </TooltipContent>
+          </Tooltip>
         )}
       />
       <DownloadResumeModal

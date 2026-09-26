@@ -1,4 +1,5 @@
 'use client';
+import { useEffect } from 'react';
 import { Loading } from '@components/views';
 import { fetchProfile } from '@app/account/query/use-profile';
 import { useUserSession } from '@lib/providers';
@@ -36,13 +37,21 @@ function previewSeed(account: AccountDto | null, template: TemplateKey): Preview
 
 function ResumeFlow() {
   const searchParams = useSearchParams();
-  const templatekey = normalizeResumeTemplate(searchParams.get('template'));
+  const requestedTemplate = searchParams.get('template');
+  const templatekey = normalizeResumeTemplate(requestedTemplate);
   const { session, isPending: isAuthenticating } = useUserSession();
-  const { seedIfFetching, step } = useResumeContext();
+  const { seedIfFetching, step, resume, changeResume } = useResumeContext();
+
+  useEffect(() => {
+    if (step !== 'options' || !requestedTemplate || resume.template === templatekey) {
+      return;
+    }
+    changeResume({ ...resume, template: templatekey });
+  }, [changeResume, requestedTemplate, resume, step, templatekey]);
 
   const userId = session?.user.id;
 
-  const { data: account, isLoading } = useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['account', userId],
     queryFn: async () => {
       const seedIfNeeded = (value: PreviewDto) => {
@@ -83,11 +92,7 @@ function ResumeFlow() {
     return <ImportResumePage />;
   }
 
-  return (
-    <ResumePreviewPage
-      level={account?.profile.seniority ?? 'senior'}
-    />
-  );
+  return <ResumePreviewPage />;
 }
 
 export default function ResumePage() {

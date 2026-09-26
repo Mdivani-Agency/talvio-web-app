@@ -244,6 +244,7 @@ async function handleAi(request, response, body) {
     'presign_error',
     'upload_error',
     'upload_delay',
+    'records_error',
   ]);
   if (known.has(scenario)) {
     send(response, 200, responseEnvelope(successText(kind, scenario)));
@@ -399,6 +400,10 @@ export function createSimulator() {
       if (request.method === 'GET' && records) {
         if (!bearerOk(request)) {
           send(response, 401, { error: 'missing bearer token' });
+          return;
+        }
+        if (state.scenario === 'records_error') {
+          send(response, 500, { error: 'simulated records failure' });
           return;
         }
         send(response, 200, recordsFor(decodeURIComponent(records[1])));
