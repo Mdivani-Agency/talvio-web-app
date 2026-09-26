@@ -106,6 +106,25 @@ export async function listResumes(userId: string): Promise<SeededResume[]> {
   }));
 }
 
+export async function setCreditBalance(userId: string, balance: number) {
+  const updated = await serviceClient().from('user_credits').update({ balance }).eq('user_id', userId);
+  if (updated.error) {
+    throw new Error(updated.error.message);
+  }
+}
+
+export async function generationLock(resumeId: string) {
+  const row = await serviceClient()
+    .from('resumes')
+    .select('generation_updated_at')
+    .eq('id', resumeId)
+    .single();
+  if (row.error) {
+    throw new Error(row.error.message);
+  }
+  return row.data.generation_updated_at as string | null;
+}
+
 export async function creditBalance(userId: string) {
   const credits = await serviceClient()
     .from('user_credits')

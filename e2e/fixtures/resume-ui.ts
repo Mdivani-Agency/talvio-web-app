@@ -13,6 +13,14 @@ export function persona(personas: Persona[], kind: Persona['kind']) {
   return match;
 }
 
+export async function mediaStats() {
+  const response = await fetch('http://127.0.0.1:3999/__e2e/stats');
+  if (!response.ok) {
+    throw new Error('Could not read simulator upload stats');
+  }
+  return response.json() as Promise<{ presigns: number; uploads: number }>;
+}
+
 export async function resetAndGuard(page: Page) {
   const response = await fetch('http://127.0.0.1:3999/__e2e/reset', { method: 'POST' });
   if (!response.ok) {

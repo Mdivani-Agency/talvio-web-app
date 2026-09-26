@@ -2,12 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Resume } from '@lib/types';
 
-const { authedFetch } = vi.hoisted(() => ({
+const { authedFetch, fetchResume } = vi.hoisted(() => ({
   authedFetch: vi.fn(),
+  fetchResume: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/authed-fetch', () => ({
   authedFetch,
+}));
+
+vi.mock('./use-resume', () => ({
+  fetchResume,
 }));
 
 import { generateAndPersistPdf } from './use-generate-pdf';
@@ -67,7 +72,23 @@ describe('generateAndPersistPdf', () => {
       ok: false,
       json: async () => ({ error: 'Not enough credits' }),
     });
+    fetchResume.mockResolvedValue(draft);
 
     await expect(generateAndPersistPdf(draft)).rejects.toThrow('Not enough credits');
+  });
+
+  it('returns the stored file when the generate response is lost after finalize', async () => {
+    authedFetch.mockRejectedValue(new Error('Failed to fetch'));
+    fetchResume.mockResolvedValue({
+      ...draft,
+      media: { url: 'https://media.talvio.co/stored.pdf', key: 'stored.pdf' },
+    });
+
+    const generated = await generateAndPersistPdf(draft);
+
+    expect(generated.media).toEqual({
+      url: 'https://media.talvio.co/stored.pdf',
+      key: 'stored.pdf',
+    });
   });
 });

@@ -4,6 +4,8 @@ import { authedFetch } from '@/lib/supabase/authed-fetch';
 import type { Resume } from '@lib/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { fetchResume } from './use-resume';
+
 export { GENERATE_PDF_CREDITS };
 
 export function triggerBrowserDownload(url: string, filename: string) {
@@ -21,29 +23,42 @@ export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
     return resume;
   }
 
-  const response = await authedFetch('/api/resume/generate-pdf', {
-    method: 'POST',
-    body: JSON.stringify({ resumeId: resume.id }),
-  });
-
-  let payload: { error?: string; url?: string; key?: string } = {};
   try {
-    payload = (await response.json()) as { error?: string; url?: string; key?: string };
-  } catch {
-    payload = {};
-  }
+    const response = await authedFetch('/api/resume/generate-pdf', {
+      method: 'POST',
+      body: JSON.stringify({ resumeId: resume.id }),
+    });
 
-  if (!response.ok) {
-    throw new Error(payload.error || 'Failed to generate PDF');
-  }
-  if (!payload.url) {
-    throw new Error('Resume PDF was not created');
-  }
+    let payload: { error?: string; url?: string; key?: string } = {};
+    try {
+      payload = (await response.json()) as { error?: string; url?: string; key?: string };
+    } catch {
+      payload = {};
+    }
 
-  return {
-    ...resume,
-    media: { url: payload.url, key: payload.key || resume.media?.key || '' },
-  };
+    if (!response.ok) {
+      throw new Error(payload.error || 'Failed to generate PDF');
+    }
+    if (!payload.url) {
+      throw new Error('Resume PDF was not created');
+    }
+
+    return {
+      ...resume,
+      media: { url: payload.url, key: payload.key || resume.media?.key || '' },
+    };
+  } catch (error) {
+    // A dropped response can arrive after finalize already stored the file.
+    try {
+      const fresh = await fetchResume(resume.id);
+      if (isGeneratedResume(fresh) && fresh.media?.url) {
+        return fresh;
+      }
+    } catch {
+      // Keep the original failure so a real credit or render error stays visible.
+    }
+    throw error;
+  }
 }
 
 export async function downloadResumePdf(resume: Resume): Promise<Resume> {

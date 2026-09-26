@@ -36,6 +36,8 @@ const state = {
   records: new Map(),
   files: new Map(),
   unexpected: [],
+  presigns: 0,
+  uploads: 0,
 };
 
 export function resetSimulator() {
@@ -43,6 +45,8 @@ export function resetSimulator() {
   state.records.clear();
   state.files.clear();
   state.unexpected = [];
+  state.presigns = 0;
+  state.uploads = 0;
 }
 
 function slugify(input) {
@@ -230,7 +234,17 @@ async function handleAi(request, response, body) {
   if (scenario === 'delayed') {
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
-  const known = new Set(['success', 'delayed', 'zero_questions', 'parse_error', 'qa_error', 'tailor_error']);
+  const known = new Set([
+    'success',
+    'delayed',
+    'zero_questions',
+    'parse_error',
+    'qa_error',
+    'tailor_error',
+    'presign_error',
+    'upload_error',
+    'upload_delay',
+  ]);
   if (known.has(scenario)) {
     send(response, 200, responseEnvelope(successText(kind, scenario)));
     return;
@@ -257,6 +271,11 @@ function handlePresign(url, request, response, body, userId) {
     send(response, 400, { error: 'invalid presign body' });
     return;
   }
+  if (state.scenario === 'presign_error') {
+    send(response, 500, { error: 'simulated presign failure' });
+    return;
+  }
+  state.presigns += 1;
   const key = mediaKey(path, userId, name, type);
   const origin = `http://127.0.0.1:${url.port || request.socket.localPort}`;
   const uploadUrl = `${origin}/upload/${encodeURIComponent(key)}`;
@@ -311,6 +330,10 @@ export function createSimulator() {
         send(response, 200, { count: state.unexpected.length, paths: state.unexpected });
         return;
       }
+      if (request.method === 'GET' && path === '/__e2e/stats') {
+        send(response, 200, { presigns: state.presigns, uploads: state.uploads });
+        return;
+      }
       if (request.method === 'POST' && path === '/v1/responses') {
         await handleAi(request, response, body);
         return;
@@ -342,6 +365,14 @@ export function createSimulator() {
           send(response, 404, { error: 'unknown upload' });
           return;
         }
+        if (state.scenario === 'upload_error') {
+          send(response, 500, { error: 'simulated upload failure' });
+          return;
+        }
+        if (state.scenario === 'upload_delay') {
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+        }
+        state.uploads += 1;
         state.files.set(key, Buffer.from(body));
         record.status = 'uploaded';
         send(response, 200, '');
