@@ -10,6 +10,7 @@ import { hasFieldError } from '@lib/forms/errors';
 import { normalizeResumeDocument, type ResumeFieldIssue } from '@lib/models/resume-document';
 import { resumeDraftSchema } from '@lib/schema/resume.schema';
 import type { ResumeForm } from '@lib/types';
+import { useLayoutEffect, useRef } from 'react';
 import { useStore } from '@tanstack/react-form';
 
 type ResumeDocumentFormProps = {
@@ -52,10 +53,24 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
     defaultValues: documentDefaults(defaultValues),
     schema: resumeDraftSchema,
     validateOn: 'submit',
-    onValuesChange: (data) => {
-      onSubmit(normalizeResumeDocument(data));
-    },
   });
+  const values = useStore(form.store, (state) => state.values);
+  const lastSent = useRef<string | null>(null);
+  // List editors call replaceFieldValue, which updates the store without
+  // TanStack onChange listeners. Read values here so those edits reach preview and save.
+  useLayoutEffect(() => {
+    const next = normalizeResumeDocument(values);
+    const serialized = JSON.stringify(next);
+    if (lastSent.current === serialized) {
+      return;
+    }
+    const isInitial = lastSent.current === null;
+    lastSent.current = serialized;
+    if (isInitial) {
+      return;
+    }
+    onSubmit(next);
+  }, [onSubmit, values]);
 
   const errorMap = useStore(form.store, (state) => state.errorMap);
   const profileHasError = (Boolean(errorMap) && hasFieldError(form, 'profile')) || issueOn(issues, ['profile']);

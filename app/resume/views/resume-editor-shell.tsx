@@ -83,7 +83,7 @@ export function ResumeEditorShell({
   return (
     <section className="grid grid-cols-5">
       <div className="col-span-2 flex flex-col">
-        <div className={`flex flex-col gap-3 border-b border-input px-4 py-3 ${family ? '' : 'pt-16'}`}>
+        <div className="flex flex-col gap-3 border-b border-input px-4 py-3 pt-16">
           {family ? (
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground">
@@ -171,6 +171,7 @@ export function ResumeEditorShell({
             variant="ghost"
             className="text-muted-foreground font-medium size-8 hover:cursor-pointer"
             title={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
+            aria-label={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
             onClick={() => setPanel(panel === 'templates' ? 'form' : 'templates')}
           >
             <Tooltip>

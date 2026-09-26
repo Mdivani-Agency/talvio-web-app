@@ -34,6 +34,7 @@ export const Tabs = React.memo(function Tabs({ tabs, currentTab, setCurrentTab, 
             <Button
               key={tab.title}
               variant={'ghost'}
+              aria-label={tab.title}
               onClick={() => setCurrentTab(index)}
               className={cn(
                 'text-sm text-left text-secondary px-4 gap-0 justify-start',

@@ -48,7 +48,7 @@ export const ResumeActionBar = ({
           onValueChange={onFontSizeChange}
           disabled={disabled}
         >
-          <SelectTrigger className="flex justify-center items-center gap-1 max-h-8 p-1 hover:cursor-pointer">
+          <SelectTrigger aria-label="Font size" className="flex justify-center items-center gap-1 max-h-8 p-1 hover:cursor-pointer">
             <Icon type="FontSize" className="size-4" />
           </SelectTrigger>
           <SelectContent>
@@ -64,11 +64,15 @@ export const ResumeActionBar = ({
         />
       </div>
       <div className="flex justify-center items-center">
-        <Icon type="ChevronLeft" className="size-4 text-muted-foreground" onClick={goToPrevious} />
+        <button type="button" aria-label="Previous page" onClick={goToPrevious}>
+          <Icon type="ChevronLeft" className="size-4 text-muted-foreground" />
+        </button>
         <span className="block my-2 text-center text-sm text-muted-foreground">
           Page {currentIndex + 1} of {imageCount}
         </span>
-        <Icon type="ChevronRight" className="size-4 text-muted-foreground" onClick={goToNext} />
+        <button type="button" aria-label="Next page" onClick={goToNext}>
+          <Icon type="ChevronRight" className="size-4 text-muted-foreground" />
+        </button>
       </div>
 
       <div className="flex gap-2">
@@ -77,6 +81,7 @@ export const ResumeActionBar = ({
           type="button"
           size="icon"
           variant="ghost"
+          aria-label="Download resume"
           onClick={handleDownload}
           disabled={imageCount === 0}
         >
@@ -86,6 +91,7 @@ export const ResumeActionBar = ({
           className="size-8 text-neutral-800 hover:cursor-pointer"
           type="button"
           variant="ghost"
+          aria-label="Full size preview"
           disabled={imageCount === 0}
           onClick={handlePreviewOpen}
         >
