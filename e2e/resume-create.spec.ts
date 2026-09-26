@@ -168,6 +168,8 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
   await page.goto(`/resume/${rows[0]?.id}`);
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Nia');
   await page.getByRole('button', { name: 'Experience' }).click();
+  const savedExperience = page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last();
+  await expandEntries(savedExperience, 1);
   await expect(page.getByRole('heading', { name: 'Edited Labs' })).toBeVisible();
 });
 
