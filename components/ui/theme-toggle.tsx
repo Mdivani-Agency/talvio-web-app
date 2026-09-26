@@ -11,6 +11,7 @@ export function ThemeToggle() {
     <Button
       variant="outline"
       size="icon"
+      aria-label="Display mode"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
     >
       {theme === "dark" ? <SunIcon className="size-4 text-primary" /> : <MoonIcon className="size-4 text-primary" />}

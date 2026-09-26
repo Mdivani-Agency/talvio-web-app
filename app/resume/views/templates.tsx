@@ -21,6 +21,7 @@ export default function TemplatesSelector({ level, templatesContainerClassName, 
         <Button
           className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'entry' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
+          aria-pressed={level === 'entry'}
           onClick={() => onChangeLevel('entry')}
         >
           Entry Level
@@ -28,6 +29,7 @@ export default function TemplatesSelector({ level, templatesContainerClassName, 
         <Button
           className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'mid' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
+          aria-pressed={level === 'mid'}
           onClick={() => onChangeLevel('mid')}
         >
           Mid Level
@@ -35,6 +37,7 @@ export default function TemplatesSelector({ level, templatesContainerClassName, 
         <Button
           className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'senior' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
+          aria-pressed={level === 'senior'}
           onClick={() => onChangeLevel('senior')}
         >
           Senior Level

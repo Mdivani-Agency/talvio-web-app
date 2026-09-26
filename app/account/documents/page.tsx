@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from "@components/icons";
 import { Button, Card, CardContent, CardFooter, Label } from "@components/ui";
+import { ErrorView, Loading } from "@components/views";
 import { getDocuments } from "@lib/clients/media.client";
 import { useUserSession } from "@lib/providers";
 import { useQuery } from "@tanstack/react-query";
@@ -10,18 +11,36 @@ import { ResumeImage } from "./resume-image";
 
 export default function DocumentsPage() {
   const { session } = useUserSession();
+  const userId = session?.user?.id;
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents', session?.user?.id],
+  const documentsQuery = useQuery({
+    queryKey: ['documents', userId],
     queryFn: async () => {
-      if (session?.user?.id) {
-        const { items } = await getDocuments(session.user.id);
-        return items;
-      }
-      return [];
+      const { items } = await getDocuments(userId!);
+      return items;
     },
-    enabled: !!session?.user?.id,
+    enabled: !!userId,
+    retry: false,
   });
+
+  if (!userId || documentsQuery.isLoading) {
+    return <Loading message="Loading your resumes..." />;
+  }
+
+  if (documentsQuery.isError) {
+    return (
+      <ErrorView
+        title="Could not load your resumes"
+        error="The document list failed."
+        errorDescription="This is not an empty library. Check your connection and try again."
+        reset={() => {
+          void documentsQuery.refetch();
+        }}
+      />
+    );
+  }
+
+  const documents = documentsQuery.data ?? [];
 
   return (
     <section className="flex flex-col gap-8 p-4">
@@ -31,8 +50,10 @@ export default function DocumentsPage() {
         documents.length === 0 && (
           <Card className="w-56 px-4">
             <CardContent className="h-48 bg-background flex justify-center items-center rounded-md">
-              <Button className="rounded-full size-10">
-                <PlusIcon className="w-4 h-4" />
+              <Button asChild className="rounded-full size-10">
+                <Link href="/resume" aria-label="Create resume">
+                  <PlusIcon className="w-4 h-4" aria-hidden="true" />
+                </Link>
               </Button>
             </CardContent>
             <CardFooter className="px-0">
@@ -55,7 +76,7 @@ export default function DocumentsPage() {
                   {document.name}.{document.type.split('/')[1]}
                 </a>
               </Label>
-              <Link target="_blank" href={document.publicUrl}>
+              <Link target="_blank" href={document.publicUrl} aria-label={`Download ${document.name}`}>
                 <Icon type={'Download'} className="size-4" />
               </Link>
             </CardFooter>

@@ -30,6 +30,7 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
                 onBlur={field.handleBlur}
                 onChange={(event) => field.handleChange(event.target.value)}
                 placeholder="Email"
+                aria-label="Email"
               />
             </FormControl>
           </FormItem>

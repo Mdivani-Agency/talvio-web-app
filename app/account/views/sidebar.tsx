@@ -10,7 +10,7 @@ export const Sidebar = () => {
   const pathname = usePathname();
 
   return (
-    <aside className={'flex flex-col gap-4 h-screen p-4 border-r border-input min-w-64 2xl:min-w-84'}>
+    <aside className={'flex w-full flex-col gap-4 border-b border-input p-4 md:h-screen md:min-w-64 md:w-auto md:border-b-0 md:border-r 2xl:min-w-84'}>
       <div className="flex justify-center px-8">
         <Logo size={'medium'} />
       </div>

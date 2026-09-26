@@ -81,8 +81,8 @@ export function ResumeEditorShell({
   };
 
   return (
-    <section className="grid grid-cols-5">
-      <div className="col-span-2 flex flex-col">
+    <section className="grid min-w-0 grid-cols-1 md:grid-cols-5">
+      <div className="flex min-w-0 flex-col md:col-span-2">
         <div className="flex flex-col gap-3 border-b border-input px-4 py-3 pt-16">
           {family ? (
             <div className="flex items-center justify-between gap-2">
@@ -158,7 +158,7 @@ export function ResumeEditorShell({
         </AnimatedTransition>
       </div>
       <ResumePreview
-        className="col-span-3 pt-16"
+        className="min-w-0 pt-16 md:col-span-3"
         templateKey={document.template}
         resume={document.resume}
         fontSize={document.fontSize}
