@@ -81,6 +81,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
     "@graphql-codegen/cli": "7.4.1",
     "@graphql-codegen/schema-ast": "6.1.0",
     "@graphql-codegen/typescript": "6.1.0",
