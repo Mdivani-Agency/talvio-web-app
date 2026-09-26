@@ -39,7 +39,7 @@ const UNREADABLE = {
   contacts: { email: 'ada@talvio.test' },
 };
 
-async function shownCredits(page: Page) {
+function shownCredits(page: Page) {
   return page.locator('span.text-2xl.font-bold');
 }
 
