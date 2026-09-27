@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(39);
+select plan(48);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -329,9 +329,13 @@ select is(
   're-download of an existing pdf_url does not consume credits'
 );
 
-update public.resumes
-set pdf_url = null
-where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+insert into public.resumes (id, user_id, name, template_key)
+values (
+  '10101010-1010-4101-8101-101010101010',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  'Ann mutable',
+  'mid-level-modern'
+);
 
 update public.user_credits
 set balance = 50
@@ -340,7 +344,7 @@ where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 
 select is(
-  public.generate_pdf('dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+  public.generate_pdf('10101010-1010-4101-8101-101010101010'),
   '',
   'generate_pdf checks the catalog balance and does not debit'
 );
@@ -360,7 +364,7 @@ select throws_ok(
   $$
     update public.resumes
     set pdf_url = 'https://media.example/stolen.pdf'
-    where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+    where id = '10101010-1010-4101-8101-101010101010';
   $$,
   '42501',
   null,
@@ -369,7 +373,7 @@ select throws_ok(
 
 select is(
   public.finalize_pdf(
-    'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    '10101010-1010-4101-8101-101010101010',
     'https://media.example/ann-final.pdf',
     'resume/ann-final.pdf'
   ),
@@ -379,7 +383,7 @@ select is(
 
 select is(
   public.finalize_pdf(
-    'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    '10101010-1010-4101-8101-101010101010',
     'https://media.example/other.pdf',
     'resume/other.pdf'
   ),
@@ -392,7 +396,7 @@ select throws_ok(
     update public.resumes
     set name = 'rewritten',
         content = '{"rewritten":true}'::jsonb
-    where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+    where id = '10101010-1010-4101-8101-101010101010';
   $$,
   '23514',
   null,
@@ -410,7 +414,7 @@ select is(
 
 select is(
   (select pdf_media_key from public.resumes
-   where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+   where id = '10101010-1010-4101-8101-101010101010'),
   'resume/ann-final.pdf',
   'finalize_pdf stores the media key'
 );
@@ -506,9 +510,18 @@ select is(
   'generation lock stores the current revision'
 );
 
+-- The file is one transaction, so now() does not advance and a name
+-- change alone cannot make updated_at differ from the lock. Disable only
+-- the clock writer, then set the later revision a subsequent request
+-- would store. resumes_zz_keep_revision_clock stays enabled.
+alter table public.resumes disable trigger resumes_set_updated_at;
+
 update public.resumes
-set name = 'Lock target renamed'
+set name = 'Lock target renamed',
+    updated_at = updated_at + interval '1 second'
 where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+
+alter table public.resumes enable trigger resumes_set_updated_at;
 
 select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 
