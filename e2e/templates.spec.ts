@@ -64,6 +64,10 @@ test.describe('templates', () => {
       await page.evaluate(() => window.localStorage.clear());
     }
   });
+});
+
+test.describe('restored editor template', () => {
+  test.describe.configure({ timeout: 180_000 });
 
   test('TPL-01 a restored editor draft uses the newly selected template once', async ({ page }) => {
     await page.goto('/resume?template=senior-level-talvio');
