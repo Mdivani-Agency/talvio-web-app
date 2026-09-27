@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Loading } from '@components/views';
 import { fetchProfile } from '@app/account/query/use-profile';
 import { useUserSession } from '@lib/providers';
@@ -41,9 +41,14 @@ function ResumeFlow() {
   const templatekey = normalizeResumeTemplate(requestedTemplate);
   const { session, isPending: isAuthenticating } = useUserSession();
   const { seedIfFetching, step, resume, changeResume } = useResumeContext();
+  const consumedTemplate = useRef<string | null>(null);
 
   useEffect(() => {
-    if (step !== 'options' || !requestedTemplate || resume.template === templatekey) {
+    if (!requestedTemplate || step === 'fetchingResume' || consumedTemplate.current === requestedTemplate) {
+      return;
+    }
+    consumedTemplate.current = requestedTemplate;
+    if (resume.template === templatekey) {
       return;
     }
     changeResume({ ...resume, template: templatekey });
