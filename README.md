@@ -20,7 +20,7 @@ yarn build
 yarn start
 ```
 
-Pull requests run lint, typecheck, tests, and `yarn build`. Pushes to `main` or `development` run those checks, then `supabase db push` and a Vercel CLI deploy. The quality job uses public `NEXT_PUBLIC_*` stubs only — no production secrets. Vercel Git auto-deploys are disabled for those two branches (`vercel.json`).
+Pull requests run lint, typecheck, tests, the local database and Playwright suite, and a release gate. Pushes to `main` or `development` run those checks, then `supabase db push` and a Vercel CLI deploy only after the release gate succeeds. The quality job uses public `NEXT_PUBLIC_*` stubs only — no production secrets. Vercel Git auto-deploys are disabled for those two branches (`vercel.json`).
 
 ## Local Supabase
 
