@@ -9,7 +9,7 @@
 
 begin;
 
-select plan(15);
+select plan(17);
 
 insert into auth.users (
   instance_id,

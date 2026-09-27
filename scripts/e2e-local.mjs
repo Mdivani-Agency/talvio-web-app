@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 
+import { assertReportFile } from './assert-e2e-results.mjs';
 import { localE2EEnv } from './e2e-env.mjs';
 import { confirmSimulatorReady } from './e2e-simulator-ready.mjs';
 
@@ -104,6 +105,7 @@ async function main() {
     await supabase(['start']);
     started = true;
     await supabase(['db', 'reset']);
+    await supabase(['test', 'db']);
     const statusText = await capture(SUPABASE[0], [...SUPABASE.slice(1), 'status', '-o', 'env']);
     const env = {
       ...process.env,
@@ -124,6 +126,14 @@ async function main() {
     testCode = await run('yarn', ['build'], { env });
     if (testCode === 0) {
       testCode = await run('yarn', ['playwright', 'test'], { env });
+    }
+    if (testCode === 0) {
+      try {
+        assertReportFile('playwright-report/results.json', 'e2e/required-results.json');
+      } catch (error) {
+        console.error(error instanceof Error ? error.message : error);
+        testCode = 1;
+      }
     }
   } finally {
     try {

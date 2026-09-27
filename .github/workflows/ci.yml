@@ -1,7 +1,8 @@
 name: CI
 
-# PRs: quality only.
-# Push to main / development: quality → db push → Vercel CLI deploy.
+# PRs and pushes: quality, local database tests, Playwright, then a release gate.
+# Push to main / development: release gate → db push → Vercel CLI deploy.
+# The gate fails unless quality and local-e2e both succeed, including when one is skipped.
 # Vercel Git auto-deploys for those branches are off (see vercel.json).
 #
 # Vercel CLI credentials are repository-scoped (same project for main and
@@ -67,9 +68,61 @@ jobs:
       - name: Build
         run: yarn build
 
+  local-e2e:
+    name: Local database and Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: yarn install --immutable
+
+      - name: Install Playwright browser
+        run: yarn playwright install --with-deps chromium
+
+      - name: Local database tests and Playwright
+        run: yarn test:e2e:local
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+  release-gate:
+    name: Release gate
+    needs: [quality, local-e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Require quality and local end-to-end
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          LOCAL_E2E_RESULT: ${{ needs.local-e2e.result }}
+        run: node scripts/release-gate.mjs
+
   db-push:
     name: Push migrations
-    needs: quality
+    needs: release-gate
     if: github.event_name == 'push'
     environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
     runs-on: ubuntu-latest
@@ -99,7 +152,7 @@ jobs:
 
   deploy:
     name: Deploy to Vercel
-    needs: [quality, db-push]
+    needs: [release-gate, db-push]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
