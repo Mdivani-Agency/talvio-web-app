@@ -109,9 +109,22 @@ export async function generateFromModal(page: Page, filename: string, label?: st
   if (label != null) {
     await dialog.getByPlaceholder('Label (optional)').fill(label);
   }
+  const download = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'Generate and Download Resume' }).click();
   await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 90_000 });
+  await download;
   return recordedDownloads(page);
+}
+
+export async function openResumeSection(page: Page, title: string, placeholder: string) {
+  const tab = page.getByRole('button', { name: title, exact: true });
+  const field = page.getByPlaceholder(placeholder);
+  await expect(async () => {
+    if (!(await field.isVisible())) {
+      await tab.click();
+    }
+    await expect(field).toBeVisible();
+  }).toPass({ timeout: 15_000 });
 }
 
 export function resumeRow(page: Page, title: string) {

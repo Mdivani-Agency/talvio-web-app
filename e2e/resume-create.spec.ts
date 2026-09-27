@@ -4,6 +4,7 @@ import { fetchPdfText } from './fixtures/pdf-text';
 import {
   chooseManual,
   generateFromModal,
+  openResumeSection,
   openSignedIn,
   persona,
   resetAndGuard,
@@ -138,7 +139,7 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
 
   await page.getByPlaceholder('First Name').fill('Nia');
   await page.getByPlaceholder('Role').fill('Edited Engineer');
-  await page.getByRole('button', { name: 'Experience' }).click();
+  await openResumeSection(page, 'Experience', 'Company');
   const experience = page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last();
   await expandEntries(experience, 1);
   await expect(page.getByRole('heading', { name: 'Imported Labs' })).toBeVisible();
@@ -167,7 +168,7 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
 
   await page.goto(`/resume/${rows[0]?.id}`);
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Nia');
-  await page.getByRole('button', { name: 'Experience' }).click();
+  await openResumeSection(page, 'Experience', 'Company');
   const savedExperience = page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last();
   await expandEntries(savedExperience, 1);
   await expect(page.getByRole('heading', { name: 'Edited Labs' })).toBeVisible();
@@ -209,7 +210,7 @@ test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', 
 
   await input.setInputFiles(PDF);
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada', { timeout: 30_000 });
-  await page.getByRole('button', { name: 'Experience' }).click();
+  await openResumeSection(page, 'Experience', 'Company');
   await expandEntries(page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last(), 1);
   await expect(page.getByRole('heading', { name: 'Imported Labs' })).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(0);

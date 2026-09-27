@@ -168,7 +168,11 @@ test('AUTH-05 a live session refreshes and a revoked session returns to sign-in'
   await serviceClient().auth.admin.signOut(userId, 'global');
   const authCookies = (await page.context().cookies()).filter((cookie) => cookie.name.includes('auth-token'));
   await page.context().addCookies(authCookies.map((cookie) => ({ ...cookie, value: 'revoked' })));
-  await page.goto('/account');
+  await page.goto('/account').catch((error: unknown) => {
+    if (!(error instanceof Error) || !error.message.includes('interrupted by another navigation')) {
+      throw error;
+    }
+  });
   await expect(page).toHaveURL(/\/auth\/sign-in/);
   const denied = await page.request.post('/api/resume/generate-pdf', {
     data: { resumeId: '00000000-0000-4000-8000-000000000001' },
