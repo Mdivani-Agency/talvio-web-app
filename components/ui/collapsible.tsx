@@ -13,11 +13,13 @@ interface CollapsibleProps {
 
 export function Collapsible({ label, children, open, className, labelClassName, onToggle }: CollapsibleProps) {
   const [mounted, setMounted] = useState(open);
+  if (open && !mounted) {
+    setMounted(true);
+  }
   const shown = open || mounted;
 
   useEffect(() => {
     if (open) {
-      setMounted(true);
       return;
     }
     const timer = setTimeout(() => setMounted(false), 300);
