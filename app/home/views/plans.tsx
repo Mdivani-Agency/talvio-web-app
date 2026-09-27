@@ -1,52 +1,22 @@
 import { Icon } from '@components/icons';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@components/ui/card';
+import { CREDIT_PACKS, jobSpecificPdfCount } from '@/lib/credits';
 import { cn } from '@lib/utils';
 
-const plans = [
-  {
-    product: {
-      price: '$2.99',
-      credits: 300,
-    },
-    features: [
-      'Your credits never expire',
-      'Enough to generate 10 job specific resumes',
-      'No auto renewal',
-    ],
-    buttonLabel: 'Buy Now',
-    buttonLink: '/coming-soon',
+const plans = CREDIT_PACKS.map((pack) => ({
+  product: {
+    price: pack.priceLabel,
+    credits: pack.credits,
   },
-  {
-    product: {
-      price: '$4.99',
-      credits: 600,
-    },
-    features: [
-      'Your credits never expire',
-      'Enough to generate 20 job specific resumes',
-      'No auto renewal',
-    ],
-    buttonLabel: 'Buy Now',
-    buttonLink: '/coming-soon',
-    highlight: {
-      title: 'Most Popular',
-    },
-  },
-  {
-    product: {
-      price: '$9.99',
-      credits: 3000,
-    },
-    features: [
-      'Your credits never expire',
-      'Enough to generate 100 job specific resumes',
-      'No auto renewal',
-    ],
-    buttonLabel: 'Buy Now',
-    buttonLink: '/coming-soon',
-  },
-];
+  features: [
+    'Your credits never expire',
+    `Enough to generate ${jobSpecificPdfCount(pack.credits)} job specific resumes`,
+    'No auto renewal',
+  ],
+  buttonLabel: 'Buy Now',
+  highlight: pack.credits === 600 ? { title: 'Most Popular' } : undefined,
+}));
 
 export const Plans = () => {
   return (

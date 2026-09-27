@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { DetailsList } from '@components/ui';
+import { FREE_CREDITS_ANSWER, MORE_CREDITS_ANSWER, SUBSCRIPTION_ANSWER, SUBSCRIPTION_QUESTION } from '@/lib/credits';
 
 const faqs = [
   {
@@ -13,18 +14,15 @@ const faqs = [
   },
   {
     question: 'Is it really free?',
-    answer:
-      'Yes, you receive free credits on signup to create and download your first resume in PDF format. No credit card required.',
+    answer: FREE_CREDITS_ANSWER,
   },
   {
     question: 'What if free credits are not enough?',
-    answer:
-      'You can purchase more credits to create more resumes. Credits are available in packages of 300, 1000, and 10000 and have no expiration date.',
+    answer: MORE_CREDITS_ANSWER,
   },
   {
-    question: 'Will I get a refund if my subscription is cancelled?',
-    answer:
-      'No, we do not have subscriptions at all, so no surprise charges with us. Just pay for what you use for and in case you have left over credits you can come back to use them any time in the future. Credits never expire.',
+    question: SUBSCRIPTION_QUESTION,
+    answer: SUBSCRIPTION_ANSWER,
   },
   {
     question: 'Is my data safe?',
