@@ -20,10 +20,6 @@ import type { PreviewDto, Resume } from '@lib/types';
 import { useResumeContext } from './providers/state-provider';
 import { ResumeEditorShell } from './views/resume-editor-shell';
 
-type ResumePreviewPageProps = {
-  level: 'entry' | 'mid' | 'senior';
-};
-
 function previewRevisionKey(body: PreviewDto) {
   return JSON.stringify({
     name: body.name,
@@ -35,7 +31,7 @@ function previewRevisionKey(body: PreviewDto) {
   });
 }
 
-export function ResumePreviewPage({ level }: ResumePreviewPageProps) {
+export function ResumePreviewPage() {
   const { session } = useUserSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -195,7 +191,6 @@ export function ResumePreviewPage({ level }: ResumePreviewPageProps) {
     <ResumeEditorShell
       document={resume}
       formKey="new"
-      level={level}
       issues={issues}
       downloadPending={downloadPending}
       saveStatus={saveStatus}

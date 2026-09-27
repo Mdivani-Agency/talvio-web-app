@@ -28,7 +28,7 @@ export const Tabs = React.memo(function Tabs({ tabs, currentTab, setCurrentTab, 
         className,
       )}
     >
-      <div className={'relative flex lg:flex-col w-full items-start justify-start lg:flex-wrap lg:gap-2'}>
+      <div className={'relative flex w-full flex-wrap items-start justify-start lg:h-full lg:flex-col lg:gap-2'}>
         {tabs.map((tab, index) => {
           return (
             <Button

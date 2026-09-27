@@ -35,6 +35,7 @@ export const DownloadResumeModal = ({
         </p>
         <Input
           placeholder="Enter a resume name"
+          aria-label="Resume name"
           disabled={isGenerating}
           value={filename}
           onChange={(e) => setFilename(e.target.value)}
@@ -42,6 +43,7 @@ export const DownloadResumeModal = ({
         {setLabel ? (
           <Input
             placeholder="Label (optional)"
+            aria-label="Label"
             disabled={isGenerating}
             value={label ?? ''}
             onChange={(e) => setLabel(e.target.value)}

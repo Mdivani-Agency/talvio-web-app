@@ -21,7 +21,14 @@ export const getDocuments = async (userId: string) => {
   const response = await authedFetch(`${MEDIA_API_URL}/${userId}/records`, {
     method: 'GET',
   });
-  return response.json() as Promise<{ items: MediaItem[], nextToken?: string }>;
+  if (!response.ok) {
+    throw new Error('Could not load documents');
+  }
+  const data = (await response.json()) as { items?: MediaItem[]; nextToken?: string };
+  if (!Array.isArray(data.items)) {
+    throw new Error('Could not load documents');
+  }
+  return { items: data.items, nextToken: data.nextToken };
 };
 
 export const fetchPdfFile = async (publicUrl: string) => {

@@ -51,7 +51,7 @@ function SignInPageContent() {
       <Card className="w-full max-w-96">
         <CardHeader>
           <CardTitle className="text-primary text-xl font-semibold text-center">
-            Access your account
+            <h1>Access your account</h1>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

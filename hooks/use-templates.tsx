@@ -14,8 +14,10 @@ export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplatePara
   const templates = listResumeTemplates();
 
   return templates[level].map(({ template, name, imageUrl, key }) => (
-    <div
-      key={`${level} ${name}`}
+    <button
+      type="button"
+      key={key}
+      aria-pressed={selectedTemplate === key}
       className={'w-full mx-2 hover:cursor-pointer hover:ring-2 hover:ring-secondary'}
       onClick={() => onSelect(template, key)}
     >
@@ -26,6 +28,6 @@ export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplatePara
       >
         <Image src={imageUrl} fill alt={`${level} ${name}`} unoptimized />
       </div>
-    </div>
+    </button>
   ));
 };

@@ -26,7 +26,7 @@ export const BurgerMenu = ({ className, user }: BurgerMenuProps) => {
     <div className={cn('md:hidden', className)}>
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
-          <Button variant={'ghost'} size={'icon'}>
+          <Button variant={'ghost'} size={'icon'} aria-label="Open menu">
             <MenuIcon className={'text-primary'} />
           </Button>
         </DrawerTrigger>
