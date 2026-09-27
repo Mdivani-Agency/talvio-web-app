@@ -26,14 +26,14 @@ export const Plans = () => {
       )}
     >
       {plans.map((plan) => (
-        <Card className={cn('md:flex-row md:justify-between md:items-start w-full lg:flex-col lg:items-stretch', plan.highlight && 'shadow-sm bg-background')} key={`plan_${plan.product.credits}_${plan.product.price}`}>
-          <CardHeader className='gap-0 text-center md:text-left lg:text-center'>
-            <CardTitle className='text-lg lg:text-xl font-semibold text-primary whitespace-nowrap'>{plan.product.credits} Credits</CardTitle>
+        <Card className={cn('w-full', plan.highlight && 'shadow-sm bg-background')} key={`plan_${plan.product.credits}_${plan.product.price}`}>
+          <CardHeader className='gap-0 text-center'>
+            <CardTitle className='text-lg font-semibold text-primary lg:text-xl'>{plan.product.credits} Credits</CardTitle>
             <CardDescription className='text-lg font-regular text-muted-foreground'>
               {plan.product.price}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className='min-w-0'>
             <ul className='flex flex-col gap-2'>
               {plan.features.map((feature) => (
                 <li key={feature} className='text-md font-regular text-muted-foreground'><Icon type={'Done'} className='size-4 mr-2' />{feature}</li>
