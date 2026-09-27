@@ -25,25 +25,39 @@ export function collectPlaywrightTests(report) {
   return tests;
 }
 
+function requireTitles(tests, project, titles, errors) {
+  for (const title of titles) {
+    const matches = tests.filter((test) => test.title === title && test.project === project);
+    if (matches.length === 0) {
+      errors.push(`Missing required test ${title} [${project}]`);
+    }
+  }
+}
+
 export function assertE2EResults(report, expected) {
   const tests = collectPlaywrightTests(report);
   const errors = [];
   const projects = expected.projects ?? [];
   const required = expected.tests ?? [];
+  const focused = expected.focused ?? [];
+  const allowed = new Set([
+    ...projects,
+    ...focused.map((group) => group.project),
+  ]);
 
   if (tests.length === 0) {
     errors.push('Playwright report has no tests');
   }
 
   const seenProjects = new Set(tests.map((test) => test.project));
-  for (const project of projects) {
+  for (const project of allowed) {
     if (!seenProjects.has(project)) {
       errors.push(`Missing Playwright project ${project}`);
     }
   }
 
   for (const test of tests) {
-    if (!projects.includes(test.project)) {
+    if (!allowed.has(test.project)) {
       errors.push(`${test.title} ran in unexpected project ${test.project}`);
     }
     if (test.status !== 'passed' || test.outcome !== 'expected') {
@@ -51,11 +65,11 @@ export function assertE2EResults(report, expected) {
     }
   }
 
-  for (const title of required) {
-    const matches = tests.filter((test) => test.title === title && projects.includes(test.project));
-    if (matches.length === 0) {
-      errors.push(`Missing required test ${title}`);
-    }
+  for (const project of projects) {
+    requireTitles(tests, project, required, errors);
+  }
+  for (const group of focused) {
+    requireTitles(tests, group.project, group.tests ?? [], errors);
   }
 
   return errors;

@@ -14,7 +14,7 @@ function Textarea({ className, error, size = 'sm', ...props }: TextareaProps) {
     <textarea
       data-slot="textarea"
       className={cn(
-        "bg-input text-foreground flex w-full min-w-0 rounded-md border px-3 py-1.5 text-sm transition-[color,box-shadow] outline-none file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-md",
+        "bg-input text-foreground block h-16 w-full min-w-0 resize-none overflow-auto rounded-md border px-3 py-1.5 text-sm transition-[color,box-shadow] outline-none placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-md",
         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         size === 'sm' && 'h-16',

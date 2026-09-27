@@ -109,9 +109,28 @@ export async function generateFromModal(page: Page, filename: string, label?: st
   if (label != null) {
     await dialog.getByPlaceholder('Label (optional)').fill(label);
   }
+  const download = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'Generate and Download Resume' }).click();
   await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 90_000 });
+  await download;
   return recordedDownloads(page);
+}
+
+export async function openResumeSection(page: Page, title: string, placeholder: string) {
+  const tab = page.getByRole('button', { name: title, exact: true });
+  const field = page.getByPlaceholder(placeholder);
+  // Global smooth scrolling keeps moving the tab during Playwright's click,
+  // so WebKit focuses the button and drops the click. Jump, then retry.
+  await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+  });
+  await expect(async () => {
+    if (await field.isVisible()) {
+      return;
+    }
+    await tab.click({ timeout: 2_000 });
+    await expect(field).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
 }
 
 export function resumeRow(page: Page, title: string) {

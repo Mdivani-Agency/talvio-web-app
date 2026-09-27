@@ -147,8 +147,10 @@ test('PDF-03 re-downloads the stored file without a new charge or upload', async
 
   await page.reload();
   await rememberDownloads(page);
+  const editorDownload = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download resume' }).click();
   await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(0);
+  await editorDownload;
   expect(generates).toHaveLength(0);
 
   await page.goto('/account');

@@ -1,5 +1,14 @@
 {
-  "projects": ["chromium"],
+  "projects": ["chromium", "firefox", "webkit"],
+  "focused": [
+    {
+      "project": "mobile-chromium",
+      "tests": [
+        "PUB-02 mobile menu opens, closes, and reaches sign-in",
+        "UX-02 mobile sign-in, editing, download, and delete stay on screen"
+      ]
+    }
+  ],
   "tests": [
     "isolated users sign in against the local production build",
     "local media, parse, and font dependencies stay on loopback",

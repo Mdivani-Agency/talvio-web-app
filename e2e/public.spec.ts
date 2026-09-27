@@ -7,6 +7,10 @@ import { test as harness } from './fixtures/test';
 function watchPageErrors(page: import('@playwright/test').Page) {
   const errors: string[] = [];
   page.on('pageerror', (error) => {
+    // WebKit reports a cancelled same-origin RSC prefetch as a page error.
+    if (error.message.includes('_rsc=') && error.message.includes('access control checks')) {
+      return;
+    }
     errors.push(error.message);
   });
   return errors;
