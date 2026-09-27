@@ -3,7 +3,8 @@ name: CI
 # PRs and pushes: quality, local database tests, Playwright, then a release gate.
 # Push to main / development: release gate → db push → Vercel CLI deploy.
 # The gate fails unless quality and local-e2e both succeed, including when one is skipped.
-# Vercel Git auto-deploys for those branches are off (see vercel.json).
+# Push runs stay queued. Each hosted mutation refuses a checkout that is no longer the branch tip.
+# Vercel Git deployments are off for every branch (see vercel.json). CLI deploys use a pinned CLI.
 #
 # Vercel CLI credentials are repository-scoped (same project for main and
 # development): VERCEL_TOKEN is a secret; VERCEL_ORG_ID and VERCEL_PROJECT_ID
@@ -147,6 +148,14 @@ jobs:
         with:
           version: 2.117.0
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Refuse a stale hosted mutation
+        run: node scripts/require-branch-head.mjs
+
       - name: Push pending migrations
         run: supabase db push --yes --project-ref "${SUPABASE_PROJECT_REF}"
 
@@ -184,7 +193,7 @@ jobs:
           fi
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@60.1.3
 
       - name: Pull Vercel environment
         run: |
@@ -203,6 +212,9 @@ jobs:
           else
             vercel build --token="${VERCEL_TOKEN}"
           fi
+
+      - name: Refuse a stale hosted mutation
+        run: node scripts/require-branch-head.mjs
 
       - name: Deploy
         run: |
