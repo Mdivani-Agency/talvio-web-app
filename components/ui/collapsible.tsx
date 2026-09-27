@@ -1,7 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ReactNode, useEffect, useState } from 'react';
 
 interface CollapsibleProps {
   label: ReactNode;
@@ -13,6 +12,17 @@ interface CollapsibleProps {
 }
 
 export function Collapsible({ label, children, open, className, labelClassName, onToggle }: CollapsibleProps) {
+  const [mounted, setMounted] = useState(open);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    const timer = setTimeout(() => setMounted(false), 300);
+    return () => clearTimeout(timer);
+  }, [open]);
+
   return (
     <div className={className}>
       <div
@@ -27,20 +37,11 @@ export function Collapsible({ label, children, open, className, labelClassName, 
       >
         {label}
       </div>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            key="content"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div className={'p-1'}>{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div className={open ? 'overflow-visible' : 'min-h-0 overflow-hidden'}>
+          {mounted ? children : null}
+        </div>
+      </div>
     </div>
   );
 }

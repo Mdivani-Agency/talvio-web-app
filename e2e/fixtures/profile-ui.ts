@@ -98,23 +98,32 @@ export async function addTag(page: Page, placeholder: string, value: string) {
 }
 
 export async function expandEntries(scope: Locator, count: number) {
-  await scope.locator('.cursor-pointer').filter({ hasText: `(${count})` }).click();
+  const header = scope.locator('.cursor-pointer').filter({ hasText: `(${count})` });
+  if (await header.locator('xpath=..').getAttribute('aria-expanded') === 'true') {
+    return;
+  }
+  await header.click();
 }
 
 export async function dragItem(page: Page, sourceText: string, targetText: string) {
   await page.evaluate(async ({ sourceText, targetText }) => {
-    const items = [...document.querySelectorAll<HTMLElement>('[draggable="true"]')];
-    const source = items.find((item) => item.textContent?.includes(sourceText));
-    const target = items.find((item) => item.textContent?.includes(targetText));
+    const find = (text: string) => [...document.querySelectorAll<HTMLElement>('[draggable="true"]')].find((item) => item.textContent?.includes(text));
+    const source = find(sourceText);
+    const target = find(targetText);
     if (!source || !target) {
       throw new Error(`Could not find draggable items for ${sourceText} -> ${targetText}`);
     }
     const dataTransfer = new DataTransfer();
     source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer }));
     await new Promise((resolve) => setTimeout(resolve, 100));
-    target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer }));
-    target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }));
-    source.dispatchEvent(new DragEvent('dragend', { bubbles: true, cancelable: true, dataTransfer }));
+    const sourceAfter = find(sourceText) ?? source;
+    const targetAfter = find(targetText) ?? target;
+    if (!sourceAfter.isConnected || !targetAfter.isConnected) {
+      throw new Error(`Drag rows detached before drop for ${sourceText} -> ${targetText}`);
+    }
+    targetAfter.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer }));
+    targetAfter.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }));
+    sourceAfter.dispatchEvent(new DragEvent('dragend', { bubbles: true, cancelable: true, dataTransfer }));
   }, { sourceText, targetText });
 }
 

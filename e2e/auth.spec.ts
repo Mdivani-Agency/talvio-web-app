@@ -187,7 +187,13 @@ test('AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the
   expect(page.url()).not.toContain('evil.example');
 
   await page.context().clearCookies();
-  await page.goto('/auth/sign-in?callbackURL=//evil.example');
+  const unsafeSignIn = `/auth/sign-in?callbackURL=${encodeURIComponent('//evil.example')}`;
+  await page.goto(unsafeSignIn, { waitUntil: 'commit' }).catch(async (error: unknown) => {
+    if (!(error instanceof Error) || !error.message.includes('NS_BINDING_ABORTED')) {
+      throw error;
+    }
+    await page.goto(unsafeSignIn, { waitUntil: 'commit' });
+  });
   await expect(page).toHaveURL(/localhost:3002\/auth\/sign-in/);
   await page.goto('/auth/callback?error=access_denied&error_description=User%20cancelled&next=https://evil.example');
   await expect(page.getByRole('heading', { name: 'Authentication Error' })).toBeVisible();

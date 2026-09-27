@@ -36,8 +36,18 @@ export const parseResume = async (resume: string) => {
     body: JSON.stringify({ resume }),
   });
   if (!res.ok) throw new Error('Failed to parse resume');
-  const data = await res.json();
-  return transformToPartial(JSON.parse(data)) as ParsedAccount;
+  try {
+    const data = await res.json();
+    if (typeof data !== 'string') {
+      throw new Error('Failed to parse resume');
+    }
+    return transformToPartial(JSON.parse(data)) as ParsedAccount;
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Failed to parse resume') {
+      throw error;
+    }
+    throw new Error('Failed to parse resume');
+  }
 };
 
 export const fetchTailoredAccount = async (account: string, questions: string[], answers: string[]) => {

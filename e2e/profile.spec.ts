@@ -320,6 +320,7 @@ test('PROF-04 provider failures recover without stranding the profile', async ({
   await uploadResume(page, PDF);
   await expect(page.getByText('Failed to parse resume').last()).toBeVisible();
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
+  await expect(page.getByRole('button', { name: 'Import from resume' })).toBeEnabled();
 
   await setScenario('success');
   await uploadResume(page, PDF);

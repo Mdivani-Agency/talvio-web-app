@@ -29,7 +29,7 @@ export const HomeNavigationMenu = ({ className, links, user, withActions = false
       {withActions && (
         <div className='flex justify-end items-center gap-2 ml-auto'>
           <ThemeToggle />
-          {user ? <UserAvatar user={user} /> : <Link href={'/auth/sign-in'}>
+          {user ? <UserAvatar user={user} /> : <Link href={'/auth/sign-in'} prefetch={false}>
             <Button variant={'ghost'} size={'sm'}>
               <Icon type={'User'} className="size-4 text-primary" />
               Sign in

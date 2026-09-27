@@ -76,7 +76,7 @@ export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, acti
   return (
     <div className={cn('space-y-6', className)}>
       <ExperienceFields form={form} />
-      <div className="flex justify-end gap-2">
+      <div className="relative z-10 flex justify-end gap-2">
         <Button type="button" className="w-36" variant={'secondary'} size={'icon'} onClick={() => void handleSubmit()}>
           {action === 'add' ? 'Add' : 'Save'}
         </Button>

@@ -33,17 +33,20 @@ export const SortableList = <T extends DraggableItem>({
   const handleDragStart = useCallback(
     (e: React.DragEvent<HTMLDivElement>, item: T) => {
       if (disabled) return;
-      // Set drag image offset to create a better drag preview
-      if (e.dataTransfer.setDragImage) {
-        const dragEl = e.currentTarget;
-        e.dataTransfer.setDragImage(dragEl, dragEl.offsetWidth / 2, dragEl.offsetHeight / 2);
-      }
-
-      e.dataTransfer.effectAllowed = 'move';
-      setDraggedItem(item);
-
-      // Add a class to the dragged item for styling
       e.currentTarget.classList.add('opacity-50');
+      if (e.dataTransfer) {
+        try {
+          if (e.dataTransfer.setDragImage) {
+            const dragEl = e.currentTarget;
+            e.dataTransfer.setDragImage(dragEl, dragEl.offsetWidth / 2, dragEl.offsetHeight / 2);
+          }
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', item.id);
+        } catch {
+          // Firefox can reject preview or payload updates on a scripted drag.
+        }
+      }
+      setDraggedItem(item);
     },
     [disabled],
   );
@@ -104,6 +107,7 @@ export const SortableList = <T extends DraggableItem>({
             onDrop={(e) => canDrag && handleDrop(e, item)}
             className={cn(
               'flex items-center gap-2 p-1.5 bg-card rounded-md shadow-sm transition-all transform',
+              isDragging && 'opacity-50',
               isDraggedOver && 'border-secondary scale-[1.02]',
               !disabled && canDrag && 'cursor-grab active:cursor-grabbing',
               disabled && 'opacity-50 cursor-not-allowed',
