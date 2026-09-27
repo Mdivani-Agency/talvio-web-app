@@ -13,6 +13,7 @@ interface CollapsibleProps {
 
 export function Collapsible({ label, children, open, className, labelClassName, onToggle }: CollapsibleProps) {
   const [mounted, setMounted] = useState(open);
+  const shown = open || mounted;
 
   useEffect(() => {
     if (open) {
@@ -39,7 +40,7 @@ export function Collapsible({ label, children, open, className, labelClassName, 
       </div>
       <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
         <div className={open ? 'overflow-visible' : 'min-h-0 overflow-hidden'}>
-          {mounted ? children : null}
+          {shown ? children : null}
         </div>
       </div>
     </div>
