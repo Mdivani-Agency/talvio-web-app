@@ -28,6 +28,19 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'mobile-chromium',
+      use: { ...devices['Pixel 5'] },
+      grep: /UX-02|PUB-02 mobile/,
+    },
   ],
   webServer: {
     command: `yarn start --hostname 127.0.0.1 --port ${port}`,
