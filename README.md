@@ -20,7 +20,7 @@ yarn build
 yarn start
 ```
 
-Pull requests run lint, typecheck, tests, the local database and Playwright suite, and a release gate. Pushes to `main` or `development` run those checks, then `supabase db push` and a Vercel CLI deploy only after the release gate succeeds. The quality job uses public `NEXT_PUBLIC_*` stubs only — no production secrets. Vercel Git auto-deploys are disabled for those two branches (`vercel.json`).
+Pull requests run lint, typecheck, tests, the local database and Playwright suite, and a release gate. Pushes to `main` or `development` run those checks, then `supabase db push` and a Vercel CLI deploy only after the release gate succeeds. The quality job uses public `NEXT_PUBLIC_*` stubs only — no production secrets. `vercel.json` disables Vercel Git deployments for every branch. The deploy job installs Vercel CLI 60.1.3 and refuses to migrate or deploy when the checkout is no longer the branch tip.
 
 ## Local Supabase
 
@@ -88,7 +88,7 @@ Supabase `db push` still reads GitHub Environment secrets when the hosted projec
 
 ## Deploy on Vercel
 
-Keep the repo connected to the Vercel project (Next.js framework preset) so CLI deploys can pull env vars. Do **not** rely on Vercel Git auto-deploys for `main` or `development` — `vercel.json` turns those off. GitHub Actions deploys `main` as production and `development` as preview.
+Keep the repo connected to the Vercel project (Next.js framework preset) so CLI deploys can pull env vars. `vercel.json` sets `git.deploymentEnabled` to `false`, so Git pushes do not create Vercel deployments. GitHub Actions deploys `main` as production and `development` as preview, using the hosted Vercel environment from `vercel pull` rather than the local end-to-end build. Require the **Release gate** check in branch protection for `main` and `development`. A workflow file cannot remove a Vercel deploy hook or a person's CLI token.
 
 | Setting | Value |
 | --- | --- |
