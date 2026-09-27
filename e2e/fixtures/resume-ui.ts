@@ -119,11 +119,17 @@ export async function generateFromModal(page: Page, filename: string, label?: st
 export async function openResumeSection(page: Page, title: string, placeholder: string) {
   const tab = page.getByRole('button', { name: title, exact: true });
   const field = page.getByPlaceholder(placeholder);
+  // Global smooth scrolling keeps moving the tab during Playwright's click,
+  // so WebKit focuses the button and drops the click. Jump, then retry.
+  await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+  });
   await expect(async () => {
-    if (!(await field.isVisible())) {
-      await tab.click();
+    if (await field.isVisible()) {
+      return;
     }
-    await expect(field).toBeVisible();
+    await tab.click({ timeout: 2_000 });
+    await expect(field).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 15_000 });
 }
 

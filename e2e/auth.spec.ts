@@ -36,6 +36,11 @@ async function createConfirmedUser(email: string) {
   return created.data.user.id;
 }
 
+function navigationInterrupted(error: unknown) {
+  const message = error instanceof Error ? error.message : '';
+  return message.includes('interrupted by another navigation') || message.includes('NS_BINDING_ABORTED');
+}
+
 function emailFor(label: string) {
   const email = `e2e-auth-${label}-${Date.now()}@talvio.test`;
   createdEmails.push(email);
@@ -90,6 +95,8 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
   await expect(page.getByRole('heading', { name: 'Authentication Error' })).toBeVisible();
   await expect(page.getByText('Could not complete sign-in. Try again.')).toBeVisible();
   await page.getByRole('link', { name: 'Go Home' }).click();
+  await expect(page).toHaveURL(/\/home$/);
+  await expect(page.getByRole('heading', { name: /Create Your Path to Career Success/ })).toBeVisible();
   await page.goto('/auth/sign-in');
   await expect(page.getByPlaceholder('Email')).toBeVisible();
   await expect(page.getByRole('button', { name: 'With Email' })).toBeVisible();
@@ -169,7 +176,7 @@ test('AUTH-05 a live session refreshes and a revoked session returns to sign-in'
   const authCookies = (await page.context().cookies()).filter((cookie) => cookie.name.includes('auth-token'));
   await page.context().addCookies(authCookies.map((cookie) => ({ ...cookie, value: 'revoked' })));
   await page.goto('/account').catch((error: unknown) => {
-    if (!(error instanceof Error) || !error.message.includes('interrupted by another navigation')) {
+    if (!navigationInterrupted(error)) {
       throw error;
     }
   });
@@ -193,10 +200,14 @@ test('AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the
   await page.context().clearCookies();
   const unsafeSignIn = `/auth/sign-in?callbackURL=${encodeURIComponent('//evil.example')}`;
   await page.goto(unsafeSignIn, { waitUntil: 'commit' }).catch(async (error: unknown) => {
-    if (!(error instanceof Error) || !error.message.includes('NS_BINDING_ABORTED')) {
+    if (!navigationInterrupted(error)) {
       throw error;
     }
-    await page.goto(unsafeSignIn, { waitUntil: 'commit' });
+    try {
+      await expect(page).toHaveURL(/\/auth\/sign-in/, { timeout: 5_000 });
+    } catch {
+      await page.goto(unsafeSignIn, { waitUntil: 'commit' });
+    }
   });
   await expect(page).toHaveURL(/localhost:3002\/auth\/sign-in/);
   await page.goto('/auth/callback?error=access_denied&error_description=User%20cancelled&next=https://evil.example');
