@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { Toaster } from "sonner";
 import { QueryProvider, SessionProvider, ThemeProvider } from '@lib/providers';
+import { HOME_DESCRIPTION } from '@/lib/public-metadata';
+import { siteOrigin } from '@/lib/site';
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -10,8 +12,9 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: "Talvio",
-  description: "Talvio - Your Career Success Partner",
+  description: HOME_DESCRIPTION,
 };
 
 export default function RootLayout({

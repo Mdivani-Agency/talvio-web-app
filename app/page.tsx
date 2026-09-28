@@ -1,15 +1,14 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { homeMetadata } from '@/lib/public-metadata';
 
-export default async function AppPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+import { HomePage } from './home/home-page';
+import { HomeShell } from './home/home-shell';
 
-  if (user) {
-    return redirect('/account');
-  }
+export const metadata = homeMetadata;
 
-  return redirect('/home');
+export default function AppPage() {
+  return (
+    <HomeShell>
+      <HomePage />
+    </HomeShell>
+  );
 }

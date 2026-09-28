@@ -1,25 +1,9 @@
-import { Footer, Header, StickyHeader } from "@components/views";
-import { HomeNavigationMenu, ResponsiveNavigationMenu } from "./views";
+import { homeMetadata } from '@/lib/public-metadata';
+
+import { HomeShell } from './home-shell';
+
+export const metadata = homeMetadata;
 
 export default function LandingPage({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="font-(family-var(--font-montserrat))">
-      <Header>
-        <ResponsiveNavigationMenu />
-      </Header>
-      <StickyHeader>
-        <ResponsiveNavigationMenu />
-      </StickyHeader>
-      {children}
-      <Footer>
-        <HomeNavigationMenu
-          links={[
-            { name: 'Workflow', href: '#workflow' },
-            { name: 'Benefits', href: '#benefits' },
-            { name: 'Price', href: '#plans' },
-            { name: 'FAQ', href: '#faq' },
-          ]} />
-      </Footer>
-    </div>
-  );
+  return <HomeShell>{children}</HomeShell>;
 }

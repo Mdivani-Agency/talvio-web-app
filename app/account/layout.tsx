@@ -1,3 +1,4 @@
+import { PRIVATE_ROBOTS } from '@/lib/public-metadata';
 import { SessionProvider } from '@lib/providers';
 import { ACCOUNT_RETURN_HEADER, accountSignInRedirect } from '@lib/auth/sign-in-href';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -6,6 +7,8 @@ import { redirect } from 'next/navigation';
 
 import { AccountProvider } from './providers/state-provider';
 import { Sidebar } from './views/sidebar';
+
+export const metadata = { robots: PRIVATE_ROBOTS };
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServerClient();

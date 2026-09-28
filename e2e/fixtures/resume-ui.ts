@@ -40,7 +40,12 @@ export async function resetAndGuard(page: Page) {
 
 export async function openSignedIn(page: Page, person: Persona, path: string) {
   await signInWithLocalMagicLink(page, person);
-  await page.goto(path);
+  const current = new URL(page.url());
+  const target = new URL(path, current.origin);
+  if (current.pathname === target.pathname && current.search === target.search) {
+    return;
+  }
+  await page.goto(`${target.pathname}${target.search}`);
 }
 
 export async function chooseManual(page: Page) {

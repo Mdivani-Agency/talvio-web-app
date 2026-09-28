@@ -14,7 +14,7 @@ export default function VerifyRequestPage() {
         We’ve just sent you an email. Open the link on this same device and
         browser to finish signing in.
       </p>
-      <Link className="w-full max-w-96" href={'/'}>
+      <Link className="w-full max-w-96" href={'/'} prefetch={false}>
         <Button className={'w-full'} variant={'default'}>
           Back to Home
         </Button>
