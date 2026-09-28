@@ -32,15 +32,14 @@ export default function PrivacyPolicyPage() {
         </p>
       </section>
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">5. GDPR Compliance</h2>
+        <h2 className="text-xl font-semibold mb-2">5. Your data</h2>
         <p className="text-sm text-muted-foreground font-medium">
-          Talvio is committed to complying with the General Data Protection Regulation (GDPR). You have the right to
-          access, correct, or delete your personal data, and to restrict or object to certain processing of your data.
-          If you wish to exercise any of these rights, please contact us at{' '}
+          You can ask about the personal information in your Talvio account by emailing{' '}
           <a href="mailto:contact@talvio.co" className="text-blue-600 underline">
             contact@talvio.co
           </a>
-          .
+          . The product does not include a self-service control to export or delete an account. We do not sell your
+          personal data.
         </p>
       </section>
       <section className="mb-8">
@@ -68,7 +67,7 @@ export default function PrivacyPolicyPage() {
           .
         </p>
       </section>
-      <footer className="mt-12 text-sm text-gray-500">Last updated: June 2025</footer>
+      <footer className="mt-12 text-sm text-gray-500">Last updated: September 2026</footer>
     </main>
   );
 }
