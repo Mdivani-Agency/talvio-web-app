@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { publicEntryRedirect } from '@/lib/public-entry';
+import { publicEntryRedirect, skipsPublicEntryRedirect } from '@/lib/public-entry';
 
 function nextWithReturnPath(request: NextRequest) {
   const headers = new Headers(request.headers);
@@ -26,7 +26,9 @@ export async function updateSession(request: NextRequest) {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !anonKey) {
-    const decision = publicEntryRedirect(request.nextUrl.pathname, false);
+    const decision = skipsPublicEntryRedirect((name) => request.headers.get(name))
+      ? null
+      : publicEntryRedirect(request.nextUrl.pathname, false);
     if (!decision) {
       return supabaseResponse;
     }
@@ -52,7 +54,9 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const signedIn = typeof data?.claims?.sub === 'string' && data.claims.sub.length > 0;
-  const decision = publicEntryRedirect(request.nextUrl.pathname, signedIn);
+  const decision = skipsPublicEntryRedirect((name) => request.headers.get(name))
+    ? null
+    : publicEntryRedirect(request.nextUrl.pathname, signedIn);
   if (!decision) {
     return supabaseResponse;
   }
