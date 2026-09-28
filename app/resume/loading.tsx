@@ -1,5 +1,5 @@
 import { Loading } from '@components/views';
 
-export default function LoadingPage() {
+export default function ResumeLoading() {
   return <Loading message={'Loading...'} />;
 }

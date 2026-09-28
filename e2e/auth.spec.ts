@@ -95,7 +95,7 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
   await expect(page.getByRole('heading', { name: 'Authentication Error' })).toBeVisible();
   await expect(page.getByText('Could not complete sign-in. Try again.')).toBeVisible();
   await page.getByRole('link', { name: 'Go Home' }).click();
-  await expect(page).toHaveURL(/\/home$/);
+  await expect(page).toHaveURL(/localhost:3002\/$/);
   await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
   await page.goto('/auth/sign-in');
   await expect(page.getByPlaceholder('Email')).toBeVisible();

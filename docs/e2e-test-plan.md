@@ -52,7 +52,7 @@ All cases below are release requirements. P0 identifies implementation order and
 
 | ID | Priority | Flow and assertions |
 | --- | --- | --- |
-| PUB-01 | P1 | Open `/`, `/home`, `/templates`, `/terms`, `/privacy-policy`; assert intended redirects, meaningful headings, working navigation and no unhandled browser errors. Unknown routes show the not-found experience. |
+| PUB-01 | P1 | Open `/`, `/home`, `/templates`, `/terms`, `/privacy-policy`; anonymous `/` serves the homepage and anonymous `/home` redirects there. Assert meaningful headings, the canonical URL, working navigation and no unhandled browser errors. Unknown routes show the not-found experience. |
 | PUB-02 | P1 | Desktop and mobile navigation: open/close menu, follow primary CTA, reach templates/sign-in, use footer/legal links; no hidden or unreachable primary controls. |
 | TPL-01 | P0 | Switch Entry/Mid/Senior levels; both active level and cards update. Select each supported template in a parameterized test and verify the matching `template` query value and preview. |
 | TPL-02 | P1 | Missing or invalid template query: deterministic fallback or clear recoverable error; never infinite loading or a crash. |

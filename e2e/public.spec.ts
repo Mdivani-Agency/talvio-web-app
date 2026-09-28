@@ -20,13 +20,14 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   const errors = watchPageErrors(page);
 
   await page.goto('/');
-  await expect(page).toHaveURL(/\/home$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co');
 
   await page.goto('/templates');
   await expect(page.getByRole('heading', { name: 'Choose Your Resume Template' })).toBeVisible();
   await page.locator('header').first().getByRole('link', { name: /Talvio/ }).click();
-  await expect(page).toHaveURL(/\/home$/);
+  await expect(page).toHaveURL(/\/$/);
 
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms of Service', exact: true })).toBeVisible();
@@ -36,7 +37,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await page.goto('/this-page-does-not-exist');
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
   await page.getByRole('link', { name: 'Go Home' }).click();
-  await expect(page).toHaveURL(/\/home$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
 
   expect(errors).toEqual([]);
