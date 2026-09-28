@@ -1,12 +1,12 @@
 export type PublicEntryRedirect = {
   pathname: '/' | '/account';
-  status: 307 | 308;
+  status: 307;
 };
 
 /**
  * Anonymous `/` is the only indexable homepage.
  * Signed-in `/` still opens the account.
- * Anonymous `/home` permanently joins `/`. Signed-in `/home` stays available so the marketing header can sign out.
+ * Anonymous `/home` uses a temporary redirect so a later signed-in visit can still open `/home`.
  */
 /** Route prefetches stay on the requested URL. Redirecting a prefetch of `/` stalls WebKit while the account document is loading. */
 export function skipsPublicEntryRedirect(header: (name: string) => string | null) {
@@ -15,7 +15,7 @@ export function skipsPublicEntryRedirect(header: (name: string) => string | null
 
 export function publicEntryRedirect(pathname: string, signedIn: boolean): PublicEntryRedirect | null {
   if ((pathname === '/home' || pathname === '/home/') && !signedIn) {
-    return { pathname: '/', status: 308 };
+    return { pathname: '/', status: 307 };
   }
 
   if (pathname === '/' && signedIn) {

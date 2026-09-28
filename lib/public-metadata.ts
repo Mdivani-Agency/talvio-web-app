@@ -18,7 +18,7 @@ export const PRIVACY_TITLE = 'Privacy Policy | Talvio';
 export const PRIVACY_DESCRIPTION = 'How Talvio handles personal data, and how to ask a question about your account.';
 
 /**
- * Canonical indexable pages. `/home` redirects to `/`.
+ * Canonical indexable pages. Anonymous `/home` redirects to `/`.
  * Blog URLs belong to MDI-249 and are added when `/blog` exists.
  * `/pricing` and `/ats-friendly-resume` are not shipped.
  */

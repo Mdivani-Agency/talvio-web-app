@@ -4,8 +4,8 @@ import { publicEntryRedirect, skipsPublicEntryRedirect } from './public-entry';
 
 describe('public entry redirects', () => {
   it('sends an anonymous visitor from /home to /', () => {
-    expect(publicEntryRedirect('/home', false)).toEqual({ pathname: '/', status: 308 });
-    expect(publicEntryRedirect('/home/', false)).toEqual({ pathname: '/', status: 308 });
+    expect(publicEntryRedirect('/home', false)).toEqual({ pathname: '/', status: 307 });
+    expect(publicEntryRedirect('/home/', false)).toEqual({ pathname: '/', status: 307 });
   });
 
   it('leaves the marketing page in place for a signed-in visitor', () => {

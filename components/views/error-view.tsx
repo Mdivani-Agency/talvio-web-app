@@ -20,7 +20,7 @@ export function ErrorView({ title = 'Unexpected error', error, errorDescription,
       <p className="text-sm text-error-500 font-medium">{errorDescription || ''}</p>
       <div className={'mt-6'}>
         {!reset ? (
-          <Link href={'/'}>
+          <Link href={'/'} prefetch={false}>
             <Button variant={'default'}>Go Home</Button>
           </Link>
         ) : (

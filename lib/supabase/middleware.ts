@@ -9,10 +9,11 @@ function nextWithReturnPath(request: NextRequest) {
   return NextResponse.next({ request: { headers } });
 }
 
-function redirectKeepingSession(request: NextRequest, response: NextResponse, pathname: string, status: 307 | 308) {
+function redirectKeepingSession(request: NextRequest, response: NextResponse, pathname: string, status: 307) {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
   const redirect = NextResponse.redirect(url, status);
+  redirect.headers.set('Cache-Control', 'private, no-store');
   for (const cookie of response.headers.getSetCookie()) {
     redirect.headers.append('set-cookie', cookie);
   }
