@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
           .
         </p>
       </section>
-      <footer className="mt-12 text-sm text-gray-500">Last updated: June 2025</footer>
+      <footer className="mt-12 text-sm text-gray-500">Last updated: September 2026</footer>
     </main>
   );
 }
