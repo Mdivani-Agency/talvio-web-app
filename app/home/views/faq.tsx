@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { DetailsList } from '@components/ui';
 import { FREE_CREDITS_ANSWER, MORE_CREDITS_ANSWER, SUBSCRIPTION_ANSWER, SUBSCRIPTION_QUESTION } from '@/lib/credits';
+import { CREATE_RESUME_ANSWER, SUPPORT_ANSWER } from '@/lib/homepage-copy';
 import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, WHAT_IS_TALVIO_ANSWER } from '@/lib/public-claims';
 
 const faqs = [
@@ -10,7 +11,7 @@ const faqs = [
   },
   {
     question: 'How do I create a resume?',
-    answer: 'You can create a resume by signing up for a free account and following the steps to create a resume.',
+    answer: CREATE_RESUME_ANSWER,
   },
   {
     question: 'Is it really free?',
@@ -34,7 +35,7 @@ const faqs = [
   },
   {
     question: 'How do I get support?',
-    answer: 'You can contact us via email at contact@talvio.co or via our social media channels.',
+    answer: SUPPORT_ANSWER,
   },
 ];
 
