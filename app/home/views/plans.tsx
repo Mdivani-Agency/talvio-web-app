@@ -1,52 +1,22 @@
 import { Icon } from '@components/icons';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@components/ui/card';
+import { CREDIT_PACKS, jobSpecificPdfCount } from '@/lib/credits';
 import { cn } from '@lib/utils';
 
-const plans = [
-  {
-    product: {
-      price: '$2.99',
-      credits: 300,
-    },
-    features: [
-      'Your credits never expire',
-      'Enough to generate 10 job specific resumes',
-      'No auto renewal',
-    ],
-    buttonLabel: 'Buy Now',
-    buttonLink: '/coming-soon',
+const plans = CREDIT_PACKS.map((pack) => ({
+  product: {
+    price: pack.priceLabel,
+    credits: pack.credits,
   },
-  {
-    product: {
-      price: '$4.99',
-      credits: 600,
-    },
-    features: [
-      'Your credits never expire',
-      'Enough to generate 20 job specific resumes',
-      'No auto renewal',
-    ],
-    buttonLabel: 'Buy Now',
-    buttonLink: '/coming-soon',
-    highlight: {
-      title: 'Most Popular',
-    },
-  },
-  {
-    product: {
-      price: '$9.99',
-      credits: 3000,
-    },
-    features: [
-      'Your credits never expire',
-      'Enough to generate 100 job specific resumes',
-      'No auto renewal',
-    ],
-    buttonLabel: 'Buy Now',
-    buttonLink: '/coming-soon',
-  },
-];
+  features: [
+    'Your credits never expire',
+    `Enough to generate ${jobSpecificPdfCount(pack.credits)} job specific resumes`,
+    'No auto renewal',
+  ],
+  buttonLabel: 'Buy Now',
+  highlight: pack.credits === 600 ? { title: 'Most Popular' } : undefined,
+}));
 
 export const Plans = () => {
   return (
@@ -56,14 +26,14 @@ export const Plans = () => {
       )}
     >
       {plans.map((plan) => (
-        <Card className={cn('md:flex-row md:justify-between md:items-start w-full lg:flex-col lg:items-stretch', plan.highlight && 'shadow-sm bg-background')} key={`plan_${plan.product.credits}_${plan.product.price}`}>
-          <CardHeader className='gap-0 text-center md:text-left lg:text-center'>
-            <CardTitle className='text-lg lg:text-xl font-semibold text-primary whitespace-nowrap'>{plan.product.credits} Credits</CardTitle>
+        <Card className={cn('w-full', plan.highlight && 'shadow-sm bg-background')} key={`plan_${plan.product.credits}_${plan.product.price}`}>
+          <CardHeader className='gap-0 text-center'>
+            <CardTitle className='text-lg font-semibold text-primary lg:text-xl'>{plan.product.credits} Credits</CardTitle>
             <CardDescription className='text-lg font-regular text-muted-foreground'>
               {plan.product.price}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className='min-w-0'>
             <ul className='flex flex-col gap-2'>
               {plan.features.map((feature) => (
                 <li key={feature} className='text-md font-regular text-muted-foreground'><Icon type={'Done'} className='size-4 mr-2' />{feature}</li>
