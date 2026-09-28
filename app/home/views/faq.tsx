@@ -1,12 +1,12 @@
 import Image from 'next/image';
 import { DetailsList } from '@components/ui';
 import { FREE_CREDITS_ANSWER, MORE_CREDITS_ANSWER, SUBSCRIPTION_ANSWER, SUBSCRIPTION_QUESTION } from '@/lib/credits';
+import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, WHAT_IS_TALVIO_ANSWER } from '@/lib/public-claims';
 
 const faqs = [
   {
     question: 'What is Talvio?',
-    answer:
-      'Talvio is a platform that allows you to create and manage ATS friendly resumes, track your job applications, and get feedback on your resume.',
+    answer: WHAT_IS_TALVIO_ANSWER,
   },
   {
     question: 'How do I create a resume?',
@@ -26,13 +26,11 @@ const faqs = [
   },
   {
     question: 'Is my data safe?',
-    answer:
-      'Yes, We are GDPR compliant and do not sell your data to third parties, utilise high security measures to protect your data and have a zero tolerance policy for any data breaches.',
+    answer: DATA_SAFETY_ANSWER,
   },
   {
     question: 'What if I want to delete my account?',
-    answer:
-      'You can delete your account at any time by going to the account settings page and clicking the "Delete Account" button. All associated data will be deleted from our servers and cannot be recovered.',
+    answer: ACCOUNT_DELETION_ANSWER,
   },
   {
     question: 'How do I get support?',
