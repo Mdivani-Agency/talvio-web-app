@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { signInThroughLocalMail, submitEmailSignIn } from './fixtures/browser-auth';
 import { serviceClient } from './fixtures/data';
@@ -38,7 +38,19 @@ async function createConfirmedUser(email: string) {
 
 function navigationInterrupted(error: unknown) {
   const message = error instanceof Error ? error.message : '';
-  return message.includes('interrupted by another navigation') || message.includes('NS_BINDING_ABORTED');
+  return message.includes('interrupted by another navigation')
+    || message.includes('NS_BINDING_ABORTED')
+    || message.includes('NS_ERROR_FAILURE');
+}
+
+async function gotoExpectingSignIn(page: Page, path: string) {
+  await page.goto(path).catch((error: unknown) => {
+    if (!navigationInterrupted(error)) {
+      throw error;
+    }
+  });
+  await expect(page).toHaveURL(/\/auth\/sign-in/);
+  await expect(page.getByRole('heading', { name: 'Access your account' })).toBeVisible();
 }
 
 function emailFor(label: string) {
@@ -146,8 +158,7 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/localhost:3002\/(?:home\/?)?$/);
 
-  await page.goto('/account');
-  await expect(page).toHaveURL(/\/auth\/sign-in/);
+  await gotoExpectingSignIn(page, '/account');
   await page.goBack();
   await expect(page.getByText('First Owner')).toHaveCount(0);
 
@@ -175,12 +186,7 @@ test('AUTH-05 a live session refreshes and a revoked session returns to sign-in'
   await serviceClient().auth.admin.signOut(userId, 'global');
   const authCookies = (await page.context().cookies()).filter((cookie) => cookie.name.includes('auth-token'));
   await page.context().addCookies(authCookies.map((cookie) => ({ ...cookie, value: 'revoked' })));
-  await page.goto('/account').catch((error: unknown) => {
-    if (!navigationInterrupted(error)) {
-      throw error;
-    }
-  });
-  await expect(page).toHaveURL(/\/auth\/sign-in/);
+  await gotoExpectingSignIn(page, '/account');
   const denied = await page.request.post('/api/resume/generate-pdf', {
     data: { resumeId: '00000000-0000-4000-8000-000000000001' },
   });
