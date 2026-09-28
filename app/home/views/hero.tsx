@@ -1,4 +1,12 @@
 import { Button } from '@components/ui';
+import {
+  HERO_BODY,
+  HERO_TITLE,
+  PRIMARY_CTA_HREF,
+  PRIMARY_CTA_LABEL,
+  SECONDARY_CTA_HREF,
+  SECONDARY_CTA_LABEL,
+} from '@/lib/homepage-copy';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -6,16 +14,20 @@ export const Hero = () => {
   return (
     <section className={'flex flex-col items-center md:h-screen lg:grid lg:grid-cols-2 lg:gap-8'}>
       <article className={'md:my-auto'}>
-        <h1 className={'text-primary font-semibold text-xl md:text-2xl lg:text-3xl lg:leading-none'}>
-          Create Your Path to Career<br className="md:inline lg:hidden" /> Success with a Powerful Resume
+        <h1 className={'text-primary font-semibold text-xl md:text-2xl lg:text-3xl lg:leading-tight'}>
+          {HERO_TITLE}
         </h1>
         <p className={'text-muted-foreground font-regular my-8 text-sm md:text-md'}>
-          Craft your perfect ATS friendly resume in minutes with our intuitive <br className="hidden md:inline" />{' '}
-          platform, no design experience needed!
+          {HERO_BODY}
         </p>
-        <Link href={'/auth/sign-in'}>
-          <Button size={'lg'} className={'lg:w-64'}>Get Started For Free</Button>
-        </Link>
+        <div className={'flex flex-col gap-3 sm:flex-row sm:flex-wrap'}>
+          <Link href={PRIMARY_CTA_HREF}>
+            <Button size={'lg'}>{PRIMARY_CTA_LABEL}</Button>
+          </Link>
+          <Link href={SECONDARY_CTA_HREF}>
+            <Button size={'lg'} variant={'outline'}>{SECONDARY_CTA_LABEL}</Button>
+          </Link>
+        </div>
       </article>
       <figure className={'relative left-[10%] mt-14 hidden h-[200] lg:h-[400] lg:mb-20 lg:mt-auto lg:block xl:h-[70%]'}>
         <Image

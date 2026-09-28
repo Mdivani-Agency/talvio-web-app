@@ -21,7 +21,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
 
   await page.goto('/');
   await expect(page).toHaveURL(/\/home$/);
-  await expect(page.getByRole('heading', { name: /Create Your Path to Career Success/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
 
   await page.goto('/templates');
   await expect(page.getByRole('heading', { name: 'Choose Your Resume Template' })).toBeVisible();
@@ -37,7 +37,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
   await page.getByRole('link', { name: 'Go Home' }).click();
   await expect(page).toHaveURL(/\/home$/);
-  await expect(page.getByRole('heading', { name: /Create Your Path to Career Success/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
 
   expect(errors).toEqual([]);
 });
@@ -48,12 +48,12 @@ test('PUB-02 desktop navigation reaches sections, templates, and sign-in', async
   await expect(header.getByRole('button', { name: 'Open menu' })).toBeHidden();
   await header.getByRole('link', { name: 'Benefits' }).click();
   await expect(page).toHaveURL(/#benefits$/);
-  await expect(page.getByRole('heading', { name: /Why Choose Talvio/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'A profile, a template, and a PDF' })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Check our templates' }).click();
+  await page.getByRole('link', { name: 'See templates' }).first().click();
   await expect(page).toHaveURL(/\/templates$/);
   await page.goto('/home');
-  await page.getByRole('link', { name: 'Get Started For Free' }).click();
+  await page.getByRole('link', { name: 'Start free' }).first().click();
   await expect(page).toHaveURL(/\/auth\/sign-in/);
   await expect(page.getByRole('heading', { name: 'Access your account' })).toBeVisible();
 
