@@ -2,14 +2,15 @@ import type { Metadata } from 'next';
 
 import { SIGNUP_CREDIT_GRANT } from './credits';
 import { allowPublicIndexing, siteOrigin } from './site';
+import { TEMPLATES_PAGE_DESCRIPTION, TEMPLATES_PAGE_TITLE } from './templates-page-copy';
 
 const signupCredits = SIGNUP_CREDIT_GRANT.toLocaleString('en-US');
 
 export const HOME_TITLE = 'Talvio | One profile and a resume PDF';
 export const HOME_DESCRIPTION = `Keep one profile, pick a template, and download a resume PDF. New accounts start with ${signupCredits} credits. No card is required.`;
 
-export const TEMPLATES_TITLE = 'Resume templates | Talvio';
-export const TEMPLATES_DESCRIPTION = 'Browse resume templates and preview a layout before you download a PDF. Preview is free.';
+export const TEMPLATES_TITLE = TEMPLATES_PAGE_TITLE;
+export const TEMPLATES_DESCRIPTION = TEMPLATES_PAGE_DESCRIPTION;
 
 export const TERMS_TITLE = 'Terms of Service | Talvio';
 export const TERMS_DESCRIPTION = 'The terms for using Talvio.';

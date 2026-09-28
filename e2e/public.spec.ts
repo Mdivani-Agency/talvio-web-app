@@ -25,7 +25,8 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co');
 
   await page.goto('/templates');
-  await expect(page.getByRole('heading', { name: 'Choose Your Resume Template' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Preview a resume template' })).toBeVisible();
+  await expect(page.getByText('Preview is free, and selecting one opens the editor.')).toBeVisible();
   await page.locator('header').first().getByRole('link', { name: /Talvio/ }).click();
   await expect(page).toHaveURL(/\/$/);
 
