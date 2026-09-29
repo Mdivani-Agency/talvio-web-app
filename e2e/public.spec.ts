@@ -26,7 +26,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
 
   await page.goto('/templates');
   await expect(page.getByRole('heading', { name: 'Preview a resume template' })).toBeVisible();
-  await expect(page.getByText('Preview is free, and selecting one opens the editor.')).toBeVisible();
+  await expect(page.getByText('Selecting one starts the resume and asks you to fill it manually or use an existing resume before the editor.')).toBeVisible();
   await page.locator('header').first().getByRole('link', { name: /Talvio/ }).click();
   await expect(page).toHaveURL(/\/$/);
 

@@ -17,6 +17,8 @@ describe('templates page copy', () => {
     expect(copy).toContain('Mid');
     expect(copy).toContain('Senior');
     expect(copy).toMatch(/preview/i);
+    expect(TEMPLATES_PAGE_INTRO).toMatch(/fill it manually/i);
+    expect(TEMPLATES_PAGE_INTRO).toMatch(/existing resume/i);
     expect(TEMPLATES_PAGE_INTRO).toContain('editor');
     expect(copy).not.toMatch(unsupported);
   });
