@@ -38,7 +38,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByText('$9.99')).toBeVisible();
   await expect(page.getByText('Checkout is not available yet. Sign in to use the free credits on a new account. This does not start a payment.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'What if I have a billing question?' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'terms of service' })).toHaveAttribute('href', '/terms');
+  await expect(page.getByRole('link', { name: 'terms of service', exact: true })).toHaveAttribute('href', '/terms');
   await expect(page.getByRole('link', { name: 'Sign in' }).first()).toHaveAttribute('href', '/auth/sign-in');
 
   await page.goto('/terms');
