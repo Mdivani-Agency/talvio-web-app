@@ -25,9 +25,8 @@ export const PRIVACY_DESCRIPTION = 'How Talvio handles personal data, and how to
 /**
  * Canonical indexable pages. Anonymous `/home` redirects to `/`.
  * Blog URLs belong to MDI-249 and are added when `/blog` exists.
- * `/ats-friendly-resume` is not shipped.
  */
-export const INDEXABLE_PUBLIC_PATHS = ['/', '/templates', '/pricing', '/privacy-policy', '/terms'] as const;
+export const INDEXABLE_PUBLIC_PATHS = ['/', '/templates', '/pricing', '/ats-friendly-resume', '/privacy-policy', '/terms'] as const;
 
 export const PRIVATE_ROBOTS_PREFIXES = ['/account', '/auth', '/resume', '/api'] as const;
 

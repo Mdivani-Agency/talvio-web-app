@@ -27,6 +27,8 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await page.goto('/templates');
   await expect(page.getByRole('heading', { name: 'Preview a resume template' })).toBeVisible();
   await expect(page.getByText('Selecting one starts the resume and asks you to fill it manually or use an existing resume before the editor.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Readable resumes and checkers', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
+  await expect(page.getByRole('link', { name: 'Pay-as-you-go pricing', exact: true })).toHaveAttribute('href', '/pricing');
   await page.locator('header').first().getByRole('link', { name: /Talvio/ }).click();
   await expect(page).toHaveURL(/\/$/);
 
@@ -40,6 +42,15 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByRole('heading', { name: 'What if I have a billing question?' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'terms of service', exact: true })).toHaveAttribute('href', '/terms');
   await expect(page.getByRole('link', { name: 'Sign in' }).first()).toHaveAttribute('href', '/auth/sign-in');
+
+  await page.goto('/ats-friendly-resume');
+  await expect(page.getByRole('heading', { name: 'A readable resume is not a checker score' })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co/ats-friendly-resume');
+  await expect(page.getByRole('heading', { name: 'Check the PDF by selecting the text' })).toBeVisible();
+  await expect(page.getByText('This is a sanity check for copy order.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
+  await expect(page.getByRole('link', { name: 'See pricing', exact: true })).toHaveAttribute('href', '/pricing');
+  await expect(page.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
 
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms of Service', exact: true })).toBeVisible();

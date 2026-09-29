@@ -46,8 +46,8 @@ describe('public metadata', () => {
   });
 
   it('lists only canonical public pages', () => {
-    expect(INDEXABLE_PUBLIC_PATHS).toEqual(['/', '/templates', '/pricing', '/privacy-policy', '/terms']);
-    expect(INDEXABLE_PUBLIC_PATHS.join(' ')).not.toMatch(/\/home|\/ats-friendly-resume|\/blog|\/account|\/auth|\/resume/);
+    expect(INDEXABLE_PUBLIC_PATHS).toEqual(['/', '/templates', '/pricing', '/ats-friendly-resume', '/privacy-policy', '/terms']);
+    expect(INDEXABLE_PUBLIC_PATHS.join(' ')).not.toMatch(/\/home|\/blog|\/account|\/auth|\/resume/);
     expect(PRIVATE_ROBOTS_PREFIXES).toEqual(['/account', '/auth', '/resume', '/api']);
   });
 
