@@ -6,6 +6,7 @@ import { setScenario } from './fixtures/profile-ui';
 import {
   generateFromModal,
   mediaStats,
+  openFinalReview,
   openSignedIn,
   persona,
   recordedDownloads,
@@ -336,8 +337,7 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   }).toBe('Edited Family');
 
   await rememberDownloads(page);
-  await page.getByRole('button', { name: 'Download resume' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Final Review' });
+  const dialog = await openFinalReview(page);
   await dialog.getByPlaceholder('Enter a resume name').fill('Edited family');
   await dialog.getByRole('button', { name: 'Generate and Download Resume' }).click();
   await expect.poll(async () => {
