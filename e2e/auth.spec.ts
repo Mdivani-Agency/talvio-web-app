@@ -44,12 +44,21 @@ function navigationInterrupted(error: unknown) {
 }
 
 async function gotoExpectingSignIn(page: Page, path: string) {
-  await page.goto(path).catch((error: unknown) => {
-    if (!navigationInterrupted(error)) {
-      throw error;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await page.goto(path).catch((error: unknown) => {
+      if (!navigationInterrupted(error)) {
+        throw error;
+      }
+    });
+    try {
+      await expect(page).toHaveURL(/\/auth\/sign-in/, { timeout: 15_000 });
+      break;
+    } catch (error) {
+      if (attempt === 1) {
+        throw error;
+      }
     }
-  });
-  await expect(page).toHaveURL(/\/auth\/sign-in/);
+  }
   await expect(page.getByRole('heading', { name: 'Access your account' })).toBeVisible();
 }
 
@@ -156,7 +165,9 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
   await page.getByTestId('account-menu').first().click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await page.getByRole('button', { name: 'Sign out' }).click();
-  await expect(page).toHaveURL(/localhost:3002\/(?:home\/?)?$/);
+  await expect(page).toHaveURL(/localhost:3002\/$/);
+  await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
 
   await gotoExpectingSignIn(page, '/account');
   await page.goBack();

@@ -20,7 +20,6 @@ import {
   AvatarFallback,
 } from '@components/ui';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@lib/utils';
 
@@ -36,15 +35,14 @@ interface UserAvatarProps {
 
 export function UserAvatar({ className, user }: UserAvatarProps) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
 
   const handleSignOut = async () => {
     setOpen(false);
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
     clearLegacyBearerToken();
-    router.replace('/');
-    router.refresh();
+    // A full document load finishes sign-out before the next navigation starts.
+    window.location.replace('/');
   };
 
   return (
