@@ -5,6 +5,8 @@ import {
   HOME_DESCRIPTION,
   HOME_TITLE,
   INDEXABLE_PUBLIC_PATHS,
+  PRICING_DESCRIPTION,
+  PRICING_TITLE,
   PRIVACY_DESCRIPTION,
   PRIVACY_TITLE,
   PRIVATE_ROBOTS_PREFIXES,
@@ -40,12 +42,12 @@ describe('public metadata', () => {
     expect(HOME_TITLE).toMatch(/PDF/);
     expect(HOME_DESCRIPTION).toContain('template');
     expect(HOME_DESCRIPTION).toContain(`${SIGNUP_CREDIT_GRANT.toLocaleString('en-US')} credits`);
-    expect([HOME_TITLE, HOME_DESCRIPTION, TEMPLATES_TITLE, TEMPLATES_DESCRIPTION, TERMS_TITLE, TERMS_DESCRIPTION, PRIVACY_TITLE, PRIVACY_DESCRIPTION].join('\n')).not.toMatch(unsupported);
+    expect([HOME_TITLE, HOME_DESCRIPTION, TEMPLATES_TITLE, TEMPLATES_DESCRIPTION, PRICING_TITLE, PRICING_DESCRIPTION, TERMS_TITLE, TERMS_DESCRIPTION, PRIVACY_TITLE, PRIVACY_DESCRIPTION].join('\n')).not.toMatch(unsupported);
   });
 
   it('lists only canonical public pages', () => {
-    expect(INDEXABLE_PUBLIC_PATHS).toEqual(['/', '/templates', '/privacy-policy', '/terms']);
-    expect(INDEXABLE_PUBLIC_PATHS.join(' ')).not.toMatch(/\/home|\/pricing|\/ats-friendly-resume|\/blog|\/account|\/auth|\/resume/);
+    expect(INDEXABLE_PUBLIC_PATHS).toEqual(['/', '/templates', '/pricing', '/privacy-policy', '/terms']);
+    expect(INDEXABLE_PUBLIC_PATHS.join(' ')).not.toMatch(/\/home|\/ats-friendly-resume|\/blog|\/account|\/auth|\/resume/);
     expect(PRIVATE_ROBOTS_PREFIXES).toEqual(['/account', '/auth', '/resume', '/api']);
   });
 

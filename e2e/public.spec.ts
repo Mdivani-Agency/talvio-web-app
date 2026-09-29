@@ -30,6 +30,17 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await page.locator('header').first().getByRole('link', { name: /Talvio/ }).click();
   await expect(page).toHaveURL(/\/$/);
 
+  await page.goto('/pricing');
+  await expect(page.getByRole('heading', { name: 'Pay as you go', exact: true })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co/pricing');
+  await expect(page.getByText('$2.99')).toBeVisible();
+  await expect(page.getByText('$4.99')).toBeVisible();
+  await expect(page.getByText('$9.99')).toBeVisible();
+  await expect(page.getByText('Checkout is not available yet. Sign in to use the free credits on a new account. This does not start a payment.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What if I have a billing question?' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'terms of service' })).toHaveAttribute('href', '/terms');
+  await expect(page.getByRole('link', { name: 'Sign in' }).first()).toHaveAttribute('href', '/auth/sign-in');
+
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms of Service', exact: true })).toBeVisible();
   await page.goto('/privacy-policy');

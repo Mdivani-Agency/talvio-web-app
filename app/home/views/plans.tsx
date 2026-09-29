@@ -2,7 +2,9 @@ import { Icon } from '@components/icons';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@components/ui/card';
 import { CREDIT_PACKS, jobSpecificPdfCount } from '@/lib/credits';
+import { PRICING_HOME_PACK_CTA_LABEL, PRICING_PATH } from '@/lib/pricing-page-copy';
 import { cn } from '@lib/utils';
+import Link from 'next/link';
 
 const plans = CREDIT_PACKS.map((pack) => ({
   product: {
@@ -14,7 +16,7 @@ const plans = CREDIT_PACKS.map((pack) => ({
     `Enough to generate ${jobSpecificPdfCount(pack.credits)} job specific resumes`,
     'No auto renewal',
   ],
-  buttonLabel: 'Buy Now',
+  buttonLabel: PRICING_HOME_PACK_CTA_LABEL,
   highlight: pack.credits === 600 ? { title: 'Most Popular' } : undefined,
 }));
 
@@ -41,7 +43,9 @@ export const Plans = () => {
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className='w-full'>{plan.buttonLabel}</Button>
+            <Link href={PRICING_PATH} className='w-full'>
+              <Button className='w-full'>{plan.buttonLabel}</Button>
+            </Link>
           </CardFooter>
         </Card>
       ))}

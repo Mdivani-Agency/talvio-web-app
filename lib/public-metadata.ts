@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { SIGNUP_CREDIT_GRANT } from './credits';
 import { allowPublicIndexing, siteOrigin } from './site';
+import { PRICING_PAGE_DESCRIPTION, PRICING_PAGE_TITLE } from './pricing-page-copy';
 import { TEMPLATES_PAGE_DESCRIPTION, TEMPLATES_PAGE_TITLE } from './templates-page-copy';
 
 const signupCredits = SIGNUP_CREDIT_GRANT.toLocaleString('en-US');
@@ -12,6 +13,9 @@ export const HOME_DESCRIPTION = `Keep one profile, pick a template, and download
 export const TEMPLATES_TITLE = TEMPLATES_PAGE_TITLE;
 export const TEMPLATES_DESCRIPTION = TEMPLATES_PAGE_DESCRIPTION;
 
+export const PRICING_TITLE = PRICING_PAGE_TITLE;
+export const PRICING_DESCRIPTION = PRICING_PAGE_DESCRIPTION;
+
 export const TERMS_TITLE = 'Terms of Service | Talvio';
 export const TERMS_DESCRIPTION = 'The terms for using Talvio.';
 
@@ -21,9 +25,9 @@ export const PRIVACY_DESCRIPTION = 'How Talvio handles personal data, and how to
 /**
  * Canonical indexable pages. Anonymous `/home` redirects to `/`.
  * Blog URLs belong to MDI-249 and are added when `/blog` exists.
- * `/pricing` and `/ats-friendly-resume` are not shipped.
+ * `/ats-friendly-resume` is not shipped.
  */
-export const INDEXABLE_PUBLIC_PATHS = ['/', '/templates', '/privacy-policy', '/terms'] as const;
+export const INDEXABLE_PUBLIC_PATHS = ['/', '/templates', '/pricing', '/privacy-policy', '/terms'] as const;
 
 export const PRIVATE_ROBOTS_PREFIXES = ['/account', '/auth', '/resume', '/api'] as const;
 
