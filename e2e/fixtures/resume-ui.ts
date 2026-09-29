@@ -104,12 +104,30 @@ export async function recordedDownloads(page: Page) {
   });
 }
 
+export async function openFinalReview(page: Page) {
+  const button = page.getByRole('button', { name: 'Download resume' });
+  const dialog = page.getByRole('dialog', { name: 'Final Review' });
+  const toast = page.locator('[data-sonner-toast]');
+  // A leaving toast covers the action bar. WebKit then focuses Download resume and drops the click.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await toast.waitFor({ state: 'hidden', timeout: 8_000 }).catch(() => undefined);
+    await button.click();
+    try {
+      await expect(dialog).toBeVisible({ timeout: 3_000 });
+      return dialog;
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+    }
+  }
+  return dialog;
+}
+
 export async function generateFromModal(page: Page, filename: string, label?: string) {
   await rememberDownloads(page);
   await waitForPreview(page);
-  await page.getByRole('button', { name: 'Download resume' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Final Review' });
-  await expect(dialog).toBeVisible();
+  const dialog = await openFinalReview(page);
   await dialog.getByPlaceholder('Enter a resume name').fill(filename);
   if (label != null) {
     await dialog.getByPlaceholder('Label (optional)').fill(label);
