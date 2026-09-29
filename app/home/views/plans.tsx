@@ -43,9 +43,9 @@ export const Plans = () => {
             </ul>
           </CardContent>
           <CardFooter>
-            <Link href={PRICING_PATH} className='w-full'>
-              <Button className='w-full'>{plan.buttonLabel}</Button>
-            </Link>
+            <Button asChild className='w-full'>
+              <Link href={PRICING_PATH}>{plan.buttonLabel}</Link>
+            </Button>
           </CardFooter>
         </Card>
       ))}

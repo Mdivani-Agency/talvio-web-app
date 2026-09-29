@@ -41,9 +41,9 @@ export default function PricingPage() {
       <section className="flex max-w-3xl flex-col gap-4">
         <h2 className="text-xl font-semibold">{PRICING_FREE_HEADING}</h2>
         <p className="text-muted-foreground">{PRICING_FREE_BODY}</p>
-        <Link href={PRICING_PRIMARY_CTA_HREF} className="w-fit">
-          <Button>{PRICING_PRIMARY_CTA_LABEL}</Button>
-        </Link>
+        <Button asChild className="w-fit">
+          <Link href={PRICING_PRIMARY_CTA_HREF}>{PRICING_PRIMARY_CTA_LABEL}</Link>
+        </Button>
       </section>
 
       <section className="flex flex-col gap-4">
@@ -68,9 +68,9 @@ export default function PricingPage() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Link href={PRICING_PACK_CTA_HREF} className="w-full">
-                    <Button className="w-full">{PRICING_PACK_CTA_LABEL}</Button>
-                  </Link>
+                  <Button asChild className="w-full">
+                    <Link href={PRICING_PACK_CTA_HREF}>{PRICING_PACK_CTA_LABEL}</Link>
+                  </Button>
                 </CardFooter>
               </Card>
             </li>
@@ -106,12 +106,12 @@ export default function PricingPage() {
         <h2 className="text-xl font-semibold">{PRICING_CLOSING_HEADING}</h2>
         <p className="text-muted-foreground">{PRICING_CLOSING_BODY}</p>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Link href={PRICING_PRIMARY_CTA_HREF} className="w-fit">
-            <Button>{PRICING_PRIMARY_CTA_LABEL}</Button>
-          </Link>
-          <Link href={PRICING_SECONDARY_CTA_HREF} className="w-fit">
-            <Button variant="outline">{PRICING_SECONDARY_CTA_LABEL}</Button>
-          </Link>
+          <Button asChild className="w-fit">
+            <Link href={PRICING_PRIMARY_CTA_HREF}>{PRICING_PRIMARY_CTA_LABEL}</Link>
+          </Button>
+          <Button asChild variant="outline" className="w-fit">
+            <Link href={PRICING_SECONDARY_CTA_HREF}>{PRICING_SECONDARY_CTA_LABEL}</Link>
+          </Button>
         </div>
       </section>
     </main>
