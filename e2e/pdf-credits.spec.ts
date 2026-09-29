@@ -339,12 +339,15 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   await rememberDownloads(page);
   const dialog = await openFinalReview(page);
   await dialog.getByPlaceholder('Enter a resume name').fill('Edited family');
+  // WebKit reports the next page.goto as "Download is starting" until this PDF download finishes.
+  const download = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'Generate and Download Resume' }).click();
   await expect.poll(async () => {
     const draft = (await listResumes(owner.userId)).find((row) => row.sourceResumeId === originalId);
     return draft?.pdfUrl ?? '';
   }, { timeout: 90_000 }).not.toBe('');
   await expect.poll(async () => (await recordedDownloads(page)).at(-1)?.download).toBe('Edited family.pdf');
+  await download;
 
   const rows = await listResumes(owner.userId);
   const original = rows.find((row) => row.id === originalId);
