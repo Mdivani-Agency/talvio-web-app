@@ -26,26 +26,50 @@ export async function resetAndGuard(page: Page) {
   if (!response.ok) {
     throw new Error('Could not reset the local simulator');
   }
-  await page.context().route('**/*', (route) => {
+  await page.context().route('**/*', async (route) => {
     const target = route.request().url();
-    if (target.startsWith('data:') || target.startsWith('blob:')) {
-      return route.continue();
+    const allowed = target.startsWith('data:')
+      || target.startsWith('blob:')
+      || LOCAL_HOSTS.has(new URL(target).hostname);
+    try {
+      if (allowed) {
+        await route.continue();
+      } else {
+        await route.abort('blockedbyclient');
+      }
+    } catch {
+      // The page cancelled this request before the route settled.
     }
-    if (LOCAL_HOSTS.has(new URL(target).hostname)) {
-      return route.continue();
-    }
-    return route.abort('blockedbyclient');
   });
+}
+
+function navigationRetryable(error: unknown) {
+  const message = error instanceof Error ? error.message : '';
+  return message.includes('NS_BINDING_ABORTED')
+    || message.includes('frame was detached')
+    || message.includes('interrupted by another navigation')
+    || message.includes('NS_ERROR_FAILURE')
+    || message.includes('Timeout');
 }
 
 export async function openSignedIn(page: Page, person: Persona, path: string) {
   await signInWithLocalMagicLink(page, person);
   const current = new URL(page.url());
   const target = new URL(path, current.origin);
+  const destination = `${target.pathname}${target.search}`;
   if (current.pathname === target.pathname && current.search === target.search) {
     return;
   }
-  await page.goto(`${target.pathname}${target.search}`);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.goto(destination, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+      return;
+    } catch (error) {
+      if (!navigationRetryable(error) || attempt === 2) {
+        throw error;
+      }
+    }
+  }
 }
 
 export async function chooseManual(page: Page) {
