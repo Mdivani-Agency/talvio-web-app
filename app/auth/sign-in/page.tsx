@@ -47,7 +47,7 @@ function SignInPageContent() {
   };
 
   return (
-    <section className="flex flex-col items-center justify-center h-screen">
+    <section className="flex min-h-screen flex-col items-center justify-center px-4 py-24">
       <Card className="w-full max-w-96">
         <CardHeader>
           <CardTitle className="text-primary text-xl font-semibold text-center">
@@ -71,7 +71,7 @@ function SignInPageContent() {
           </Button>
           <div className="flex items-center gap-2">
             <Separator className="flex-1" />
-            <span className="text-sm text-muted-foreground px-2">or</span>
+            <span className="text-md text-muted-foreground px-2">or</span>
             <Separator className="flex-1" />
           </div>
           <SignInForm onSubmit={handleEmailSignIn} />

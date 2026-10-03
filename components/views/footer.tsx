@@ -1,12 +1,22 @@
 import Link from 'next/link';
 import { PropsWithChildren } from 'react';
 import { cn } from '@utils/tailwind';
-import { Label, Logo } from '@components/ui';
+import { Logo } from '@components/ui';
+import {
+  FOOTER_PAGE_LINKS,
+  FOOTER_POWERED_BY_HREF,
+  FOOTER_POWERED_BY_LEAD,
+  FOOTER_POWERED_BY_NAME,
+  SOCIAL_LINKS,
+  footerCopyright,
+} from '@/lib/public-nav';
 
 type FooterProps = {
   className?: string;
   size?: 'small' | 'large';
 };
+
+const linkClassName = 'text-primary text-md font-regular hover:text-secondary hover:underline';
 
 export const Footer = ({ children, className, size = 'small' }: PropsWithChildren<FooterProps>) => {
   return (
@@ -18,49 +28,38 @@ export const Footer = ({ children, className, size = 'small' }: PropsWithChildre
           size === 'large' && 'mb-8 gap-8 py-11',
         )}
       >
-        <div className={'flex gap-6 order-last md:order-first'}>
-          <Link target="_blank" href={'https://www.facebook.com/profile.php?id=61574246154502'}>
-            <Label className={'text-primary text-md font-regular hover:cursor-pointer hover:text-secondary hover:underline'}>
-              Facebook
-            </Label>
-          </Link>
-          <Link target="_blank" href={'https://twitter.com/talvio25'}>
-            <Label className={'text-primary text-md font-regular hover:cursor-pointer hover:text-secondary hover:underline'}>
-              Twitter
-            </Label>
-          </Link>
-          <Link target="_blank" href={'https://www.linkedin.com/company/talvio-co'}>
-            <Label className={'text-primary text-md font-regular hover:cursor-pointer hover:text-secondary hover:underline'}>
-              LinkedIn
-            </Label>
-          </Link>
-        </div>
+        <ul className={'flex gap-6 order-last md:order-first'}>
+          {SOCIAL_LINKS.map((link) => (
+            <li key={link.name}>
+              <Link target="_blank" rel="noreferrer" href={link.href} className={linkClassName}>
+                {link.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
         {children}
       </div>
       <div className={'flex flex-col gap-4 lg:gap-8 lg:flex-row lg:items-center lg:justify-between'}>
-        <Label className={'text-muted-foreground text-small font-regular'}>© 2025 Talvio. All rights reserved.</Label>
+        <p className={'text-muted-foreground text-md font-regular'}>{footerCopyright(new Date().getFullYear())}</p>
 
-        <div className={'flex gap-6'}>
-          <Link href={'/privacy-policy'}>
-            <Label className={'text-primary text-sm font-regular hover:cursor-pointer hover:text-secondary hover:underline'}>
-              Privacy Policy
-            </Label>
-          </Link>
-          <Link href={'/terms'}>
-            <Label className={'text-primary text-sm font-regular hover:cursor-pointer hover:text-secondary hover:underline'}>
-              Terms of Service
-            </Label>
-          </Link>
-        </div>
+        <nav aria-label="Footer">
+          <ul className={'flex flex-wrap gap-x-6 gap-y-2'}>
+            {FOOTER_PAGE_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} className={linkClassName}>
+                  {link.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <div className={'flex gap-6'}>
-          <p className={'text-sm text-muted-foreground'}>
-            @Powered by{' '}
-            <Link target="_blank" href={'https://mdivani.agency'} className={'text-xs uppercase'}>
-              MDIVANI AGENCY
-            </Link>
-          </p>
-        </div>
+        <p className={'text-md text-muted-foreground'}>
+          {FOOTER_POWERED_BY_LEAD}{' '}
+          <Link target="_blank" rel="noreferrer" href={FOOTER_POWERED_BY_HREF} className={'text-sm uppercase'}>
+            {FOOTER_POWERED_BY_NAME}
+          </Link>
+        </p>
       </div>
     </footer>
   );

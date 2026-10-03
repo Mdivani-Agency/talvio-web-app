@@ -37,21 +37,23 @@ const sections = [
 export default function AtsFriendlyResumePage() {
   return (
     <main className="mx-auto flex w-full max-w-container-3xl flex-col gap-12 px-4 pb-12 pt-24 text-primary lg:px-6">
-      <header className="flex max-w-3xl flex-col gap-4">
-        <h1 className="text-2xl font-semibold">{ATS_PAGE_HEADING}</h1>
-        <p className="text-lg text-muted-foreground">{ATS_PAGE_INTRO}</p>
+      <header className="flex flex-col gap-4">
+        <h1 className="text-2xl font-semibold lg:text-3xl">{ATS_PAGE_HEADING}</h1>
+        <p className="max-w-[70ch] text-lg text-muted-foreground">{ATS_PAGE_INTRO}</p>
       </header>
 
-      {sections.map((section) => (
-        <section key={section.heading} className="flex max-w-3xl flex-col gap-4">
-          <h2 className="text-xl font-semibold">{section.heading}</h2>
-          <p className="text-muted-foreground">{section.body}</p>
-        </section>
-      ))}
+      <div className="grid gap-4 md:grid-cols-2 lg:gap-8">
+        {sections.map((section) => (
+          <section key={section.heading} className="flex flex-col gap-4 rounded-lg bg-card p-6 lg:p-8">
+            <h2 className="text-xl font-semibold">{section.heading}</h2>
+            <p className="text-md text-muted-foreground">{section.body}</p>
+          </section>
+        ))}
+      </div>
 
-      <section className="flex max-w-3xl flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-lg bg-card p-6 lg:p-8">
         <h2 className="text-xl font-semibold">{ATS_CLOSING_HEADING}</h2>
-        <p className="text-muted-foreground">{ATS_CLOSING_BODY}</p>
+        <p className="max-w-[70ch] text-md text-muted-foreground">{ATS_CLOSING_BODY}</p>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Button asChild className="w-fit">
             <Link href={ATS_TEMPLATES_CTA_HREF}>{ATS_TEMPLATES_CTA_LABEL}</Link>
@@ -65,7 +67,7 @@ export default function AtsFriendlyResumePage() {
         </div>
       </section>
 
-      <p className="max-w-3xl text-muted-foreground">
+      <p className="max-w-[70ch] text-md text-muted-foreground">
         {ATS_RELATED_LEAD}{' '}
         <a href={ATS_RELATED_HREF} className="underline" rel="noreferrer" target="_blank">
           {ATS_RELATED_LABEL}

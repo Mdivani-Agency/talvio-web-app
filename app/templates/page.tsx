@@ -24,6 +24,8 @@ export default function TemplatesPage() {
 
   return (
     <Templates
+      className="h-auto overflow-visible pt-24 pb-12"
+      headingClassName="text-2xl lg:text-3xl 2xl:text-3xl"
       templatesContainerClassName='grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
       heading={TEMPLATES_PAGE_HEADING}
       intro={TEMPLATES_PAGE_INTRO}
