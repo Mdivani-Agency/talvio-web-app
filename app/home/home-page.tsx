@@ -16,7 +16,7 @@ export function HomePage() {
       <NavSection id="plans" title="Pay as you go" name="Price">
         <Plans />
       </NavSection>
-      <NavSection id="faq" title="Frequently Asked Questions" name="FAQ">
+      <NavSection id="faq" title="Frequently asked questions" name="FAQ">
         <Faq />
       </NavSection>
       <Cta />

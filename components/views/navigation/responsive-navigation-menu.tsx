@@ -1,9 +1,10 @@
 'use client';
-import { BurgerMenu } from "./burger-menu";
-import { HomeNavigationMenu } from "./navigation-menu";
+import { BurgerMenu } from './burger-menu';
+import { SiteNavigationMenu } from './navigation-menu';
 import { useUserSession } from '@lib/providers';
+import type { NavLink } from '@/lib/public-nav';
 
-export const ResponsiveNavigationMenu = () => {
+export const ResponsiveNavigationMenu = ({ links }: { links: NavLink[] }) => {
   const { session } = useUserSession();
   const user = session?.user
     ? {
@@ -16,17 +17,12 @@ export const ResponsiveNavigationMenu = () => {
 
   return (
     <div className="flex w-full">
-      <HomeNavigationMenu
+      <SiteNavigationMenu
         user={user}
         withActions={true}
         className="hidden md:flex w-full"
-        links={[
-          { name: 'Workflow', href: '#workflow' },
-          { name: 'Benefits', href: '#benefits' },
-          { name: 'Price', href: '#plans' },
-          { name: 'FAQ', href: '#faq' },
-        ]} />
-      <BurgerMenu className="ml-auto" user={user} />
+        links={links} />
+      <BurgerMenu className="ml-auto" links={links} user={user} />
     </div>
   )
 }

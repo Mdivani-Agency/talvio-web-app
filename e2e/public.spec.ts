@@ -107,6 +107,44 @@ test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) =
   await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible();
 });
 
+const PUBLIC_PAGE_PATHS = ['/templates', '/ats-friendly-resume', '/terms', '/privacy-policy', '/auth/sign-in'];
+
+test('PUB-03 every public page links to the other public pages from the header and footer', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const path of ['/home', ...PUBLIC_PAGE_PATHS]) {
+    await page.goto(path);
+    const header = page.locator('header').first();
+    await expect(header.getByRole('link', { name: 'Templates', exact: true })).toHaveAttribute('href', '/templates');
+    await expect(header.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
+    await expect(header.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(page.locator('h1')).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
+
+  for (const path of ['/home', '/templates', '/ats-friendly-resume', '/terms', '/privacy-policy']) {
+    await page.goto(path);
+    const footer = page.getByRole('contentinfo');
+    await expect(footer.getByRole('link', { name: 'Templates', exact: true })).toHaveAttribute('href', '/templates');
+    await expect(footer.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
+    await expect(footer.getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('href', '/privacy-policy');
+    await expect(footer.getByRole('link', { name: 'Terms of Service', exact: true })).toHaveAttribute('href', '/terms');
+    await expect(footer.getByText(`© ${new Date().getFullYear()} Talvio`)).toBeVisible();
+    await expect(footer.getByText('@Powered by')).toHaveCount(0);
+  }
+});
+
+test('PUB-03 the mobile menu lists the same links as the desktop header, all as links', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/ats-friendly-resume');
+  await page.locator('header').first().getByRole('button', { name: 'Open menu' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('link', { name: 'Templates', exact: true })).toHaveAttribute('href', '/templates');
+  await expect(dialog.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
+  await expect(dialog.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(dialog.getByText('Account', { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 harness('PUB-01 a signed-in visit to the root opens the account', async ({ page, personas }) => {
   await signInWithLocalMagicLink(page, persona(personas, 'complete'));
   await page.goto('/');

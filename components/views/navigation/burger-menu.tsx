@@ -5,12 +5,14 @@ import { MenuIcon } from 'lucide-react';
 import { cn } from '@lib/utils';
 import Link from 'next/link';
 import { useState } from 'react';
-import { UserAvatar } from '@components/views';
 import { Icon } from '@components/icons';
 import { Separator } from '@components/ui';
+import { SIGN_IN_HREF, SIGN_IN_LABEL, type NavLink } from '@/lib/public-nav';
+import { UserAvatar } from '../user-avatar';
 
 interface BurgerMenuProps {
   className?: string;
+  links: NavLink[];
   user?: {
     id: string;
     name: string;
@@ -19,7 +21,7 @@ interface BurgerMenuProps {
   }
 }
 
-export const BurgerMenu = ({ className, user }: BurgerMenuProps) => {
+export const BurgerMenu = ({ className, links, user }: BurgerMenuProps) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -37,21 +39,11 @@ export const BurgerMenu = ({ className, user }: BurgerMenuProps) => {
             </DrawerTitle>
           </DrawerHeader>
           <NavigationMenu className='w-full max-w-auto flex flex-col justify-start items-start gap-4 p-4'>
-            <NavigationMenuItem asChild onClick={() => setOpen(false)}>
-              <Link href='#benefits' className='text-primary text-lg font-semibold'>Benefits</Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem asChild onClick={() => setOpen(false)}>
-              <Link href='#plans' className='text-primary text-lg font-semibold'>Price</Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem asChild onClick={() => setOpen(false)}>
-              <Link href='#faq' className='text-primary text-lg font-semibold'>FAQ</Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem asChild onClick={() => setOpen(false)}>
-              <Link href='#workflow' className='text-primary text-lg font-semibold'>Workflows</Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem asChild onClick={() => setOpen(false)}>
-              <span className='text-primary text-lg font-semibold'>Account</span>
-            </NavigationMenuItem>
+            {links.map((link) => (
+              <NavigationMenuItem key={link.name} asChild onClick={() => setOpen(false)}>
+                <Link href={link.href} className='text-primary text-lg font-semibold'>{link.name}</Link>
+              </NavigationMenuItem>
+            ))}
             <Separator className='w-full' />
             <div className='flex flex-col gap-2'>
               <NavigationMenuItem asChild>
@@ -60,11 +52,11 @@ export const BurgerMenu = ({ className, user }: BurgerMenuProps) => {
                   <UserAvatar user={user} />
                   <span className='text-primary text-md font-medium'>View account</span>
                 </Link> :
-                <Link className='flex items-center gap-2' href={'/auth/sign-in'}>
+                <Link className='flex items-center gap-2' href={SIGN_IN_HREF}>
                   <Button className='mr-2' variant={'ghost'} size={'icon'}>
                     <Icon type={'User'} className="size-4 text-primary" />
                   </Button>
-                  <span className='text-primary text-md font-medium'>Sign in</span>
+                  <span className='text-primary text-md font-medium'>{SIGN_IN_LABEL}</span>
                 </Link>
                 }
               </NavigationMenuItem>

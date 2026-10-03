@@ -6,6 +6,8 @@ import { cn } from '@lib/utils';
 interface TemplatesProps {
   level: 'entry' | 'mid' | 'senior';
   templatesContainerClassName?: string;
+  className?: string;
+  headingClassName?: string;
   heading?: string;
   intro?: string;
   related?: ReactNode;
@@ -15,6 +17,8 @@ interface TemplatesProps {
 export default function TemplatesSelector({
   level,
   templatesContainerClassName,
+  className,
+  headingClassName,
   heading = 'Choose Your Resume Template',
   intro = 'Select a template based on your experience level to get the best layout for your career stage.',
   related,
@@ -23,8 +27,8 @@ export default function TemplatesSelector({
 }: PropsWithChildren<TemplatesProps>) {
 
   return (
-    <section className="text-center text-secondary-900 gap-4 h-screen overflow-y-auto px-4 py-4 pt-16 col-span-2">
-      <h1 className="text-lg 2xl:text-xl font-bold mt-6 2xl:mt-4">{heading}</h1>
+    <section className={cn("text-center text-secondary-900 gap-4 h-screen overflow-y-auto px-4 py-4 pt-16 col-span-2", className)}>
+      <h1 className={cn("text-lg 2xl:text-xl font-bold mt-6 2xl:mt-4", headingClassName)}>{heading}</h1>
       <p className="text-md 2xl:text-lg font-regular mx-auto max-w-2xl">
         {intro}
       </p>

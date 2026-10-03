@@ -40,7 +40,7 @@ export default function PricingPage() {
 
       <section className="flex max-w-3xl flex-col gap-4">
         <h2 className="text-xl font-semibold">{PRICING_FREE_HEADING}</h2>
-        <p className="text-muted-foreground">{PRICING_FREE_BODY}</p>
+        <p className="text-md text-muted-foreground">{PRICING_FREE_BODY}</p>
         <Button asChild className="w-fit">
           <Link href={PRICING_PRIMARY_CTA_HREF}>{PRICING_PRIMARY_CTA_LABEL}</Link>
         </Button>
@@ -48,7 +48,7 @@ export default function PricingPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">{PRICING_PACKS_HEADING}</h2>
-        <p className="max-w-3xl text-muted-foreground">{PRICING_CHECKOUT_NOTE}</p>
+        <p className="max-w-3xl text-md text-muted-foreground">{PRICING_CHECKOUT_NOTE}</p>
         <ul className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
           {CREDIT_PACKS.map((pack) => (
             <li key={pack.credits} className="w-full">
@@ -60,7 +60,7 @@ export default function PricingPage() {
                   <CardDescription className="text-lg text-muted-foreground">{pack.priceLabel}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ul className="flex flex-col gap-2 text-muted-foreground">
+                  <ul className="flex flex-col gap-2 text-md text-muted-foreground">
                     <li>{pricingPackPdfLine(pack.credits)}</li>
                     {PRICING_PACK_TERMS.map((term) => (
                       <li key={term}>{term}</li>
@@ -80,7 +80,7 @@ export default function PricingPage() {
 
       <section className="flex max-w-3xl flex-col gap-4">
         <h2 className="text-xl font-semibold">{PRICING_CREDIT_HEADING}</h2>
-        <p className="text-muted-foreground">{PRICING_CREDIT_BODY}</p>
+        <p className="text-md text-muted-foreground">{PRICING_CREDIT_BODY}</p>
       </section>
 
       <section className="flex max-w-3xl flex-col gap-6">
@@ -89,14 +89,14 @@ export default function PricingPage() {
           <article key={item.question} className="flex flex-col gap-2">
             <h3 className="text-lg font-semibold">{item.question}</h3>
             {item.question === PRICING_BILLING_QUESTION ? (
-              <p className="text-muted-foreground">
+              <p className="text-md text-muted-foreground">
                 {PRICING_BILLING_LEAD}{' '}
                 <Link href={PRICING_TERMS_HREF} className="underline">{PRICING_TERMS_LABEL}</Link>
                 {' '}{PRICING_BILLING_TRAIL}{' '}
                 <a href={`mailto:${PRICING_BILLING_EMAIL}`} className="underline">{PRICING_BILLING_EMAIL}</a>.
               </p>
             ) : (
-              <p className="text-muted-foreground">{item.answer}</p>
+              <p className="text-md text-muted-foreground">{item.answer}</p>
             )}
           </article>
         ))}
@@ -104,7 +104,7 @@ export default function PricingPage() {
 
       <section className="flex max-w-3xl flex-col gap-4">
         <h2 className="text-xl font-semibold">{PRICING_CLOSING_HEADING}</h2>
-        <p className="text-muted-foreground">{PRICING_CLOSING_BODY}</p>
+        <p className="text-md text-muted-foreground">{PRICING_CLOSING_BODY}</p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild className="w-fit">
             <Link href={PRICING_PRIMARY_CTA_HREF}>{PRICING_PRIMARY_CTA_LABEL}</Link>
