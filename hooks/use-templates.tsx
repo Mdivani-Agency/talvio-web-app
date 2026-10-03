@@ -26,7 +26,7 @@ export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplatePara
           selectedTemplate === key ? 'border-2 border-blue-500' : ''
         }`}
       >
-        <Image src={imageUrl} fill alt={`${name} template, ${level} level`} unoptimized />
+        <Image src={imageUrl} fill alt={`${level} ${name}`} unoptimized />
       </div>
     </button>
   ));
