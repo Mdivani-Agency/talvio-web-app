@@ -12,7 +12,7 @@ import Link from 'next/link';
 
 export const Cta = () => {
   return (
-    <section className={'mb-16 flex w-full items-center lg:h-screen'}>
+    <section className={'mb-16 flex w-full items-center'}>
       <Card className={'w-full lg:grid lg:grid-cols-3 lg:pb-0'}>
         <article className={'col-span-2 p-6 md:my-auto lg:px-10'}>
           <h2 className={'text-2xl font-semibold text-primary'}>{CTA_TITLE}</h2>

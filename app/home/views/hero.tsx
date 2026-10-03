@@ -12,12 +12,12 @@ import Link from 'next/link';
 
 export const Hero = () => {
   return (
-    <section className={'flex flex-col items-center md:h-screen lg:grid lg:grid-cols-2 lg:gap-8'}>
-      <article className={'md:my-auto'}>
+    <section className={'flex flex-col items-center md:py-32 lg:grid lg:grid-cols-2 lg:items-center lg:gap-8'}>
+      <article>
         <h1 className={'text-primary font-semibold text-xl md:text-2xl lg:text-3xl lg:leading-tight'}>
           {HERO_TITLE}
         </h1>
-        <p className={'text-muted-foreground font-regular my-8 text-sm md:text-md'}>
+        <p className={'text-muted-foreground font-regular my-8 text-md'}>
           {HERO_BODY}
         </p>
         <div className={'flex flex-col gap-3 sm:flex-row sm:flex-wrap'}>
@@ -29,7 +29,7 @@ export const Hero = () => {
           </Link>
         </div>
       </article>
-      <figure className={'relative left-[10%] mt-14 hidden h-[200] lg:h-[400] lg:mb-20 lg:mt-auto lg:block xl:h-[70%]'}>
+      <figure className={'relative left-[10%] mt-14 hidden h-[200] lg:block lg:h-[400px] xl:h-[520px]'}>
         <Image
           className="overflow-x-visible object-contain object-center lg:object-left"
           alt={'Resume on macbook'}
