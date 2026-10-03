@@ -13,7 +13,6 @@ export async function POST(request: Request) {
       ? request.headers.get('x-e2e-scenario')
       : null;
     const parsed = await textToStructuredResume(resume, scenario);
-    console.log('response raw', parsed);
     return new Response(JSON.stringify(parsed), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

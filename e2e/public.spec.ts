@@ -54,8 +54,17 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
 
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms of Service', exact: true })).toBeVisible();
+  await expect(page.getByText('Last updated: October 2026')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '5. Free use and the monthly limit', exact: true })).toBeVisible();
+  await expect(page.getByText('This free allowance is permanent.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Privacy Policy', exact: true }).first()).toHaveAttribute('href', '/privacy-policy');
+  await expect(page.getByRole('link', { name: 'MDIO', exact: true })).toHaveAttribute('href', 'https://mdivani.agency');
   await page.goto('/privacy-policy');
   await expect(page.getByRole('heading', { name: 'Privacy Policy', exact: true })).toBeVisible();
+  await expect(page.getByText('Last updated: October 2026')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '6. Who we share data with', exact: true })).toBeVisible();
+  await expect(page.getByText('we do not currently use analytics tools')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'contact@talvio.co' }).first()).toHaveAttribute('href', 'mailto:contact@talvio.co');
 
   await page.goto('/this-page-does-not-exist');
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
