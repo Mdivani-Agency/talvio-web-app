@@ -20,7 +20,7 @@ type NavigationMenuProps = {
 export const SiteNavigationMenu = ({ className, links, user, withActions = false }: NavigationMenuProps) => {
   return (
     <div className={cn('flex w-full', className)}>
-      <NavigationMenu className={cn('flex items-center justify-center md:ml-auto gap-6 2xl:gap-10')}>
+      <NavigationMenu className={cn('flex items-center justify-center md:ml-auto gap-6 2xl:gap-10 whitespace-nowrap')}>
         {links.map((link) => (
             <NavigationMenuItem key={link.name} asChild className={'text-primary text-md font-regular hover:cursor-pointer'}>
               <Link href={link.href}>{link.name}</Link>

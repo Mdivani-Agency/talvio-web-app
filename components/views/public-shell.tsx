@@ -19,7 +19,7 @@ export const PublicShell = ({
   withFooter = true,
 }: PropsWithChildren<PublicShellProps>) => {
   return (
-    <section className="flex min-h-screen flex-col justify-between font-(family-var(--font-montserrat))">
+    <div className="flex min-h-screen flex-col justify-between font-(family-var(--font-montserrat))">
       <Header size={size}>
         <ResponsiveNavigationMenu links={links} />
       </Header>
@@ -28,6 +28,6 @@ export const PublicShell = ({
       </StickyHeader>
       {children}
       {withFooter ? <Footer /> : null}
-    </section>
+    </div>
   );
 };

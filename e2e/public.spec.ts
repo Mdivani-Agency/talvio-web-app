@@ -128,7 +128,8 @@ test('PUB-03 every public page links to the other public pages from the header a
     await expect(footer.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
     await expect(footer.getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('href', '/privacy-policy');
     await expect(footer.getByRole('link', { name: 'Terms of Service', exact: true })).toHaveAttribute('href', '/terms');
-    await expect(footer.getByText(`© ${new Date().getFullYear()} Talvio`)).toBeVisible();
+    // The year is rendered at build time, so match any year.
+    await expect(footer.getByText(/© \d{4} Talvio/)).toBeVisible();
     await expect(footer.getByText('@Powered by')).toHaveCount(0);
   }
 });
@@ -143,6 +144,21 @@ test('PUB-03 the mobile menu lists the same links as the desktop header, all as 
   await expect(dialog.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
   await expect(dialog.getByText('Account', { exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('PUB-03 the homepage header does not wrap its links at tablet widths', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 900 });
+  await page.goto('/home');
+  const header = page.locator('header').first();
+  await expect(header.getByRole('button', { name: 'Open menu' })).toBeVisible();
+
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto('/home');
+  await expect(header.getByRole('button', { name: 'Open menu' })).toBeHidden();
+  for (const name of ['Workflow', 'Benefits', 'Price', 'FAQ', 'Templates', 'ATS-friendly resume']) {
+    const box = await header.getByRole('link', { name, exact: true }).boundingBox();
+    expect(box?.height ?? 0, `${name} wraps`).toBeLessThan(30);
+  }
 });
 
 harness('PUB-01 a signed-in visit to the root opens the account', async ({ page, personas }) => {

@@ -4,7 +4,19 @@ import { SiteNavigationMenu } from './navigation-menu';
 import { useUserSession } from '@lib/providers';
 import type { NavLink } from '@/lib/public-nav';
 
-export const ResponsiveNavigationMenu = ({ links }: { links: NavLink[] }) => {
+// Full class names so Tailwind can see them. Pages with many links collapse to the burger menu until `lg`.
+const COLLAPSE_CLASSES = {
+  md: { menu: 'hidden md:flex w-full', burger: 'md:hidden' },
+  lg: { menu: 'hidden lg:flex w-full', burger: 'lg:hidden' },
+} as const;
+
+export const ResponsiveNavigationMenu = ({
+  links,
+  collapseBelow = 'md',
+}: {
+  links: NavLink[];
+  collapseBelow?: keyof typeof COLLAPSE_CLASSES;
+}) => {
   const { session } = useUserSession();
   const user = session?.user
     ? {
@@ -20,9 +32,9 @@ export const ResponsiveNavigationMenu = ({ links }: { links: NavLink[] }) => {
       <SiteNavigationMenu
         user={user}
         withActions={true}
-        className="hidden md:flex w-full"
+        className={COLLAPSE_CLASSES[collapseBelow].menu}
         links={links} />
-      <BurgerMenu className="ml-auto" links={links} user={user} />
+      <BurgerMenu className={`ml-auto ${COLLAPSE_CLASSES[collapseBelow].burger}`} links={links} user={user} />
     </div>
   )
 }

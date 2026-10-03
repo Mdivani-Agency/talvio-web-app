@@ -5,10 +5,10 @@ export function HomeShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="font-(family-var(--font-montserrat))">
       <Header>
-        <ResponsiveNavigationMenu links={HOME_NAV_LINKS} />
+        <ResponsiveNavigationMenu links={HOME_NAV_LINKS} collapseBelow="lg" />
       </Header>
       <StickyHeader>
-        <ResponsiveNavigationMenu links={HOME_NAV_LINKS} />
+        <ResponsiveNavigationMenu links={HOME_NAV_LINKS} collapseBelow="lg" />
       </StickyHeader>
       {children}
       <Footer>
