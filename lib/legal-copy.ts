@@ -12,8 +12,9 @@ export type LegalDocument = {
   sections: LegalSection[];
 };
 
-/** Month and year both legal pages were published. Update it only when the text changes. */
-export const LEGAL_LAST_UPDATED = 'October 2026';
+/** Month and year each document was last changed. Update the one whose text you change. */
+export const TERMS_LAST_UPDATED = 'October 2026';
+export const PRIVACY_LAST_UPDATED = 'October 2026';
 
 export const OPERATOR_NAME = 'MDIO';
 export const OPERATOR_HREF = 'https://mdivani.agency';

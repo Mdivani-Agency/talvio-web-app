@@ -9,7 +9,7 @@ describe('LegalDocument', () => {
   it('renders one h1, the date, and one h2 per section', () => {
     const html = renderToStaticMarkup(<LegalDocument doc={TERMS} />);
     expect(html.match(/<h1/g)).toHaveLength(1);
-    expect(html).toContain('Last updated: October 2026');
+    expect(html).toContain(`Last updated: ${TERMS.lastUpdated}`);
     expect(html.match(/<h2/g)).toHaveLength(TERMS.sections.length);
   });
 

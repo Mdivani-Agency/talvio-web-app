@@ -1,5 +1,5 @@
 import {
-  LEGAL_LAST_UPDATED,
+  PRIVACY_LAST_UPDATED,
   contactLink,
   operatorLink,
   p,
@@ -11,7 +11,7 @@ import {
 /** Privacy Policy, published as written in the Linear document attached to MDI-322. */
 export const PRIVACY: LegalDocument = {
   title: 'Privacy Policy',
-  lastUpdated: LEGAL_LAST_UPDATED,
+  lastUpdated: PRIVACY_LAST_UPDATED,
   sections: [
     {
       heading: '1. Who is responsible for your data',
@@ -134,7 +134,7 @@ export const PRIVACY: LegalDocument = {
       heading: '10. Security',
       blocks: [
         p(
-          'Your data is sent over encrypted connections, and each account can read only its own profile, resumes and files. No online service can promise complete security, but we work to protect your data and will tell you if a breach affects you, as the law requires.',
+          'Your data is sent over encrypted connections, and each account can read only its own profile and resumes. Generated PDF files are stored at their own web addresses, and anyone who has an address can open that file, so share your PDF links with care. No online service can promise complete security, but we work to protect your data and will tell you if a breach affects you, as the law requires.',
         ),
       ],
     },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { LEGAL_LAST_UPDATED, documentText } from './legal-copy';
+import { PRIVACY_LAST_UPDATED, documentText } from './legal-copy';
 import { PRIVACY } from './privacy-copy';
 
 const text = documentText(PRIVACY);
@@ -8,7 +8,7 @@ const text = documentText(PRIVACY);
 describe('privacy policy copy', () => {
   it('has the 13 numbered sections in order, with the date set', () => {
     expect(PRIVACY.title).toBe('Privacy Policy');
-    expect(PRIVACY.lastUpdated).toBe(LEGAL_LAST_UPDATED);
+    expect(PRIVACY.lastUpdated).toBe(PRIVACY_LAST_UPDATED);
     PRIVACY.sections.forEach((section, index) => {
       expect(section.heading.startsWith(`${index + 1}. `)).toBe(true);
     });
@@ -38,6 +38,12 @@ describe('privacy policy copy', () => {
     expect(text).toContain('does not yet have a self-service tool');
     expect(text).toContain('contact@talvio.co');
     expect(text).not.toMatch(/GDPR/);
+  });
+
+  it('describes who can open generated PDFs the way the code serves them', () => {
+    expect(text).toContain('each account can read only its own profile and resumes');
+    expect(text).toContain('anyone who has an address can open that file');
+    expect(text).not.toContain('its own profile, resumes and files');
   });
 
   it('does not mention credits, subscriptions, plans or billing', () => {

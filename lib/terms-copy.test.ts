@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { LEGAL_LAST_UPDATED, documentText } from './legal-copy';
+import { TERMS_LAST_UPDATED, documentText } from './legal-copy';
 import { TERMS } from './terms-copy';
 
 const text = documentText(TERMS);
@@ -8,7 +8,7 @@ const text = documentText(TERMS);
 describe('terms of service copy', () => {
   it('has the 18 numbered sections in order, with the date set', () => {
     expect(TERMS.title).toBe('Terms of Service');
-    expect(TERMS.lastUpdated).toBe(LEGAL_LAST_UPDATED);
+    expect(TERMS.lastUpdated).toBe(TERMS_LAST_UPDATED);
     expect(TERMS.lastUpdated).toMatch(/^[A-Z][a-z]+ \d{4}$/);
     TERMS.sections.forEach((section, index) => {
       expect(section.heading.startsWith(`${index + 1}. `)).toBe(true);

@@ -1,9 +1,9 @@
-import { LEGAL_LAST_UPDATED, contactLink, operatorLink, p, ul, type LegalDocument } from './legal-copy';
+import { TERMS_LAST_UPDATED, contactLink, operatorLink, p, ul, type LegalDocument } from './legal-copy';
 
 /** Terms of Service, published as written in the Linear document attached to MDI-322. */
 export const TERMS: LegalDocument = {
   title: 'Terms of Service',
-  lastUpdated: LEGAL_LAST_UPDATED,
+  lastUpdated: TERMS_LAST_UPDATED,
   sections: [
     {
       heading: '1. Who we are',
