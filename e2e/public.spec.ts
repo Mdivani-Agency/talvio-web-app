@@ -1,4 +1,7 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+
+import { INDEXABLE_PUBLIC_PATHS } from '../lib/public-metadata';
 
 import { signInWithLocalMagicLink } from './fixtures/auth';
 import { persona } from './fixtures/resume-ui';
@@ -163,6 +166,66 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
   const sitemap = await (await request.get('/sitemap.xml')).text();
   expect(sitemap.match(/<url>/g)?.length).toBeGreaterThan(0);
   expect(sitemap.match(/<lastmod>/g)?.length).toBe(sitemap.match(/<url>/g)?.length);
+});
+
+/** Every indexable page plus sign-in. `/pricing` is excluded until MDI-320 redirects it. */
+const PUBLIC_PAGES = [...INDEXABLE_PUBLIC_PATHS.filter((path) => path !== '/pricing'), '/auth/sign-in'];
+const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+
+async function axeViolations(page: import('@playwright/test').Page) {
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze();
+  return results.violations.map(
+    (violation) =>
+      `${violation.id} (${violation.helpUrl}): ${violation.nodes
+        .map((node) => `${node.target.join(' ')}: ${node.failureSummary}`)
+        .join('; ')}`,
+  );
+}
+
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
+]) {
+  test(`PUB-07 public pages pass WCAG AA, keep 16px text and fit ${viewport.width}px`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize(viewport);
+    for (const path of PUBLIC_PAGES) {
+      await page.goto(path);
+      await page.waitForLoadState('networkidle');
+      expect(await axeViolations(page), path).toEqual([]);
+
+      const layout = await page.evaluate(() => {
+        const overflow = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+        const smallText: string[] = [];
+        for (const element of document.body.querySelectorAll<HTMLElement>('*')) {
+          const ownText = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+          const rect = element.getBoundingClientRect();
+          if (!ownText || rect.width <= 1 || rect.height <= 1 || !element.checkVisibility()) continue;
+          if (parseFloat(getComputedStyle(element).fontSize) < 16) smallText.push(element.textContent?.trim().slice(0, 40) ?? '');
+        }
+        // A band is a block at least one screen tall with no image and little text.
+        const emptyBands = [...document.querySelectorAll<HTMLElement>('main section, main > *')]
+          .filter((element) => element.getBoundingClientRect().height >= innerHeight && !element.querySelector('img, svg'))
+          .filter((element) => element.innerText.trim().split(/\s+/).length < 60)
+          .map((element) => element.innerText.trim().slice(0, 40));
+        return { overflow, smallText, emptyBands };
+      });
+      expect(layout.overflow, path).toBeLessThanOrEqual(1);
+      expect(layout.smallText, path).toEqual([]);
+      expect(layout.emptyBands, path).toEqual([]);
+    }
+  });
+}
+
+test('PUB-07 public pages pass WCAG AA contrast in dark mode', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  for (const path of PUBLIC_PAGES) {
+    await page.goto(path);
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('html')).toHaveClass(/dark/);
+    expect(await axeViolations(page), path).toEqual([]);
+  }
 });
 
 test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) => {

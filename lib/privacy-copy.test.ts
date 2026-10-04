@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { RELEASE_BANNED_TERMS } from '@/test/utils/public-copy';
+
 import { PRIVACY_LAST_UPDATED, documentText } from './legal-copy';
 import { PRIVACY } from './privacy-copy';
 
@@ -47,6 +49,7 @@ describe('privacy policy copy', () => {
   });
 
   it('does not mention credits, subscriptions, plans or billing', () => {
-    expect(text).not.toMatch(/credit|subscription|\bplans?\b|pricing|upgrade|premium|billing|pay as you go/i);
+    expect(text).not.toMatch(RELEASE_BANNED_TERMS);
+    expect(text).not.toMatch(/premium|billing/i);
   });
 });

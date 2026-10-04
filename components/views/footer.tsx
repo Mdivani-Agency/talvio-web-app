@@ -56,7 +56,7 @@ export const Footer = ({ children, className, size = 'small' }: PropsWithChildre
 
         <p className={'text-md text-muted-foreground'}>
           {FOOTER_POWERED_BY_LEAD}{' '}
-          <Link target="_blank" rel="noreferrer" href={FOOTER_POWERED_BY_HREF} className={'text-sm uppercase'}>
+          <Link target="_blank" rel="noreferrer" href={FOOTER_POWERED_BY_HREF} className={'text-md uppercase'}>
             {FOOTER_POWERED_BY_NAME}
           </Link>
         </p>

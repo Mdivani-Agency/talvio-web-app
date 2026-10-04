@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { BRIEF_BANNED_TERMS, wordCount } from '@/test/utils/public-copy';
+
 import {
   BENEFITS,
   BENEFITS_TITLE,
@@ -22,11 +24,8 @@ import {
 } from './homepage-copy';
 import { HOME_SECTION_LINKS } from './public-nav';
 
-const words = (text: string) => text.trim().split(/\s+/).length;
-
-/** Terms the messaging brief bans from public copy (MDI-322). */
-const banned =
-  /credit|\bpacks?\b|pricing|\bprices?\b|subscription|\bplans?\b|upgrade|premium|pay as you go|never expire|do not expire|free trial|free for now|free during beta|unlimited|\bCV\b|sign up|register|log in|AI-powered|ATS-proof|ATS-optimized|seamless|effortless|powerful|unlock|supercharge|dream job|guarantee|in minutes|in seconds|!/i;
+const words = wordCount;
+const banned = BRIEF_BANNED_TERMS;
 
 /** Claims the product does not support. */
 const unsupported = /application track|job application|per-application|GDPR|career success|job description|Delete Account|writes your resume|tailors/i;
