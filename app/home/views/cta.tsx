@@ -29,7 +29,7 @@ export const Cta = () => {
         <figure className={'hidden justify-center pt-6 lg:flex'}>
           <picture className={'relative block h-[60vh] w-full'}>
             <Image
-              alt={'Phone showing a resume'}
+              alt={'Hand holding a phone with the Talvio welcome screen'}
               src={'/hand.png'}
               placeholder={'blur'}
               blurDataURL={'/hand-blur.png'}
