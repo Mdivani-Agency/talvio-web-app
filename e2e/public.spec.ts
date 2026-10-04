@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { INDEXABLE_PUBLIC_PATHS } from '../lib/public-metadata';
+
 import { signInWithLocalMagicLink } from './fixtures/auth';
 import { persona } from './fixtures/resume-ui';
 import { test as harness } from './fixtures/test';
@@ -162,12 +164,18 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
   expect(sitemap.match(/<lastmod>/g)?.length).toBe(sitemap.match(/<url>/g)?.length);
 });
 
-const PUBLIC_PAGES = ['/', '/templates', '/ats-friendly-resume', '/terms', '/privacy-policy', '/auth/sign-in'] as const;
+/** Every indexable page plus sign-in. `/pricing` is excluded until MDI-320 redirects it. */
+const PUBLIC_PAGES = [...INDEXABLE_PUBLIC_PATHS.filter((path) => path !== '/pricing'), '/auth/sign-in'];
 const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 async function axeViolations(page: import('@playwright/test').Page) {
   const results = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze();
-  return results.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`);
+  return results.violations.map(
+    (violation) =>
+      `${violation.id} (${violation.helpUrl}): ${violation.nodes
+        .map((node) => `${node.target.join(' ')}: ${node.failureSummary}`)
+        .join('; ')}`,
+  );
 }
 
 for (const viewport of [

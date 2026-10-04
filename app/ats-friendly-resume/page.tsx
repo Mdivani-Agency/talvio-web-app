@@ -23,7 +23,7 @@ export default function AtsFriendlyResumePage() {
       <ol className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
         {ATS_SECTIONS.map((section, index) => (
           <li key={section.heading} className="flex flex-col gap-3 rounded-lg bg-card p-6 lg:p-8">
-            <span aria-hidden="true" className="text-md font-semibold text-secondary">{index + 1}</span>
+            <span aria-hidden="true" className="text-xl font-semibold text-secondary">{index + 1}</span>
             <h2 className="text-xl font-semibold">{section.heading}</h2>
             <p className="text-md text-muted-foreground">{section.body}</p>
           </li>

@@ -156,7 +156,7 @@ export function DatePicker({
               'transition-colors duration-300 ease-in',
               !disabled && 'hover:bg-input/80',
               variant === 'primary' &&
-                'bg-input active:bg-input/80 placeholder:text-muted-foreground disabled:bg-input/80 disabled:text-muted-foreground',
+                'bg-input active:bg-input/80 placeholder:text-placeholder disabled:bg-input/80 disabled:text-muted-foreground',
               size === 'sm' && 'text-sm',
               size === 'md' && 'text-md',
               size === 'lg' && 'text-md',
@@ -237,7 +237,7 @@ export function DatePicker({
               'transition-colors duration-300 ease-in',
               !disabled && 'hover:bg-input/80',
               variant === 'primary' &&
-                'bg-input active:bg-input/80 placeholder:text-muted-foreground disabled:bg-input/80 disabled:text-muted-foreground',
+                'bg-input active:bg-input/80 placeholder:text-placeholder disabled:bg-input/80 disabled:text-muted-foreground',
               size === 'sm' && 'text-sm',
               size === 'md' && 'text-md',
               size === 'lg' && 'text-md',
