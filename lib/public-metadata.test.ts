@@ -72,7 +72,7 @@ describe('public metadata', () => {
   });
 
   it('shares a 1200x630 large image card on every public page', () => {
-    expect(SHARE_IMAGE).toMatchObject({ url: '/share-image.png', width: 1200, height: 630 });
+    expect(SHARE_IMAGE).toMatchObject({ url: '/share-image-v1.png', width: 1200, height: 630 });
     expect(SHARE_IMAGE.alt).toContain('Free PDF resume generator');
     for (const page of pages) {
       const metadata = publicPageMetadata(page.path, page.title, page.description);

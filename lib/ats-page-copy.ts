@@ -2,6 +2,9 @@ import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL, SECONDARY_CTA_HREF, SECONDARY_CTA_
 
 export const ATS_PATH = '/ats-friendly-resume';
 
+/** Sitemap date (ISO). Change it with the copy in this file. */
+export const ATS_LAST_MODIFIED = '2026-10-04';
+
 export const ATS_PAGE_TITLE = 'How to make an ATS-friendly resume | Talvio';
 
 export const ATS_PAGE_DESCRIPTION =

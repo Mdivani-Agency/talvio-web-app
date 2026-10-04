@@ -1,11 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { SITE_ONE_LINER } from './public-claims';
 import { homeStructuredData, serializeJsonLd } from './structured-data';
 
 describe('homepage structured data', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('describes Talvio with the one-sentence description from the brief', () => {
-    delete process.env.SITE_URL;
+    vi.stubEnv('SITE_URL', '');
     const data = homeStructuredData();
     expect(data['@context']).toBe('https://schema.org');
     expect(data['@graph'].map((node) => node['@type'])).toEqual(['Organization', 'WebSite', 'WebApplication']);

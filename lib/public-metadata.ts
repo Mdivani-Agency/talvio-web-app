@@ -1,10 +1,11 @@
 import type { Metadata, MetadataRoute } from 'next';
 
 import { allowPublicIndexing, siteOrigin } from './site';
-import { ATS_PAGE_DESCRIPTION, ATS_PAGE_TITLE } from './ats-page-copy';
-import { BENEFITS_TITLE, HERO_TITLE } from './homepage-copy';
-import { PRICING_PAGE_DESCRIPTION, PRICING_PAGE_TITLE } from './pricing-page-copy';
-import { TEMPLATES_PAGE_DESCRIPTION, TEMPLATES_PAGE_TITLE } from './templates-page-copy';
+import { ATS_LAST_MODIFIED, ATS_PAGE_DESCRIPTION, ATS_PAGE_TITLE } from './ats-page-copy';
+import { BENEFITS_TITLE, HERO_TITLE, HOME_LAST_MODIFIED } from './homepage-copy';
+import { PRIVACY_LAST_MODIFIED, TERMS_LAST_MODIFIED } from './legal-copy';
+import { PRICING_LAST_MODIFIED, PRICING_PAGE_DESCRIPTION, PRICING_PAGE_TITLE } from './pricing-page-copy';
+import { TEMPLATES_LAST_MODIFIED, TEMPLATES_PAGE_DESCRIPTION, TEMPLATES_PAGE_TITLE } from './templates-page-copy';
 
 export const HOME_TITLE = 'Free PDF resume generator | Talvio Beta';
 export const HOME_DESCRIPTION =
@@ -30,10 +31,10 @@ export const PRIVACY_DESCRIPTION =
 
 /**
  * Placeholder share image (1200x630) for every public page: the logo, the homepage headline and the supporting line.
- * A designed image can replace `public/share-image.png` without code changes.
+ * Social networks cache images by URL, so a new image gets a new file name (`share-image-v2.png`) and this URL changes with it.
  */
 export const SHARE_IMAGE = {
-  url: '/share-image.png',
+  url: '/share-image-v1.png',
   width: 1200,
   height: 630,
   alt: `Talvio. ${HERO_TITLE}. ${BENEFITS_TITLE}`,
@@ -51,14 +52,14 @@ export const INDEXABLE_PUBLIC_PATHS = ['/', '/templates', '/pricing', '/ats-frie
 
 export type IndexablePublicPath = (typeof INDEXABLE_PUBLIC_PATHS)[number];
 
-/** Date each page's content last changed, for the sitemap. Update it with the page's copy. */
+/** Date each page's content last changed, for the sitemap. Each date lives in the page's copy module, next to the copy it dates. */
 export const PUBLIC_PAGE_LAST_MODIFIED: Record<IndexablePublicPath, string> = {
-  '/': '2026-10-04',
-  '/templates': '2026-10-04',
-  '/pricing': '2026-10-03',
-  '/ats-friendly-resume': '2026-10-04',
-  '/privacy-policy': '2026-10-04',
-  '/terms': '2026-10-04',
+  '/': HOME_LAST_MODIFIED,
+  '/templates': TEMPLATES_LAST_MODIFIED,
+  '/pricing': PRICING_LAST_MODIFIED,
+  '/ats-friendly-resume': ATS_LAST_MODIFIED,
+  '/privacy-policy': PRIVACY_LAST_MODIFIED,
+  '/terms': TERMS_LAST_MODIFIED,
 };
 
 export function publicSitemap(): MetadataRoute.Sitemap {

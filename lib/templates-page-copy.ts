@@ -1,3 +1,6 @@
+/** Sitemap date (ISO). Change it with the copy in this file. */
+export const TEMPLATES_LAST_MODIFIED = '2026-10-04';
+
 export const TEMPLATES_PAGE_TITLE = 'Free resume templates by experience level | Talvio';
 
 export const TEMPLATES_PAGE_DESCRIPTION =

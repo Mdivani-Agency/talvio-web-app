@@ -40,10 +40,9 @@ export const Hero = () => {
           src={'/macbook.png'}
           placeholder={'blur'}
           blurDataURL={'/macbook-blur.png'}
-          loading="eager"
+          // Stays lazy so phones, where the figure is hidden, never fetch it. Desktop requests it first.
           fetchPriority="high"
-          // Hidden below lg, so phones fetch the smallest candidate.
-          sizes="(min-width: 1024px) 50vw, 1px"
+          sizes="(min-width: 1024px) 50vw, 100vw"
           fill
         />
       </figure>
