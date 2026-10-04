@@ -26,10 +26,9 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co');
 
   await page.goto('/templates');
-  await expect(page.getByRole('heading', { name: 'Preview a resume template' })).toBeVisible();
-  await expect(page.getByText('Selecting one starts the resume and asks you to fill it manually or use an existing resume before the editor.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Readable resumes and checkers', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
-  await expect(page.getByRole('link', { name: 'Pay-as-you-go pricing', exact: true })).toHaveAttribute('href', '/pricing');
+  await expect(page.getByRole('heading', { name: 'Free resume templates', level: 1 })).toBeVisible();
+  await expect(page.getByText('Pick a template for your experience level. Preview is free.')).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: /pricing/i })).toHaveCount(0);
   await page.locator('header').first().getByRole('link', { name: /Talvio/ }).click();
   await expect(page).toHaveURL(/\/$/);
 
@@ -45,13 +44,15 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByRole('link', { name: 'Sign in' }).first()).toHaveAttribute('href', '/auth/sign-in');
 
   await page.goto('/ats-friendly-resume');
-  await expect(page.getByRole('heading', { name: 'A readable resume is not a checker score' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'How to make an ATS-friendly resume', level: 1 })).toBeVisible();
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co/ats-friendly-resume');
-  await expect(page.getByRole('heading', { name: 'Check the PDF by selecting the text' })).toBeVisible();
-  await expect(page.getByText('This is a sanity check for copy order.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
-  await expect(page.getByRole('link', { name: 'See pricing', exact: true })).toHaveAttribute('href', '/pricing');
-  await expect(page.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(page.getByRole('heading', { name: 'Test your PDF' })).toBeVisible();
+  const atsMain = page.getByRole('main');
+  await expect(atsMain.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
+  await expect(atsMain.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(atsMain.getByRole('link', { name: /pricing/i })).toHaveCount(0);
+  await expect(atsMain.locator('a[href*="mdivani.agency"]')).toHaveCount(0);
+  expect(await atsMain.innerText()).not.toMatch(/credit|\$\d|subscription|pay-as-you-go/i);
 
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms of Service', exact: true })).toBeVisible();
@@ -115,6 +116,17 @@ test('PUB-04 the homepage says what is free and mentions no credits or prices', 
   await page.goto('/auth/sign-in');
   await expect(page.getByText('New here? Signing in creates your account. No card needed.')).toBeVisible();
   expect(await page.locator('body').innerText()).not.toMatch(/credit|\$\d|subscription/i);
+});
+
+test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/templates');
+  const first = page.getByRole('main').getByRole('img').first();
+  await expect(first).toBeVisible();
+  const box = await first.boundingBox();
+  expect(box).not.toBeNull();
+  // At least half of the template is visible without scrolling.
+  expect(box!.y + box!.height / 2).toBeLessThan(page.viewportSize()!.height);
 });
 
 test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) => {
