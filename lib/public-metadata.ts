@@ -1,14 +1,12 @@
 import type { Metadata } from 'next';
 
-import { SIGNUP_CREDIT_GRANT } from './credits';
 import { allowPublicIndexing, siteOrigin } from './site';
 import { PRICING_PAGE_DESCRIPTION, PRICING_PAGE_TITLE } from './pricing-page-copy';
 import { TEMPLATES_PAGE_DESCRIPTION, TEMPLATES_PAGE_TITLE } from './templates-page-copy';
 
-const signupCredits = SIGNUP_CREDIT_GRANT.toLocaleString('en-US');
-
-export const HOME_TITLE = 'Talvio | One profile and a resume PDF';
-export const HOME_DESCRIPTION = `Keep one profile, pick a template, and download a resume PDF. New accounts start with ${signupCredits} credits. No card is required.`;
+export const HOME_TITLE = 'Free PDF resume generator | Talvio Beta';
+export const HOME_DESCRIPTION =
+  'Create a resume PDF for free. Write your experience once, pick a template and download. 3 new resume PDFs every month, free forever. Now in beta.';
 
 export const TEMPLATES_TITLE = TEMPLATES_PAGE_TITLE;
 export const TEMPLATES_DESCRIPTION = TEMPLATES_PAGE_DESCRIPTION;

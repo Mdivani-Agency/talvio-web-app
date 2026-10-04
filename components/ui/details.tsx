@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon } from '../icons';
 
 interface DetailsListProps {
-  qa: {
+  qa: readonly {
     question: string;
     answer: string;
   }[];

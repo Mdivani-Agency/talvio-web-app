@@ -2,5 +2,5 @@ export * from "./hero";
 export * from "./benefits";
 export * from "./workflows";
 export * from "./nav-section";
-export * from "./plans";
+export * from "./whats-free";
 export * from "./faq";
