@@ -9,6 +9,7 @@ import {
   ATS_PRIMARY_CTA_LABEL,
   ATS_SECONDARY_CTA_HREF,
   ATS_SECTIONS,
+  atsMetadataText,
   atsPageText,
 } from './ats-page-copy';
 
@@ -60,6 +61,7 @@ describe('ATS guide copy', () => {
 
   it('uses no banned terms and promises no ATS outcome', () => {
     expect(atsPageText()).not.toMatch(banned);
+    expect(atsMetadataText()).not.toMatch(banned);
     expect(atsPageText()).not.toMatch(/interview|get (you )?(a|the) job|hired/i);
   });
 });

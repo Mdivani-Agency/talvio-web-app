@@ -120,7 +120,9 @@ test('PUB-05 the first template is above the fold on a phone', async ({ page }) 
   const first = page.getByRole('main').getByRole('img').first();
   await expect(first).toBeVisible();
   const box = await first.boundingBox();
-  expect(box?.y ?? Infinity).toBeLessThan(844);
+  expect(box).not.toBeNull();
+  // At least half of the template is visible without scrolling.
+  expect(box!.y + box!.height / 2).toBeLessThan(page.viewportSize()!.height);
 });
 
 test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) => {

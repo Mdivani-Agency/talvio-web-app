@@ -33,7 +33,7 @@ export const ATS_SECTIONS = [
   },
   {
     heading: 'Test your PDF',
-    body: "Paste your PDF's text into a plain editor. If it reads in order, the text is selectable.",
+    body: 'Copy all text from your PDF into a plain editor. It should paste in reading order.',
   },
 ] as const;
 
@@ -47,7 +47,12 @@ export const ATS_PRIMARY_CTA_LABEL = PRIMARY_CTA_LABEL;
 export const ATS_SECONDARY_CTA_HREF = SECONDARY_CTA_HREF;
 export const ATS_SECONDARY_CTA_LABEL = SECONDARY_CTA_LABEL;
 
-/** Every visible line on the page, for the copy tests. Metadata is listed separately (MDI-339). */
+/** The shipped title and description, for the banned-term test. MDI-339 rewrites them. */
+export function atsMetadataText(): string {
+  return [ATS_PAGE_TITLE, ATS_PAGE_DESCRIPTION].join('\n');
+}
+
+/** Every visible line on the page, for the copy tests. Metadata is in `atsMetadataText()`. */
 export function atsPageText(): string {
   return [
     ATS_PAGE_HEADING,
