@@ -237,19 +237,21 @@ test('AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the
     contentType: 'text/html',
     body: '<!doctype html><title>provider-boundary</title>',
   }));
+  const authorizeProviders: string[] = [];
+  page.on('request', (request) => {
+    if (!request.url().includes('/auth/v1/authorize')) {
+      return;
+    }
+    authorizeProviders.push(new URL(request.url()).searchParams.get('provider') ?? '');
+  });
   await page.goto('/auth/sign-in?callbackURL=/account');
+  await expect(page.getByRole('button', { name: 'Continue with Linkedin' })).toHaveCount(0);
+  await expect(page.getByText('Used LinkedIn before? Request an email code for that same address.')).toBeVisible();
   const google = page.waitForRequest((request) => request.url().includes('provider=google'));
   await page.getByRole('button', { name: 'Continue with Google' }).click();
   const googleRequest = await google;
   const googleUrl = new URL(googleRequest.url());
   expect(googleUrl.searchParams.get('provider')).toBe('google');
   expect(decodeURIComponent(googleUrl.searchParams.get('redirect_to') ?? '')).toContain('http://localhost:3002/auth/callback');
-
-  await page.goto('/auth/sign-in?callbackURL=/account');
-  const linkedin = page.waitForRequest((request) => request.url().includes('provider=linkedin_oidc'));
-  await page.getByRole('button', { name: 'Continue with Linkedin' }).click();
-  const linkedinRequest = await linkedin;
-  const linkedinUrl = new URL(linkedinRequest.url());
-  expect(linkedinUrl.searchParams.get('provider')).toBe('linkedin_oidc');
-  expect(decodeURIComponent(linkedinUrl.searchParams.get('redirect_to') ?? '')).toContain('http://localhost:3002/auth/callback');
+  expect(authorizeProviders).not.toContain('linkedin_oidc');
 });
