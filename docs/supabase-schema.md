@@ -36,9 +36,9 @@ Auth providers (app wiring is [MDI-173](https://linear.app/mdivani/issue/MDI-173
 - [ ] Google
 - [ ] Redirect URLs: `http://localhost:3002/**`, `http://localhost:3002/auth/callback`, Vercel preview + production origins
 
-LinkedIn (`linkedin_oidc`) is not a sign-in provider. Hosted Auth sets `external_linkedin_oidc_enabled = false` in `talvio-terraform-iac` (`app.tf`, merged in [talvio-terraform-iac #17](https://github.com/Mdivani-Agency/talvio-terraform-iac/pull/17)). That setting takes effect on the next Terraform apply. The app does not call `signInWithOAuth` for LinkedIn.
+LinkedIn (`linkedin_oidc`) is not a sign-in provider. Hosted Auth sets `external_linkedin_oidc_enabled = false` in `talvio-terraform-iac` (`app.tf`, merged in [talvio-terraform-iac #17](https://github.com/Mdivani-Agency/talvio-terraform-iac/pull/17)). The dev apply for that merge succeeded, and a later prod apply on `main` succeeded. The app does not call `signInWithOAuth` for LinkedIn.
 
-Accounts that previously signed in only with LinkedIn keep the email LinkedIn stored on `auth.users`. Local config required that email (`email_optional = false`). They sign in with an email code to that same address. Google still works when the Google account uses that email. Disabling the provider does not delete `auth.users` or profile rows. Before apply, list accounts whose only identity is LinkedIn:
+Accounts that previously signed in only with LinkedIn keep the email LinkedIn stored on `auth.users`. Local config required that email (`email_optional = false`). Email codes were already on the sign-in screen before that apply. They sign in with an email code to that same address. Google still works when the Google account uses that email. Disabling the provider does not delete `auth.users` or profile rows. To find accounts whose only identity is LinkedIn:
 
 ```sql
 select u.id, u.email
@@ -53,7 +53,7 @@ and not exists (
 );
 ```
 
-A row with a null email has no self-serve path. Recover that account manually before apply. This environment cannot query hosted `auth.identities`.
+A row with a null email has no self-serve path and needs manual recovery. This environment cannot query hosted `auth.identities`.
 
 ## Local workflow
 
