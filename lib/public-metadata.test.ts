@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { SIGNUP_CREDIT_GRANT } from './credits';
 import {
   HOME_DESCRIPTION,
   HOME_TITLE,
@@ -38,10 +37,12 @@ describe('public metadata', () => {
   });
 
   it('describes shipped homepage behavior', () => {
-    expect(HOME_TITLE).toMatch(/profile/i);
-    expect(HOME_TITLE).toMatch(/PDF/);
-    expect(HOME_DESCRIPTION).toContain('template');
-    expect(HOME_DESCRIPTION).toContain(`${SIGNUP_CREDIT_GRANT.toLocaleString('en-US')} credits`);
+    expect(HOME_TITLE).toBe('Free PDF resume generator | Talvio Beta');
+    expect(HOME_TITLE.length).toBeLessThanOrEqual(60);
+    expect(HOME_DESCRIPTION).toContain('3 new resume PDFs every month, free forever');
+    expect(HOME_DESCRIPTION.length).toBeGreaterThanOrEqual(120);
+    expect(HOME_DESCRIPTION.length).toBeLessThanOrEqual(155);
+    expect(`${HOME_TITLE}\n${HOME_DESCRIPTION}`).not.toMatch(/credit|subscription|pricing|\bplans?\b/i);
     expect([HOME_TITLE, HOME_DESCRIPTION, TEMPLATES_TITLE, TEMPLATES_DESCRIPTION, PRICING_TITLE, PRICING_DESCRIPTION, TERMS_TITLE, TERMS_DESCRIPTION, PRIVACY_TITLE, PRIVACY_DESCRIPTION].join('\n')).not.toMatch(unsupported);
   });
 

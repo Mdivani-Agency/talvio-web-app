@@ -12,6 +12,13 @@ import { safeRedirectPath } from '@/lib/auth/safe-redirect-path';
 import { signInSearchParams } from '@/lib/auth/sign-in-href';
 
 import { SignInForm } from './sign-in.form';
+import {
+  SIGN_IN_DIVIDER,
+  SIGN_IN_GOOGLE_LABEL,
+  SIGN_IN_HEADING,
+  SIGN_IN_INTRO,
+  SIGN_IN_LINKEDIN_LABEL,
+} from '@/lib/sign-in-copy';
 
 function authRedirectTo(next: string) {
   return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
@@ -51,8 +58,9 @@ function SignInPageContent() {
       <Card className="w-full max-w-96">
         <CardHeader>
           <CardTitle className="text-primary text-xl font-semibold text-center">
-            <h1>Access your account</h1>
+            <h1>{SIGN_IN_HEADING}</h1>
           </CardTitle>
+          <p className="text-md text-muted-foreground text-center">{SIGN_IN_INTRO}</p>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button
@@ -60,18 +68,18 @@ function SignInPageContent() {
             onClick={() => void handleOAuth('google')}
             variant={'outline'}
           >
-            <Icon type="Google" className="size-4" /> Continue with Google
+            <Icon type="Google" className="size-4" /> {SIGN_IN_GOOGLE_LABEL}
           </Button>
           <Button
             className="bg-[#0B66C2] text-white flex items-center gap-2"
             onClick={() => void handleOAuth('linkedin_oidc')}
             variant={'outline'}
           >
-            <Icon type="LinkedIn" className="size-4" /> Continue with Linkedin
+            <Icon type="LinkedIn" className="size-4" /> {SIGN_IN_LINKEDIN_LABEL}
           </Button>
           <div className="flex items-center gap-2">
             <Separator className="flex-1" />
-            <span className="text-md text-muted-foreground px-2">or</span>
+            <span className="text-md text-muted-foreground px-2">{SIGN_IN_DIVIDER}</span>
             <Separator className="flex-1" />
           </div>
           <SignInForm onSubmit={handleEmailSignIn} />

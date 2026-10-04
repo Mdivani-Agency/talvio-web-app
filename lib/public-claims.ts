@@ -1,9 +1,9 @@
-/** Approved public answers. Shipped behavior only. */
-export const WHAT_IS_TALVIO_ANSWER =
-  'Talvio lets you keep a profile, build resumes from templates, and download a PDF. During setup you can answer optional questions that suggest profile edits.';
-
+/** Approved public answers shared by public pages. Shipped behavior only; see the "Approved public claims" Notion page. */
 export const DATA_SAFETY_ANSWER =
-  'We do not sell your personal data. The privacy policy describes what the product stores. For a question about your data, email contact@talvio.co.';
+  'Talvio does not sell your personal data or use it for advertising. The privacy policy explains what is stored. For a question about your data, email contact@talvio.co.';
 
+/** No in-app delete exists. Closure is by email; PDF file cleanup is tracked in MDI-341. */
 export const ACCOUNT_DELETION_ANSWER =
-  'There is no delete-account button in the product. Email contact@talvio.co to ask about closing your account. That request does not by itself remove files already stored for a PDF download.';
+  'Email contact@talvio.co and we will close your account. There is no delete button in the product.';
+
+export const SUPPORT_ANSWER = 'Email contact@talvio.co.';

@@ -2,7 +2,7 @@ import { Icon } from '@components/icons';
 import { BENEFITS } from '@/lib/homepage-copy';
 import Image from 'next/image';
 
-const ICONS = ['MemoCheck', 'Corportate', 'Pencil', 'Spark'] as const;
+const ICONS = ['MemoCheck', 'Corportate', 'Spark'] as const;
 
 export const Benefits = () => {
   const cards = BENEFITS.map((benefit, index) => (
@@ -27,7 +27,7 @@ export const Benefits = () => {
           fill
         />
       </figure>
-      <ul className="grid w-full grid-cols-1 gap-4 md:gap-8 lg:py-24">{cards.slice(2)}</ul>
+      <ul className="grid w-full grid-cols-1 content-center gap-4 md:gap-8 lg:py-24">{cards.slice(2)}</ul>
     </section>
   );
 };

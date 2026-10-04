@@ -1,5 +1,6 @@
-import { Button } from '@components/ui';
+import { Badge, Button } from '@components/ui';
 import {
+  HERO_BADGE,
   HERO_BODY,
   HERO_TITLE,
   PRIMARY_CTA_HREF,
@@ -14,6 +15,9 @@ export const Hero = () => {
   return (
     <section className={'flex flex-col items-center md:py-32 lg:grid lg:grid-cols-2 lg:items-center lg:gap-8'}>
       <article>
+        <Badge variant={'secondary'} className={'mb-4 px-3 py-1 text-sm'}>
+          {HERO_BADGE}
+        </Badge>
         <h1 className={'text-primary font-semibold text-xl md:text-2xl lg:text-3xl lg:leading-tight'}>
           {HERO_TITLE}
         </h1>
