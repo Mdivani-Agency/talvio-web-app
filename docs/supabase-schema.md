@@ -34,8 +34,26 @@ Auth providers (app wiring is [MDI-173](https://linear.app/mdivani/issue/MDI-173
 
 - [ ] Email magic link / OTP (local mail: Inbucket on `:54324`)
 - [ ] Google
-- [ ] LinkedIn (`linkedin_oidc`)
 - [ ] Redirect URLs: `http://localhost:3002/**`, `http://localhost:3002/auth/callback`, Vercel preview + production origins
+
+LinkedIn (`linkedin_oidc`) is not a sign-in provider. Hosted Auth sets `external_linkedin_oidc_enabled = false` in `talvio-terraform-iac` (`app.tf`, merged in [talvio-terraform-iac #17](https://github.com/Mdivani-Agency/talvio-terraform-iac/pull/17)). The dev apply for that merge succeeded, and a later prod apply on `main` succeeded. The app does not call `signInWithOAuth` for LinkedIn.
+
+Accounts that previously signed in only with LinkedIn keep the email LinkedIn stored on `auth.users`. Local config required that email (`email_optional = false`). Email codes were already on the sign-in screen before that apply. They sign in with an email code to that same address. Google still works when the Google account uses that email. Disabling the provider does not delete `auth.users` or profile rows. To find accounts whose only identity is LinkedIn:
+
+```sql
+select u.id, u.email
+from auth.users u
+where exists (
+  select 1 from auth.identities i
+  where i.user_id = u.id and i.provider = 'linkedin_oidc'
+)
+and not exists (
+  select 1 from auth.identities i
+  where i.user_id = u.id and i.provider <> 'linkedin_oidc'
+);
+```
+
+A row with a null email has no self-serve path and needs manual recovery. This environment cannot query hosted `auth.identities`.
 
 ## Local workflow
 
@@ -135,7 +153,7 @@ Supabase Auth is the identity provider. `auth.users` is identity — no
 | `lib/supabase/server.ts` | Server Components / route handlers |
 | `lib/supabase/middleware.ts` + root `proxy.ts` | Refresh the session cookie |
 | `app/auth/callback/route.ts` | `exchangeCodeForSession` then redirect to `next` |
-| `app/auth/sign-in` | Magic link (`signInWithOtp`) + Google + `linkedin_oidc` |
+| `app/auth/sign-in` | Magic link (`signInWithOtp`) + Google. Former LinkedIn accounts use the email code for the same address. |
 
 `/account` redirects to `/auth/sign-in` when there is no session. `/resume`
 stays guest-friendly. Sign-out clears the Supabase cookie and any leftover

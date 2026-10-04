@@ -36,7 +36,8 @@ describe('homepage copy', () => {
   it('orders workflow steps as sign-in, profile, then PDF', () => {
     expect(WORKFLOW_TITLE).toMatch(/profile/i);
     expect(WORKFLOW_STEPS.map((step) => step.title)).toEqual(['Sign in', 'Add your profile', 'Download a PDF']);
-    expect(WORKFLOW_STEPS[0]?.body).toMatch(/email code, Google, or LinkedIn/);
+    expect(WORKFLOW_STEPS[0]?.body).toMatch(/email code or Google/);
+    expect(WORKFLOW_STEPS[0]?.body).not.toMatch(/LinkedIn/);
     expect(WORKFLOW_STEPS[1]?.body).toMatch(/parsed PDF/);
     expect(WORKFLOW_STEPS[1]?.body).toMatch(/continue without them/);
     expect(WORKFLOW_STEPS[2]?.body).toContain(`${GENERATE_PDF_CREDITS} credits`);

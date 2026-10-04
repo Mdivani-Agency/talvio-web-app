@@ -35,10 +35,10 @@ function SignInPageContent() {
     router.push('/auth/verify-request');
   };
 
-  const handleOAuth = async (provider: 'google' | 'linkedin_oidc') => {
+  const handleGoogleSignIn = async () => {
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: 'google',
       options: { redirectTo: authRedirectTo(next) },
     });
     if (error) {
@@ -57,17 +57,10 @@ function SignInPageContent() {
         <CardContent className="flex flex-col gap-4">
           <Button
             className="bg-[#FEFEFF] text-[#0d0d0d] flex items-center gap-2"
-            onClick={() => void handleOAuth('google')}
+            onClick={() => void handleGoogleSignIn()}
             variant={'outline'}
           >
             <Icon type="Google" className="size-4" /> Continue with Google
-          </Button>
-          <Button
-            className="bg-[#0B66C2] text-white flex items-center gap-2"
-            onClick={() => void handleOAuth('linkedin_oidc')}
-            variant={'outline'}
-          >
-            <Icon type="LinkedIn" className="size-4" /> Continue with Linkedin
           </Button>
           <div className="flex items-center gap-2">
             <Separator className="flex-1" />
@@ -75,6 +68,9 @@ function SignInPageContent() {
             <Separator className="flex-1" />
           </div>
           <SignInForm onSubmit={handleEmailSignIn} />
+          <p className="text-center text-sm text-muted-foreground">
+            Used LinkedIn before? Request an email code for that same address.
+          </p>
         </CardContent>
       </Card>
     </section>
