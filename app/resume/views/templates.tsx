@@ -30,9 +30,9 @@ export default function TemplatesSelector({
       <p className="text-md 2xl:text-lg font-regular mx-auto max-w-2xl">
         {intro}
       </p>
-      <div className="flex gap-6 justify-center items-center my-4">
+      <div className="flex flex-wrap gap-x-1 gap-y-2 sm:gap-6 justify-center items-center my-4">
         <Button
-          className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'entry' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
+          className={`px-3 py-1 text-md 2xl:text-lg text-secondary-900 font-medium ${level === 'entry' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
           aria-pressed={level === 'entry'}
           onClick={() => onChangeLevel('entry')}
@@ -40,7 +40,7 @@ export default function TemplatesSelector({
           Entry Level
         </Button>
         <Button
-          className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'mid' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
+          className={`px-3 py-1 text-md 2xl:text-lg text-secondary-900 font-medium ${level === 'mid' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
           aria-pressed={level === 'mid'}
           onClick={() => onChangeLevel('mid')}
@@ -48,7 +48,7 @@ export default function TemplatesSelector({
           Mid Level
         </Button>
         <Button
-          className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'senior' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
+          className={`px-3 py-1 text-md 2xl:text-lg text-secondary-900 font-medium ${level === 'senior' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
           aria-pressed={level === 'senior'}
           onClick={() => onChangeLevel('senior')}

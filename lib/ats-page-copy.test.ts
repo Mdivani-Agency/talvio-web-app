@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { BRIEF_BANNED_TERMS, wordCount } from '@/test/utils/public-copy';
+
 import {
   ATS_CLOSING_BODY,
   ATS_PAGE_HEADING,
@@ -13,11 +15,8 @@ import {
   atsPageText,
 } from './ats-page-copy';
 
-const words = (text: string) => text.trim().split(/\s+/).length;
-
-/** Banned by the messaging brief (MDI-322). */
-const banned =
-  /credit|\bpacks?\b|pricing|\bprices?\b|subscription|\bplans?\b|upgrade|premium|pay as you go|pay-as-you-go|free trial|unlimited|\bCV\b|sign up|log in|ATS-proof|ATS-optimized|beats the ATS|guarantee|pass(es)? the ATS|ATS pass|dream job|in minutes|in seconds|!/i;
+const words = wordCount;
+const banned = BRIEF_BANNED_TERMS;
 
 describe('ATS guide copy', () => {
   it('leads with the target query', () => {

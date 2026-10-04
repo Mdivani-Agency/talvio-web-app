@@ -106,7 +106,8 @@
   --secondary: #1E20D4;
   --secondary-foreground: #FEFEFE;
   --muted: #DFDFDF;
-  --muted-foreground: #87888C;
+  /* Darkest grey that keeps 4.5:1 on background, card and popover (WCAG AA). */
+  --muted-foreground: #696A6E;
   --accent: #FEFEFE;
   --accent-foreground: #404040;
   --destructive: #FF1F1F;
@@ -133,8 +134,9 @@
   --popover-foreground: #fefefe;
   --primary: #fefefe;
   --primary-foreground: #0d0d0d;
-  --secondary: #686ae2;
-  --secondary-foreground: #FEFEFE;
+  /* No purple keeps 4.5:1 both as text on #0d0d0d and behind white text, so buttons use dark text (WCAG AA). */
+  --secondary: #7375E5;
+  --secondary-foreground: #0D0D0D;
   --muted: #87888C;
   --muted-foreground: #F6F6FE;
   --accent: #404040;
