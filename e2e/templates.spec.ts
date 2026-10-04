@@ -37,7 +37,7 @@ test.describe('templates', () => {
         await image.click();
         await expect(page).toHaveURL(new RegExp(`/resume\\?template=${level.id}-level-${style.id}$`));
         await page.goto('/templates');
-        await expect(page.getByRole('heading', { name: 'Preview a resume template' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Free resume templates' })).toBeVisible();
         await page.getByRole('button', { name: level.label, exact: true }).click();
       }
     }
