@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@components/icons';
-import { Button, Card, CardContent, CardHeader, CardTitle, Separator } from '@components/ui';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@components/ui';
 import { createSupabaseBrowserClient } from '@lib/supabase/client';
 import { Loading } from '@components/views';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -60,7 +60,7 @@ function SignInPageContent() {
           <CardTitle className="text-primary text-xl font-semibold text-center">
             <h1>{SIGN_IN_HEADING}</h1>
           </CardTitle>
-          <p className="text-md text-muted-foreground text-center">{SIGN_IN_INTRO}</p>
+          <CardDescription className="text-md text-center">{SIGN_IN_INTRO}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button

@@ -9,7 +9,7 @@ export const Faq = () => {
         <Image src="/faq.png" placeholder={'blur'} blurDataURL={'/faq.png'} alt="FAQ" fill />
       </div>
       <article className="w-full">
-        <DetailsList qa={[...HOME_FAQ]} />
+        <DetailsList qa={HOME_FAQ} />
       </article>
     </section>
   );
