@@ -38,12 +38,3 @@ function joinWithAnd(items: readonly string[]): string {
 export function formatCreditPackList(packs: readonly CreditPack[] = CREDIT_PACKS): string {
   return joinWithAnd(packs.map((pack) => `${pack.credits.toLocaleString('en-US')} credits (${pack.priceLabel})`));
 }
-
-export const FREE_CREDITS_ANSWER = `New accounts receive ${SIGNUP_CREDIT_GRANT.toLocaleString('en-US')} credits. A new job-specific PDF costs ${GENERATE_PDF_CREDITS} credits, so that grant covers ${jobSpecificPdfCount(SIGNUP_CREDIT_GRANT)} PDFs. No credit card is required. Downloading a PDF you already generated does not use more credits.`;
-
-export const MORE_CREDITS_ANSWER = `One-time packs are ${formatCreditPackList()}. At ${GENERATE_PDF_CREDITS} credits per new job-specific PDF, those packs cover ${joinWithAnd(CREDIT_PACKS.map((pack) => String(jobSpecificPdfCount(pack.credits))))} PDFs. Credits do not expire, and packs do not renew automatically.`;
-
-export const SUBSCRIPTION_QUESTION = 'Will I be charged on a subscription?';
-
-export const SUBSCRIPTION_ANSWER =
-  'No. Talvio does not sell subscriptions, and credit packs do not renew on their own. Unused credits stay on your account. For a billing issue, email contact@talvio.co.';

@@ -13,7 +13,7 @@ export const PUBLIC_PAGE_LINKS: NavLink[] = [
 export const HOME_SECTION_LINKS: NavLink[] = [
   { name: 'Workflow', href: '#workflow' },
   { name: 'Benefits', href: '#benefits' },
-  { name: 'Price', href: '#plans' },
+  { name: "What's free", href: '#whats-free' },
   { name: 'FAQ', href: '#faq' },
 ];
 

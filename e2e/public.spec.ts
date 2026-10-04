@@ -21,7 +21,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
 
   await page.goto('/');
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co');
 
   await page.goto('/templates');
@@ -70,7 +70,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
   await page.getByRole('link', { name: 'Go Home' }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
 
   expect(errors).toEqual([]);
 });
@@ -81,14 +81,14 @@ test('PUB-02 desktop navigation reaches sections, templates, and sign-in', async
   await expect(header.getByRole('button', { name: 'Open menu' })).toBeHidden();
   await header.getByRole('link', { name: 'Benefits' }).click();
   await expect(page).toHaveURL(/#benefits$/);
-  await expect(page.getByRole('heading', { name: 'A profile, a template, and a PDF' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Write your experience once. Reuse it in every resume.' })).toBeVisible();
 
   await page.getByRole('link', { name: 'See templates' }).first().click();
   await expect(page).toHaveURL(/\/templates$/);
   await page.goto('/home');
   await page.getByRole('link', { name: 'Start free' }).first().click();
   await expect(page).toHaveURL(/\/auth\/sign-in/);
-  await expect(page.getByRole('heading', { name: 'Access your account' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Start free or sign in' })).toBeVisible();
 
   await page.goto('/home');
   await page.locator('footer').getByRole('link', { name: 'Privacy Policy' }).click();
@@ -96,6 +96,21 @@ test('PUB-02 desktop navigation reaches sections, templates, and sign-in', async
   await page.goto('/home');
   await page.locator('footer').getByRole('link', { name: 'Terms of Service' }).click();
   await expect(page).toHaveURL(/\/terms$/);
+});
+
+test('PUB-04 the homepage says what is free and mentions no credits or prices', async ({ page }) => {
+  await page.goto('/home');
+  await expect(page.getByText('Talvio Beta', { exact: true })).toBeVisible();
+  await page.locator('header').first().getByRole('link', { name: "What's free" }).click();
+  await expect(page).toHaveURL(/#whats-free$/);
+  await expect(page.getByRole('heading', { name: '3 new resume PDFs every month' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Start your first resume' })).toBeVisible();
+  const text = await page.locator('main').innerText();
+  expect(text).not.toMatch(/credit|\$\d|subscription|pay as you go|never expire/i);
+
+  await page.goto('/auth/sign-in');
+  await expect(page.getByText('New here? Signing in creates your account. No card needed.')).toBeVisible();
+  expect(await page.locator('body').innerText()).not.toMatch(/credit|\$\d|subscription/i);
 });
 
 test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) => {
@@ -164,7 +179,7 @@ test('PUB-03 the homepage header does not wrap its links at tablet widths', asyn
   await page.setViewportSize({ width: 1024, height: 900 });
   await page.goto('/home');
   await expect(header.getByRole('button', { name: 'Open menu' })).toBeHidden();
-  for (const name of ['Workflow', 'Benefits', 'Price', 'FAQ', 'Templates', 'ATS-friendly resume']) {
+  for (const name of ['Workflow', 'Benefits', "What's free", 'FAQ', 'Templates', 'ATS-friendly resume']) {
     const box = await header.getByRole('link', { name, exact: true }).boundingBox();
     expect(box?.height ?? 0, `${name} wraps`).toBeLessThan(30);
   }
