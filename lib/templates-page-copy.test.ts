@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { BRIEF_BANNED_TERMS } from '@/test/utils/public-copy';
+
 import {
   TEMPLATES_PAGE_DESCRIPTION,
   TEMPLATES_PAGE_HEADING,
@@ -19,8 +21,7 @@ describe('templates page copy', () => {
 
   it('mentions no pricing, packs, credits or ATS guarantees, including in the shipped metadata', () => {
     const text = [TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO, TEMPLATES_PAGE_TITLE, TEMPLATES_PAGE_DESCRIPTION].join('\n');
-    expect(text).not.toMatch(
-      /credit|\bpacks?\b|pricing|pay-as-you-go|subscription|ATS-safe|ATS-proof|guarantee/i,
-    );
+    expect(text).not.toMatch(BRIEF_BANNED_TERMS);
+    expect(text).not.toMatch(/ATS-safe/i);
   });
 });

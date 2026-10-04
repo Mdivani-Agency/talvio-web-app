@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { RELEASE_BANNED_TERMS } from '@/test/utils/public-copy';
+
 import { TERMS_LAST_UPDATED, documentText } from './legal-copy';
 import { TERMS } from './terms-copy';
 
@@ -32,7 +34,8 @@ describe('terms of service copy', () => {
   });
 
   it('does not mention credits, subscriptions, plans or billing', () => {
-    expect(text).not.toMatch(/credit|subscription|\bplans?\b|pricing|upgrade|premium|billing|pay as you go/i);
+    expect(text).not.toMatch(RELEASE_BANNED_TERMS);
+    expect(text).not.toMatch(/premium|billing/i);
   });
 
   it('makes no promise about interviews, jobs or applicant tracking results', () => {
