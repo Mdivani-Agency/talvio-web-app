@@ -55,6 +55,7 @@ Public pages (`/`, `/templates`, `/pricing`, `/ats-friendly-resume`, `/terms`, `
 - `page.tsx` is a server component. Reference: `app/pricing/page.tsx`.
 - Copy lives in `lib/<page>-copy.ts` as exported constants with a co-located test. Do not hard-code marketing copy in the page. Shared claims live in `lib/public-claims.ts` and `lib/credits.ts`.
 - Add the path to `INDEXABLE_PUBLIC_PATHS` in `lib/public-metadata.ts`. `app/sitemap.ts` and `app/robots.ts` derive from it; do not build a second sitemap or robots source.
+- Each page's sitemap date (`*_LAST_MODIFIED`) lives in its copy module. A pull request that changes a page's copy also updates that date.
 - Canonical URLs come from `siteOrigin()` in `lib/site.ts`. Preview deployments are not indexed (`allowPublicIndexing()`).
 - Public copy must match shipped behaviour. Do not add claims the product does not support.
 

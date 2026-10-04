@@ -21,7 +21,7 @@ export const Benefits = () => {
           src={'/iphone.png'}
           placeholder={'blur'}
           blurDataURL={'/iphone-blur.png'}
-          alt={'Iphone with nested website'}
+          alt={'Phone showing a Talvio resume template'}
           className="object-contain"
           priority={false}
           fill

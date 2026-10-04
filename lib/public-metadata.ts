@@ -1,8 +1,11 @@
-import type { Metadata } from 'next';
+import type { Metadata, MetadataRoute } from 'next';
 
 import { allowPublicIndexing, siteOrigin } from './site';
-import { PRICING_PAGE_DESCRIPTION, PRICING_PAGE_TITLE } from './pricing-page-copy';
-import { TEMPLATES_PAGE_DESCRIPTION, TEMPLATES_PAGE_TITLE } from './templates-page-copy';
+import { ATS_LAST_MODIFIED, ATS_PAGE_DESCRIPTION, ATS_PAGE_TITLE } from './ats-page-copy';
+import { BENEFITS_TITLE, HERO_TITLE, HOME_LAST_MODIFIED } from './homepage-copy';
+import { PRIVACY_LAST_MODIFIED, TERMS_LAST_MODIFIED } from './legal-copy';
+import { PRICING_LAST_MODIFIED, PRICING_PAGE_DESCRIPTION, PRICING_PAGE_TITLE } from './pricing-page-copy';
+import { TEMPLATES_LAST_MODIFIED, TEMPLATES_PAGE_DESCRIPTION, TEMPLATES_PAGE_TITLE } from './templates-page-copy';
 
 export const HOME_TITLE = 'Free PDF resume generator | Talvio Beta';
 export const HOME_DESCRIPTION =
@@ -11,20 +14,61 @@ export const HOME_DESCRIPTION =
 export const TEMPLATES_TITLE = TEMPLATES_PAGE_TITLE;
 export const TEMPLATES_DESCRIPTION = TEMPLATES_PAGE_DESCRIPTION;
 
+export const ATS_TITLE = ATS_PAGE_TITLE;
+export const ATS_DESCRIPTION = ATS_PAGE_DESCRIPTION;
+
+/** `/pricing` keeps its copy until MDI-320 redirects it and removes it from the sitemap. */
 export const PRICING_TITLE = PRICING_PAGE_TITLE;
 export const PRICING_DESCRIPTION = PRICING_PAGE_DESCRIPTION;
 
 export const TERMS_TITLE = 'Terms of Service | Talvio';
-export const TERMS_DESCRIPTION = 'The terms for using Talvio.';
+export const TERMS_DESCRIPTION =
+  'The terms for using Talvio, the free PDF resume generator: your account, your content and resume PDFs, optional AI suggestions, and ending your use.';
 
 export const PRIVACY_TITLE = 'Privacy Policy | Talvio';
-export const PRIVACY_DESCRIPTION = 'How Talvio handles personal data, and how to ask a question about your account.';
+export const PRIVACY_DESCRIPTION =
+  'What personal data Talvio stores, why it is used, who processes it and for how long, and how to ask for a copy, a correction or deletion.';
+
+/**
+ * Placeholder share image (1200x630) for every public page: the logo, the homepage headline and the supporting line.
+ * Social networks cache images by URL, so a new image gets a new file name (`share-image-v2.png`) and this URL changes with it.
+ */
+export const SHARE_IMAGE = {
+  url: '/share-image-v1.png',
+  width: 1200,
+  height: 630,
+  alt: `Talvio. ${HERO_TITLE}. ${BENEFITS_TITLE}`,
+};
+
+/** Open Graph and Twitter fields shared by every page. A segment that sets `openGraph` replaces the parent's, so pages spread these. */
+export const SHARE_OPEN_GRAPH = { siteName: 'Talvio', type: 'website', images: [SHARE_IMAGE] } satisfies Metadata['openGraph'];
+export const SHARE_TWITTER = { card: 'summary_large_image', images: [SHARE_IMAGE] } satisfies Metadata['twitter'];
 
 /**
  * Canonical indexable pages. Anonymous `/home` redirects to `/`.
  * Blog URLs belong to MDI-249 and are added when `/blog` exists.
  */
 export const INDEXABLE_PUBLIC_PATHS = ['/', '/templates', '/pricing', '/ats-friendly-resume', '/privacy-policy', '/terms'] as const;
+
+export type IndexablePublicPath = (typeof INDEXABLE_PUBLIC_PATHS)[number];
+
+/** Date each page's content last changed, for the sitemap. Each date lives in the page's copy module, next to the copy it dates. */
+export const PUBLIC_PAGE_LAST_MODIFIED: Record<IndexablePublicPath, string> = {
+  '/': HOME_LAST_MODIFIED,
+  '/templates': TEMPLATES_LAST_MODIFIED,
+  '/pricing': PRICING_LAST_MODIFIED,
+  '/ats-friendly-resume': ATS_LAST_MODIFIED,
+  '/privacy-policy': PRIVACY_LAST_MODIFIED,
+  '/terms': TERMS_LAST_MODIFIED,
+};
+
+export function publicSitemap(): MetadataRoute.Sitemap {
+  const origin = siteOrigin();
+  return INDEXABLE_PUBLIC_PATHS.map((path) => ({
+    url: path === '/' ? origin : `${origin}${path}`,
+    lastModified: PUBLIC_PAGE_LAST_MODIFIED[path],
+  }));
+}
 
 export const PRIVATE_ROBOTS_PREFIXES = ['/account', '/auth', '/resume', '/api'] as const;
 
@@ -36,18 +80,8 @@ export function publicPageMetadata(path: string, title: string, description: str
     description,
     alternates: { canonical: path === '/' ? `${siteOrigin()}/` : path },
     robots: allowPublicIndexing() ? { index: true, follow: true } : PRIVATE_ROBOTS,
-    openGraph: {
-      title,
-      description,
-      url: path,
-      siteName: 'Talvio',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-    },
+    openGraph: { ...SHARE_OPEN_GRAPH, title, description, url: path },
+    twitter: { ...SHARE_TWITTER, title, description },
   };
 }
 

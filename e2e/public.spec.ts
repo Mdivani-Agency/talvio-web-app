@@ -129,6 +129,42 @@ test('PUB-05 the first template is above the fold on a phone', async ({ page }) 
   expect(box!.y + box!.height / 2).toBeLessThan(page.viewportSize()!.height);
 });
 
+test('PUB-06 public pages render complete search and share metadata', async ({ page, request }) => {
+  const pages = [
+    ['/', 'Free PDF resume generator | Talvio Beta'],
+    ['/templates', 'Free resume templates by experience level | Talvio'],
+    ['/ats-friendly-resume', 'How to make an ATS-friendly resume | Talvio'],
+    ['/terms', 'Terms of Service | Talvio'],
+    ['/privacy-policy', 'Privacy Policy | Talvio'],
+  ] as const;
+  for (const [path, title] of pages) {
+    await page.goto(path);
+    await expect(page).toHaveTitle(title);
+    expect(title.length, path).toBeLessThanOrEqual(60);
+    const description = (await page.locator('meta[name="description"]').getAttribute('content')) ?? '';
+    expect(description.length, path).toBeGreaterThanOrEqual(120);
+    expect(description.length, path).toBeLessThanOrEqual(155);
+    await expect(page.locator('h1')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /\/share-image-v\d+\.png$/);
+    await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200');
+    await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', /\/share-image-v\d+\.png$/);
+  }
+
+  await page.goto('/');
+  const jsonLd = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}');
+  expect(jsonLd['@graph'].map((node: { '@type': string }) => node['@type'])).toEqual(['Organization', 'WebSite', 'WebApplication']);
+
+  const image = await request.get('/share-image-v1.png');
+  expect(image.ok()).toBe(true);
+  expect(image.headers()['content-type']).toBe('image/png');
+
+  const sitemap = await (await request.get('/sitemap.xml')).text();
+  expect(sitemap.match(/<url>/g)?.length).toBeGreaterThan(0);
+  expect(sitemap.match(/<lastmod>/g)?.length).toBe(sitemap.match(/<url>/g)?.length);
+});
+
 test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/home');

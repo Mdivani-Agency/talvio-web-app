@@ -12,6 +12,9 @@ const signupPdfs = jobSpecificPdfCount(SIGNUP_CREDIT_GRANT);
 
 export const PRICING_PATH = '/pricing';
 
+/** Sitemap date (ISO). Change it with the copy in this file. */
+export const PRICING_LAST_MODIFIED = '2026-10-03';
+
 export const PRICING_PAGE_TITLE = 'Pay-as-you-go pricing | Talvio';
 
 export const PRICING_PAGE_DESCRIPTION =

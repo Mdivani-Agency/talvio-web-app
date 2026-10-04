@@ -5,6 +5,9 @@ import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, SUPPORT_ANSWER } from './p
  * Copy that states the monthly allowance ships with MDI-320.
  */
 
+/** Sitemap date (ISO). Change it with the homepage copy. */
+export const HOME_LAST_MODIFIED = '2026-10-04';
+
 /** New visitors sign in here. There is no separate sign-up route. */
 export const PRIMARY_CTA_HREF = '/auth/sign-in';
 export const PRIMARY_CTA_LABEL = 'Start free';
