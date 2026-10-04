@@ -2,10 +2,10 @@ import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL, SECONDARY_CTA_HREF, SECONDARY_CTA_
 
 export const ATS_PATH = '/ats-friendly-resume';
 
-export const ATS_PAGE_TITLE = 'Readable resumes and ATS checkers | Talvio';
+export const ATS_PAGE_TITLE = 'How to make an ATS-friendly resume | Talvio';
 
 export const ATS_PAGE_DESCRIPTION =
-  'Use standard headings, a simple reading order, and evidence that matches the role. A generic checker score is not the hiring company’s system, and those systems differ.';
+  'How to make an ATS-friendly resume: use standard headings, keep one reading order, show what you did, and check that your PDF text pastes in order.';
 
 // Rewrite from the messaging brief. Primary query: "ATS-friendly resume".
 export const ATS_PAGE_HEADING = 'How to make an ATS-friendly resume';
@@ -47,7 +47,7 @@ export const ATS_PRIMARY_CTA_LABEL = PRIMARY_CTA_LABEL;
 export const ATS_SECONDARY_CTA_HREF = SECONDARY_CTA_HREF;
 export const ATS_SECONDARY_CTA_LABEL = SECONDARY_CTA_LABEL;
 
-/** The shipped title and description, for the banned-term test. MDI-339 rewrites them. */
+/** The page title and description, for the banned-term test. */
 export function atsMetadataText(): string {
   return [ATS_PAGE_TITLE, ATS_PAGE_DESCRIPTION].join('\n');
 }

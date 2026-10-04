@@ -36,12 +36,14 @@ export const Hero = () => {
       <figure className={'relative left-[10%] mt-14 hidden h-[200] lg:block lg:h-[400px] xl:h-[520px]'}>
         <Image
           className="overflow-x-visible object-contain object-center lg:object-left"
-          alt={'Resume on macbook'}
+          alt={'Laptop showing two Talvio resume templates'}
           src={'/macbook.png'}
           placeholder={'blur'}
           blurDataURL={'/macbook-blur.png'}
-          priority={false}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          loading="eager"
+          fetchPriority="high"
+          // Hidden below lg, so phones fetch the smallest candidate.
+          sizes="(min-width: 1024px) 50vw, 1px"
           fill
         />
       </figure>
