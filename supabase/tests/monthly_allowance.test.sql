@@ -104,9 +104,9 @@ select is(
 select ok(
   exists (
     select 1 from public.monthly_allowance_runs
-    where period_start = date_trunc('month', now() at time zone 'UTC')::date
+    where period_start = date_trunc('month', applied_at at time zone 'UTC')::date
   ),
-  'the migration applied the current month'
+  'the migration applied the month it ran in'
 );
 
 -- Signup grant.

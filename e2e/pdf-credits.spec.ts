@@ -73,12 +73,12 @@ test('PDF-01 generates a final PDF from the editor and the dashboard', async ({ 
   expect(pdf.text).toContain('Owner');
 
   await page.goto('/account');
-  await expect(shownCredits(page)).toHaveText('270');
+  await expect(shownCredits(page)).toHaveText('60');
   await rememberDownloads(page);
   const row = resumeRow(page, 'Dashboard copy');
   await row.getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(row.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  await expect(shownCredits(page)).toHaveText('240');
+  await expect(shownCredits(page)).toHaveText('30');
 
   const dashboard = (await listResumes(owner.userId)).find((row) => row.name === 'Dashboard copy');
   expect(dashboard?.pdfUrl).toBeTruthy();

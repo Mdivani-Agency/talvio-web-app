@@ -89,7 +89,11 @@ or `authenticated`). For the UTC month containing `p_now` it:
 - returns the number of accounts reset.
 
 The migration runs it once at the end (cutover), so existing accounts move to
-90 and the current month is recorded. There is no request-time catch-up: if
+90 and the current month is recorded. That is a data change on every
+environment the migration reaches (CI applies it with `supabase db push`):
+every balance becomes 90 at that moment, including balances above 90 and
+accounts mid-generation. Run late in a month, the next reset still comes on
+the 1st. There is no request-time catch-up: if
 the job does not run, nobody renews until it is rerun. Manual rerun as
 `postgres`: `select public.apply_monthly_allowance();`. Inspect the job with
 `select * from cron.job where jobname = 'monthly-allowance-reset';` and runs

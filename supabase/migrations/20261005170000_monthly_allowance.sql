@@ -15,6 +15,8 @@
 -- 1. Extension. Supabase installs pg_cron in pg_catalog; its objects live in
 --    schema cron.
 create extension if not exists pg_cron with schema pg_catalog;
+grant usage on schema cron to postgres;
+grant all privileges on all tables in schema cron to postgres;
 
 -- 2. Table: one row per month the reset has applied.
 create table public.monthly_allowance_runs (
@@ -119,6 +121,9 @@ select cron.schedule(
   $$select public.apply_monthly_allowance()$$
 );
 
--- 10. Cutover: apply the current month now. Existing dev accounts move to 90,
---     and the month is recorded so the next reset is on the 1st.
+-- 10. Cutover: apply the current month now. This mutates data on every
+--     environment the migration reaches (CI pushes it with `supabase db push`):
+--     every balance, including any above 90 or mid-generation, becomes 90 at
+--     that moment, and the month is recorded. The next reset is the coming 1st,
+--     even if this runs late in a month. There are no live users (MDI-320).
 select public.apply_monthly_allowance();
