@@ -1,14 +1,15 @@
 import {
   CREDIT_PACKS,
   GENERATE_PDF_CREDITS,
-  SIGNUP_CREDIT_GRANT,
+  MONTHLY_CREDIT_ALLOWANCE,
   formatCreditPackList,
   jobSpecificPdfCount,
 } from './credits';
 import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL, SECONDARY_CTA_HREF, SECONDARY_CTA_LABEL } from './homepage-copy';
 
-const signupCredits = SIGNUP_CREDIT_GRANT.toLocaleString('en-US');
-const signupPdfs = jobSpecificPdfCount(SIGNUP_CREDIT_GRANT);
+// `/pricing` is retired by MDI-398 (redirect and removal). Until then its numbers follow the server.
+const signupCredits = MONTHLY_CREDIT_ALLOWANCE.toLocaleString('en-US');
+const signupPdfs = jobSpecificPdfCount(MONTHLY_CREDIT_ALLOWANCE);
 
 export const PRICING_PATH = '/pricing';
 

@@ -26,8 +26,11 @@ has an `updated_at` column:
 `public.handle_new_user()` — `AFTER INSERT` on `auth.users`, trigger
 `on_auth_user_created`. `SECURITY DEFINER`, `search_path = public`.
 
-Inserts `public.user_credits (user_id, balance)` with **300** credits for
-`new.id`. Locked on [MDI-144](https://linear.app/mdivani/issue/MDI-144):
+Inserts `public.user_credits (user_id, balance)` with the monthly allowance,
+**90** credits (`monthly_credit_allowance()`), for `new.id`, whatever the date.
+Set by `20261005170000_monthly_allowance.sql`
+([MDI-357](https://linear.app/mdivani/issue/MDI-357)); the original grant of 300
+came from [MDI-144](https://linear.app/mdivani/issue/MDI-144). Rules:
 
 - Preview is free
 - Final PDF generation is paid (`generate_pdf` checks balance, then
@@ -65,3 +68,32 @@ that same timestamp. Content, template, color, font, or type changes while
 
 Defined in `20260923060000_resume_save_idempotency.sql`. Execute is revoked
 from `public` / `anon` / `authenticated` — trigger-only.
+
+## Scheduled job: `monthly-allowance-reset`
+
+`pg_cron` job created by `20261005170000_monthly_allowance.sql`
+([MDI-357](https://linear.app/mdivani/issue/MDI-357)). Schedule `0 0 1 * *`
+(1st of each month, 00:00 UTC; `pg_cron` runs in GMT). Command:
+`select public.apply_monthly_allowance()`.
+
+`public.apply_monthly_allowance(p_now timestamptz default now())` is private
+(`SECURITY DEFINER`, `search_path = public`, no `EXECUTE` for `public`, `anon`
+or `authenticated`). For the UTC month containing `p_now` it:
+
+- records the month in `monthly_allowance_runs`, and returns 0 without
+  changes if that month is already recorded (one reset per month);
+- refuses a month older than the latest recorded one (`stale_period`), so a
+  late or manual run applies the current month only;
+- sets every `user_credits.balance` to 90. It never adds: 0, 30, 60, 90 and
+  any legacy balance all become 90;
+- returns the number of accounts reset.
+
+The migration runs it once at the end (cutover), so existing accounts move to
+90 and the current month is recorded. There is no request-time catch-up: if
+the job does not run, nobody renews until it is rerun. Manual rerun as
+`postgres`: `select public.apply_monthly_allowance();`. Inspect the job with
+`select * from cron.job where jobname = 'monthly-allowance-reset';` and runs
+with `select * from cron.job_run_details order by start_time desc;`.
+
+`generate_pdf` / `finalize_pdf` are unchanged: a generation is debited from
+the balance at finalize time, whichever month it started in.

@@ -34,8 +34,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;
 ### Credits (balance only)
 
 `user_credits` — authenticated can read their own balance (RLS). Writes go
-through `SECURITY DEFINER` RPCs (`handle_new_user`, `finalize_pdf` →
-private `consume_credits`).
+through `SECURITY DEFINER` functions (`handle_new_user`, the monthly reset
+`apply_monthly_allowance`, `finalize_pdf` → private `consume_credits`).
 
 ```sql
 GRANT SELECT ON public.user_credits TO authenticated;
@@ -47,8 +47,13 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_credits TO service_role;
 
 Price catalog for paid actions. No Data API grants — invisible to
 `/graphql/v1`. RLS enabled with no policies. Updates go through
-migrations. Seeded `generate_pdf = 30` (300 signup credits / 10
-job-specific resumes).
+migrations. Seeded `generate_pdf = 30` (the monthly allowance of 90 covers
+3 new resume PDFs).
+
+`monthly_allowance_runs` (MDI-357) is server-only in the same way: RLS on, no
+policies, no grants. `apply_monthly_allowance()` and
+`monthly_credit_allowance()` have no `EXECUTE` for `public`, `anon` or
+`authenticated`.
 
 ```sql
 REVOKE ALL ON TABLE public.credit_prices FROM public, anon, authenticated;
@@ -95,6 +100,7 @@ the GraphQL `JSON` scalar (serialized string).
 | `resumes` | none | SELECT, DELETE; INSERT/UPDATE without pdf pointers | all | `00800_resumes_rls.sql` |
 | `user_credits` | none | SELECT | all | `00800_resumes_rls.sql` |
 | `credit_prices` | none | none | none | `00600_profile_rpcs.sql` (server-side) |
+| `monthly_allowance_runs` | none | none | none | `20261005170000_monthly_allowance.sql` (server-side) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

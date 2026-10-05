@@ -6,7 +6,8 @@ export const CREDIT_BOUNDARIES = {
   zero: 0,
   belowPrice: 29,
   exactPrice: 30,
-  ample: 300,
+  /** The monthly allowance every account gets at signup (MDI-320): 3 new PDFs. */
+  ample: 90,
 } as const;
 
 const RESUME_CONTENT = {

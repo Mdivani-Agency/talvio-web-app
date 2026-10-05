@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CREDIT_PACKS,
   GENERATE_PDF_CREDITS,
-  SIGNUP_CREDIT_GRANT,
+  MONTHLY_CREDIT_ALLOWANCE,
   jobSpecificPdfCount,
 } from './credits';
 
@@ -14,9 +14,10 @@ describe('GENERATE_PDF_CREDITS', () => {
 });
 
 describe('credit packs', () => {
-  it('mirrors the signup grant and divides it into new PDFs', () => {
-    expect(SIGNUP_CREDIT_GRANT).toBe(300);
-    expect(jobSpecificPdfCount(SIGNUP_CREDIT_GRANT)).toBe(10);
+  it('mirrors the monthly allowance, which covers the 3 new resume PDFs the public copy promises', () => {
+    expect(MONTHLY_CREDIT_ALLOWANCE).toBe(90);
+    // If the PDF price changes, the "3 new resume PDFs every month" claim must be reviewed first (MDI-320).
+    expect(jobSpecificPdfCount(MONTHLY_CREDIT_ALLOWANCE)).toBe(3);
   });
 
   it('uses the homepage pack prices and an exact PDF yield', () => {

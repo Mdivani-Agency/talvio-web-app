@@ -248,7 +248,8 @@ Explicit delete remains allowed; the app deletes the open draft before the paren
 
 ## `user_credits`
 
-Balance only in v1. Writes via RPCs (`handle_new_user`,
+Balance only in v1. Writes via `SECURITY DEFINER` functions
+(`handle_new_user` → 90, the monthly reset `apply_monthly_allowance` → 90,
 `finalize_pdf` → private `consume_credits`). Clients never pass an amount.
 
 | Column | Type | Notes |
@@ -269,5 +270,18 @@ Server-side catalog of paid-action prices. No Data API grants — hidden from
 | `amount` | `integer not null` | `check (amount > 0)` |
 | `updated_at` | `timestamptz not null default now()` | trigger `credit_prices_set_updated_at` |
 
-Seeded row: `generate_pdf` = **30** (300 signup credits / 10 job-specific
-resumes from the marketing packs). Change prices with a later migration.
+Seeded row: `generate_pdf` = **30**, so the monthly allowance of 90 covers 3
+new resume PDFs. Change prices with a later migration, and review the public
+"3 new resume PDFs every month" claim first (MDI-320).
+
+## `monthly_allowance_runs`
+
+One row per UTC month the monthly allowance reset has applied
+(`20261005170000_monthly_allowance.sql`). Server-only: no Data API grants, RLS
+enabled, no policies. Written only by `apply_monthly_allowance()`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `period_start` | `date` | PK; first day of the UTC month (`monthly_allowance_runs_first_of_month_ck`) |
+| `applied_at` | `timestamptz not null default now()` | |
+| `accounts_reset` | `integer not null default 0` | `check (accounts_reset >= 0)` |
