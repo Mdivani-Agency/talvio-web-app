@@ -145,7 +145,9 @@ test('PDF-02 charges exactly 30, blocks 29 and 0 with the renewal date, and reje
   await expect(generateButton(page, 'Empty resume')).toBeEnabled();
   await setCreditBalance(empty.userId, 0);
   await generateButton(page, 'Empty resume').click();
-  await expect(page.getByText(EXHAUSTED())).toBeVisible();
+  // The refusal shows in the toast, and the card refetches to the same exhausted line.
+  await expect(page.locator('[data-sonner-toast]').getByText(EXHAUSTED())).toBeVisible();
+  await expect(page.getByTestId('allowance-exhausted')).toHaveText(EXHAUSTED());
   // The persona's email contains "credits", so check the toast and the card rather than the whole page.
   await expect(page.locator('[data-sonner-toast]').filter({ hasText: /credit/i })).toHaveCount(0);
   await expect(page.getByTestId('allowance-card')).not.toContainText(/credit/i);
@@ -325,7 +327,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await generateButton(page, 'Finalize resume').click();
   await expect.poll(() => generationLock(finalizeId)).not.toBeNull();
   await setCreditBalance(owner.userId, 0);
-  await expect(page.getByText(EXHAUSTED())).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-sonner-toast]').getByText(EXHAUSTED())).toBeVisible({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === finalizeId)?.pdfUrl).toBeNull();
   expect(await generationLock(finalizeId)).toBeNull();
   expect(await creditBalance(owner.userId)).toBe(0);
@@ -425,8 +427,11 @@ test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero
   await expect(shownAllowance(page)).toHaveText('3 of 3 left this month');
 
   for (const [index, name] of titles.slice(0, 3).entries()) {
+    // WebKit reports the next page.goto as "Download is starting" until each PDF download finishes.
+    const download = page.waitForEvent('download', { timeout: 90_000 });
     await generateButton(page, name).click();
     await expect(resumeRow(page, name).getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+    await download;
     await expect(shownAllowance(page)).toHaveText(`${2 - index} of 3 left this month`);
   }
   expect(await creditBalance(owner.userId)).toBe(0);
@@ -443,8 +448,10 @@ test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero
     }
   });
   await rememberDownloads(page);
+  const redownload = page.waitForEvent('download', { timeout: 30_000 });
   await resumeRow(page, 'First resume').getByRole('button', { name: 'Download' }).click();
   await expect.poll(async () => (await recordedDownloads(page)).some((item) => item.download === 'First resume.pdf')).toBe(true);
+  await redownload;
   expect(generates).toHaveLength(0);
   expect(await creditBalance(owner.userId)).toBe(0);
   expect((await mediaStats()).uploads).toBe(3);
