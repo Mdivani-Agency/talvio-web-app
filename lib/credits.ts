@@ -1,8 +1,11 @@
 /** Display-only mirror of `credit_prices.generate_pdf`. Never sent to the server. */
 export const GENERATE_PDF_CREDITS = 30;
 
-/** Display-only mirror of the `handle_new_user` signup grant. */
-export const SIGNUP_CREDIT_GRANT = 300;
+/**
+ * Display-only mirror of `monthly_credit_allowance()`: the balance every account gets at signup and on the
+ * 1st of each month (MDI-320). Never sent to the server.
+ */
+export const MONTHLY_CREDIT_ALLOWANCE = 90;
 
 export type CreditPack = {
   credits: number;
