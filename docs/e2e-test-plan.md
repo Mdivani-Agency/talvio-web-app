@@ -54,6 +54,7 @@ All cases below are release requirements. P0 identifies implementation order and
 | --- | --- | --- |
 | PUB-01 | P1 | Open `/`, `/home`, `/templates`, `/terms`, `/privacy-policy`; anonymous `/` serves the homepage and anonymous `/home` redirects there. Assert meaningful headings, the canonical URL, working navigation and no unhandled browser errors. Unknown routes show the not-found experience. |
 | PUB-02 | P1 | Desktop and mobile navigation: open/close menu, follow primary CTA, reach templates/sign-in, use footer/legal links; no hidden or unreachable primary controls. |
+| PUB-08 | P1 | With the default release flags, `/pricing` returns a 307 to `/#whats-free` and `/account/credits` a 307 to `/account`. The sitemap has no `/pricing`, and no public page links to either path or shows "Buy credits". |
 | TPL-01 | P0 | Switch Entry/Mid/Senior levels; both active level and cards update. Select each supported template in a parameterized test and verify the matching `template` query value and preview. |
 | TPL-02 | P1 | Missing or invalid template query: deterministic fallback or clear recoverable error; never infinite loading or a crash. |
 | AUTH-01 | P0 | New and returning email users: submit email, see verify-request page, obtain local mail, follow link, reach safe requested destination with a valid server session. Reload remains authenticated. |
@@ -76,7 +77,7 @@ All cases below are release requirements. P0 identifies implementation order and
 | RES-08 | P0 | Delete cancel leaves data intact. Confirm deletes draft-only, generated-only and generated-with-draft families; reload and direct URLs confirm removal. Failure never falsely reports complete deletion. |
 | RES-09 | P1 | Long and Unicode content: multi-page preview, previous/next bounds, full-size modal, template switching and style changes render without blank pages or overflow that hides controls. |
 | PDF-01 | P0 | Generate final PDF from editor and dashboard: actual renderer runs, bytes upload, URL/key persist and real browser download succeeds. Parse downloaded PDF and assert expected name/content/page count and valid PDF structure. |
-| PDF-02 | P0 | First successful generation deducts exactly 30 credits and refreshes displayed balance. Balance of exactly 30 succeeds; 29 and 0 reject with useful UI feedback, unchanged balance and no finalized PDF. |
+| PDF-02 | P0 | First successful generation deducts exactly 30 credits and refreshes displayed balance. Balance of exactly 30 succeeds; 29 and 0 reject with useful UI feedback and no purchase link, unchanged balance and no finalized PDF. |
 | PDF-03 | P0 | Re-download generated file, including after reload and from dashboard: same stored file, no new charge and no new render/upload. A duplicate direct generation request also remains idempotent. |
 | PDF-04 | P0 | Double click and concurrent generation requests: one logical finalization and one charge, stable returned PDF URL. Supplement UI test with concurrent authenticated Playwright API requests and database outcome assertions. |
 | PDF-05 | P0 | Rendering, presign, upload and finalize failures do not charge for an unsuccessful finalization or mark the resume ready. Retry succeeds without duplicate charging. Simulate lost response after successful finalize to exercise idempotent recovery. |

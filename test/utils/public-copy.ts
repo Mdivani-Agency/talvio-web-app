@@ -1,6 +1,6 @@
 /**
  * Shared rules for public copy tests (MDI-322).
- * `/pricing` is excluded until MDI-320 redirects it.
+ * `/pricing` is not covered: it is served only while the `plansPage` flag is on (MDI-398).
  */
 
 /** Terms no public page, title or description may contain, including the legal documents (MDI-322 definition of done). */

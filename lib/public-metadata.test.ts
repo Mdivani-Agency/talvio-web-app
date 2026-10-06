@@ -6,12 +6,14 @@ import {
   HOME_DESCRIPTION,
   HOME_TITLE,
   INDEXABLE_PUBLIC_PATHS,
+  indexablePublicPaths,
   PRICING_DESCRIPTION,
   PRICING_TITLE,
   PRIVACY_DESCRIPTION,
   PRIVACY_TITLE,
   PRIVATE_ROBOTS_PREFIXES,
   PUBLIC_PAGE_LAST_MODIFIED,
+  PUBLIC_PAGE_PATHS,
   publicPageMetadata,
   publicSitemap,
   SHARE_IMAGE,
@@ -44,7 +46,6 @@ describe('public metadata', () => {
     expect(HOME_DESCRIPTION).toContain('3 new resume PDFs every month, free forever');
   });
 
-  /** `/pricing` is left out: MDI-320 redirects it and removes it from the sitemap. */
   const pages = [
     { path: '/', title: HOME_TITLE, description: HOME_DESCRIPTION, query: /free PDF resume generator/i },
     { path: '/templates', title: TEMPLATES_TITLE, description: TEMPLATES_DESCRIPTION, query: /free resume templates/i },
@@ -62,8 +63,8 @@ describe('public metadata', () => {
     }
   });
 
-  it('covers every indexable page except /pricing and uses no banned or unsupported terms', () => {
-    expect(pages.map((page) => page.path).sort()).toEqual(INDEXABLE_PUBLIC_PATHS.filter((path) => path !== '/pricing').sort());
+  it('covers every indexable page and uses no banned or unsupported terms', () => {
+    expect(pages.map((page) => page.path).sort()).toEqual(indexablePublicPaths({ plansPage: false }).sort());
     const text = pages.flatMap((page) => [page.title, page.description]).join('\n');
     expect(text).not.toMatch(/credit|\bpacks?\b|subscription|pricing|\bplans?\b|upgrade|premium|catalogue|\bCV\b|!/i);
     expect(text).not.toMatch(/ATS-proof|ATS-optimized|guarantee|interview|hired|application track|career success|GDPR/i);
@@ -83,20 +84,29 @@ describe('public metadata', () => {
 
   it('gives every sitemap entry a lastModified date', () => {
     delete process.env.SITE_URL;
-    const sitemap = publicSitemap();
+    const sitemap = publicSitemap({ plansPage: false });
     expect(sitemap.map((entry) => entry.url)).toEqual(
-      INDEXABLE_PUBLIC_PATHS.map((path) => (path === '/' ? 'https://www.talvio.co' : `https://www.talvio.co${path}`)),
+      indexablePublicPaths({ plansPage: false }).map((path) => (path === '/' ? 'https://www.talvio.co' : `https://www.talvio.co${path}`)),
     );
     for (const entry of sitemap) {
       expect(entry.lastModified).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(Number.isNaN(Date.parse(String(entry.lastModified)))).toBe(false);
     }
-    expect(Object.keys(PUBLIC_PAGE_LAST_MODIFIED).sort()).toEqual([...INDEXABLE_PUBLIC_PATHS].sort());
+    expect(Object.keys(PUBLIC_PAGE_LAST_MODIFIED).sort()).toEqual([...PUBLIC_PAGE_PATHS].sort());
+  });
+
+  it('drops /pricing from the sitemap while the plans page is off and restores it when on', () => {
+    delete process.env.SITE_URL;
+    expect(publicSitemap({ plansPage: false }).map((entry) => entry.url)).not.toContain('https://www.talvio.co/pricing');
+    expect(publicSitemap({ plansPage: true }).map((entry) => entry.url)).toContain('https://www.talvio.co/pricing');
+    expect(indexablePublicPaths({ plansPage: true })).toEqual([...PUBLIC_PAGE_PATHS]);
   });
 
   it('lists only canonical public pages', () => {
-    expect(INDEXABLE_PUBLIC_PATHS).toEqual(['/', '/templates', '/pricing', '/ats-friendly-resume', '/privacy-policy', '/terms']);
-    expect(INDEXABLE_PUBLIC_PATHS.join(' ')).not.toMatch(/\/home|\/blog|\/account|\/auth|\/resume/);
+    expect(indexablePublicPaths({ plansPage: false })).toEqual(['/', '/templates', '/ats-friendly-resume', '/privacy-policy', '/terms']);
+    expect(INDEXABLE_PUBLIC_PATHS).toEqual(indexablePublicPaths());
+    expect(PUBLIC_PAGE_PATHS).toEqual(['/', '/templates', '/pricing', '/ats-friendly-resume', '/privacy-policy', '/terms']);
+    expect(PUBLIC_PAGE_PATHS.join(' ')).not.toMatch(/\/home|\/blog|\/account|\/auth|\/resume/);
     expect(PRIVATE_ROBOTS_PREFIXES).toEqual(['/account', '/auth', '/resume', '/api']);
   });
 

@@ -214,7 +214,7 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 - [x] Filename or label edits do not regenerate preview. Color, font, template key, and content do.
 - [x] Download of a new resume creates one row, then generates. A second click or a lost response updates that row and does not insert or charge another.
 - [x] First final PDF debits once. An existing `pdf_url` downloads with no debit at balance 0.
-- [x] Insufficient credits shows the buy-credits path and does not upload. `generateAndChargeResumePdf` returns 402 before render, and `submitWrapper` links to `/account/credits`.
+- [x] Insufficient credits does not upload. `generateAndChargeResumePdf` returns 402 before render. With the default flags (MDI-398, `creditPurchaseUi` off) `submitWrapper` shows the error with no purchase link; with the flag on it links to `/account/credits`.
 - [x] Editing a generated resume reuses its open draft. View original is read-only. Discard deletes only the draft. The original URL still downloads. Browser discard was not clicked; `deleteResume` targets the draft id, and the generated row keeps `pdf_url`.
 - [x] A second edit does not insert a second open draft.
 - [x] Label edits on a generated row do not fork and do not change `content`.

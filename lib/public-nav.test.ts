@@ -7,16 +7,16 @@ import {
   PUBLIC_PAGE_LINKS,
   footerCopyright,
 } from './public-nav';
-import { INDEXABLE_PUBLIC_PATHS } from './public-metadata';
+import { indexablePublicPaths } from './public-metadata';
 
 describe('public navigation', () => {
-  it('links every indexable page except pricing from the footer', () => {
+  it('links every indexable page from the footer and no purchase page', () => {
     const hrefs = FOOTER_PAGE_LINKS.map((link) => link.href);
-    for (const path of INDEXABLE_PUBLIC_PATHS) {
-      if (path === '/pricing') continue;
+    for (const path of indexablePublicPaths({ plansPage: false })) {
       expect(hrefs).toContain(path);
     }
-    expect(hrefs).not.toContain('/pricing');
+    expect(HOME_NAV_LINKS.map((link) => link.href).concat(hrefs)).not.toContain('/pricing');
+    expect(HOME_NAV_LINKS.map((link) => link.href).concat(hrefs)).not.toContain('/account/credits');
   });
 
   it('keeps the homepage anchors before the page links, in one order', () => {
