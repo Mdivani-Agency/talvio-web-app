@@ -7,7 +7,7 @@ import {
 } from './credits';
 import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL, SECONDARY_CTA_HREF, SECONDARY_CTA_LABEL } from './homepage-copy';
 
-// `/pricing` is retired by MDI-398 (redirect and removal). Until then its numbers follow the server.
+// `/pricing` is served only while the `plansPage` flag is on (MDI-398). Its numbers follow the server.
 const signupCredits = MONTHLY_CREDIT_ALLOWANCE.toLocaleString('en-US');
 const signupPdfs = jobSpecificPdfCount(MONTHLY_CREDIT_ALLOWANCE);
 

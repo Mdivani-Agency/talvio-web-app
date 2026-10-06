@@ -8,6 +8,8 @@ const alias = {
   '@components': path.resolve(__dirname, 'components'),
   '@lib': path.resolve(__dirname, 'lib'),
   '@hooks': path.resolve(__dirname, 'hooks'),
+  '@ui': path.resolve(__dirname, 'components/ui'),
+  '@utils': path.resolve(__dirname, 'lib/utils'),
 };
 
 export default defineConfig({

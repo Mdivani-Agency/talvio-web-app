@@ -2,6 +2,7 @@ import { Icon } from '@components/icons';
 import { Button } from '@components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
 import { useCredits } from '@app/account/query/use-credits';
+import { featureFlags } from '@/lib/flags';
 import Link from 'next/link';
 
 type CreditsCardProps = {
@@ -20,9 +21,11 @@ export const CreditsCard = ({ className }: CreditsCardProps) => {
       </CardHeader>
       <CardContent className="flex items-end justify-between">
         <span className="text-2xl font-bold">{credits}</span>
-        <Link href="/account/credits">
-          <Button className="text-sm w-28" size={"sm"}>Buy More</Button>
-        </Link>
+        {featureFlags().creditPurchaseUi && (
+          <Link href="/account/credits">
+            <Button className="text-sm w-28" size={"sm"}>Buy More</Button>
+          </Link>
+        )}
       </CardContent>
     </Card>
   );

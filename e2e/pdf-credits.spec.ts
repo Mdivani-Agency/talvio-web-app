@@ -99,6 +99,7 @@ test('PDF-02 charges exactly 30 and rejects balances of 29 and 0', async ({ page
   await exactRow.getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(exactRow.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
   await expect(shownCredits(page)).toHaveText('0');
+  await expect(page.locator('a[href^="/account/upgrade"], a[href^="/account/credits"]')).toHaveCount(0);
   expect(await creditBalance(exact.userId)).toBe(0);
   expect((await listResumes(exact.userId))[0]?.pdfUrl).toBeTruthy();
 
@@ -108,7 +109,8 @@ test('PDF-02 charges exactly 30 and rejects balances of 29 and 0', async ({ page
   await openSignedIn(page, below, '/account');
   await resumeRow(page, 'Short resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(page.getByText('Not enough credits')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Buy credits' })).toHaveAttribute('href', '/account/credits');
+  await expect(page.getByRole('link', { name: 'Buy credits' })).toHaveCount(0);
+  await expect(page.locator('a[href^="/account/credits"]')).toHaveCount(0);
   expect(await creditBalance(below.userId)).toBe(29);
   expect((await listResumes(below.userId))[0]?.pdfUrl).toBeNull();
   expect((await mediaStats()).uploads).toBe(1);
@@ -119,7 +121,8 @@ test('PDF-02 charges exactly 30 and rejects balances of 29 and 0', async ({ page
   await openSignedIn(page, empty, '/account');
   await resumeRow(page, 'Empty resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(page.getByText('Not enough credits')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Buy credits' })).toHaveAttribute('href', '/account/credits');
+  await expect(page.getByRole('link', { name: 'Buy credits' })).toHaveCount(0);
+  await expect(page.locator('a[href^="/account/credits"]')).toHaveCount(0);
   expect(await creditBalance(empty.userId)).toBe(0);
   expect((await listResumes(empty.userId))[0]?.pdfUrl).toBeNull();
   expect((await mediaStats()).uploads).toBe(1);
