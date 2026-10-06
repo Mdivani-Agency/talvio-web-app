@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 
+import { CREDIT_BOUNDARIES } from './fixtures/data';
 import { expect, test } from './fixtures/test';
 import { fetchPdfText } from './fixtures/pdf-text';
 import { setScenario } from './fixtures/profile-ui';
@@ -65,24 +66,24 @@ test('PDF-01 generates a final PDF from the editor and the dashboard', async ({ 
   const editorRow = (await listResumes(owner.userId)).find((row) => row.id === editorId);
   expect(editorRow?.pdfUrl).toBeTruthy();
   expect(editorRow?.pdfMediaKey).toBeTruthy();
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   const pdf = await fetchPdfText(editorRow?.pdfUrl ?? '');
   expect(pdf.pages).toBeGreaterThan(0);
   expect(pdf.text).toContain('Ada');
   expect(pdf.text).toContain('Owner');
 
   await page.goto('/account');
-  await expect(shownCredits(page)).toHaveText('270');
+  await expect(shownCredits(page)).toHaveText('60');
   await rememberDownloads(page);
   const row = resumeRow(page, 'Dashboard copy');
   await row.getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(row.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  await expect(shownCredits(page)).toHaveText('240');
+  await expect(shownCredits(page)).toHaveText('30');
 
   const dashboard = (await listResumes(owner.userId)).find((row) => row.name === 'Dashboard copy');
   expect(dashboard?.pdfUrl).toBeTruthy();
   expect(dashboard?.pdfMediaKey).toBeTruthy();
-  expect(await creditBalance(owner.userId)).toBe(240);
+  expect(await creditBalance(owner.userId)).toBe(30);
   const second = await fetchPdfText(dashboard?.pdfUrl ?? '');
   expect(second.pages).toBeGreaterThan(0);
   expect(second.text).toContain('Ada');
@@ -159,13 +160,13 @@ test('PDF-03 re-downloads the stored file without a new charge or upload', async
   await resumeRow(page, 'Stored resume').getByRole('button', { name: 'Download' }).click();
   await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(0);
   expect(generates).toHaveLength(0);
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   expect((await mediaStats()).uploads).toBe(1);
 
   const again = await page.request.post('/api/resume/generate-pdf', { data: { resumeId } });
   expect(again.ok()).toBeTruthy();
   expect((await again.json()).url).toBe(url);
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   expect((await listResumes(owner.userId)).find((row) => row.id === resumeId)?.pdfUrl).toBe(url);
   expect((await mediaStats()).uploads).toBe(1);
 });
@@ -185,7 +186,7 @@ test('PDF-04 one double click and two concurrent requests charge once', async ({
   await expect(resumeRow(page, 'Double resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
   const doubled = (await listResumes(owner.userId)).find((row) => row.name === 'Double resume');
   expect(doubled?.pdfUrl).toBeTruthy();
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   expect((await mediaStats()).uploads).toBe(1);
 
   const [left, right] = await Promise.all([
@@ -201,7 +202,7 @@ test('PDF-04 one double click and two concurrent requests charge once', async ({
 
   const concurrent = (await listResumes(owner.userId)).find((row) => row.id === concurrentId);
   expect(concurrent?.pdfUrl).toBe(urls[0]);
-  expect(await creditBalance(owner.userId)).toBe(240);
+  expect(await creditBalance(owner.userId)).toBe(30);
   expect((await mediaStats()).uploads).toBe(2);
   expect(await generationLock(concurrentId)).toBeNull();
 });
@@ -238,7 +239,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await openSignedIn(page, owner, '/account');
   await resumeRow(page, 'Unreadable resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(page.getByText('Failed to generate PDF')).toBeVisible({ timeout: 30_000 });
-  expect(await creditBalance(owner.userId)).toBe(300);
+  expect(await creditBalance(owner.userId)).toBe(90);
   expect((await listResumes(owner.userId)).find((row) => row.id === unreadableId)?.pdfUrl).toBeNull();
   expect(await generationLock(unreadableId)).toBeNull();
   expect((await mediaStats()).presigns).toBe(0);
@@ -252,32 +253,34 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await page.goto('/account');
   await resumeRow(page, 'Unreadable resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(resumeRow(page, 'Unreadable resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
 
   await setScenario('presign_error');
   await resumeRow(page, 'Presign resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(page.getByText('Failed to generate PDF').last()).toBeVisible({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === presignId)?.pdfUrl).toBeNull();
   expect(await generationLock(presignId)).toBeNull();
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
 
   await setScenario('success');
   await resumeRow(page, 'Presign resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(resumeRow(page, 'Presign resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  expect(await creditBalance(owner.userId)).toBe(240);
+  expect(await creditBalance(owner.userId)).toBe(30);
 
   await setScenario('upload_error');
   await resumeRow(page, 'Upload resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(page.getByText('Failed to generate PDF').last()).toBeVisible({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === uploadId)?.pdfUrl).toBeNull();
   expect(await generationLock(uploadId)).toBeNull();
-  expect(await creditBalance(owner.userId)).toBe(240);
+  expect(await creditBalance(owner.userId)).toBe(30);
 
   await setScenario('success');
   await resumeRow(page, 'Upload resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(resumeRow(page, 'Upload resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  expect(await creditBalance(owner.userId)).toBe(210);
+  expect(await creditBalance(owner.userId)).toBe(0);
 
+  // Three PDFs used the whole allowance; top up so this generation can start.
+  await setCreditBalance(owner.userId, CREDIT_BOUNDARIES.ample);
   await setScenario('upload_delay');
   await resumeRow(page, 'Finalize resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect.poll(() => generationLock(finalizeId)).not.toBeNull();
@@ -294,7 +297,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   expect(await creditBalance(owner.userId)).toBe(0);
   expect((await listResumes(owner.userId)).find((row) => row.id === finalizeId)?.pdfUrl).toBeTruthy();
 
-  await setCreditBalance(owner.userId, 300);
+  await setCreditBalance(owner.userId, CREDIT_BOUNDARIES.ample);
   let dropped = false;
   await page.route('**/api/resume/generate-pdf', async (route) => {
     if (dropped) {
@@ -312,7 +315,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 90_000 });
   const lost = (await listResumes(owner.userId)).find((row) => row.id === lostId);
   expect(lost?.pdfUrl).toBeTruthy();
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   expect((await recordedDownloads(page)).some((item) => item.download === 'Lost resume.pdf')).toBe(true);
 });
 
@@ -357,7 +360,7 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   expect(draft?.pdfUrl).toBeTruthy();
   expect(draft?.pdfUrl).not.toBe(originalUrl);
   expect(contentProfile(draft?.content ?? {}).role).toBe('Edited Family');
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
 
   const pdf = await fetchPdfText(draft?.pdfUrl ?? '');
   expect(pdf.text).toContain('Edited');

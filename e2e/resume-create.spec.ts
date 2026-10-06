@@ -48,7 +48,7 @@ test('RES-01 creates a resume without a profile and keeps it after reload', asyn
   expect(rows[0]?.templateKey).toBe('senior-level-ember');
   expect(rows[0]?.pdfUrl).toBeTruthy();
   expect(contentProfile(rows[0]?.content ?? {}).firstName).toBe('Nia');
-  expect(await creditBalance(empty.userId)).toBe(270);
+  expect(await creditBalance(empty.userId)).toBe(60);
 
   const pdf = await fetchPdfText(rows[0]?.pdfUrl ?? '');
   expect(pdf.text).toContain('Nia');
@@ -85,7 +85,7 @@ test('RES-01 prefills a resume from the profile and saves the edited draft', asy
   expect(rows[0]?.label).toBeNull();
   expect(contentProfile(rows[0]?.content ?? {}).role).toBe('Principal Engineer');
   expect(rows[0]?.pdfUrl).toBeTruthy();
-  expect(await creditBalance(complete.userId)).toBe(270);
+  expect(await creditBalance(complete.userId)).toBe(60);
 
   await page.goto('/account');
   await expect(page.getByRole('link', { name: 'Ada Owner', exact: true })).toBeVisible();

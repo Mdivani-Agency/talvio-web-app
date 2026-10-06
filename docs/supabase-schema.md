@@ -167,12 +167,14 @@ Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format
 | `20260101000600_profile_rpcs.sql` | `save_profile`; `credit_prices`; private `consume_credits` / `require_credits`; public `generate_pdf` + `finalize_pdf` |
 | `20260101000700_profile_rls.sql` | RLS + grants for profiles + 9 children; enum `USAGE` |
 | `20260101000800_resumes_rls.sql` | RLS + grants for `resumes` and `user_credits` |
-| `20260101000900_auth_hooks.sql` | `handle_new_user` → 300 signup credits |
+| `20260101000900_auth_hooks.sql` | `handle_new_user` → 300 signup credits (superseded by `20261005170000`) |
 | `20260923060000_resume_save_idempotency.sql` | `client_draft_id`, generation lock, `release_resume_generation` |
 | `20260924121500_enable_pg_graphql.sql` | `pg_graphql` in schema `graphql` |
+| `20261005170000_monthly_allowance.sql` | `pg_cron`; server-only `monthly_allowance_runs`; private `monthly_credit_allowance()` (90) and `apply_monthly_allowance()`; `handle_new_user` → 90; cron job `monthly-allowance-reset` (`0 0 1 * *`); cutover run |
 
-Constraint / RLS smokes: `supabase/tests/schema_constraints.sql` and
-`supabase/tests/rls.test.sql` (`yarn db:test` after `yarn db:reset`).
+Constraint / RLS smokes: `supabase/tests/schema_constraints.sql`,
+`supabase/tests/rls.test.sql` and `supabase/tests/monthly_allowance.test.sql`
+(`yarn db:test` after `yarn db:reset`).
 
 ## Related docs
 

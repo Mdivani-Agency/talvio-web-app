@@ -458,8 +458,8 @@ select pg_temp.insert_auth_user(
 
 select is(
   (select balance from public.user_credits where user_id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'),
-  300,
-  'a freshly created auth.users row receives 300 credits'
+  90,
+  'a freshly created auth.users row receives the 90-credit monthly allowance'
 );
 
 insert into public.resumes (id, user_id, name, template_key)
