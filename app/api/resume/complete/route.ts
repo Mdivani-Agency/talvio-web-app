@@ -1,6 +1,12 @@
 import { parseResume } from '@lib/clients/openai.client';
+import { requireAiUser, spendAiRequest } from '@/lib/services/ai-cap.server';
 
 export async function POST(request: Request) {
+  const context = await requireAiUser(request);
+  if (context instanceof Response) {
+    return context;
+  }
+
   try {
     const { resume, questions, answers } = await request.json();
     if (typeof resume !== 'string' || !Array.isArray(questions) || !Array.isArray(answers)) {
@@ -8,6 +14,10 @@ export async function POST(request: Request) {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+    const refused = await spendAiRequest(context);
+    if (refused) {
+      return refused;
     }
     // Compose a prompt for OpenAI
     const qaPairs = questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || ''}`).join('\n');

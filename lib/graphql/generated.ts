@@ -58,6 +58,7 @@ export type IntFilter = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  consume_ai_request?: Maybe<Scalars['Int']['output']>;
   deleteFromresumesCollection?: Maybe<ResumesDeleteResponse>;
   finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;

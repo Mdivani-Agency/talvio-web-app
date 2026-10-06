@@ -10,6 +10,7 @@ import { saveProfile, seedAccountQuery } from '@app/account/query/use-save-profi
 import { Button } from '@components/ui';
 import { Card, CardContent, CardFooter } from '@components/ui';
 import { ErrorView, Loading } from '@components/views';
+import { AI_CAP_TITLE, AiCapError } from '@lib/ai-cap';
 import { fetchQuestions, fetchTailoredAccount } from '@lib/clients/llm.client';
 import { mergeAccountProposal } from '@lib/onboarding/proposal';
 import { assignQuestionIds, previousQuestionId, tailorPayload } from '@lib/onboarding/questions';
@@ -84,6 +85,10 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
       receiveProposal(proposal, revision);
     },
     onError(error) {
+      if (error instanceof AiCapError) {
+        toast.error(error.message);
+        return;
+      }
       toast.error(`Could not improve your profile: ${error instanceof Error ? error.message : 'Server error'}`);
     },
   });
@@ -132,13 +137,18 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
   );
 
   if (questionsQuery.isError && !questions) {
+    const capped = questionsQuery.error instanceof AiCapError;
     return (
       <>
         {backToProfile}
         <ErrorView
-          title="Could not load questions"
-          error="The AI question request failed."
-          errorDescription="You can retry or continue and save your profile without AI."
+          title={capped ? AI_CAP_TITLE : 'Could not load questions'}
+          error={capped ? questionsQuery.error.message : 'The AI question request failed.'}
+          errorDescription={
+            capped
+              ? 'Continue without AI to save your profile now.'
+              : 'You can retry or continue and save your profile without AI.'
+          }
           reset={() => {
             void questionsQuery.refetch();
           }}

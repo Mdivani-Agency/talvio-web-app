@@ -21,6 +21,7 @@
     "SEC-01 another user and an anonymous client cannot read or change a resume",
     "SEC-02 pdf and presign routes reject bad auth and ignore forged ownership",
     "SEC-03 provider routes return defined errors without leaking secrets",
+    "AI-01 twenty AI requests a day, a refused 21st with the reset time, and editing and PDFs still work",
     "PROF-01 manual profile answers questions and survives reload",
     "PROF-02 rejects invalid profile input and keeps optional sections empty",
     "PROF-02 edit remove and reorder survive a reload",

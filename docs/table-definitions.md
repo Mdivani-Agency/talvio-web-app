@@ -285,3 +285,20 @@ enabled, no policies. Written only by `apply_monthly_allowance()`.
 | `period_start` | `date` | PK; first day of the UTC month (`monthly_allowance_runs_first_of_month_ck`) |
 | `applied_at` | `timestamptz not null default now()` | |
 | `accounts_reset` | `integer not null default 0` | `check (accounts_reset >= 0)` |
+
+## `ai_daily_usage`
+
+AI requests per user per UTC day (`20261006100000_ai_daily_caps.sql`,
+[MDI-401](https://linear.app/mdivani/issue/MDI-401)). Server-only: no Data API
+grants, RLS enabled, no policies. Written only by `consume_ai_request_for()`
+(through the public `consume_ai_request()`), pruned by `prune_ai_daily_usage()`.
+Separate from `user_credits`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `user_id` | `uuid not null` | FK → `auth.users(id)` on delete cascade; PK with `usage_date` |
+| `usage_date` | `date not null` | UTC day; PK with `user_id` |
+| `request_count` | `integer not null default 0` | `check (request_count >= 0)`; never above `ai_daily_request_cap()` (20) |
+| `updated_at` | `timestamptz not null default now()` | trigger `ai_daily_usage_set_updated_at` |
+
+Index: `ai_daily_usage_usage_date_idx (usage_date)` for pruning.

@@ -1,6 +1,12 @@
 import { textToStructuredResume } from '@lib/clients/openai.client';
+import { requireAiUser, spendAiRequest } from '@/lib/services/ai-cap.server';
 
 export async function POST(request: Request) {
+  const context = await requireAiUser(request);
+  if (context instanceof Response) {
+    return context;
+  }
+
   try {
     const { resume } = await request.json();
     if (typeof resume !== 'string') {
@@ -8,6 +14,10 @@ export async function POST(request: Request) {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+    const refused = await spendAiRequest(context);
+    if (refused) {
+      return refused;
     }
     const scenario = process.env.OPENAI_BASE_URL
       ? request.headers.get('x-e2e-scenario')
