@@ -33,7 +33,8 @@ function redirectKeepingSession(
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = nextWithReturnPath(request);
 
-  const retired = flagRedirect(request.nextUrl.pathname, featureFlags());
+  const prefetch = skipsPublicEntryRedirect((name) => request.headers.get(name));
+  const retired = prefetch ? null : flagRedirect(request.nextUrl.pathname, featureFlags());
   if (retired) {
     return redirectKeepingSession(request, supabaseResponse, retired.pathname, retired.status, retired.hash);
   }

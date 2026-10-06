@@ -39,11 +39,13 @@ describe('flag redirects', () => {
 
   it('sends /account/credits to the account while the purchase UI is off', () => {
     expect(flagRedirect('/account/credits', DEFAULT_FEATURE_FLAGS)).toEqual({ pathname: '/account', status: 307 });
+    expect(flagRedirect('/account/upgrade', DEFAULT_FEATURE_FLAGS)).toEqual({ pathname: '/account', status: 307 });
   });
 
   it('serves both paths again when the flags are on', () => {
     expect(flagRedirect('/pricing', on)).toBeNull();
     expect(flagRedirect('/account/credits', on)).toBeNull();
+    expect(flagRedirect('/account/upgrade', on)).toBeNull();
     expect(flagRedirect('/pricing', { ...DEFAULT_FEATURE_FLAGS, plansPage: true })).toBeNull();
     expect(flagRedirect('/account/credits', { ...DEFAULT_FEATURE_FLAGS, creditPurchaseUi: true })).toBeNull();
   });

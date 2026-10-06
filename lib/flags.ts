@@ -5,11 +5,14 @@
  * Each variable is read by its literal name so Next.js inlines it into client bundles.
  */
 export type FeatureFlags = {
-  /** Beta labelling and the free monthly allowance as the only credit source. */
+  /** Beta labelling and the free monthly allowance as the only credit source. Declared by MDI-398 for the MDI-320 beta; no code reads it yet. */
   betaMode: boolean;
   /** Serves `/pricing` and lists it in the sitemap. Off: `/pricing` redirects to the homepage allowance section. */
   plansPage: boolean;
-  /** Shows credit purchase entry points ("Buy credits", `/account/credits`). */
+  /**
+   * Shows credit purchase entry points ("Buy credits", "Buy More", "Upgrade Now").
+   * Keep it off until the purchase pages ship: `/account/credits` and `/account/upgrade` have no page, so turning it on links to a 404.
+   */
   creditPurchaseUi: boolean;
 };
 

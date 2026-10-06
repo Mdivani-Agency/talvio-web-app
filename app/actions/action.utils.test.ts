@@ -13,6 +13,7 @@ describe('submitWrapper', () => {
   beforeEach(() => {
     toast.success.mockReset();
     toast.error.mockReset();
+    vi.stubEnv('NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI', '');
   });
 
   it('toasts success, calls onSuccess, and returns true', async () => {
@@ -30,7 +31,7 @@ describe('submitWrapper', () => {
   });
 
   afterEach(() => {
-    delete process.env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI;
+    vi.unstubAllEnvs();
   });
 
   it('toasts the parsed GraphQL error without a purchase link while the purchase UI is off', async () => {
@@ -46,7 +47,7 @@ describe('submitWrapper', () => {
   });
 
   it('adds the buy credits link when the purchase UI flag is on', async () => {
-    process.env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI = 'true';
+    vi.stubEnv('NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI', 'true');
     const result = await submitWrapper({
       fn: async () => {
         throw { response: { errors: [{ message: 'insufficient_credits' }] } };

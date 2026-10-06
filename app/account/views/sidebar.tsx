@@ -5,6 +5,7 @@ import { Icon } from '@components/icons';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@lib/utils';
+import { featureFlags } from '@/lib/flags';
 
 export const Sidebar = () => {
   const pathname = usePathname();
@@ -40,16 +41,18 @@ export const Sidebar = () => {
           </li>
         </ul>
       </nav>
-      <div className={'text-center mt-auto mb-8 rounded-md bg-card py-10 px-5'}>
-        <Icon className={'size-20 2xl:size-28 text-secondary mb-3.5'} type={'Premium'} />
-        <h2 className={'text-sm text-primary font-medium mb-3.5'}>Get Premium Features</h2>
-        <p className={'text-xs text-primary mb-4'}>Unlock pro resume features and stand out</p>
-        <Link href="/account/upgrade">
-          <Button className={'text-sm mx-auto w-full'} size={'sm'}>
-            Upgrade Now
-          </Button>
-        </Link>
-      </div>
+      {featureFlags().creditPurchaseUi && (
+        <div className={'text-center mt-auto mb-8 rounded-md bg-card py-10 px-5'}>
+          <Icon className={'size-20 2xl:size-28 text-secondary mb-3.5'} type={'Premium'} />
+          <h2 className={'text-sm text-primary font-medium mb-3.5'}>Get Premium Features</h2>
+          <p className={'text-xs text-primary mb-4'}>Unlock pro resume features and stand out</p>
+          <Link href="/account/upgrade">
+            <Button className={'text-sm mx-auto w-full'} size={'sm'}>
+              Upgrade Now
+            </Button>
+          </Link>
+        </div>
+      )}
     </aside>
   );
 };

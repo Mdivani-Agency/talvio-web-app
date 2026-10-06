@@ -302,16 +302,18 @@ test('PUB-08 retired pricing and purchase pages redirect and no public page link
   expect(new URL(pricing.headers().location, 'http://localhost').pathname).toBe('/');
   expect(pricing.headers().location).toMatch(/\/#whats-free$/);
 
-  const credits = await request.get('/account/credits', { maxRedirects: 0 });
-  expect(credits.status()).toBe(307);
-  expect(new URL(credits.headers().location, 'http://localhost').pathname).toBe('/account');
+  for (const path of ['/account/credits', '/account/upgrade']) {
+    const retired = await request.get(path, { maxRedirects: 0 });
+    expect(retired.status(), path).toBe(307);
+    expect(new URL(retired.headers().location, 'http://localhost').pathname, path).toBe('/account');
+  }
 
   const sitemap = await (await request.get('/sitemap.xml')).text();
   expect(sitemap).not.toContain('/pricing');
 
   for (const path of PUBLIC_PAGES) {
     await page.goto(path);
-    await expect(page.locator('a[href^="/pricing"], a[href^="/account/credits"]'), path).toHaveCount(0);
+    await expect(page.locator('a[href^="/pricing"], a[href^="/account/credits"], a[href^="/account/upgrade"]'), path).toHaveCount(0);
     await expect(page.getByText(/buy credits|buy more/i), path).toHaveCount(0);
   }
 });

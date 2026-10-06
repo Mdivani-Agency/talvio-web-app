@@ -99,6 +99,7 @@ test('PDF-02 charges exactly 30 and rejects balances of 29 and 0', async ({ page
   await exactRow.getByRole('button', { name: 'Generate PDF (30)' }).click();
   await expect(exactRow.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
   await expect(shownCredits(page)).toHaveText('0');
+  await expect(page.locator('a[href^="/account/upgrade"], a[href^="/account/credits"]')).toHaveCount(0);
   expect(await creditBalance(exact.userId)).toBe(0);
   expect((await listResumes(exact.userId))[0]?.pdfUrl).toBeTruthy();
 

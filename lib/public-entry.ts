@@ -36,7 +36,7 @@ export type FlagRedirect = {
 
 /**
  * Entry points a release flag turns off (MDI-398). Temporary redirects, so turning the flag on restores the page.
- * `/pricing` goes to the homepage allowance section. `/account/credits` has no page and goes to the account.
+ * `/pricing` goes to the homepage allowance section. `/account/credits` and `/account/upgrade` have no page and go to the account.
  */
 export function flagRedirect(
   pathname: string,
@@ -48,7 +48,7 @@ export function flagRedirect(
     return { pathname: '/', hash: WHATS_FREE_ID, status: 307 };
   }
 
-  if (path === '/account/credits' && !flags.creditPurchaseUi) {
+  if ((path === '/account/credits' || path === '/account/upgrade') && !flags.creditPurchaseUi) {
     return { pathname: '/account', status: 307 };
   }
 

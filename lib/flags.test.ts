@@ -1,10 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_FEATURE_FLAGS, featureFlags } from './flags';
 
 describe('feature flags', () => {
   afterEach(() => {
-    delete process.env.NEXT_PUBLIC_FLAG_PLANS_PAGE;
+    vi.unstubAllEnvs();
   });
 
   it('defaults to beta on, plans page off and purchase UI off', () => {
@@ -33,7 +33,7 @@ describe('feature flags', () => {
   });
 
   it('reads process.env when no env is given', () => {
-    process.env.NEXT_PUBLIC_FLAG_PLANS_PAGE = 'true';
+    vi.stubEnv('NEXT_PUBLIC_FLAG_PLANS_PAGE', 'true');
     expect(featureFlags().plansPage).toBe(true);
   });
 });

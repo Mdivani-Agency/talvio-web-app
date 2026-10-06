@@ -7,12 +7,12 @@ import {
   PUBLIC_PAGE_LINKS,
   footerCopyright,
 } from './public-nav';
-import { INDEXABLE_PUBLIC_PATHS } from './public-metadata';
+import { indexablePublicPaths } from './public-metadata';
 
 describe('public navigation', () => {
   it('links every indexable page from the footer and no purchase page', () => {
     const hrefs = FOOTER_PAGE_LINKS.map((link) => link.href);
-    for (const path of INDEXABLE_PUBLIC_PATHS) {
+    for (const path of indexablePublicPaths({ plansPage: false })) {
       expect(hrefs).toContain(path);
     }
     expect(HOME_NAV_LINKS.map((link) => link.href).concat(hrefs)).not.toContain('/pricing');
