@@ -55,9 +55,9 @@ function Button({
   return (
     <Comp
       data-slot="button"
+      {...props}
       className={cn(buttonVariants({ variant, size, className }), loading && 'cursor-not-allowed')}
       disabled={loading || props.disabled}
-      {...props}
     />
   )
 }

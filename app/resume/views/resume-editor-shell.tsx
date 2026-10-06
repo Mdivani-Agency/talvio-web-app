@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Icon } from '@components/icons';
+import { useAllowance } from '@app/account/hooks/use-allowance';
 import { DownloadResumeModal } from '@components/modals';
 import { AnimatedTransition, Button, Input, Tooltip, TooltipContent, TooltipTrigger } from '@components/ui';
 import { normalizeResumeLabel } from '@lib/adapters/resume.adapter';
@@ -60,6 +61,7 @@ export function ResumeEditorShell({
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloadName, setDownloadName] = useState(document.name);
   const [downloadLabel, setDownloadLabel] = useState(document.label ?? '');
+  const { allowance } = useAllowance();
 
   const { data: templates } = useQuery({
     queryKey: ['templates'],
@@ -193,6 +195,7 @@ export function ResumeEditorShell({
         setLabel={setDownloadLabel}
         isGenerating={downloadPending}
         isFreeDownload={isGenerated}
+        allowance={allowance}
         generateResume={() => {
           void Promise.resolve(onDownload(downloadName, downloadLabel)).then((ok) => {
             if (ok !== false) {

@@ -15,7 +15,7 @@ import {
 } from './views';
 import { useResumes } from '@app/resume/query/use-resumes';
 import { ResumeCard } from './views/resume-card';
-import { CreditsCard } from './views/credits-card';
+import { AllowanceCard } from './views/allowance-card';
 
 type DashboardProps = {
   account: Account;
@@ -36,7 +36,7 @@ export const Dashboard = ({ account, sessionUser }: DashboardProps) => {
           hasNextPage={data?.hasNextPage}
           onLoadMore={() => setLimit((value) => value + RESUME_PAGE_SIZE)}
         />
-        <CreditsCard />
+        <AllowanceCard />
       </div>
       <ProfileSection profile={account.profile} />
       {/* TODO: Add empty placeholders for sections to add new item */}

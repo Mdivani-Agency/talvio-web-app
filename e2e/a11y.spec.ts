@@ -173,7 +173,7 @@ test('UX-03 failed profile, resume, and document reads recover, and a pending ge
     });
   });
   await page.goto('/account');
-  const generate = page.getByRole('button', { name: 'Generate PDF (30)' });
+  const generate = page.getByRole('button', { name: 'Generate PDF', exact: true });
   await generate.click();
   await expect(generate).toBeDisabled();
   releaseGenerate();
