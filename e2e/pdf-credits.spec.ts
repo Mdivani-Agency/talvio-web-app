@@ -333,7 +333,11 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   expect(await creditBalance(owner.userId)).toBe(0);
 
   await setScenario('success');
+  // The refused generation refetched the balance, so generate is blocked at zero. Top up and reload.
+  await expect(generateButton(page, 'Finalize resume')).toBeDisabled();
   await setCreditBalance(owner.userId, 30);
+  await page.reload();
+  await expect(shownAllowance(page)).toHaveText('1 of 3 left this month');
   await generateButton(page, 'Finalize resume').click();
   await expect(resumeRow(page, 'Finalize resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
   expect(await creditBalance(owner.userId)).toBe(0);
