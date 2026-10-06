@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { publicEntryRedirect, skipsPublicEntryRedirect } from '@/lib/public-entry';
+import { featureFlags } from '@/lib/flags';
+import { flagRedirect, publicEntryRedirect, skipsPublicEntryRedirect } from '@/lib/public-entry';
 
 function nextWithReturnPath(request: NextRequest) {
   const headers = new Headers(request.headers);
@@ -9,9 +10,18 @@ function nextWithReturnPath(request: NextRequest) {
   return NextResponse.next({ request: { headers } });
 }
 
-function redirectKeepingSession(request: NextRequest, response: NextResponse, pathname: string, status: 307) {
+function redirectKeepingSession(
+  request: NextRequest,
+  response: NextResponse,
+  pathname: string,
+  status: 307,
+  hash?: string,
+) {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
+  if (hash) {
+    url.hash = hash;
+  }
   const redirect = NextResponse.redirect(url, status);
   redirect.headers.set('Cache-Control', 'private, no-store');
   for (const cookie of response.headers.getSetCookie()) {
@@ -22,6 +32,11 @@ function redirectKeepingSession(request: NextRequest, response: NextResponse, pa
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = nextWithReturnPath(request);
+
+  const retired = flagRedirect(request.nextUrl.pathname, featureFlags());
+  if (retired) {
+    return redirectKeepingSession(request, supabaseResponse, retired.pathname, retired.status, retired.hash);
+  }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

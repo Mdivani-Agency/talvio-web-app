@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const toast = vi.hoisted(() => ({
   success: vi.fn(),
@@ -29,7 +29,24 @@ describe('submitWrapper', () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  it('toasts the parsed GraphQL error and returns false', async () => {
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI;
+  });
+
+  it('toasts the parsed GraphQL error without a purchase link while the purchase UI is off', async () => {
+    const result = await submitWrapper({
+      fn: async () => {
+        throw { response: { errors: [{ message: 'insufficient_credits' }] } };
+      },
+    });
+
+    expect(result).toBe(false);
+    expect(toast.error).toHaveBeenCalledWith('Not enough credits');
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('adds the buy credits link when the purchase UI flag is on', async () => {
+    process.env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI = 'true';
     const result = await submitWrapper({
       fn: async () => {
         throw { response: { errors: [{ message: 'insufficient_credits' }] } };

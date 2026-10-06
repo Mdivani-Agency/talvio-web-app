@@ -1,3 +1,6 @@
+import type { FeatureFlags } from './flags';
+import { WHATS_FREE_ID } from './homepage-copy';
+
 export type PublicEntryRedirect = {
   pathname: '/' | '/account';
   status: 307;
@@ -19,6 +22,33 @@ export function publicEntryRedirect(pathname: string, signedIn: boolean): Public
   }
 
   if (pathname === '/' && signedIn) {
+    return { pathname: '/account', status: 307 };
+  }
+
+  return null;
+}
+
+export type FlagRedirect = {
+  pathname: '/' | '/account';
+  hash?: string;
+  status: 307;
+};
+
+/**
+ * Entry points a release flag turns off (MDI-398). Temporary redirects, so turning the flag on restores the page.
+ * `/pricing` goes to the homepage allowance section. `/account/credits` has no page and goes to the account.
+ */
+export function flagRedirect(
+  pathname: string,
+  flags: Pick<FeatureFlags, 'plansPage' | 'creditPurchaseUi'>,
+): FlagRedirect | null {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+
+  if (path === '/pricing' && !flags.plansPage) {
+    return { pathname: '/', hash: WHATS_FREE_ID, status: 307 };
+  }
+
+  if (path === '/account/credits' && !flags.creditPurchaseUi) {
     return { pathname: '/account', status: 307 };
   }
 

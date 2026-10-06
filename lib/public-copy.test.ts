@@ -25,7 +25,7 @@ import { SIGN_IN_DIVIDER, SIGN_IN_GOOGLE_LABEL, SIGN_IN_HEADING, SIGN_IN_INTRO, 
 import { TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO } from './templates-page-copy';
 import { TERMS } from './terms-copy';
 
-/** Marketing copy for every public page except `/pricing` (retired by MDI-320), one entry per page or shared area. */
+/** Marketing copy for every indexable public page plus sign-in, one entry per page or shared area. */
 const marketing: Record<string, string> = {
   homepage: homepageCopyText(),
   templates: [TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO].join('\n'),

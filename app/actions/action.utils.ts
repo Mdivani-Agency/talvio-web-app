@@ -2,6 +2,7 @@ import { createElement } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
+import { featureFlags } from '@/lib/flags';
 import { parseGraphqlError } from '@/lib/graphql-client';
 
 type SubmitResult = { id: string };
@@ -28,7 +29,7 @@ export async function submitWrapper({
     return true;
   } catch (error) {
     const message = errorMessage ?? parseGraphqlError(error);
-    if (message === 'Not enough credits') {
+    if (message === 'Not enough credits' && featureFlags().creditPurchaseUi) {
       toast.error(message, {
         action: createElement(Link, { href: '/account/credits' }, 'Buy credits'),
       });

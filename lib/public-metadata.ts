@@ -1,5 +1,6 @@
 import type { Metadata, MetadataRoute } from 'next';
 
+import { featureFlags, type FeatureFlags } from './flags';
 import { allowPublicIndexing, siteOrigin } from './site';
 import { ATS_LAST_MODIFIED, ATS_PAGE_DESCRIPTION, ATS_PAGE_TITLE } from './ats-page-copy';
 import { BENEFITS_TITLE, HERO_TITLE, HOME_LAST_MODIFIED } from './homepage-copy';
@@ -17,7 +18,7 @@ export const TEMPLATES_DESCRIPTION = TEMPLATES_PAGE_DESCRIPTION;
 export const ATS_TITLE = ATS_PAGE_TITLE;
 export const ATS_DESCRIPTION = ATS_PAGE_DESCRIPTION;
 
-/** `/pricing` keeps its copy until MDI-320 redirects it and removes it from the sitemap. */
+/** `/pricing` is served only while the `plansPage` flag is on (MDI-398). */
 export const PRICING_TITLE = PRICING_PAGE_TITLE;
 export const PRICING_DESCRIPTION = PRICING_PAGE_DESCRIPTION;
 
@@ -45,12 +46,20 @@ export const SHARE_OPEN_GRAPH = { siteName: 'Talvio', type: 'website', images: [
 export const SHARE_TWITTER = { card: 'summary_large_image', images: [SHARE_IMAGE] } satisfies Metadata['twitter'];
 
 /**
- * Canonical indexable pages. Anonymous `/home` redirects to `/`.
+ * Every public page that can be indexed. Anonymous `/home` redirects to `/`.
  * Blog URLs belong to MDI-249 and are added when `/blog` exists.
  */
-export const INDEXABLE_PUBLIC_PATHS = ['/', '/templates', '/pricing', '/ats-friendly-resume', '/privacy-policy', '/terms'] as const;
+export const PUBLIC_PAGE_PATHS = ['/', '/templates', '/pricing', '/ats-friendly-resume', '/privacy-policy', '/terms'] as const;
 
-export type IndexablePublicPath = (typeof INDEXABLE_PUBLIC_PATHS)[number];
+export type IndexablePublicPath = (typeof PUBLIC_PAGE_PATHS)[number];
+
+/** The pages indexed under the given flags. `/pricing` redirects and leaves the sitemap while `plansPage` is off. */
+export function indexablePublicPaths(flags: Pick<FeatureFlags, 'plansPage'> = featureFlags()): IndexablePublicPath[] {
+  return PUBLIC_PAGE_PATHS.filter((path) => path !== '/pricing' || flags.plansPage);
+}
+
+/** Canonical indexable pages under the deployed flags. */
+export const INDEXABLE_PUBLIC_PATHS: readonly IndexablePublicPath[] = indexablePublicPaths();
 
 /** Date each page's content last changed, for the sitemap. Each date lives in the page's copy module, next to the copy it dates. */
 export const PUBLIC_PAGE_LAST_MODIFIED: Record<IndexablePublicPath, string> = {
@@ -62,9 +71,9 @@ export const PUBLIC_PAGE_LAST_MODIFIED: Record<IndexablePublicPath, string> = {
   '/terms': TERMS_LAST_MODIFIED,
 };
 
-export function publicSitemap(): MetadataRoute.Sitemap {
+export function publicSitemap(flags: Pick<FeatureFlags, 'plansPage'> = featureFlags()): MetadataRoute.Sitemap {
   const origin = siteOrigin();
-  return INDEXABLE_PUBLIC_PATHS.map((path) => ({
+  return indexablePublicPaths(flags).map((path) => ({
     url: path === '/' ? origin : `${origin}${path}`,
     lastModified: PUBLIC_PAGE_LAST_MODIFIED[path],
   }));

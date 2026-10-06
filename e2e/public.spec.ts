@@ -35,17 +35,8 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page).toHaveURL(/\/$/);
 
   await page.goto('/pricing');
-  await expect(page.getByRole('heading', { name: 'Pay as you go', exact: true })).toBeVisible();
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co/pricing');
-  await expect(page.getByText('$2.99')).toBeVisible();
-  await expect(page.getByText('$4.99')).toBeVisible();
-  await expect(page.getByText('$9.99')).toBeVisible();
-  await expect(page.getByText('Your balance resets to 90 credits on the 1st of each month. Unused credits do not carry over.')).toBeVisible();
-  await expect(page.getByRole('main')).not.toContainText(/do not expire/i);
-  await expect(page.getByText('Checkout is not available yet. Sign in to use the free credits on a new account. This does not start a payment.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'What if I have a billing question?' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'terms of service', exact: true })).toHaveAttribute('href', '/terms');
-  await expect(page.getByRole('link', { name: 'Sign in' }).first()).toHaveAttribute('href', '/auth/sign-in');
+  await expect(page).toHaveURL(/\/#whats-free$/);
+  await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
 
   await page.goto('/ats-friendly-resume');
   await expect(page.getByRole('heading', { name: 'How to make an ATS-friendly resume', level: 1 })).toBeVisible();
@@ -166,8 +157,8 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
   expect(sitemap.match(/<lastmod>/g)?.length).toBe(sitemap.match(/<url>/g)?.length);
 });
 
-/** Every indexable page plus sign-in. `/pricing` is excluded until MDI-320 redirects it. */
-const PUBLIC_PAGES = [...INDEXABLE_PUBLIC_PATHS.filter((path) => path !== '/pricing'), '/auth/sign-in'];
+/** Every indexable page plus sign-in. */
+const PUBLIC_PAGES = [...INDEXABLE_PUBLIC_PATHS, '/auth/sign-in'];
 const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 async function axeViolations(page: import('@playwright/test').Page) {
@@ -303,4 +294,24 @@ harness('PUB-01 a signed-in visit to the root opens the account', async ({ page,
   await page.goto('/');
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByText('Ada Owner')).toBeVisible();
+});
+
+test('PUB-08 retired pricing and purchase pages redirect and no public page links to them', async ({ page, request }) => {
+  const pricing = await request.get('/pricing', { maxRedirects: 0 });
+  expect(pricing.status()).toBe(307);
+  expect(new URL(pricing.headers().location, 'http://localhost').pathname).toBe('/');
+  expect(pricing.headers().location).toMatch(/\/#whats-free$/);
+
+  const credits = await request.get('/account/credits', { maxRedirects: 0 });
+  expect(credits.status()).toBe(307);
+  expect(new URL(credits.headers().location, 'http://localhost').pathname).toBe('/account');
+
+  const sitemap = await (await request.get('/sitemap.xml')).text();
+  expect(sitemap).not.toContain('/pricing');
+
+  for (const path of PUBLIC_PAGES) {
+    await page.goto(path);
+    await expect(page.locator('a[href^="/pricing"], a[href^="/account/credits"]'), path).toHaveCount(0);
+    await expect(page.getByText(/buy credits|buy more/i), path).toHaveCount(0);
+  }
 });
