@@ -34,15 +34,18 @@ describe('submitWrapper', () => {
     vi.unstubAllEnvs();
   });
 
-  it('toasts the parsed GraphQL error without a purchase link while the purchase UI is off', async () => {
+  it('toasts the renewal date, with no purchase link, when no PDF is left', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-06T12:00:00Z'));
     const result = await submitWrapper({
       fn: async () => {
         throw { response: { errors: [{ message: 'insufficient_credits' }] } };
       },
     });
+    vi.useRealTimers();
 
     expect(result).toBe(false);
-    expect(toast.error).toHaveBeenCalledWith('Not enough credits');
+    expect(toast.error).toHaveBeenCalledWith('No new resume PDFs left this month. You get 3 more on 1 November.');
     expect(toast.success).not.toHaveBeenCalled();
   });
 
@@ -56,7 +59,7 @@ describe('submitWrapper', () => {
 
     expect(result).toBe(false);
     expect(toast.error).toHaveBeenCalledWith(
-      'Not enough credits',
+      expect.stringMatching(/^No new resume PDFs left this month\./),
       expect.objectContaining({
         action: expect.objectContaining({
           type: expect.anything(),
@@ -77,5 +80,15 @@ describe('submitWrapper', () => {
 
     expect(result).toBe(false);
     expect(toast.error).toHaveBeenCalledWith('Could not save');
+  });
+
+  it('rewrites the generate route error the same way', async () => {
+    await submitWrapper({
+      fn: async () => {
+        throw new Error('Not enough credits');
+      },
+    });
+
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/^No new resume PDFs left this month\./));
   });
 });

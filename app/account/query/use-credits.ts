@@ -10,7 +10,8 @@ export function useCredits() {
     async (sdk) => {
       const data = await sdk.Credits({ first: 1 });
       const row = unwrapCollection(data.user_creditsCollection)[0];
-      return row?.balance ?? 0;
+      // A missing row is unknown, not zero: the server still decides, so generate must not be blocked.
+      return row?.balance ?? null;
     },
     { enabled: !!userId },
   );

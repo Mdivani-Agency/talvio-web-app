@@ -82,5 +82,7 @@ export function useGenerateResumePdf(userId?: string) {
       await queryClient.invalidateQueries({ queryKey: ['credits', userId] });
       await queryClient.invalidateQueries({ queryKey: ['documents', userId] });
     },
+    // A refused generation means the balance changed elsewhere; show the real count.
+    onError: () => queryClient.invalidateQueries({ queryKey: ['credits', userId] }),
   });
 }
