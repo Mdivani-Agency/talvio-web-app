@@ -82,9 +82,10 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_request() TO authenticated;
 
 `consume_ai_request()` takes no arguments and counts one AI request for
 `auth.uid()` on the current UTC day, so a caller can only spend their own
-quota. The AI routes call it with the caller's session before the provider,
-the same way the generate route calls `generate_pdf`; the app has no
-service-role client. It never touches `user_credits`.
+quota. The AI routes call it through pg_graphql with the caller's token
+(`ConsumeAiRequest` in `lib/graphql/ai-cap.graphql`, via
+`getServerGraphqlSdk`) before the provider; the app has no service-role
+client. It never touches `user_credits`.
 
 `consume_credits` and `require_credits` are private: they receive
 `user_id` + `action` and look up `credit_prices`. `generate_pdf` checks

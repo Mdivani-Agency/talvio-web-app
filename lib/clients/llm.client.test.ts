@@ -46,6 +46,12 @@ describe('AI requests', () => {
     });
   });
 
+  it('ask a user without a browser session to sign in', async () => {
+    authedFetch.mockRejectedValue(new Error('No token found'));
+
+    await expect(fetchQuestions('resume text')).rejects.toThrow('Please sign in');
+  });
+
   it('surface the daily cap message from parse', async () => {
     const body = aiCapBody(new Date('2026-10-06T15:00:00Z'));
     authedFetch.mockResolvedValue(Response.json(body, { status: 429 }));

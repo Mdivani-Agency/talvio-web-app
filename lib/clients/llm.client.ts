@@ -20,8 +20,16 @@ export async function aiRequestError(res: Response, fallback: string): Promise<E
   return new Error(fallback);
 }
 
-function postAi(path: string, body: unknown) {
-  return authedFetch(path, { method: 'POST', body: JSON.stringify(body) });
+async function postAi(path: string, body: unknown) {
+  try {
+    return await authedFetch(path, { method: 'POST', body: JSON.stringify(body) });
+  } catch (error) {
+    // authedFetch throws before the request when the browser has no session.
+    if (error instanceof Error && error.message === 'No token found') {
+      throw new Error('Please sign in');
+    }
+    throw error;
+  }
 }
 
 export const fetchQuestions = async (resume: string) => {

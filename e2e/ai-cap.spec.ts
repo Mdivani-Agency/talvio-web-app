@@ -16,7 +16,7 @@ function nextUtcMidnight(now: Date) {
 }
 
 test('AI-01 twenty AI requests a day, a refused 21st with the reset time, and editing and PDFs still work', async ({ page, personas }) => {
-  const owner = persona(personas, 'complete');
+  const owner = persona(personas, 'creditsAmple');
   await seedProfile(owner.userId);
   const resumeId = await seedResume({ userId: owner.userId, name: 'Capped copy', content: SEEDED_RESUME_CONTENT });
   await openSignedIn(page, owner, '/resume');

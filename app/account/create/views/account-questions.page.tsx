@@ -149,9 +149,13 @@ export const AccountQuestions = memo(function Questions({ userId }: QuestionsPro
               ? 'Continue without AI to save your profile now.'
               : 'You can retry or continue and save your profile without AI.'
           }
-          reset={() => {
-            void questionsQuery.refetch();
-          }}
+          reset={
+            capped
+              ? undefined
+              : () => {
+                  void questionsQuery.refetch();
+                }
+          }
         />
         <div className="flex justify-center pb-8">
           <Button type="button" variant="secondary" onClick={continueWithoutAi}>

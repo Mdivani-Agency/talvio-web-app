@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requireApiUser } = vi.hoisted(() => ({ requireApiUser: vi.fn() }));
+const { requireApiUser, consumeAiRequest, getServerGraphqlSdk } = vi.hoisted(() => {
+  const consume = vi.fn();
+  return {
+    requireApiUser: vi.fn(),
+    consumeAiRequest: consume,
+    getServerGraphqlSdk: vi.fn(() => ({ ConsumeAiRequest: consume })),
+  };
+});
+
+vi.mock('@/lib/graphql/server-sdk', () => ({ getServerGraphqlSdk }));
 
 vi.mock('@/lib/supabase/require-api-user', async () => {
   const actual = await vi.importActual<typeof import('@/lib/supabase/require-api-user')>(
@@ -10,14 +19,12 @@ vi.mock('@/lib/supabase/require-api-user', async () => {
 });
 
 import { aiCapReachedLine } from '@/lib/ai-cap';
+import { graphqlClientError } from '@/test/utils/graphql-errors';
 import { ApiAuthError, type ApiUserContext } from '@/lib/supabase/require-api-user';
 
 import { requireAiUser, spendAiRequest } from './ai-cap.server';
 
-function contextWith(result: { data?: unknown; error: { message: string } | null }) {
-  const rpc = vi.fn().mockResolvedValue(result);
-  return { rpc, context: { user: { id: 'user-1' }, accessToken: 'jwt', supabase: { rpc } } as unknown as ApiUserContext };
-}
+const context = { user: { id: 'user-1' }, accessToken: 'jwt', supabase: {} } as unknown as ApiUserContext;
 
 describe('requireAiUser', () => {
   beforeEach(() => {
@@ -32,6 +39,14 @@ describe('requireAiUser', () => {
     await expect((result as Response).json()).resolves.toEqual({ error: 'Please sign in' });
   });
 
+  it('returns 500, not 401, when auth itself fails', async () => {
+    requireApiUser.mockRejectedValue(new Error('NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY are required'));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const result = await requireAiUser(new Request('http://localhost/api/resume/qa', { method: 'POST' }));
+    expect((result as Response).status).toBe(500);
+    expect(await (result as Response).text()).not.toContain('SUPABASE');
+  });
+
   it('returns the signed-in context', async () => {
     const context = { user: { id: 'user-1' } };
     requireApiUser.mockResolvedValue(context);
@@ -40,14 +55,19 @@ describe('requireAiUser', () => {
 });
 
 describe('spendAiRequest', () => {
-  it('lets the request through while the cap is not reached', async () => {
-    const { rpc, context } = contextWith({ data: 19, error: null });
+  beforeEach(() => {
+    consumeAiRequest.mockReset();
+  });
+
+  it('spends through pg_graphql with the caller token and lets the request through', async () => {
+    consumeAiRequest.mockResolvedValue({ consume_ai_request: 19 });
     await expect(spendAiRequest(context)).resolves.toBeNull();
-    expect(rpc).toHaveBeenCalledWith('consume_ai_request');
+    expect(getServerGraphqlSdk).toHaveBeenCalledWith('jwt');
+    expect(consumeAiRequest).toHaveBeenCalledTimes(1);
   });
 
   it('returns 429 with the message and the next 00:00 UTC at the cap', async () => {
-    const { context } = contextWith({ error: { message: 'ai_daily_cap' } });
+    consumeAiRequest.mockRejectedValue(graphqlClientError('ai_daily_cap'));
     const response = await spendAiRequest(context, new Date('2026-10-06T22:00:00Z'));
 
     expect(response?.status).toBe(429);
@@ -60,12 +80,12 @@ describe('spendAiRequest', () => {
   });
 
   it('returns 401 when the database has no user', async () => {
-    const { context } = contextWith({ error: { message: 'not authenticated' } });
+    consumeAiRequest.mockRejectedValue(graphqlClientError('not authenticated'));
     expect((await spendAiRequest(context))?.status).toBe(401);
   });
 
   it('fails closed with 503 when the count cannot be checked', async () => {
-    const { context } = contextWith({ error: { message: 'connection refused' } });
+    consumeAiRequest.mockRejectedValue(new Error('connection refused'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const response = await spendAiRequest(context);
     expect(response?.status).toBe(503);

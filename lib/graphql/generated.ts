@@ -838,6 +838,10 @@ export type ResumesBySourceQueryVariables = Exact<{
 
 export type ResumesBySourceQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
 
+export type ConsumeAiRequestMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type ConsumeAiRequestMutation = { consume_ai_request: number | null };
+
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type HealthQuery = { __typename: 'Query' };
@@ -1150,6 +1154,11 @@ export const ResumesBySourceDocument = gql`
   }
 }
     ${ListResumeFragmentDoc}`;
+export const ConsumeAiRequestDocument = gql`
+    mutation ConsumeAiRequest {
+  consume_ai_request
+}
+    `;
 export const HealthDocument = gql`
     query Health {
   __typename
@@ -1215,6 +1224,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     ResumesBySource(variables: ResumesBySourceQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesBySourceQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ResumesBySourceQuery>({ document: ResumesBySourceDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesBySource', 'query', variables);
+    },
+    ConsumeAiRequest(variables?: ConsumeAiRequestMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ConsumeAiRequestMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ConsumeAiRequestMutation>({ document: ConsumeAiRequestDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ConsumeAiRequest', 'mutation', variables);
     },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);

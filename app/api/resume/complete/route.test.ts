@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requireApiUser, parseResume } = vi.hoisted(() => ({
+const { requireApiUser, consumeAiRequest, parseResume } = vi.hoisted(() => ({
   requireApiUser: vi.fn(),
+  consumeAiRequest: vi.fn(),
   parseResume: vi.fn(),
 }));
 
@@ -12,8 +13,13 @@ vi.mock('@/lib/supabase/require-api-user', async () => {
   return { ...actual, requireApiUser };
 });
 
+vi.mock('@/lib/graphql/server-sdk', () => ({
+  getServerGraphqlSdk: vi.fn(() => ({ ConsumeAiRequest: consumeAiRequest })),
+}));
+
 vi.mock('@lib/clients/openai.client', () => ({ parseResume }));
 
+import { graphqlClientError } from '@/test/utils/graphql-errors';
 import { ApiAuthError } from '@/lib/supabase/require-api-user';
 
 import { POST } from './route';
@@ -26,15 +32,16 @@ function post(body: unknown) {
   }));
 }
 
-function signedIn(rpcResult: { data?: unknown; error: { message: string } | null }) {
-  const rpc = vi.fn().mockResolvedValue(rpcResult);
-  requireApiUser.mockResolvedValue({ user: { id: 'user-1' }, accessToken: 'jwt', supabase: { rpc } });
-  return rpc;
+function signedIn(spend: () => Promise<unknown>) {
+  consumeAiRequest.mockImplementation(spend);
+  requireApiUser.mockResolvedValue({ user: { id: 'user-1' }, accessToken: 'jwt', supabase: {} });
+  return consumeAiRequest;
 }
 
 describe('POST /api/resume/complete', () => {
   beforeEach(() => {
     requireApiUser.mockReset();
+    consumeAiRequest.mockReset();
     parseResume.mockReset();
   });
 
@@ -48,7 +55,7 @@ describe('POST /api/resume/complete', () => {
   });
 
   it('rejects an invalid body without spending a request', async () => {
-    const rpc = signedIn({ data: 19, error: null });
+    const rpc = signedIn(async () => ({ consume_ai_request: 19 }));
 
     const response = await post({ resume: 'Ada Owner' });
 
@@ -58,7 +65,9 @@ describe('POST /api/resume/complete', () => {
   });
 
   it('returns 429 with the reset time at the daily cap, without calling the provider', async () => {
-    signedIn({ error: { message: 'ai_daily_cap' } });
+    signedIn(async () => {
+      throw graphqlClientError('ai_daily_cap');
+    });
 
     const response = await post({ resume: 'Ada Owner', questions: ['Q'], answers: ['A'] });
 
@@ -71,15 +80,14 @@ describe('POST /api/resume/complete', () => {
   });
 
   it('spends one request, then calls the provider', async () => {
-    const rpc = signedIn({ data: 19, error: null });
+    const rpc = signedIn(async () => ({ consume_ai_request: 19 }));
     parseResume.mockResolvedValue({ name: 'Ada' });
 
     const response = await post({ resume: 'Ada Owner', questions: ['Q'], answers: ['A'] });
 
     expect(response.status).toBe(200);
     expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith('consume_ai_request');
-    expect(parseResume).toHaveBeenCalledTimes(1);
+        expect(parseResume).toHaveBeenCalledTimes(1);
     expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(parseResume.mock.invocationCallOrder[0]);
   });
 });
