@@ -69,4 +69,10 @@ describe('DownloadResumeModal', () => {
 
     expect(dialog.textContent).not.toMatch(/credit/i);
   });
+
+  it('stays disabled while a PDF is being generated', () => {
+    renderModal({ allowance: allowanceStatus(60, NOW), isGenerating: true });
+
+    expect(screen.getByRole('button', { name: 'Generate and Download Resume' }).hasAttribute('disabled')).toBe(true);
+  });
 });

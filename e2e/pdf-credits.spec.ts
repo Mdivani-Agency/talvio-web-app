@@ -138,7 +138,9 @@ test('PDF-02 charges exactly 30, blocks 29 and 0 with the renewal date, and reje
   await setCreditBalance(empty.userId, 0);
   await generateButton(page, 'Empty resume').click();
   await expect(page.getByText(EXHAUSTED())).toBeVisible();
-  await expect(page.getByText(/credit/i)).toHaveCount(0);
+  // The persona's email contains "credits", so check the toast and the card rather than the whole page.
+  await expect(page.locator('[data-sonner-toast]').filter({ hasText: /credit/i })).toHaveCount(0);
+  await expect(page.getByTestId('allowance-card')).not.toContainText(/credit/i);
   await expect(page.getByRole('link', { name: 'Buy credits' })).toHaveCount(0);
   expect(await creditBalance(empty.userId)).toBe(0);
   expect((await listResumes(empty.userId))[0]?.pdfUrl).toBeNull();
@@ -278,6 +280,8 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await setScenario('presign_error');
   await generateButton(page, 'Presign resume').click();
   await expect(page.getByText('Failed to generate PDF').last()).toBeVisible({ timeout: 30_000 });
+  // An earlier toast can satisfy the wait above. Wait for this generation to settle before changing the scenario.
+  await expect(generateButton(page, 'Presign resume')).toBeEnabled({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === presignId)?.pdfUrl).toBeNull();
   expect(await generationLock(presignId)).toBeNull();
   expect(await creditBalance(owner.userId)).toBe(60);
@@ -289,6 +293,9 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
 
   await setScenario('upload_error');
   await generateButton(page, 'Upload resume').click();
+  // The presign toast from above can still be on screen, so wait for this generation itself to settle.
+  await expect(generateButton(page, 'Upload resume')).toBeDisabled();
+  await expect(generateButton(page, 'Upload resume')).toBeEnabled({ timeout: 30_000 });
   await expect(page.getByText('Failed to generate PDF').last()).toBeVisible({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === uploadId)?.pdfUrl).toBeNull();
   expect(await generationLock(uploadId)).toBeNull();

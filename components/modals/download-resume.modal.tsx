@@ -54,7 +54,7 @@ export const DownloadResumeModal = ({
             onChange={(e) => setLabel(e.target.value)}
           />
         ) : null}
-        <Button loading={isGenerating} disabled={blocked} onClick={generateResume}>
+        <Button loading={isGenerating} disabled={isGenerating || blocked} onClick={generateResume}>
           {isFreeDownload ? 'Download Resume' : 'Generate and Download Resume'}
         </Button>
       </div>
