@@ -1,4 +1,5 @@
-import { GENERATE_PDF_CREDITS } from '@/lib/credits';
+import type { AllowanceStatus } from '@/lib/allowance';
+import { allowanceExhaustedLine, generateDialogLine, REDOWNLOAD_DIALOG_LINE } from '@/lib/allowance-copy';
 import { Button, Input } from '@components/ui';
 import { Modal } from '@components/views';
 
@@ -9,7 +10,7 @@ export const DownloadResumeModal = ({
   setFilename,
   generateResume,
   onClose,
-  costCredits = GENERATE_PDF_CREDITS,
+  allowance,
   isFreeDownload = false,
   label,
   setLabel,
@@ -20,19 +21,23 @@ export const DownloadResumeModal = ({
   setFilename: (filename: string) => void;
   generateResume: () => void;
   onClose: () => void;
-  costCredits?: number;
+  /** The signed-in balance as resume PDFs; unknown for guests and while loading. */
+  allowance?: AllowanceStatus;
   isFreeDownload?: boolean;
   label?: string;
   setLabel?: (label: string) => void;
 }) => {
+  const blocked = !isFreeDownload && allowance?.exhausted === true;
+  const message = isFreeDownload
+    ? REDOWNLOAD_DIALOG_LINE
+    : allowance?.exhausted
+      ? allowanceExhaustedLine(allowance.total, allowance.renewsOn)
+      : generateDialogLine(allowance?.remaining, allowance?.total);
+
   return (
     <Modal title="Final Review" open={isOpen} onOpenChange={onClose}>
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-center text-secondary-900">
-          {isFreeDownload
-            ? 'Your resume PDF is ready. Download it again at no extra cost.'
-            : `Your resume is ready. Generating the final PDF costs ${costCredits} credits. Re-downloads of that file stay free.`}
-        </p>
+        <p className="text-sm text-center text-secondary-900">{message}</p>
         <Input
           placeholder="Enter a resume name"
           aria-label="Resume name"
@@ -49,7 +54,7 @@ export const DownloadResumeModal = ({
             onChange={(e) => setLabel(e.target.value)}
           />
         ) : null}
-        <Button loading={isGenerating} onClick={generateResume}>
+        <Button loading={isGenerating} disabled={blocked} onClick={generateResume}>
           {isFreeDownload ? 'Download Resume' : 'Generate and Download Resume'}
         </Button>
       </div>
