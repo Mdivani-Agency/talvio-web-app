@@ -21,7 +21,9 @@ type AllowanceCardProps = {
 };
 
 export const AllowanceCard = ({ className }: AllowanceCardProps) => {
-  const { allowance: status, isError, refetch } = useAllowance();
+  const { allowance: status, isError, isSuccess, refetch } = useAllowance();
+  // A loaded but missing balance row is unknown: offer a retry instead of an endless loading state.
+  const failed = isError || (isSuccess && !status);
 
   return (
     <Card className={className} data-testid="allowance-card">
@@ -32,7 +34,7 @@ export const AllowanceCard = ({ className }: AllowanceCardProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
-        {isError ? (
+        {failed ? (
           <div role="alert" className="flex items-center justify-between gap-2">
             <span className="text-sm text-destructive">{ALLOWANCE_ERROR}</span>
             <Button type="button" variant="link" size="sm" className="px-0" onClick={() => void refetch()}>

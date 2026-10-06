@@ -48,6 +48,14 @@ function shownAllowance(page: Page) {
   return page.getByTestId('allowance-remaining');
 }
 
+/** Resolves when a generate request fails, before the simulator scenario may change. */
+function failedGeneration(page: Page) {
+  return page.waitForResponse(
+    (response) => response.url().includes('/api/resume/generate-pdf') && response.status() >= 400,
+    { timeout: 60_000 },
+  );
+}
+
 function generateButton(page: Page, title: string) {
   return resumeRow(page, title).getByRole('button', { name: 'Generate PDF', exact: true });
 }
@@ -278,9 +286,11 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   expect(await creditBalance(owner.userId)).toBe(60);
 
   await setScenario('presign_error');
+  // Wait for this request to fail: an earlier "Failed to generate PDF" toast can still be on screen.
+  const presignFailed = failedGeneration(page);
   await generateButton(page, 'Presign resume').click();
+  await presignFailed;
   await expect(page.getByText('Failed to generate PDF').last()).toBeVisible({ timeout: 30_000 });
-  // An earlier toast can satisfy the wait above. Wait for this generation to settle before changing the scenario.
   await expect(generateButton(page, 'Presign resume')).toBeEnabled({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === presignId)?.pdfUrl).toBeNull();
   expect(await generationLock(presignId)).toBeNull();
@@ -292,11 +302,11 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   expect(await creditBalance(owner.userId)).toBe(30);
 
   await setScenario('upload_error');
+  const uploadFailed = failedGeneration(page);
   await generateButton(page, 'Upload resume').click();
-  // The presign toast from above can still be on screen, so wait for this generation itself to settle.
-  await expect(generateButton(page, 'Upload resume')).toBeDisabled();
-  await expect(generateButton(page, 'Upload resume')).toBeEnabled({ timeout: 30_000 });
+  await uploadFailed;
   await expect(page.getByText('Failed to generate PDF').last()).toBeVisible({ timeout: 30_000 });
+  await expect(generateButton(page, 'Upload resume')).toBeEnabled({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === uploadId)?.pdfUrl).toBeNull();
   expect(await generationLock(uploadId)).toBeNull();
   expect(await creditBalance(owner.userId)).toBe(30);

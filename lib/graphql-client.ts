@@ -2,6 +2,7 @@ import { GraphQLClient, ClientError } from 'graphql-request';
 
 import { getSdk } from '@/lib/graphql/generated';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { INSUFFICIENT_ALLOWANCE_ERROR } from '@/lib/allowance';
 
 export type GraphqlSdk = ReturnType<typeof getSdk>;
 
@@ -82,7 +83,7 @@ export function parseGraphqlError(error: unknown): string {
   const haystack = `${code} ${message}`.toLowerCase();
 
   if (haystack.includes('insufficient_credits')) {
-    return 'Not enough credits';
+    return INSUFFICIENT_ALLOWANCE_ERROR;
   }
   if (haystack.includes('unknown_action')) {
     return 'Unknown billing action';

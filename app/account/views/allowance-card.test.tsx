@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const credits = vi.hoisted(() => ({
-  current: { data: undefined as number | undefined, isError: false, refetch: vi.fn() },
+  current: { data: undefined as number | null | undefined, isError: false, isSuccess: false, refetch: vi.fn() },
 }));
 
 vi.mock('@components/icons', () => ({ Icon: () => null }));
@@ -10,8 +10,8 @@ vi.mock('@app/account/query/use-credits', () => ({ useCredits: () => credits.cur
 
 import { AllowanceCard } from './allowance-card';
 
-function setCredits(data: number | undefined, isError = false) {
-  credits.current = { data, isError, refetch: vi.fn() };
+function setCredits(data: number | null | undefined, isError = false) {
+  credits.current = { data, isError, isSuccess: !isError && data !== undefined, refetch: vi.fn() };
 }
 
 describe('AllowanceCard', () => {
@@ -82,5 +82,13 @@ describe('AllowanceCard', () => {
     render(<AllowanceCard />);
 
     expect(screen.getByRole('link').getAttribute('href')).toBe('/account/credits');
+  });
+
+  it('treats a missing balance row as unknown, with retry, not as zero', () => {
+    setCredits(null);
+    render(<AllowanceCard />);
+
+    expect(screen.getByRole('alert').textContent).toContain('Could not load your resume PDFs.');
+    expect(screen.queryByTestId('allowance-remaining')).toBeNull();
   });
 });

@@ -7,6 +7,7 @@ import { generateResumePdfBytes } from '@/lib/services/resume-pdf.server';
 import type { ApiUserContext } from '@/lib/supabase/require-api-user';
 import { findTemplate } from '@/lib/templates';
 import type { Resume } from '@lib/types';
+import { INSUFFICIENT_ALLOWANCE_ERROR } from '@/lib/allowance';
 
 export class GeneratePdfError extends Error {
   status: number;
@@ -42,7 +43,7 @@ function mapRpcError(error: { message?: string }) {
   const message = error.message ?? 'Something went wrong';
   const status = rpcStatus(message);
   if (status === 402) {
-    return new GeneratePdfError('Not enough credits', 402);
+    return new GeneratePdfError(INSUFFICIENT_ALLOWANCE_ERROR, 402);
   }
   if (status === 404) {
     return new GeneratePdfError('Resume not found', 404);

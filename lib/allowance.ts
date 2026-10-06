@@ -1,5 +1,11 @@
 import { GENERATE_PDF_CREDITS, MONTHLY_CREDIT_ALLOWANCE } from './credits';
 
+/**
+ * The error the generate route and `parseGraphqlError` report when the balance cannot pay for a PDF.
+ * `submitWrapper` matches it to show the allowance message instead.
+ */
+export const INSUFFICIENT_ALLOWANCE_ERROR = 'Not enough credits';
+
 /** New resume PDFs the monthly allowance pays for (MDI-320): 90 / 30 = 3. */
 export const MONTHLY_PDF_ALLOWANCE = MONTHLY_CREDIT_ALLOWANCE / GENERATE_PDF_CREDITS;
 
