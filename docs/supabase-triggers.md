@@ -18,6 +18,7 @@ has an `updated_at` column:
 | `resumes` | `resumes_set_updated_at` |
 | `user_credits` | `user_credits_set_updated_at` |
 | `credit_prices` | `credit_prices_set_updated_at` |
+| `ai_daily_usage` | `ai_daily_usage_set_updated_at` |
 
 `contacts`, `skills`, `tools`, `links`, and `languages` have `created_at` only.
 
@@ -101,3 +102,25 @@ with `select * from cron.job_run_details order by start_time desc;`.
 
 `generate_pdf` / `finalize_pdf` are unchanged: a generation is debited from
 the balance at finalize time, whichever month it started in.
+
+## Scheduled job: `ai-daily-usage-prune`
+
+`pg_cron` job created by `20261006100000_ai_daily_caps.sql`
+([MDI-401](https://linear.app/mdivani/issue/MDI-401)). Schedule `10 0 * * *`
+(daily, 00:10 UTC). Command: `select public.prune_ai_daily_usage()`.
+
+`public.prune_ai_daily_usage(p_now timestamptz default now())` is private and
+deletes `ai_daily_usage` rows more than 7 days before the UTC day of `p_now`.
+The daily cap itself needs no job: the count is keyed on the UTC date, so it
+starts again at 00:00 UTC. If the prune job does not run, old rows stay but
+no cap is affected.
+
+## AI daily cap: `consume_ai_request`
+
+`public.consume_ai_request()` (public RPC) calls the private
+`consume_ai_request_for(auth.uid(), now())`. That function upserts today's
+`ai_daily_usage` row with `request_count + 1` only while the count is below
+`ai_daily_request_cap()` (20), in one statement, and returns the requests
+left. At the cap it raises `ai_daily_cap` without counting. Concurrent calls
+for the same user queue on the row lock and re-check the count, so they cannot
+take it past 20.

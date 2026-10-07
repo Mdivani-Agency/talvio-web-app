@@ -143,7 +143,7 @@ test('SEC-02 pdf and presign routes reject bad auth and ignore forged ownership'
   expect(forged.body.key).toBe(`resume/${owner.userId}/ada-owner.pdf`);
 });
 
-test('SEC-03 provider routes return defined errors without leaking secrets', async ({ request }) => {
+test('SEC-03 provider routes return defined errors without leaking secrets', async ({ page, personas, request }) => {
   const secret = process.env.OPENAI_API_KEY ?? '';
   expect(secret.length).toBeGreaterThan(0);
 
@@ -153,8 +153,22 @@ test('SEC-03 provider routes return defined errors without leaking secrets', asy
     ['/api/resume/account', {}],
     ['/api/resume/complete', { resume: 'text' }],
   ] as const;
+
+  // AI routes refuse signed-out callers before the provider (MDI-401).
+  for (const [path] of cases) {
+    const response = await request.post(path, {
+      headers: { 'x-e2e-scenario': 'success' },
+      data: { resume: 'Ada Owner', account: '{}', questions: [], answers: [] },
+    });
+    expect(response.status(), path).toBe(401);
+    expect(await response.json()).toEqual({ error: 'Please sign in' });
+  }
+
+  const owner = persona(personas, 'complete');
+  await signInWithLocalMagicLink(page, owner);
+
   for (const [path, data] of cases) {
-    const response = await request.post(path, { data });
+    const response = await page.request.post(path, { data });
     expect(response.status(), path).toBe(400);
     expect(await response.text()).not.toContain(secret);
   }
@@ -162,13 +176,13 @@ test('SEC-03 provider routes return defined errors without leaking secrets', asy
   const missingFont = await request.get('/api/resume/fonts');
   expect(missingFont.status()).toBe(400);
 
-  const guestParse = await request.post('/api/resume/parse', {
+  const signedInParse = await page.request.post('/api/resume/parse', {
     headers: { 'x-e2e-scenario': 'success' },
     data: { resume: 'Ada Owner' },
   });
-  expect(guestParse.status()).toBe(200);
+  expect(signedInParse.status()).toBe(200);
 
-  const failed = await request.post('/api/resume/parse', {
+  const failed = await page.request.post('/api/resume/parse', {
     headers: { 'x-e2e-scenario': 'error' },
     data: { resume: 'Ada Owner' },
   });
