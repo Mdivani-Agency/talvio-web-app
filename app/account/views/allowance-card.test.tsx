@@ -40,7 +40,7 @@ describe('AllowanceCard', () => {
     expect(screen.queryByTestId('allowance-exhausted')).toBeNull();
   });
 
-  it('shows zero with when more PDFs arrive', () => {
+  it('shows zero with the date more PDFs arrive', () => {
     setCredits(0);
     render(<AllowanceCard />);
 

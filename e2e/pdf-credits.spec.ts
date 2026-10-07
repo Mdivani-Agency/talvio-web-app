@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { nextAllowanceRenewal } from '../lib/allowance';
 import { allowanceExhaustedLine, generateBlockedNote } from '../lib/allowance-copy';
@@ -63,6 +63,15 @@ function generateButton(page: Page, title: string) {
 /** The renewal date as the app shows it. Computed in the test so the spec does not go stale at month end. */
 const EXHAUSTED = () => allowanceExhaustedLine(3, nextAllowanceRenewal());
 const BLOCKED_NOTE = () => generateBlockedNote(nextAllowanceRenewal());
+
+const PURCHASE_LINKS = 'a[href^="/pricing"], a[href^="/account/credits"], a[href^="/account/upgrade"]';
+const PURCHASE_TEXT = /\bbuy\b|purchase|upgrade|\bpacks?\b|\bplans?\b|pricing|subscri/i;
+
+/** MDI-320 contract 6: no pack, plan or purchase entry point, wherever the allowance shows. */
+async function expectNoPurchaseEntry(scope: Page | Locator, where: string) {
+  await expect(scope.locator(PURCHASE_LINKS), where).toHaveCount(0);
+  await expect(scope.getByText(PURCHASE_TEXT), where).toHaveCount(0);
+}
 
 test('PDF-01 generates a final PDF from the editor and the dashboard', async ({ page, personas }) => {
   const owner = persona(personas, 'creditsAmple');
@@ -429,6 +438,7 @@ test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero
   }
   await openSignedIn(page, owner, '/account');
   await expect(shownAllowance(page)).toHaveText('3 of 3 left this month');
+  await expectNoPurchaseEntry(page, 'account with a full allowance');
 
   for (const [index, name] of titles.slice(0, 3).entries()) {
     // WebKit reports the next page.goto as "Download is starting" until each PDF download finishes.
@@ -444,6 +454,7 @@ test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero
   await expect(page.getByTestId('allowance-exhausted')).toHaveText(EXHAUSTED());
   await expect(generateButton(page, 'Fourth resume')).toBeDisabled();
   await expect(resumeRow(page, 'Fourth resume').getByText(BLOCKED_NOTE())).toBeVisible();
+  await expectNoPurchaseEntry(page, 'account at zero');
 
   const generates: string[] = [];
   page.on('request', (request) => {
@@ -465,6 +476,7 @@ test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero
   const dialog = await openFinalReview(page);
   await expect(dialog.getByText(EXHAUSTED())).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Generate and Download Resume' })).toBeDisabled();
+  await expectNoPurchaseEntry(page, 'editor and generate dialog at zero');
   expect((await listResumes(owner.userId)).find((row) => row.id === fourthId)?.pdfUrl).toBeNull();
 });
 

@@ -36,13 +36,17 @@ describe('submitWrapper', () => {
 
   it('toasts the renewal date, with no purchase link, when no PDF is left', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date('2026-10-06T12:00:00Z'));
-    const result = await submitWrapper({
-      fn: async () => {
-        throw { response: { errors: [{ message: 'insufficient_credits' }] } };
-      },
-    });
-    vi.useRealTimers();
+    let result: boolean;
+    try {
+      vi.setSystemTime(new Date('2026-10-06T12:00:00Z'));
+      result = await submitWrapper({
+        fn: async () => {
+          throw { response: { errors: [{ message: 'insufficient_credits' }] } };
+        },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
 
     expect(result).toBe(false);
     expect(toast.error).toHaveBeenCalledWith('No new resume PDFs left this month. You get 3 more on 1 November.');
