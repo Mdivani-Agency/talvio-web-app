@@ -16,7 +16,7 @@ export const WORKFLOW_TITLE = 'Build a resume from one profile';
 export const WORKFLOW_STEPS = [
   {
     title: 'Sign in',
-    body: `Use an email code, Google, or LinkedIn. A new account receives ${signupCredits} credits.`,
+    body: `Use an email code or Google. A new account receives ${signupCredits} credits.`,
   },
   {
     title: 'Add your profile',

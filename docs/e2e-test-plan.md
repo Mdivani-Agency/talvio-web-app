@@ -27,7 +27,7 @@ Tests run against a production Next.js build served locally in CI, with disposab
 | AI | Deterministic local HTTP provider simulator | Talvio route validation, provider request construction, response parsing and UI state transitions |
 | Media | Local HTTP service implementing presign, upload, download and records contracts | Talvio media client, actual generated PDF bytes, upload handling and browser download |
 | Fonts | Checked-in licensed font fixtures or deterministic local font responses | Rendering and pagination with stable font metrics |
-| OAuth | Assert provider and return URL at the authorization boundary; simulate cancellation/error | Talvio's initiation and callback error handling; real Google/LinkedIn consent is outside local E2E |
+| OAuth | Assert provider and return URL at the authorization boundary; simulate cancellation/error | Talvio's initiation and callback error handling; real Google consent is outside local E2E. LinkedIn is not a provider. |
 
 Browser `page.route()` does not intercept Next.js server-side provider requests. Add configurable provider origins where needed: media already reads `NEXT_PUBLIC_API_BASE_URL`; the OpenAI client and Google font lookup need explicit local endpoint support or test-process network interception. Keep production defaults intact. Do not add a test login bypass or fake persistence to the application.
 
@@ -61,7 +61,7 @@ All cases below are release requirements. P0 identifies implementation order and
 | AUTH-03 | P0 | Anonymous account/create/documents deep links require sign-in. Guest resume editing may remain available, but import and save/download require authentication. Return to the intended allowed destination after sign-in. |
 | AUTH-04 | P0 | Sign out; protected routes reject access after reload/back navigation. Sign in as another user in the same context and assert previous user's cached profile/resumes/credits are absent. |
 | AUTH-05 | P0 | Session refresh and expired/revoked refresh session: valid session renews; unrecoverable expiry requests sign-in without a loading loop or unauthenticated write. Control local session state instead of long sleeps. |
-| AUTH-06 | P0 | External, protocol-relative and malformed callback destinations never cause an external redirect. Google/LinkedIn initiation carries the expected provider and safe callback; provider cancellation reaches the app error UI. |
+| AUTH-06 | P0 | External, protocol-relative and malformed callback destinations never cause an external redirect. Google initiation carries the expected provider and safe callback; LinkedIn cannot be started; provider cancellation reaches the app error UI. |
 | PROF-01 | P0 | New account: manually enter required profile/contact fields, add experience, education, projects, skills, tools, languages and links; complete AI questions; saved profile appears correctly on dashboard after reload. |
 | PROF-02 | P1 | Required fields, email/URL/date validation and optional empty sections; add/edit/remove/reorder repeatable entries and verify exact values and order survive persistence. |
 | PROF-03 | P0 | Import a valid text PDF during onboarding; extracted content populates editable fields; answer or skip questions; provider completion and profile save preserve supplied data and produce the intended profile. |
