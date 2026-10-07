@@ -6,7 +6,7 @@ import { allowanceStatus, type AllowanceStatus } from '@/lib/allowance';
 /** The pg_cron reset runs at 00:00 UTC on the 1st; refetch shortly after so it has finished. */
 export const RENEWAL_REFETCH_DELAY_MS = 60_000;
 
-/** Longest delay setTimeout accepts. A later reset is picked up by the next mount or refetch. */
+/** Longest delay setTimeout accepts (about 24.8 days). Longer waits are chained. */
 const MAX_TIMEOUT_MS = 2_147_483_647;
 
 /** The balance as resume PDFs. `allowance` is undefined while loading, on error, and for guests. */
@@ -21,11 +21,14 @@ export function useAllowance(): ReturnType<typeof useCredits> & { allowance?: Al
     if (renewsAt == null) {
       return;
     }
-    const delay = Math.max(0, renewsAt - Date.now() + RENEWAL_REFETCH_DELAY_MS);
-    if (delay > MAX_TIMEOUT_MS) {
-      return;
-    }
-    const timer = setTimeout(() => void refetch(), delay);
+    const dueAt = renewsAt + RENEWAL_REFETCH_DELAY_MS;
+    let timer: ReturnType<typeof setTimeout>;
+    // Early in a 31-day month the wait exceeds what setTimeout accepts, so wait in steps.
+    const schedule = () => {
+      const delay = Math.max(0, dueAt - Date.now());
+      timer = setTimeout(delay > MAX_TIMEOUT_MS ? schedule : () => void refetch(), Math.min(delay, MAX_TIMEOUT_MS));
+    };
+    schedule();
     return () => clearTimeout(timer);
   }, [renewsAt, refetch]);
 

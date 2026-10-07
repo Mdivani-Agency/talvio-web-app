@@ -2,5 +2,4 @@
 export const SIGN_IN_HEADING = 'Start free or sign in';
 export const SIGN_IN_INTRO = 'New here? Signing in creates your account. No card needed.';
 export const SIGN_IN_GOOGLE_LABEL = 'Continue with Google';
-export const SIGN_IN_LINKEDIN_LABEL = 'Continue with LinkedIn';
 export const SIGN_IN_DIVIDER = 'or';

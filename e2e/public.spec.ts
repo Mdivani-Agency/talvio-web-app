@@ -25,7 +25,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await page.goto('/');
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
-  await expect(page.getByText('Use an email code or Google.')).toBeVisible();
+  await expect(page.getByText('Use an email link or Google.')).toBeVisible();
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co');
 
   await page.goto('/templates');
@@ -89,7 +89,7 @@ test('PUB-02 desktop navigation reaches sections, templates, and sign-in', async
   await expect(page.getByRole('heading', { name: 'Start free or sign in' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue with Linkedin' })).toHaveCount(0);
-  await expect(page.getByText('Used LinkedIn before? Request an email code for that same address.')).toBeVisible();
+  await expect(page.getByText('Used LinkedIn before? Request an email link for that same address.')).toBeVisible();
 
   await page.goto('/home');
   await page.locator('footer').getByRole('link', { name: 'Privacy Policy' }).click();

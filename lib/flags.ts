@@ -7,7 +7,11 @@
 export type FeatureFlags = {
   /** Beta labelling and the free monthly allowance as the only credit source. Declared by MDI-398 for the MDI-320 beta; no code reads it yet. */
   betaMode: boolean;
-  /** Serves `/pricing` and lists it in the sitemap. Off: `/pricing` redirects to the homepage allowance section. */
+  /**
+   * Serves `/pricing` and lists it in the sitemap. Off: `/pricing` redirects to the homepage allowance section.
+   * Keep it off while the monthly reset sets every balance to 90 (`apply_monthly_allowance`): `/pricing` sells
+   * one-time packs, and the next reset would overwrite a purchased balance. Purchases need a reset that adds first.
+   */
   plansPage: boolean;
   /**
    * Shows credit purchase entry points ("Buy credits", "Buy More", "Upgrade Now").

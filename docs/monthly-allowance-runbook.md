@@ -65,7 +65,8 @@ order by d.start_time desc
 limit 20;
 ```
 
-Expected: `monthly-allowance-reset` with schedule `0 0 1 * *` and command
+Expected: `monthly-allowance-reset` with schedule `0 * * * *` (hourly; only the
+first run of a month changes anything) and command
 `select public.apply_monthly_allowance()`; `ai-daily-usage-prune` with
 schedule `10 0 * * *` and command `select public.prune_ai_daily_usage()`.
 Both `active`. `pg_cron` runs in GMT.
@@ -82,8 +83,9 @@ select user_id, balance from public.user_credits where balance < 0 or balance > 
 
 ## Manual rerun when the reset did not run
 
-If the check returns `false` after the 1st (the job failed, was inactive, or
-the database was down at 00:00 UTC):
+The job runs hourly, so a single missed run (the database was down at 00:00
+UTC) is caught at the next hour. If the check still returns `false` after
+01:00 UTC on the 1st, the job is failing, inactive or missing:
 
 1. Look at `cron.job_run_details` for the failure (`return_message`) and fix
    its cause first.
@@ -100,15 +102,15 @@ the database was down at 00:00 UTC):
 The reset applies only the month containing `now()`. A missed month is not
 replayed: a run on the 20th grants one allowance, not one per missed month.
 A run for a month older than the latest recorded one raises `stale_period`.
-There is no request-time catch-up, so until the rerun nobody renews (the
-accepted risk in MDI-320).
+There is no request-time catch-up, so while the job is not running nobody
+renews (the accepted risk in MDI-320).
 
 If the job is missing, recreate it with the same statement as the migration:
 
 ```sql
 select cron.schedule(
   'monthly-allowance-reset',
-  '0 0 1 * *',
+  '0 * * * *',
   $$select public.apply_monthly_allowance()$$
 );
 ```

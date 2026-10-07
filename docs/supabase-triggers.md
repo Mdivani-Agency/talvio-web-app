@@ -73,8 +73,10 @@ from `public` / `anon` / `authenticated` — trigger-only.
 ## Scheduled job: `monthly-allowance-reset`
 
 `pg_cron` job created by `20261005170000_monthly_allowance.sql`
-([MDI-357](https://linear.app/mdivani/issue/MDI-357)). Schedule `0 0 1 * *`
-(1st of each month, 00:00 UTC; `pg_cron` runs in GMT). Command:
+([MDI-357](https://linear.app/mdivani/issue/MDI-357)). Schedule `0 * * * *`
+(hourly; `pg_cron` runs in GMT). The first run of a month, 00:00 UTC on the
+1st, applies the reset; every other run returns 0 and writes nothing, so a
+missed run is caught within the hour. Command:
 `select public.apply_monthly_allowance()`.
 
 `public.apply_monthly_allowance(p_now timestamptz default now())` is private
@@ -95,7 +97,7 @@ environment the migration reaches (CI applies it with `supabase db push`):
 every balance becomes 90 at that moment, including balances above 90 and
 accounts mid-generation. Run late in a month, the next reset still comes on
 the 1st. There is no request-time catch-up: if
-the job does not run, nobody renews until it is rerun. Manual rerun as
+the job stops running altogether, nobody renews until it runs again or is rerun. Manual rerun as
 `postgres`: `select public.apply_monthly_allowance();`. The operational check,
 rerun steps and rollback are in
 [monthly-allowance-runbook.md](./monthly-allowance-runbook.md). Inspect the job with

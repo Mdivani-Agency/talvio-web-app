@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BRIEF_BANNED_TERMS } from '@/test/utils/public-copy';
 
-import { SIGN_IN_HEADING, SIGN_IN_INTRO, SIGN_IN_LINKEDIN_LABEL } from './sign-in-copy';
+import { SIGN_IN_HEADING, SIGN_IN_INTRO } from './sign-in-copy';
 
 describe('sign-in copy', () => {
   it('uses the brief vocabulary and no credit or pricing terms', () => {
@@ -10,9 +10,5 @@ describe('sign-in copy', () => {
     expect(SIGN_IN_HEADING).toBe('Start free or sign in');
     expect(text).toContain('No card needed');
     expect(text).not.toMatch(BRIEF_BANNED_TERMS);
-  });
-
-  it('spells LinkedIn correctly', () => {
-    expect(SIGN_IN_LINKEDIN_LABEL).toBe('Continue with LinkedIn');
   });
 });

@@ -30,7 +30,7 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         p(
           strong('Account details.'),
-          ' Your email address. If you sign in with Google or LinkedIn, we also receive the name, email address and profile picture that provider shares with us.',
+          ' Your email address. If you sign in with Google, we also receive the name, email address and profile picture Google shares with us.',
         ),
         p(
           strong('Profile and resume content.'),
@@ -94,7 +94,7 @@ export const PRIVACY: LegalDocument = {
           [strong('Vercel:'), ' website hosting.'],
           [strong('Amazon Web Services:'), ' storage of generated PDF files and delivery of account emails.'],
           [strong('OpenAI:'), ' AI features, when you use them.'],
-          [strong('Google and LinkedIn:'), ' sign-in, if you choose to sign in with them.'],
+          [strong('Google:'), ' sign-in, if you choose to sign in with it.'],
         ),
         p(
           'We may also disclose data when the law requires it, or to a successor if Talvio is transferred to another company, under the same protections.',

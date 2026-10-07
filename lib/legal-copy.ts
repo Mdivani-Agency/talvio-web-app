@@ -17,8 +17,8 @@ export const TERMS_LAST_UPDATED = 'October 2026';
 export const PRIVACY_LAST_UPDATED = 'October 2026';
 
 /** Sitemap dates (ISO). Change them with the text and the "Last updated" lines above. */
-export const TERMS_LAST_MODIFIED = '2026-10-04';
-export const PRIVACY_LAST_MODIFIED = '2026-10-04';
+export const TERMS_LAST_MODIFIED = '2026-10-07';
+export const PRIVACY_LAST_MODIFIED = '2026-10-07';
 
 export const OPERATOR_NAME = 'MDIO';
 export const OPERATOR_HREF = 'https://mdivani.agency';

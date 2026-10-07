@@ -66,7 +66,7 @@ describe('homepage copy', () => {
   });
 
   it('names only the sign-in methods that exist', () => {
-    expect(WORKFLOW_STEPS[0]?.body).toMatch(/email code or Google/);
+    expect(WORKFLOW_STEPS[0]?.body).toMatch(/email link or Google/);
     expect(WORKFLOW_STEPS[0]?.body).not.toMatch(/LinkedIn/);
   });
 

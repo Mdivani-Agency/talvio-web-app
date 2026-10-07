@@ -85,8 +85,8 @@ $$;
 
 select is(
   (select schedule from cron.job where jobname = 'monthly-allowance-reset'),
-  '0 0 1 * *',
-  'the reset job runs on the 1st of each month at 00:00'
+  '0 * * * *',
+  'the reset job runs hourly, so the 1st at 00:00 applies it and a missed run is caught within the hour'
 );
 
 select is(

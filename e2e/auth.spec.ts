@@ -246,7 +246,7 @@ test('AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the
   });
   await page.goto('/auth/sign-in?callbackURL=/account');
   await expect(page.getByRole('button', { name: 'Continue with Linkedin' })).toHaveCount(0);
-  await expect(page.getByText('Used LinkedIn before? Request an email code for that same address.')).toBeVisible();
+  await expect(page.getByText('Used LinkedIn before? Request an email link for that same address.')).toBeVisible();
   const google = page.waitForRequest((request) => request.url().includes('provider=google'));
   await page.getByRole('button', { name: 'Continue with Google' }).click();
   const googleRequest = await google;

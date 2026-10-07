@@ -43,6 +43,23 @@ describe('useAllowance', () => {
     expect(credits.current.refetch).toHaveBeenCalledTimes(1);
   });
 
+  it('still refetches after the reset when the page opens more than 24.8 days before it', () => {
+    vi.setSystemTime(new Date('2026-10-01T00:05:00Z'));
+    renderHook(() => useAllowance());
+    const due = new Date('2026-11-01T00:00:00Z').getTime() + RENEWAL_REFETCH_DELAY_MS - Date.now();
+    expect(due).toBeGreaterThan(2_147_483_647);
+
+    act(() => {
+      vi.advanceTimersByTime(due - 1);
+    });
+    expect(credits.current.refetch).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(credits.current.refetch).toHaveBeenCalledTimes(1);
+  });
+
   it('schedules nothing while the balance is unknown', () => {
     credits.current = { data: undefined, refetch: vi.fn() };
     const { result } = renderHook(() => useAllowance());

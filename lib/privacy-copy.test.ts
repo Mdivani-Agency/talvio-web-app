@@ -22,7 +22,7 @@ describe('privacy policy copy', () => {
       ...PRIVACY,
       sections: PRIVACY.sections.filter((s) => s.heading === '6. Who we share data with'),
     });
-    for (const processor of ['Supabase', 'Vercel', 'Amazon Web Services', 'OpenAI', 'Google and LinkedIn']) {
+    for (const processor of ['Supabase', 'Vercel', 'Amazon Web Services', 'OpenAI', 'Google']) {
       expect(sharing).toContain(processor);
     }
   });

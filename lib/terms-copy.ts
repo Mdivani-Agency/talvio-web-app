@@ -29,7 +29,7 @@ export const TERMS: LegalDocument = {
       heading: '3. Your account',
       blocks: [
         p(
-          'You sign in with an email code, Google or LinkedIn. Keep access to your email and sign-in provider secure, because anyone who can use them can open your account. You are responsible for what happens in your account. Each person may have one account. Tell us at once if you think someone else has used yours.',
+          'You sign in with an email link or Google. Keep access to your email and sign-in provider secure, because anyone who can use them can open your account. You are responsible for what happens in your account. Each person may have one account. Tell us at once if you think someone else has used yours.',
         ),
       ],
     },

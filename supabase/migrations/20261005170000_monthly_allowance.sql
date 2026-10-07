@@ -4,7 +4,9 @@
 -- of each month at 00:00 UTC a pg_cron job sets every balance to 90. It never
 -- adds, so 0, 30, 60, 90 and any legacy balance all become 90. The reset
 -- records the month it applied and does nothing if run again for that month.
--- There is no request-time catch-up.
+-- The job runs hourly so a missed 00:00 run is caught within the hour; every
+-- other run in the month returns 0 and writes nothing. There is no
+-- request-time catch-up.
 --
 -- generate_pdf, finalize_pdf and consume_credits are unchanged: a generation
 -- is debited from the balance at finalize time, whichever month it started in.
@@ -113,11 +115,12 @@ $$;
 
 revoke all on function public.handle_new_user() from public, anon, authenticated;
 
--- Schedule: 1st of each month, 00:00 UTC (pg_cron runs in GMT). Scheduling by
--- name replaces an existing job, so rerunning this file keeps one job.
+-- Schedule: hourly, on the hour (pg_cron runs in GMT). The first run of a month
+-- is 00:00 UTC on the 1st and applies the reset; the rest return 0. Scheduling
+-- by name replaces an existing job, so rerunning this file keeps one job.
 select cron.schedule(
   'monthly-allowance-reset',
-  '0 0 1 * *',
+  '0 * * * *',
   $$select public.apply_monthly_allowance()$$
 );
 

@@ -6,7 +6,7 @@ import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, SUPPORT_ANSWER } from './p
  */
 
 /** Sitemap date (ISO). Change it with the homepage copy. */
-export const HOME_LAST_MODIFIED = '2026-10-04';
+export const HOME_LAST_MODIFIED = '2026-10-07';
 
 /** New visitors sign in here. There is no separate sign-up route. */
 export const PRIMARY_CTA_HREF = '/auth/sign-in';
@@ -25,7 +25,7 @@ export const WORKFLOW_TITLE = 'From your profile to a resume PDF';
 export const WORKFLOW_STEPS = [
   {
     title: 'Sign in',
-    body: 'Use an email code or Google. Signing in creates your account.',
+    body: 'Use an email link or Google. Signing in creates your account.',
   },
   {
     title: 'Add your experience',

@@ -76,7 +76,7 @@ function SignInPageContent() {
           </div>
           <SignInForm onSubmit={handleEmailSignIn} />
           <p className="text-center text-sm text-muted-foreground">
-            Used LinkedIn before? Request an email code for that same address.
+            Used LinkedIn before? Request an email link for that same address.
           </p>
         </CardContent>
       </Card>

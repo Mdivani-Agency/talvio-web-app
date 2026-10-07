@@ -21,7 +21,7 @@ import {
   TERMS_TITLE,
 } from './public-metadata';
 import { FOOTER_PAGE_LINKS, FOOTER_POWERED_BY_LEAD, HOME_NAV_LINKS, SIGN_IN_LABEL, footerCopyright } from './public-nav';
-import { SIGN_IN_DIVIDER, SIGN_IN_GOOGLE_LABEL, SIGN_IN_HEADING, SIGN_IN_INTRO, SIGN_IN_LINKEDIN_LABEL } from './sign-in-copy';
+import { SIGN_IN_DIVIDER, SIGN_IN_GOOGLE_LABEL, SIGN_IN_HEADING, SIGN_IN_INTRO } from './sign-in-copy';
 import { TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO } from './templates-page-copy';
 import { TERMS } from './terms-copy';
 
@@ -30,7 +30,7 @@ const marketing: Record<string, string> = {
   homepage: homepageCopyText(),
   templates: [TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO].join('\n'),
   'ATS guide': atsPageText(),
-  'sign-in': [SIGN_IN_HEADING, SIGN_IN_INTRO, SIGN_IN_GOOGLE_LABEL, SIGN_IN_LINKEDIN_LABEL, SIGN_IN_DIVIDER].join('\n'),
+  'sign-in': [SIGN_IN_HEADING, SIGN_IN_INTRO, SIGN_IN_GOOGLE_LABEL, SIGN_IN_DIVIDER].join('\n'),
   navigation: [...HOME_NAV_LINKS, ...FOOTER_PAGE_LINKS].map((link) => link.name).concat(SIGN_IN_LABEL, FOOTER_POWERED_BY_LEAD, footerCopyright(2026)).join('\n'),
   claims: [DATA_SAFETY_ANSWER, ACCOUNT_DELETION_ANSWER, SUPPORT_ANSWER].join('\n'),
   metadata: [
@@ -70,6 +70,13 @@ describe('public copy release rules', () => {
       for (const sentence of sentences(text)) {
         expect(wordCount(sentence), `${name}: ${sentence}`).toBeLessThanOrEqual(18);
       }
+    }
+  });
+
+  it('names only the sign-in methods that exist: an email link and Google (MDI-344)', () => {
+    for (const [name, text] of Object.entries({ homepage: marketing.homepage, 'sign-in': marketing['sign-in'], ...legal })) {
+      expect(text, name).not.toMatch(/linkedin/i);
+      expect(text, name).not.toMatch(/email code/i);
     }
   });
 
