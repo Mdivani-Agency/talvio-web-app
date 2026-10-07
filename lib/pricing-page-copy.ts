@@ -1,26 +1,30 @@
 import {
   CREDIT_PACKS,
   GENERATE_PDF_CREDITS,
-  SIGNUP_CREDIT_GRANT,
+  MONTHLY_CREDIT_ALLOWANCE,
   formatCreditPackList,
   jobSpecificPdfCount,
 } from './credits';
 import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL, SECONDARY_CTA_HREF, SECONDARY_CTA_LABEL } from './homepage-copy';
 
-const signupCredits = SIGNUP_CREDIT_GRANT.toLocaleString('en-US');
-const signupPdfs = jobSpecificPdfCount(SIGNUP_CREDIT_GRANT);
+// `/pricing` is served only while the `plansPage` flag is on (MDI-398). Its numbers follow the server.
+const signupCredits = MONTHLY_CREDIT_ALLOWANCE.toLocaleString('en-US');
+const signupPdfs = jobSpecificPdfCount(MONTHLY_CREDIT_ALLOWANCE);
 
 export const PRICING_PATH = '/pricing';
+
+/** Sitemap date (ISO). Change it with the copy in this file. */
+export const PRICING_LAST_MODIFIED = '2026-10-05';
 
 export const PRICING_PAGE_TITLE = 'Pay-as-you-go pricing | Talvio';
 
 export const PRICING_PAGE_DESCRIPTION =
-  `A new account starts with ${signupCredits} credits. One-time packs are ${formatCreditPackList()}. Credits do not expire, and there is no subscription.`;
+  `A new account starts with ${signupCredits} credits. One-time packs are ${formatCreditPackList()}. Free credits reset on the 1st of each month, and there is no subscription.`;
 
 export const PRICING_PAGE_HEADING = 'Pay as you go';
 
 export const PRICING_PAGE_INTRO =
-  `A new account starts with ${signupCredits} credits. A new job-specific PDF costs ${GENERATE_PDF_CREDITS} credits, so that grant covers ${signupPdfs} PDFs. No card is required to begin. Packs are one-time purchases. Credits do not expire, and packs do not renew.`;
+  `A new account starts with ${signupCredits} credits. A new job-specific PDF costs ${GENERATE_PDF_CREDITS} credits, so that grant covers ${signupPdfs} PDFs. No card is required to begin. Packs are one-time purchases. Free credits reset to ${signupCredits} on the 1st of each month.`;
 
 export const PRICING_FREE_HEADING = 'Free to start';
 
@@ -39,7 +43,6 @@ export const PRICING_PACK_CTA_LABEL = 'Sign in';
 export const PRICING_HOME_PACK_CTA_LABEL = 'See pricing';
 
 export const PRICING_PACK_TERMS = [
-  'Credits do not expire',
   'No auto-renewal',
   'No subscription',
 ] as const;
@@ -56,7 +59,8 @@ export const PRICING_MONTHLY_ANSWER =
 
 export const PRICING_EXPIRY_QUESTION = 'Do unused credits disappear?';
 
-export const PRICING_EXPIRY_ANSWER = 'No. Unused credits stay on your account until you use them.';
+export const PRICING_EXPIRY_ANSWER =
+  `Your balance resets to ${signupCredits} credits on the 1st of each month. Unused credits do not carry over.`;
 
 export const PRICING_BILLING_QUESTION = 'What if I have a billing question?';
 

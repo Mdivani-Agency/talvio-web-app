@@ -59,7 +59,7 @@ async function gotoExpectingSignIn(page: Page, path: string) {
       }
     }
   }
-  await expect(page.getByRole('heading', { name: 'Access your account' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Start free or sign in' })).toBeVisible();
 }
 
 function emailFor(label: string) {
@@ -117,7 +117,7 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
   await expect(page.getByText('Could not complete sign-in. Try again.')).toBeVisible();
   await page.getByRole('link', { name: 'Go Home' }).click();
   await expect(page).toHaveURL(/localhost:3002\/$/);
-  await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
   await page.goto('/auth/sign-in');
   await expect(page.getByPlaceholder('Email')).toBeVisible();
   await expect(page.getByRole('button', { name: 'With Email' })).toBeVisible();
@@ -166,7 +166,7 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/localhost:3002\/$/);
-  await expect(page.getByRole('heading', { name: 'Keep one profile and download a resume PDF' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
 
   await gotoExpectingSignIn(page, '/account');
@@ -246,7 +246,7 @@ test('AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the
   });
   await page.goto('/auth/sign-in?callbackURL=/account');
   await expect(page.getByRole('button', { name: 'Continue with Linkedin' })).toHaveCount(0);
-  await expect(page.getByText('Used LinkedIn before? Request an email code for that same address.')).toBeVisible();
+  await expect(page.getByText('Used LinkedIn before? Request an email link for that same address.')).toBeVisible();
   const google = page.waitForRequest((request) => request.url().includes('provider=google'));
   await page.getByRole('button', { name: 'Continue with Google' }).click();
   const googleRequest = await google;

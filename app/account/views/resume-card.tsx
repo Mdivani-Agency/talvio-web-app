@@ -12,7 +12,8 @@ import { submitWrapper } from '@app/actions/action.utils';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { groupResumeFamilies, isGeneratedResume, resumeDisplayTitle, type ResumeFamily } from '@/lib/adapters/resume.adapter';
-import { GENERATE_PDF_CREDITS } from '@/lib/credits';
+import { GENERATE_PDF_LABEL, generateBlockedNote } from '@/lib/allowance-copy';
+import { useAllowance } from '@app/account/hooks/use-allowance';
 
 export const ResumeCard = ({
   resumes = [],
@@ -28,6 +29,8 @@ export const ResumeCard = ({
   const [familyToDelete, setFamilyToDelete] = useState<ResumeFamily>();
   const deleteResume = useDeleteResume(userId);
   const generatePdf = useGenerateResumePdf(userId);
+  const { allowance } = useAllowance();
+  const blocked = allowance?.exhausted ?? false;
   const pendingId = generatePdf.isPending ? generatePdf.variables?.id : undefined;
   const families = groupResumeFamilies(resumes);
 
@@ -108,24 +111,29 @@ export const ResumeCard = ({
                       Download
                     </Button>
                   ) : (
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="sm"
-                      className="px-0"
-                      loading={pendingId === display.id}
-                      disabled={generatePdf.isPending}
-                      onClick={() => {
-                        void submitWrapper({
-                          fn: async () => {
-                            const result = await generatePdf.mutateAsync(display);
-                            return { id: result.id };
-                          },
-                        });
-                      }}
-                    >
-                      Generate PDF ({GENERATE_PDF_CREDITS})
-                    </Button>
+                    <>
+                      {blocked && allowance ? (
+                        <span className="text-xs text-muted-foreground">{generateBlockedNote(allowance.renewsOn)}</span>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="px-0"
+                        loading={pendingId === display.id}
+                        disabled={generatePdf.isPending || blocked}
+                        onClick={() => {
+                          void submitWrapper({
+                            fn: async () => {
+                              const result = await generatePdf.mutateAsync(display);
+                              return { id: result.id };
+                            },
+                          });
+                        }}
+                      >
+                        {GENERATE_PDF_LABEL}
+                      </Button>
+                    </>
                   )}
                   <Link href={href} aria-label={`Edit ${resumeDisplayTitle(display)}`}>
                     <Icon type="Edit" className="size-4" />

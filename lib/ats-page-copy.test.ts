@@ -1,50 +1,66 @@
 import { describe, expect, it } from 'vitest';
 
+import { BRIEF_BANNED_TERMS, wordCount } from '@/test/utils/public-copy';
+
 import {
-  ATS_CHECKERS_BODY,
-  ATS_PAGE_DESCRIPTION,
+  ATS_CLOSING_BODY,
   ATS_PAGE_HEADING,
-  ATS_PAGE_TITLE,
+  ATS_PAGE_INTRO,
   ATS_PATH,
-  ATS_PDF_BODY,
-  ATS_PRICING_CTA_HREF,
-  ATS_RELATED_HREF,
-  ATS_RELATED_LABEL,
-  ATS_SIGN_IN_CTA_HREF,
-  ATS_TEMPLATES_CTA_HREF,
+  ATS_PRIMARY_CTA_HREF,
+  ATS_PRIMARY_CTA_LABEL,
+  ATS_SECONDARY_CTA_HREF,
+  ATS_SECTIONS,
+  atsMetadataText,
   atsPageText,
 } from './ats-page-copy';
 
-const unsupported = /ATS-safe|guaranteed pass|track the application|application tracking|all systems behave|identically|GDPR|career success|job description/i;
+const words = wordCount;
+const banned = BRIEF_BANNED_TERMS;
 
-describe('ATS explainer copy', () => {
-  it('explains headings, reading order, evidence, and checker limits', () => {
-    const copy = atsPageText();
+describe('ATS guide copy', () => {
+  it('leads with the target query', () => {
     expect(ATS_PATH).toBe('/ats-friendly-resume');
-    expect(ATS_PAGE_TITLE).toMatch(/ATS checkers/);
-    expect(ATS_PAGE_HEADING).toMatch(/checker score/);
-    expect(ATS_PAGE_DESCRIPTION).toMatch(/reading order/);
-    expect(copy).toMatch(/Experience/);
-    expect(copy).toMatch(/simple reading order|top to bottom/);
-    expect(copy).toMatch(/role/);
-    expect(ATS_CHECKERS_BODY).toMatch(/not the hiring company/);
-    expect(ATS_CHECKERS_BODY).toMatch(/differ/);
-    expect(ATS_PDF_BODY).toMatch(/select the text/i);
-    expect(ATS_PDF_BODY).toMatch(/copy/i);
-    expect(ATS_PDF_BODY).toMatch(/sanity check/);
-    expect(ATS_PDF_BODY).toMatch(/not an ATS pass/);
-    expect(ATS_TEMPLATES_CTA_HREF).toBe('/templates');
-    expect(ATS_PRICING_CTA_HREF).toBe('/pricing');
-    expect(ATS_SIGN_IN_CTA_HREF).toBe('/auth/sign-in');
-    expect(copy).not.toMatch(unsupported);
+    expect(ATS_PAGE_HEADING).toBe('How to make an ATS-friendly resume');
   });
 
-  it('points at the agency essay without republishing it', () => {
-    expect(ATS_RELATED_HREF).toBe(
-      'https://www.mdivani.agency/blog/ats-friendly-resume-what-actually-matters-vs-the-myths',
-    );
-    expect(ATS_RELATED_LABEL).toBe('ATS-Friendly Resume: What Actually Matters vs the Myths');
-    expect(atsPageText()).not.toContain(ATS_RELATED_LABEL);
-    expect(atsPageText()).not.toMatch(/\/blog/);
+  it('covers headings, reading order, evidence, checker limits and a PDF check, once each', () => {
+    expect(ATS_SECTIONS.map((section) => section.heading)).toEqual([
+      'Use standard headings',
+      'Keep one reading order',
+      'Show what you did',
+      'Treat checker scores lightly',
+      'Test your PDF',
+    ]);
+    const mentions = (pattern: RegExp) => ATS_SECTIONS.filter((section) => pattern.test(section.body)).length;
+    expect(mentions(/checker/i)).toBe(1);
+    expect(mentions(/employer/i)).toBe(1);
+    expect(ATS_PAGE_INTRO).not.toMatch(/checker/i);
+  });
+
+  it('keeps every block inside its word budget', () => {
+    expect(words(ATS_PAGE_HEADING)).toBeLessThanOrEqual(10);
+    expect(words(ATS_PAGE_INTRO)).toBeLessThanOrEqual(30);
+    for (const section of ATS_SECTIONS) {
+      expect(words(section.heading), section.heading).toBeLessThanOrEqual(5);
+      expect(words(section.body), section.heading).toBeLessThanOrEqual(18);
+    }
+    expect(words(ATS_CLOSING_BODY)).toBeLessThanOrEqual(30);
+    for (const sentence of atsPageText().split(/(?<=[.?])\s+|\n/)) {
+      expect(words(sentence), sentence).toBeLessThanOrEqual(18);
+    }
+  });
+
+  it('ends with one primary button and no pricing or outbound links', () => {
+    expect(ATS_PRIMARY_CTA_LABEL).toBe('Start free');
+    expect(ATS_PRIMARY_CTA_HREF).toBe('/auth/sign-in');
+    expect(ATS_SECONDARY_CTA_HREF).toBe('/templates');
+    expect(atsPageText()).not.toMatch(/mdivani\.agency|\/blog|\/pricing/);
+  });
+
+  it('uses no banned terms and promises no ATS outcome', () => {
+    expect(atsPageText()).not.toMatch(banned);
+    expect(atsMetadataText()).not.toMatch(banned);
+    expect(atsPageText()).not.toMatch(/interview|get (you )?(a|the) job|hired/i);
   });
 });

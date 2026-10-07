@@ -38,7 +38,7 @@ Auth providers (app wiring is [MDI-173](https://linear.app/mdivani/issue/MDI-173
 
 LinkedIn (`linkedin_oidc`) is not a sign-in provider. Hosted Auth sets `external_linkedin_oidc_enabled = false` in `talvio-terraform-iac` (`app.tf`, merged in [talvio-terraform-iac #17](https://github.com/Mdivani-Agency/talvio-terraform-iac/pull/17)). The dev apply for that merge succeeded, and a later prod apply on `main` succeeded. The app does not call `signInWithOAuth` for LinkedIn.
 
-Accounts that previously signed in only with LinkedIn keep the email LinkedIn stored on `auth.users`. Local config required that email (`email_optional = false`). Email codes were already on the sign-in screen before that apply. They sign in with an email code to that same address. Google still works when the Google account uses that email. Disabling the provider does not delete `auth.users` or profile rows. To find accounts whose only identity is LinkedIn:
+Accounts that previously signed in only with LinkedIn keep the email LinkedIn stored on `auth.users`. Local config required that email (`email_optional = false`). Email sign-in was already on the sign-in screen before that apply. They sign in with an email link to that same address. Google still works when the Google account uses that email. Disabling the provider does not delete `auth.users` or profile rows. To find accounts whose only identity is LinkedIn:
 
 ```sql
 select u.id, u.email
@@ -153,7 +153,7 @@ Supabase Auth is the identity provider. `auth.users` is identity — no
 | `lib/supabase/server.ts` | Server Components / route handlers |
 | `lib/supabase/middleware.ts` + root `proxy.ts` | Refresh the session cookie |
 | `app/auth/callback/route.ts` | `exchangeCodeForSession` then redirect to `next` |
-| `app/auth/sign-in` | Magic link (`signInWithOtp`) + Google. Former LinkedIn accounts use the email code for the same address. |
+| `app/auth/sign-in` | Magic link (`signInWithOtp`) + Google. Former LinkedIn accounts use an email link for the same address. |
 
 `/account` redirects to `/auth/sign-in` when there is no session. `/resume`
 stays guest-friendly. Sign-out clears the Supabase cookie and any leftover
@@ -185,12 +185,16 @@ Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format
 | `20260101000600_profile_rpcs.sql` | `save_profile`; `credit_prices`; private `consume_credits` / `require_credits`; public `generate_pdf` + `finalize_pdf` |
 | `20260101000700_profile_rls.sql` | RLS + grants for profiles + 9 children; enum `USAGE` |
 | `20260101000800_resumes_rls.sql` | RLS + grants for `resumes` and `user_credits` |
-| `20260101000900_auth_hooks.sql` | `handle_new_user` → 300 signup credits |
+| `20260101000900_auth_hooks.sql` | `handle_new_user` → 300 signup credits (superseded by `20261005170000`) |
 | `20260923060000_resume_save_idempotency.sql` | `client_draft_id`, generation lock, `release_resume_generation` |
 | `20260924121500_enable_pg_graphql.sql` | `pg_graphql` in schema `graphql` |
+| `20261005170000_monthly_allowance.sql` | `pg_cron`; server-only `monthly_allowance_runs`; private `monthly_credit_allowance()` (90) and `apply_monthly_allowance()`; `handle_new_user` → 90; cron job `monthly-allowance-reset` (hourly, `0 * * * *`; applies once per month); cutover run |
+| `20261006100000_ai_daily_caps.sql` | Server-only `ai_daily_usage`; private `ai_daily_request_cap()` (20), `consume_ai_request_for()` and `prune_ai_daily_usage()`; public `consume_ai_request()`; cron job `ai-daily-usage-prune` (`10 0 * * *`) |
 
-Constraint / RLS smokes: `supabase/tests/schema_constraints.sql` and
-`supabase/tests/rls.test.sql` (`yarn db:test` after `yarn db:reset`).
+Constraint / RLS smokes: `supabase/tests/schema_constraints.sql`,
+`supabase/tests/rls.test.sql`, `supabase/tests/monthly_allowance.test.sql` and
+`supabase/tests/ai_daily_caps.test.sql`
+(`yarn db:test` after `yarn db:reset`).
 
 ## Related docs
 
@@ -198,6 +202,7 @@ Constraint / RLS smokes: `supabase/tests/schema_constraints.sql` and
 - [data-api-grants.md](./data-api-grants.md) — grant tiers
 - [supabase-rls.md](./supabase-rls.md) — policy per table
 - [supabase-triggers.md](./supabase-triggers.md) — `set_updated_at`, `handle_new_user`
+- [monthly-allowance-runbook.md](./monthly-allowance-runbook.md) — operational check, manual rerun, job inspection, rollback
 - Notion schema page — locked decisions and suggested SQL
 - `AGENTS.md` “SQL and Supabase migrations” — migration layout
 - `AGENTS.md` “GraphQL queries and mutations” — query / mutation / hook patterns

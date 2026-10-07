@@ -1,0 +1,4 @@
+# MDI-401: spends one of the signed-in user's daily AI requests. Server routes only.
+mutation ConsumeAiRequest {
+  consume_ai_request
+}

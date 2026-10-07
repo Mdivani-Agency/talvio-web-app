@@ -54,7 +54,8 @@ Public pages (`/`, `/templates`, `/pricing`, `/ats-friendly-resume`, `/terms`, `
 - `layout.tsx` exports `metadata = publicPageMetadata(path, title, description)` from `@/lib/public-metadata` and renders `StickyHeader`, `Header` and `Footer` from `@components/views`. Reference: `app/pricing/layout.tsx`.
 - `page.tsx` is a server component. Reference: `app/pricing/page.tsx`.
 - Copy lives in `lib/<page>-copy.ts` as exported constants with a co-located test. Do not hard-code marketing copy in the page. Shared claims live in `lib/public-claims.ts` and `lib/credits.ts`.
-- Add the path to `INDEXABLE_PUBLIC_PATHS` in `lib/public-metadata.ts`. `app/sitemap.ts` and `app/robots.ts` derive from it; do not build a second sitemap or robots source.
+- Add the path to `PUBLIC_PAGE_PATHS` and its date to `PUBLIC_PAGE_LAST_MODIFIED` in `lib/public-metadata.ts`. `INDEXABLE_PUBLIC_PATHS` derives from them and the release flags (`lib/flags.ts`), and `app/sitemap.ts` derives from that; do not build a second sitemap or robots source.
+- Each page's sitemap date (`*_LAST_MODIFIED`) lives in its copy module. A pull request that changes a page's copy also updates that date.
 - Canonical URLs come from `siteOrigin()` in `lib/site.ts`. Preview deployments are not indexed (`allowPublicIndexing()`).
 - Public copy must match shipped behaviour. Do not add claims the product does not support.
 

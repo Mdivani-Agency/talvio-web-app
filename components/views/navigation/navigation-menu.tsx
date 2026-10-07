@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { cn } from '@utils/tailwind';
 import { Button, NavigationMenu, NavigationMenuItem, ThemeToggle } from '@components/ui';
-import { UserAvatar } from '@components/views';
 import { Icon } from '@components/icons';
+import { SIGN_IN_HREF, SIGN_IN_LABEL, type NavLink } from '@/lib/public-nav';
+import { UserAvatar } from '../user-avatar';
 
 type NavigationMenuProps = {
   className?: string;
@@ -13,13 +14,13 @@ type NavigationMenuProps = {
     image?: string | null;
   }
   withActions?: boolean;
-  links: { name: string; href: string }[];
+  links: NavLink[];
 };
 
-export const HomeNavigationMenu = ({ className, links, user, withActions = false }: NavigationMenuProps) => {
+export const SiteNavigationMenu = ({ className, links, user, withActions = false }: NavigationMenuProps) => {
   return (
     <div className={cn('flex w-full', className)}>
-      <NavigationMenu className={cn('flex items-center justify-center md:ml-auto gap-6 2xl:gap-10')}>
+      <NavigationMenu className={cn('flex items-center justify-center md:ml-auto gap-6 2xl:gap-10 whitespace-nowrap')}>
         {links.map((link) => (
             <NavigationMenuItem key={link.name} asChild className={'text-primary text-md font-regular hover:cursor-pointer'}>
               <Link href={link.href}>{link.name}</Link>
@@ -29,10 +30,10 @@ export const HomeNavigationMenu = ({ className, links, user, withActions = false
       {withActions && (
         <div className='flex justify-end items-center gap-2 ml-auto'>
           <ThemeToggle />
-          {user ? <UserAvatar user={user} /> : <Link href={'/auth/sign-in'} prefetch={false}>
+          {user ? <UserAvatar user={user} /> : <Link href={SIGN_IN_HREF} prefetch={false}>
             <Button variant={'ghost'} size={'sm'}>
               <Icon type={'User'} className="size-4 text-primary" />
-              Sign in
+              {SIGN_IN_LABEL}
               </Button>
             </Link>}
         </div>

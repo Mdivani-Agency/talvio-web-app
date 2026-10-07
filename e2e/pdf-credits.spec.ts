@@ -1,5 +1,9 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
+import { nextAllowanceRenewal } from '../lib/allowance';
+import { allowanceExhaustedLine, generateBlockedNote } from '../lib/allowance-copy';
+
+import { CREDIT_BOUNDARIES } from './fixtures/data';
 import { expect, test } from './fixtures/test';
 import { fetchPdfText } from './fixtures/pdf-text';
 import { setScenario } from './fixtures/profile-ui';
@@ -40,8 +44,33 @@ const UNREADABLE = {
   contacts: { email: 'ada@talvio.test' },
 };
 
-function shownCredits(page: Page) {
-  return page.locator('span.text-2xl.font-bold');
+function shownAllowance(page: Page) {
+  return page.getByTestId('allowance-remaining');
+}
+
+/** Resolves when a generate request fails, before the simulator scenario may change. */
+function failedGeneration(page: Page) {
+  return page.waitForResponse(
+    (response) => response.url().includes('/api/resume/generate-pdf') && response.status() >= 400,
+    { timeout: 60_000 },
+  );
+}
+
+function generateButton(page: Page, title: string) {
+  return resumeRow(page, title).getByRole('button', { name: 'Generate PDF', exact: true });
+}
+
+/** The renewal date as the app shows it. Computed in the test so the spec does not go stale at month end. */
+const EXHAUSTED = () => allowanceExhaustedLine(3, nextAllowanceRenewal());
+const BLOCKED_NOTE = () => generateBlockedNote(nextAllowanceRenewal());
+
+const PURCHASE_LINKS = 'a[href^="/pricing"], a[href^="/account/credits"], a[href^="/account/upgrade"]';
+const PURCHASE_TEXT = /\bbuy\b|purchase|upgrade|\bpacks?\b|\bplans?\b|pricing|subscri/i;
+
+/** MDI-320 contract 6: no pack, plan or purchase entry point, wherever the allowance shows. */
+async function expectNoPurchaseEntry(scope: Page | Locator, where: string) {
+  await expect(scope.locator(PURCHASE_LINKS), where).toHaveCount(0);
+  await expect(scope.getByText(PURCHASE_TEXT), where).toHaveCount(0);
 }
 
 test('PDF-01 generates a final PDF from the editor and the dashboard', async ({ page, personas }) => {
@@ -65,39 +94,42 @@ test('PDF-01 generates a final PDF from the editor and the dashboard', async ({ 
   const editorRow = (await listResumes(owner.userId)).find((row) => row.id === editorId);
   expect(editorRow?.pdfUrl).toBeTruthy();
   expect(editorRow?.pdfMediaKey).toBeTruthy();
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   const pdf = await fetchPdfText(editorRow?.pdfUrl ?? '');
   expect(pdf.pages).toBeGreaterThan(0);
   expect(pdf.text).toContain('Ada');
   expect(pdf.text).toContain('Owner');
 
   await page.goto('/account');
-  await expect(shownCredits(page)).toHaveText('270');
+  await expect(shownAllowance(page)).toHaveText('2 of 3 left this month');
   await rememberDownloads(page);
   const row = resumeRow(page, 'Dashboard copy');
-  await row.getByRole('button', { name: 'Generate PDF (30)' }).click();
+  await generateButton(page, 'Dashboard copy').click();
   await expect(row.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  await expect(shownCredits(page)).toHaveText('240');
+  await expect(shownAllowance(page)).toHaveText('1 of 3 left this month');
 
   const dashboard = (await listResumes(owner.userId)).find((row) => row.name === 'Dashboard copy');
   expect(dashboard?.pdfUrl).toBeTruthy();
   expect(dashboard?.pdfMediaKey).toBeTruthy();
-  expect(await creditBalance(owner.userId)).toBe(240);
+  expect(await creditBalance(owner.userId)).toBe(30);
   const second = await fetchPdfText(dashboard?.pdfUrl ?? '');
   expect(second.pages).toBeGreaterThan(0);
   expect(second.text).toContain('Ada');
   expect((await recordedDownloads(page)).some((item) => item.download === 'Dashboard copy.pdf')).toBe(true);
 });
 
-test('PDF-02 charges exactly 30 and rejects balances of 29 and 0', async ({ page, personas }) => {
+test('PDF-02 charges exactly 30, blocks 29 and 0 with the renewal date, and rejects a stale click', async ({ page, personas }) => {
   const exact = persona(personas, 'creditsExact');
   await seedProfile(exact.userId);
   await seedResume({ userId: exact.userId, name: 'Exact resume', content: SEEDED_RESUME_CONTENT });
   await openSignedIn(page, exact, '/account');
+  await expect(shownAllowance(page)).toHaveText('1 of 3 left this month');
   const exactRow = resumeRow(page, 'Exact resume');
-  await exactRow.getByRole('button', { name: 'Generate PDF (30)' }).click();
+  await generateButton(page, 'Exact resume').click();
   await expect(exactRow.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  await expect(shownCredits(page)).toHaveText('0');
+  await expect(shownAllowance(page)).toHaveText('0 of 3 left this month');
+  await expect(page.getByTestId('allowance-exhausted')).toHaveText(EXHAUSTED());
+  await expect(page.locator('a[href^="/account/upgrade"], a[href^="/account/credits"]')).toHaveCount(0);
   expect(await creditBalance(exact.userId)).toBe(0);
   expect((await listResumes(exact.userId))[0]?.pdfUrl).toBeTruthy();
 
@@ -105,20 +137,30 @@ test('PDF-02 charges exactly 30 and rejects balances of 29 and 0', async ({ page
   await seedProfile(below.userId);
   await seedResume({ userId: below.userId, name: 'Short resume', content: SEEDED_RESUME_CONTENT });
   await openSignedIn(page, below, '/account');
-  await resumeRow(page, 'Short resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
-  await expect(page.getByText('Not enough credits')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Buy credits' })).toHaveAttribute('href', '/account/credits');
+  await expect(shownAllowance(page)).toHaveText('0 of 3 left this month');
+  await expect(generateButton(page, 'Short resume')).toBeDisabled();
+  await expect(resumeRow(page, 'Short resume').getByText(BLOCKED_NOTE())).toBeVisible();
+  await expect(page.locator('a[href^="/account/credits"]')).toHaveCount(0);
   expect(await creditBalance(below.userId)).toBe(29);
   expect((await listResumes(below.userId))[0]?.pdfUrl).toBeNull();
   expect((await mediaStats()).uploads).toBe(1);
 
+  // The page still shows a PDF left, but the balance ran out in another tab. The server refuses it.
   const empty = persona(personas, 'creditsZero');
   await seedProfile(empty.userId);
   await seedResume({ userId: empty.userId, name: 'Empty resume', content: SEEDED_RESUME_CONTENT });
+  await setCreditBalance(empty.userId, 30);
   await openSignedIn(page, empty, '/account');
-  await resumeRow(page, 'Empty resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
-  await expect(page.getByText('Not enough credits')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Buy credits' })).toHaveAttribute('href', '/account/credits');
+  await expect(generateButton(page, 'Empty resume')).toBeEnabled();
+  await setCreditBalance(empty.userId, 0);
+  await generateButton(page, 'Empty resume').click();
+  // The refusal shows in the toast, and the card refetches to the same exhausted line.
+  await expect(page.locator('[data-sonner-toast]').getByText(EXHAUSTED())).toBeVisible();
+  await expect(page.getByTestId('allowance-exhausted')).toHaveText(EXHAUSTED());
+  // The persona's email contains "credits", so check the toast and the card rather than the whole page.
+  await expect(page.locator('[data-sonner-toast]').filter({ hasText: /credit/i })).toHaveCount(0);
+  await expect(page.getByTestId('allowance-card')).not.toContainText(/credit/i);
+  await expect(page.getByRole('link', { name: 'Buy credits' })).toHaveCount(0);
   expect(await creditBalance(empty.userId)).toBe(0);
   expect((await listResumes(empty.userId))[0]?.pdfUrl).toBeNull();
   expect((await mediaStats()).uploads).toBe(1);
@@ -159,13 +201,13 @@ test('PDF-03 re-downloads the stored file without a new charge or upload', async
   await resumeRow(page, 'Stored resume').getByRole('button', { name: 'Download' }).click();
   await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(0);
   expect(generates).toHaveLength(0);
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   expect((await mediaStats()).uploads).toBe(1);
 
   const again = await page.request.post('/api/resume/generate-pdf', { data: { resumeId } });
   expect(again.ok()).toBeTruthy();
   expect((await again.json()).url).toBe(url);
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   expect((await listResumes(owner.userId)).find((row) => row.id === resumeId)?.pdfUrl).toBe(url);
   expect((await mediaStats()).uploads).toBe(1);
 });
@@ -181,11 +223,11 @@ test('PDF-04 one double click and two concurrent requests charge once', async ({
   });
   await openSignedIn(page, owner, '/account');
 
-  await resumeRow(page, 'Double resume').getByRole('button', { name: 'Generate PDF (30)' }).dblclick();
+  await generateButton(page, 'Double resume').dblclick();
   await expect(resumeRow(page, 'Double resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
   const doubled = (await listResumes(owner.userId)).find((row) => row.name === 'Double resume');
   expect(doubled?.pdfUrl).toBeTruthy();
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   expect((await mediaStats()).uploads).toBe(1);
 
   const [left, right] = await Promise.all([
@@ -201,7 +243,7 @@ test('PDF-04 one double click and two concurrent requests charge once', async ({
 
   const concurrent = (await listResumes(owner.userId)).find((row) => row.id === concurrentId);
   expect(concurrent?.pdfUrl).toBe(urls[0]);
-  expect(await creditBalance(owner.userId)).toBe(240);
+  expect(await creditBalance(owner.userId)).toBe(30);
   expect((await mediaStats()).uploads).toBe(2);
   expect(await generationLock(concurrentId)).toBeNull();
 });
@@ -236,9 +278,9 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   });
 
   await openSignedIn(page, owner, '/account');
-  await resumeRow(page, 'Unreadable resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
+  await generateButton(page, 'Unreadable resume').click();
   await expect(page.getByText('Failed to generate PDF')).toBeVisible({ timeout: 30_000 });
-  expect(await creditBalance(owner.userId)).toBe(300);
+  expect(await creditBalance(owner.userId)).toBe(90);
   expect((await listResumes(owner.userId)).find((row) => row.id === unreadableId)?.pdfUrl).toBeNull();
   expect(await generationLock(unreadableId)).toBeNull();
   expect((await mediaStats()).presigns).toBe(0);
@@ -250,51 +292,67 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
     return contentProfile(row?.content ?? {}).role;
   }).toBe('Engineer');
   await page.goto('/account');
-  await resumeRow(page, 'Unreadable resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
+  await generateButton(page, 'Unreadable resume').click();
   await expect(resumeRow(page, 'Unreadable resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
 
   await setScenario('presign_error');
-  await resumeRow(page, 'Presign resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
+  // Wait for this request to fail: an earlier "Failed to generate PDF" toast can still be on screen.
+  const presignFailed = failedGeneration(page);
+  await generateButton(page, 'Presign resume').click();
+  await presignFailed;
   await expect(page.getByText('Failed to generate PDF').last()).toBeVisible({ timeout: 30_000 });
+  await expect(generateButton(page, 'Presign resume')).toBeEnabled({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === presignId)?.pdfUrl).toBeNull();
   expect(await generationLock(presignId)).toBeNull();
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
 
   await setScenario('success');
-  await resumeRow(page, 'Presign resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
+  await generateButton(page, 'Presign resume').click();
   await expect(resumeRow(page, 'Presign resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  expect(await creditBalance(owner.userId)).toBe(240);
+  expect(await creditBalance(owner.userId)).toBe(30);
 
   await setScenario('upload_error');
-  await resumeRow(page, 'Upload resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
+  const uploadFailed = failedGeneration(page);
+  await generateButton(page, 'Upload resume').click();
+  await uploadFailed;
   await expect(page.getByText('Failed to generate PDF').last()).toBeVisible({ timeout: 30_000 });
+  await expect(generateButton(page, 'Upload resume')).toBeEnabled({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === uploadId)?.pdfUrl).toBeNull();
   expect(await generationLock(uploadId)).toBeNull();
-  expect(await creditBalance(owner.userId)).toBe(240);
+  expect(await creditBalance(owner.userId)).toBe(30);
 
   await setScenario('success');
-  await resumeRow(page, 'Upload resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
+  await generateButton(page, 'Upload resume').click();
   await expect(resumeRow(page, 'Upload resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
-  expect(await creditBalance(owner.userId)).toBe(210);
+  expect(await creditBalance(owner.userId)).toBe(0);
 
+  // Three PDFs used the whole allowance, so generate is blocked. Top up and reload so this generation can start.
+  await expect(generateButton(page, 'Finalize resume')).toBeDisabled();
+  await setCreditBalance(owner.userId, CREDIT_BOUNDARIES.ample);
+  await page.reload();
+  await expect(shownAllowance(page)).toHaveText('3 of 3 left this month');
   await setScenario('upload_delay');
-  await resumeRow(page, 'Finalize resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
+  await generateButton(page, 'Finalize resume').click();
   await expect.poll(() => generationLock(finalizeId)).not.toBeNull();
   await setCreditBalance(owner.userId, 0);
-  await expect(page.getByText('Not enough credits')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-sonner-toast]').getByText(EXHAUSTED())).toBeVisible({ timeout: 30_000 });
   expect((await listResumes(owner.userId)).find((row) => row.id === finalizeId)?.pdfUrl).toBeNull();
   expect(await generationLock(finalizeId)).toBeNull();
   expect(await creditBalance(owner.userId)).toBe(0);
 
   await setScenario('success');
+  // The refused generation refetched the balance, so generate is blocked at zero. Top up and reload.
+  await expect(generateButton(page, 'Finalize resume')).toBeDisabled();
   await setCreditBalance(owner.userId, 30);
-  await resumeRow(page, 'Finalize resume').getByRole('button', { name: 'Generate PDF (30)' }).click();
+  await page.reload();
+  await expect(shownAllowance(page)).toHaveText('1 of 3 left this month');
+  await generateButton(page, 'Finalize resume').click();
   await expect(resumeRow(page, 'Finalize resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
   expect(await creditBalance(owner.userId)).toBe(0);
   expect((await listResumes(owner.userId)).find((row) => row.id === finalizeId)?.pdfUrl).toBeTruthy();
 
-  await setCreditBalance(owner.userId, 300);
+  await setCreditBalance(owner.userId, CREDIT_BOUNDARIES.ample);
   let dropped = false;
   await page.route('**/api/resume/generate-pdf', async (route) => {
     if (dropped) {
@@ -312,7 +370,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 90_000 });
   const lost = (await listResumes(owner.userId)).find((row) => row.id === lostId);
   expect(lost?.pdfUrl).toBeTruthy();
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
   expect((await recordedDownloads(page)).some((item) => item.download === 'Lost resume.pdf')).toBe(true);
 });
 
@@ -357,7 +415,7 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   expect(draft?.pdfUrl).toBeTruthy();
   expect(draft?.pdfUrl).not.toBe(originalUrl);
   expect(contentProfile(draft?.content ?? {}).role).toBe('Edited Family');
-  expect(await creditBalance(owner.userId)).toBe(270);
+  expect(await creditBalance(owner.userId)).toBe(60);
 
   const pdf = await fetchPdfText(draft?.pdfUrl ?? '');
   expect(pdf.text).toContain('Edited');
@@ -369,3 +427,56 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   await expect(page.getByRole('link', { name: 'Edited family', exact: true })).toBeVisible();
   await expect(page.getByText('PDF ready', { exact: false })).toHaveCount(2);
 });
+
+test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero', async ({ page, personas }) => {
+  test.setTimeout(240_000);
+  const owner = persona(personas, 'creditsAmple');
+  await seedProfile(owner.userId);
+  const titles = ['First resume', 'Second resume', 'Third resume', 'Fourth resume'];
+  for (const name of titles) {
+    await seedResume({ userId: owner.userId, name, content: SEEDED_RESUME_CONTENT });
+  }
+  await openSignedIn(page, owner, '/account');
+  await expect(shownAllowance(page)).toHaveText('3 of 3 left this month');
+  await expectNoPurchaseEntry(page, 'account with a full allowance');
+
+  for (const [index, name] of titles.slice(0, 3).entries()) {
+    // WebKit reports the next page.goto as "Download is starting" until each PDF download finishes.
+    const download = page.waitForEvent('download', { timeout: 90_000 });
+    await generateButton(page, name).click();
+    await expect(resumeRow(page, name).getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+    await download;
+    await expect(shownAllowance(page)).toHaveText(`${2 - index} of 3 left this month`);
+  }
+  expect(await creditBalance(owner.userId)).toBe(0);
+  expect((await mediaStats()).uploads).toBe(3);
+
+  await expect(page.getByTestId('allowance-exhausted')).toHaveText(EXHAUSTED());
+  await expect(generateButton(page, 'Fourth resume')).toBeDisabled();
+  await expect(resumeRow(page, 'Fourth resume').getByText(BLOCKED_NOTE())).toBeVisible();
+  await expectNoPurchaseEntry(page, 'account at zero');
+
+  const generates: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/api/resume/generate-pdf')) {
+      generates.push(request.url());
+    }
+  });
+  await rememberDownloads(page);
+  const redownload = page.waitForEvent('download', { timeout: 30_000 });
+  await resumeRow(page, 'First resume').getByRole('button', { name: 'Download' }).click();
+  await expect.poll(async () => (await recordedDownloads(page)).some((item) => item.download === 'First resume.pdf')).toBe(true);
+  await redownload;
+  expect(generates).toHaveLength(0);
+  expect(await creditBalance(owner.userId)).toBe(0);
+  expect((await mediaStats()).uploads).toBe(3);
+
+  const fourthId = (await listResumes(owner.userId)).find((row) => row.name === 'Fourth resume')?.id ?? '';
+  await page.goto(`/resume/${fourthId}`);
+  const dialog = await openFinalReview(page);
+  await expect(dialog.getByText(EXHAUSTED())).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Generate and Download Resume' })).toBeDisabled();
+  await expectNoPurchaseEntry(page, 'editor and generate dialog at zero');
+  expect((await listResumes(owner.userId)).find((row) => row.id === fourthId)?.pdfUrl).toBeNull();
+});
+

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CREDIT_PACKS, GENERATE_PDF_CREDITS, SIGNUP_CREDIT_GRANT, jobSpecificPdfCount } from './credits';
+import { CREDIT_PACKS, GENERATE_PDF_CREDITS, MONTHLY_CREDIT_ALLOWANCE, jobSpecificPdfCount } from './credits';
 import {
   PRICING_BILLING_ANSWER,
   PRICING_BILLING_QUESTION,
@@ -21,7 +21,7 @@ describe('pricing page copy', () => {
   it('uses the shared catalog, a fixed PDF price, and the sign-in path', () => {
     expect(PRICING_PAGE_TITLE).toMatch(/pricing/i);
     expect(PRICING_PAGE_HEADING).toMatch(/pay as you go/i);
-    expect(PRICING_PAGE_DESCRIPTION).toContain(SIGNUP_CREDIT_GRANT.toLocaleString('en-US'));
+    expect(PRICING_PAGE_DESCRIPTION).toContain(MONTHLY_CREDIT_ALLOWANCE.toLocaleString('en-US'));
     for (const pack of CREDIT_PACKS) {
       expect(PRICING_PAGE_DESCRIPTION).toContain(pack.priceLabel);
       expect(pricingPackPdfLine(pack.credits)).toContain(String(jobSpecificPdfCount(pack.credits)));
