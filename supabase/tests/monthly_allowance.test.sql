@@ -239,9 +239,15 @@ select is(
 );
 
 -- Signup on the last day of a month: 90 at signup, then the reset on the 1st
--- sets 90 again. It never stacks to 180.
+-- sets 90 again. It never stacks to 180. Neither handle_new_user nor the reset
+-- reads a date, so this pins that the signup time makes no difference: the
+-- account is dated one second before the next applied month.
 
 select pg_temp.insert_auth_user('a7a7a7a7-a7a7-4a7a-8a7a-a7a7a7a7a7a7', 'allowance-last-day@talvio.test');
+
+update auth.users
+set created_at = pg_temp.month_start(5) - interval '1 second'
+where id = 'a7a7a7a7-a7a7-4a7a-8a7a-a7a7a7a7a7a7';
 
 select is(
   pg_temp.balance('a7a7a7a7-a7a7-4a7a-8a7a-a7a7a7a7a7a7'),

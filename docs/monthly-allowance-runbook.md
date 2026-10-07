@@ -18,9 +18,10 @@ from the app or the Data API.
   creates `pg_cron`, the `monthly-allowance-reset` job and the cutover;
   `20261006100000_ai_daily_caps.sql` creates the AI cap and the
   `ai-daily-usage-prune` job. Nothing is set up by hand.
-- Flags: `NEXT_PUBLIC_FLAG_BETA_MODE`, `NEXT_PUBLIC_FLAG_PLANS_PAGE` and
+- Flags: `NEXT_PUBLIC_FLAG_PLANS_PAGE` and
   `NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI` are Vercel environment variables
-  (`lib/flags.ts`). They are inlined at build time, so a change takes effect
+  (`lib/flags.ts`). `NEXT_PUBLIC_FLAG_BETA_MODE` is declared but no code reads
+  it yet, so changing it does nothing. They are inlined at build time, so a change takes effect
   only with a new build and deploy.
 
 ## Operational check: is the current month applied?
@@ -148,9 +149,14 @@ balance as a side effect.
 
 ### Roll back the app
 
-Redeploy an earlier build (redeploy the previous Vercel deployment, or revert
-the commit on `development` / `main` so CI deploys again). The database stays
-as it is: balances, the month record and both jobs keep working, because the
+Redeploy the previous Vercel deployment. Do not `git revert` a commit that
+adds a migration: the hosted database keeps it, `supabase db push` then fails
+with "Remote migration versions not found in local migrations directory", and
+CI never reaches "Deploy to Vercel". If a code fix has to go through git, keep
+`supabase/migrations/` as it is and change only app files, or add a new
+forward migration.
+
+The database stays as it is: balances, the month record and both jobs keep working, because the
 reset runs in the database and not in the app. An app build from before
 MDI-400 still reads `user_credits` and shows the balance as credits; one from
 before MDI-401 calls the AI provider without the cap. Neither changes
