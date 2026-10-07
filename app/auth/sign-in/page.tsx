@@ -75,7 +75,7 @@ function SignInPageContent() {
             <Separator className="flex-1" />
           </div>
           <SignInForm onSubmit={handleEmailSignIn} />
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-md text-muted-foreground">
             Used LinkedIn before? Request an email link for that same address.
           </p>
         </CardContent>
