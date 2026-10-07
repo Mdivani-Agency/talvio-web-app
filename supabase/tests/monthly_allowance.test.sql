@@ -6,7 +6,7 @@
 
 begin;
 
-select plan(24);
+select plan(28);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -236,6 +236,41 @@ select is(
   pg_temp.balance('a6a6a6a6-a6a6-4a6a-8a6a-a6a6a6a6a6a6'),
   60,
   'a generation that crosses midnight is debited from the new balance'
+);
+
+-- Signup on the last day of a month: 90 at signup, then the reset on the 1st
+-- sets 90 again. It never stacks to 180.
+
+select pg_temp.insert_auth_user('a7a7a7a7-a7a7-4a7a-8a7a-a7a7a7a7a7a7', 'allowance-last-day@talvio.test');
+
+select is(
+  pg_temp.balance('a7a7a7a7-a7a7-4a7a-8a7a-a7a7a7a7a7a7'),
+  90,
+  'an account created on the last day of a month starts with 90'
+);
+
+select cmp_ok(
+  public.apply_monthly_allowance(pg_temp.month_start(5)),
+  '>=',
+  1,
+  'the reset on the next 1st runs for the new account'
+);
+
+select is(
+  pg_temp.balance('a7a7a7a7-a7a7-4a7a-8a7a-a7a7a7a7a7a7'),
+  90,
+  'the reset after a last-day signup sets 90, never 180'
+);
+
+-- Operational check (docs/monthly-allowance-runbook.md): the month the
+-- migration ran in is recorded.
+
+select ok(
+  (select exists (
+    select 1 from public.monthly_allowance_runs
+    where period_start = date_trunc('month', now() at time zone 'UTC')::date
+  )),
+  'the runbook check finds the current month applied'
 );
 
 -- Server-owned: clients cannot reset or read the month record.
