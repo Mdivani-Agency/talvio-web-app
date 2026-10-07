@@ -102,14 +102,23 @@ A run for a month older than the latest recorded one raises `stale_period`.
 There is no request-time catch-up, so until the rerun nobody renews (the
 accepted risk in MDI-320).
 
-If the job is missing or inactive, recreate it with the same statement as the
-migration. Scheduling by name replaces an existing job:
+If the job is missing, recreate it with the same statement as the migration:
 
 ```sql
 select cron.schedule(
   'monthly-allowance-reset',
   '0 0 1 * *',
   $$select public.apply_monthly_allowance()$$
+);
+```
+
+If the job exists but `active` is `false`, reactivate it. `cron.schedule` on an
+existing name updates the schedule and command but leaves `active` as it is:
+
+```sql
+select cron.alter_job(
+  (select jobid from cron.job where jobname = 'monthly-allowance-reset'),
+  active => true
 );
 ```
 
@@ -168,7 +177,8 @@ To stop renewals without touching any balance:
 select cron.unschedule('monthly-allowance-reset');
 ```
 
-Resume with the `cron.schedule` statement under "Manual rerun". If a 1st
+`cron.unschedule` deletes the job. Resume with the `cron.schedule` statement
+under "Manual rerun". If a 1st
 passed while it was paused, run the operational check and the manual rerun.
 
 ### Never

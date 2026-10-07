@@ -65,7 +65,7 @@ const EXHAUSTED = () => allowanceExhaustedLine(3, nextAllowanceRenewal());
 const BLOCKED_NOTE = () => generateBlockedNote(nextAllowanceRenewal());
 
 const PURCHASE_LINKS = 'a[href^="/pricing"], a[href^="/account/credits"], a[href^="/account/upgrade"]';
-const PURCHASE_TEXT = /\bbuy\b|upgrade|\bpacks?\b|pricing|subscri/i;
+const PURCHASE_TEXT = /\bbuy\b|purchase|upgrade|\bpacks?\b|\bplans?\b|pricing|subscri/i;
 
 /** MDI-320 contract 6: no pack, plan or purchase entry point, wherever the allowance shows. */
 async function expectNoPurchaseEntry(scope: Page | Locator, where: string) {
