@@ -181,5 +181,5 @@ Constraint / RLS smokes: `supabase/tests/schema_constraints.sql` and
 - [supabase-rls.md](./supabase-rls.md) — policy per table
 - [supabase-triggers.md](./supabase-triggers.md) — `set_updated_at`, `handle_new_user`
 - Notion schema page — locked decisions and suggested SQL
-- `.cursor/rules/migrations.mdc` — migration layout
-- `.cursor/rules/graphql.mdc` — query / mutation / hook patterns
+- `AGENTS.md` “SQL and Supabase migrations” — migration layout
+- `AGENTS.md` “GraphQL queries and mutations” — query / mutation / hook patterns

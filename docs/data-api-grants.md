@@ -99,7 +99,7 @@ the GraphQL `JSON` scalar (serialized string).
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).
 
-## Generic tiers (from `.cursor/rules/migrations.mdc`)
+## Generic tiers
 
 Use these for tables that do not match a v1 tier above.
 

@@ -49,7 +49,7 @@ Preserve unrelated content and established decisions. Explain proposed changes t
 After the Notion plan is saved:
 
 - Create issues from the plan, or update matching existing issues rather than creating duplicates.
-- Use the Talvio project and MDI team. When `.cursor/rules/linear.mdc` is present, follow the project id and conventions there instead of hard-coding them.
+- Use the Talvio project and MDI team. Follow the project id and conventions in the “Linear workflow” section of `AGENTS.md`.
 - Link the Notion plan in the parent issue and every implementation sub-issue.
 - For multi-stage work, create a parent epic with independently reviewable sub-issues.
 - Give each issue a concrete outcome-oriented title, the problem and intended behavior, explicit scope and exclusions, relevant interfaces and constraints, testable acceptance criteria, validation expectations, and dependencies.
