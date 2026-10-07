@@ -96,7 +96,9 @@ every balance becomes 90 at that moment, including balances above 90 and
 accounts mid-generation. Run late in a month, the next reset still comes on
 the 1st. There is no request-time catch-up: if
 the job does not run, nobody renews until it is rerun. Manual rerun as
-`postgres`: `select public.apply_monthly_allowance();`. Inspect the job with
+`postgres`: `select public.apply_monthly_allowance();`. The operational check,
+rerun steps and rollback are in
+[monthly-allowance-runbook.md](./monthly-allowance-runbook.md). Inspect the job with
 `select * from cron.job where jobname = 'monthly-allowance-reset';` and runs
 with `select * from cron.job_run_details order by start_time desc;`.
 

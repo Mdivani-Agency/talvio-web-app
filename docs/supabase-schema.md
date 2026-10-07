@@ -202,6 +202,7 @@ Constraint / RLS smokes: `supabase/tests/schema_constraints.sql`,
 - [data-api-grants.md](./data-api-grants.md) — grant tiers
 - [supabase-rls.md](./supabase-rls.md) — policy per table
 - [supabase-triggers.md](./supabase-triggers.md) — `set_updated_at`, `handle_new_user`
+- [monthly-allowance-runbook.md](./monthly-allowance-runbook.md) — operational check, manual rerun, job inspection, rollback
 - Notion schema page — locked decisions and suggested SQL
 - `AGENTS.md` “SQL and Supabase migrations” — migration layout
 - `AGENTS.md` “GraphQL queries and mutations” — query / mutation / hook patterns
