@@ -32,6 +32,8 @@ Every table below except `user_credits` has four policies:
 | `resumes` | select / insert / update / delete own |
 | `user_credits` | `user_credits_select_own` only |
 | `credit_prices` | none (no grants, no policies) |
+| `monthly_allowance_runs` | none (no grants, no policies) |
+| `ai_daily_usage` | none (no grants, no policies); written by `consume_ai_request` |
 
 `user_credits` has no insert / update / delete policies. Authenticated clients
 cannot write the balance through GraphQL; `handle_new_user` and
