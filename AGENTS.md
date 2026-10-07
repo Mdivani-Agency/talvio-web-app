@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Talvio web app: rules for all agents
 
-This file is the canonical rule set for every agent working in this repository. Where another rule file disagrees with it, this file wins. That includes `.cursor/rules/`: five files there (`page.mdc`, `pagination.mdc`, `forms.mdc`, `graphql.mdc`, `migrations.mdc`) describe components from another codebase that do not exist here, such as `AccessLayer`, `PageContainer`, `paginated-list` and `useTemplateResponseForm`. Do not create or import those.
+This file is the canonical rule set for every agent working in this repository. Where another rule file disagrees with it, this file wins. The former `.cursor/rules/` directory has been removed; this file replaces it. Some of those rules described components from another codebase that do not exist here, such as `AccessLayer`, `PageContainer`, `paginated-list` and `useTemplateResponseForm`. Do not create or import those.
 
 Every path and symbol named below exists in this repository. If you find one that does not, say so and follow the nearest existing pattern instead of creating it.
 

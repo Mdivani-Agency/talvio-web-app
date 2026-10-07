@@ -1,12 +1,12 @@
 ---
 description: Review changes
-argument-hint: [SOURCE]
+argument-hint: [commit-or-branch]
 ---
 
-review changes against $SOURCE
+review changes against $ARGUMENTS
 
 
-You are a Principal Software Engineer performing a strict code review. Review the changes made in the latest commit or current chat session.
+You are a Principal Software Engineer performing a strict code review. Review the changes in $ARGUMENTS. If no source was given, review the changes made in the latest commit or current chat session.
 
 Establish the review scope first: identify the changed files, relevant Linear ticket, and intended behavior. Read the implementation and surrounding code rather than relying only on the commit message or chat summary.
 

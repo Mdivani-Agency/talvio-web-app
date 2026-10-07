@@ -22,6 +22,7 @@ Do this before writing any code, and always before starting an epic or its first
 
 Cloud runs:
 
+- A standalone ticket (no parent epic and no sub-issues) gets one branch, cut from `development`. Commit and push it, then open a pull request into `development`. The rest of this list applies to epics and their sub-issues.
 - An epic has one feature branch, cut from `development`. Reuse it if it exists; create and push it from `development` if it does not.
 - Each sub-issue gets its own branch, cut from the epic's feature branch.
 - Commit and push the sub-issue branch, then open a pull request into the epic's feature branch, not into `development` or `main`.
@@ -39,6 +40,7 @@ Local runs use one feature branch for the epic and its children. Do not create a
 - Examples:
   - Epic feature branch: `cursor/mdi-200-resume-export`
   - Sub-issue branch: `cursor/mdi-211-llm-operation-contracts`
+  - Standalone ticket branch: `cursor/mdi-230-fix-signin-redirect`
   - Commit subject: `feat(llm): add versioned operation contracts`
   - Commit footer: `Refs: MDI-211`
 - If a platform adds its own prefix or suffix, keep the identifier in the descriptive segment: `cursor/mdi-211-llm-operation-contracts-5d6d`.
@@ -65,10 +67,10 @@ Team statuses: Backlog, Todo, In Progress, In Review, Done, Canceled, Duplicate.
 
 Cloud:
 
-- After opening the sub-issue PR, move the ticket to **In Review** and add the PR link, branch, validation results and any limitations.
+- After opening the sub-issue PR (or the standalone ticket's PR into `development`), move the ticket to **In Review** and add the PR link, branch, validation results and any limitations.
 - Address review findings on the same sub-issue branch.
 - When the sub-issue PR is merged into the feature branch, add a comment saying so. Keep the ticket **In Review**.
-- When the feature branch is merged into `development` and the acceptance criteria are satisfied, move the epic and every sub-issue merged with it to **Done**.
+- When the feature branch is merged into `development` and the acceptance criteria are satisfied, move the epic and every sub-issue merged with it to **Done**. A standalone ticket moves to **Done** when its PR is merged into `development`.
 
 Local:
 
@@ -113,9 +115,9 @@ Before handing the task back:
 
 Cloud:
 
-- Confirm the sub-issue branch is pushed and its PR targets the epic's feature branch and accurately describes the final change.
+- Confirm the branch is pushed and its PR targets the epic's feature branch (or `development` for a standalone ticket) and accurately describes the final change.
 - Confirm Linear is **In Review** with the PR link.
-- Stop and wait for the PR to be merged into the feature branch.
+- Stop and wait for the PR to be merged.
 
 Local:
 
