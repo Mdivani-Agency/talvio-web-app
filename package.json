@@ -57,6 +57,7 @@
     "@tiptap/pm": "2.27.3",
     "@tiptap/react": "2.27.3",
     "@tiptap/starter-kit": "2.27.3",
+    "@vercel/analytics": "2.0.1",
     "class-variance-authority": "0.7.1",
     "cmdk": "1.1.1",
     "country-state-city": "3.2.1",

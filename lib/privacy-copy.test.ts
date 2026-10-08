@@ -27,8 +27,10 @@ describe('privacy policy copy', () => {
     }
   });
 
-  it('says no analytics tool is in use', () => {
-    expect(text).toContain('we do not currently use analytics tools');
+  it('discloses Vercel Web Analytics', () => {
+    expect(text).toContain('Vercel Web Analytics');
+    expect(text).toContain('without cookies');
+    expect(text).not.toContain('we do not currently use analytics tools');
     expect(text).not.toMatch(/posthog/i);
   });
 

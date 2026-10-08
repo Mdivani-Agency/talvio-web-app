@@ -61,7 +61,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByRole('heading', { name: 'Privacy Policy', exact: true })).toBeVisible();
   await expect(page.getByText(/^Last updated: [A-Z][a-z]+ \d{4}$/)).toBeVisible();
   await expect(page.getByRole('heading', { name: '6. Who we share data with', exact: true })).toBeVisible();
-  await expect(page.getByText('we do not currently use analytics tools')).toBeVisible();
+  await expect(page.getByText(/Vercel Web Analytics/).first()).toBeVisible();
   await expect(page.getByRole('main').getByRole('link', { name: 'contact@talvio.co' }).first()).toHaveAttribute('href', 'mailto:contact@talvio.co');
 
   await page.goto('/this-page-does-not-exist');

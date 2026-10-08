@@ -46,6 +46,10 @@ export const PRIVACY: LegalDocument = {
           ' How many resume PDFs you have created this month, and how often you use AI features.',
         ),
         p(
+          strong('Usage statistics.'),
+          ' The pages you visit on Talvio, your referrer, and your approximate country, browser and device type, recorded as anonymous page-view counts.',
+        ),
+        p(
           strong('Technical data.'),
           ' Your IP address, browser type and request logs, which our hosting providers record to run and protect the service.',
         ),
@@ -55,7 +59,7 @@ export const PRIVACY: LegalDocument = {
       heading: '3. Cookies and browser storage',
       blocks: [
         p(
-          "We use cookies only to keep you signed in. Your browser's local storage holds unsaved drafts and your display theme on your own device. We do not use advertising cookies, and we do not currently use analytics tools. If that changes, we will update this policy first.",
+          "We use cookies only to keep you signed in. Your browser's local storage holds unsaved drafts and your display theme on your own device. We do not use advertising cookies. We measure how the website is used with Vercel Web Analytics, which counts page views without cookies and without following you across other websites.",
         ),
       ],
     },
@@ -91,7 +95,7 @@ export const PRIVACY: LegalDocument = {
         p('We share personal data only with the providers that help us run Talvio:'),
         ul(
           [strong('Supabase:'), ' sign-in, database and storage of your profile and resumes.'],
-          [strong('Vercel:'), ' website hosting.'],
+          [strong('Vercel:'), ' website hosting and anonymous page-view statistics.'],
           [strong('Amazon Web Services:'), ' storage of generated PDF files and delivery of account emails.'],
           [strong('OpenAI:'), ' AI features, when you use them.'],
           [strong('Google:'), ' sign-in, if you choose to sign in with it.'],

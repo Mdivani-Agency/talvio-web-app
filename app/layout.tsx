@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { QueryProvider, SessionProvider, ThemeProvider } from '@lib/providers';
 import { HOME_DESCRIPTION, SHARE_OPEN_GRAPH, SHARE_TWITTER } from '@/lib/public-metadata';
@@ -43,6 +44,7 @@ export default function RootLayout({
             <Toaster />
           </QueryProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
