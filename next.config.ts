@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -48,4 +49,16 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: 'talvio',
+  project: 'talvio-web-app',
+
+  // Source map upload token; set SENTRY_AUTH_TOKEN in the build environment.
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  widenClientFileUpload: true,
+
+  // Proxy events through our own origin so ad blockers do not drop them.
+  tunnelRoute: '/monitoring',
+
+  silent: !process.env.CI,
+});
