@@ -14,9 +14,10 @@ from the app or the Data API.
 
 - Migrations: on a push to `development` (dev) or `main` (production), CI runs
   the release gate, then `supabase db push`, then the Vercel CLI deploy
-  (`.github/workflows/ci.yml`). `20261005170000_monthly_allowance.sql`
-  creates `pg_cron`, the `monthly-allowance-reset` job and the cutover;
-  `20261006100000_ai_daily_caps.sql` creates the AI cap and the
+  (`.github/workflows/ci.yml`). `20261008000100_extensions_enums.sql`
+  enables `pg_cron`; `20261008000400_monthly_allowance.sql` creates the
+  `monthly-allowance-reset` job and records the current month;
+  `20261008000500_ai_daily_caps.sql` creates the AI cap and the
   `ai-daily-usage-prune` job. Nothing is set up by hand.
 - Flags: `NEXT_PUBLIC_FLAG_PLANS_PAGE` and
   `NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI` are Vercel environment variables
@@ -191,9 +192,9 @@ passed while it was paused, run the operational check and the manual rerun.
 
 ### Never
 
-- Never revert `handle_new_user` to the 300-credit grant from
-  `20260101000900_auth_hooks.sql`, and never edit a merged migration (CI has
-  already applied it). Any change is a new timestamped migration.
+- Never revert `handle_new_user` to the original 300-credit signup grant, and
+  never edit a merged migration (CI has already applied it). Any change is a
+  new timestamped migration.
 - Never delete rows from `monthly_allowance_runs`. The record is what stops a
   rerun from refilling spent balances in the same month.
 - Never call `apply_monthly_allowance` with a past `p_now` to "replay" a
