@@ -1,83 +1,52 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMachine } from '@xstate/react';
-import { createContext, PropsWithChildren, useContext, useEffect } from 'react';
-import { ActorRef, AnyActorRef, MachineSnapshot, Snapshot, StateSchema } from 'xstate';
-import { AccountContext, AccountEvents, AccountState, MetaKey } from '../state/types';
-import { accountState } from '../state/machine';
+
+import { createContext, PropsWithChildren, useContext } from 'react';
+
+import { Loading } from '@components/views';
+import { DraftStatusBanner } from '@components/views/draft-status';
 import { useUserSession } from '@lib/providers';
 
-type State = MachineSnapshot<
-  AccountContext,
-  AccountEvents,
-  Record<string, AnyActorRef | undefined>,
-  AccountState,
-  string,
-  unknown,
-  Record<MetaKey, any>,
-  StateSchema
->;
+import { useAccountOnboarding, type AccountOnboarding } from '../hooks/use-account-onboarding';
 
-type ContextState = {
-  userId: string;
-  state: State;
-  actorRef: ActorRef<Snapshot<State>, AccountEvents>;
-  send: (event: AccountEvents) => void;
-};
+const OnboardingContext = createContext<AccountOnboarding | null>(null);
 
-export const ACCOUNT_SNAPSHOT_KEY = 'account-state-snapshot';
+function AccountOnboardingProvider({
+  children,
+  userId,
+}: PropsWithChildren<{ userId: string }>) {
+  const onboarding = useAccountOnboarding(userId);
 
-function getSnapshot(userId: string) {
-  if (typeof window !== 'undefined') {
-    const snapshot = localStorage.getItem(`${ACCOUNT_SNAPSHOT_KEY}-${userId}`);
-    return snapshot ? JSON.parse(snapshot) : undefined;
-  }
-
-  return undefined;
+  return (
+    <OnboardingContext.Provider value={onboarding}>
+      <DraftStatusBanner status={onboarding.persistStatus} />
+      {children}
+    </OnboardingContext.Provider>
+  );
 }
 
-const MachineContext = createContext<ContextState>({} as ContextState);
-
-const PersistState = ({ children, userId }: PropsWithChildren<{ userId: string }>) => {
-  const { actorRef } = useAccountContext();
-
-  useEffect(() => {
-    const subscription = actorRef.subscribe((snapshot) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`${ACCOUNT_SNAPSHOT_KEY}-${userId}`, JSON.stringify(snapshot));
-      }
-    });
-
-    return subscription.unsubscribe;
-  }, [actorRef, userId]);
-
-  return children;
-};
-
 export const AccountProvider = ({ children }: PropsWithChildren) => {
-  const { session } = useUserSession();
+  const { session, isPending } = useUserSession();
 
-  if (!session || !session.user) {
+  if (isPending) {
+    return <Loading message="Restoring account draft..." />;
+  }
+
+  if (!session?.user) {
     throw new Error('User not found');
   }
 
-  const { user } = session;
-
-  const [state, send, actorRef] = useMachine(accountState, { snapshot: getSnapshot(user.id) });
-
   return (
-    // @ts-expect-error - TODO: fix this
-    <MachineContext.Provider value={{ state, actorRef, userId: user.id, send }}>
-      <PersistState userId={user.id}>{children}</PersistState>
-    </MachineContext.Provider>
+    <AccountOnboardingProvider userId={session.user.id}>
+      {children}
+    </AccountOnboardingProvider>
   );
 };
 
 export const useAccountContext = () => {
-  const context = useContext(MachineContext);
+  const context = useContext(OnboardingContext);
 
   if (!context) {
-    throw new Error('useMachineContext must be used within a AccountProvider');
+    throw new Error('useAccountContext must be used within a AccountProvider');
   }
 
   return context;

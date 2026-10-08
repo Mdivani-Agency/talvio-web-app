@@ -34,7 +34,6 @@ import Drag from './svg/drag.svg';
 import Star from './svg/star.svg';
 import Project from './svg/project.svg';
 import Twitter from './svg/twitter.svg';
-import LinkedIn from './svg/linkedin.svg';
 import DarkMode from './svg/dark-mode.svg';
 import Settings from './svg/settings.svg';
 import Logout from './svg/logout.svg';
@@ -97,7 +96,6 @@ const IconMap = {
   Project,
   Google,
   Twitter,
-  LinkedIn,
   Logo,
   DarkMode,
   Settings,

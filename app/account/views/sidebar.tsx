@@ -5,12 +5,13 @@ import { Icon } from '@components/icons';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@lib/utils';
+import { featureFlags } from '@/lib/flags';
 
 export const Sidebar = () => {
   const pathname = usePathname();
 
   return (
-    <aside className={'flex flex-col gap-4 h-screen p-4 border-r border-input min-w-64 2xl:min-w-84'}>
+    <aside className={'flex w-full flex-col gap-4 border-b border-input p-4 md:h-screen md:min-w-64 md:w-auto md:border-b-0 md:border-r 2xl:min-w-84'}>
       <div className="flex justify-center px-8">
         <Logo size={'medium'} />
       </div>
@@ -40,16 +41,18 @@ export const Sidebar = () => {
           </li>
         </ul>
       </nav>
-      <div className={'text-center mt-auto mb-8 rounded-md bg-card py-10 px-5'}>
-        <Icon className={'size-20 2xl:size-28 text-secondary mb-3.5'} type={'Premium'} />
-        <h2 className={'text-sm text-primary font-medium mb-3.5'}>Get Premium Features</h2>
-        <p className={'text-xs text-primary mb-4'}>Unlock pro resume features and stand out</p>
-        <Link href="/account/upgrade">
-          <Button className={'text-sm mx-auto w-full'} size={'sm'}>
-            Upgrade Now
-          </Button>
-        </Link>
-      </div>
+      {featureFlags().creditPurchaseUi && (
+        <div className={'text-center mt-auto mb-8 rounded-md bg-card py-10 px-5'}>
+          <Icon className={'size-20 2xl:size-28 text-secondary mb-3.5'} type={'Premium'} />
+          <h2 className={'text-sm text-primary font-medium mb-3.5'}>Get Premium Features</h2>
+          <p className={'text-xs text-primary mb-4'}>Unlock pro resume features and stand out</p>
+          <Link href="/account/upgrade">
+            <Button className={'text-sm mx-auto w-full'} size={'sm'}>
+              Upgrade Now
+            </Button>
+          </Link>
+        </div>
+      )}
     </aside>
   );
 };

@@ -39,6 +39,7 @@ export const StickyHeader = ({
   return (
     <Header
       size={size}
+      inert={!show}
       className={cn(
         'sticky top-0 z-20 backdrop-blur-2xs -translate-y-[100%] transition-transform duration-300 ease-in-out',
         show && 'translate-y-0',

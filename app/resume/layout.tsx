@@ -1,17 +1,15 @@
 import { Header } from "@components/views";
 import { SessionProvider } from "@lib/providers";
-import { ResumeProvider } from "./providers/state-provider";
+import { PRIVATE_ROBOTS } from '@/lib/public-metadata';
 
-export default async function ResumeLayout({ children, params }: { children: React.ReactNode, params: { resumeId: string } }) {
-  const { resumeId = 'new_resume' } = await params;
+export const metadata = { robots: PRIVATE_ROBOTS };
 
+export default async function ResumeLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="font-(family-var(--font-montserrat))">
       <SessionProvider>
-        <ResumeProvider resumeId={resumeId}>
-          <Header className="bg-popover" />
-          {children}
-        </ResumeProvider>
+        <Header className="bg-popover" />
+        {children}
       </SessionProvider>
     </div>
   );

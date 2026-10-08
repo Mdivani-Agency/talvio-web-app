@@ -1,0 +1,163 @@
+fragment ProfileFields on profiles {
+  user_id
+  first_name
+  last_name
+  role
+  tagline
+  seniority
+  city
+  country
+  created_at
+  updated_at
+}
+
+query ProfileByUser($userId: UUID!) {
+  profilesCollection(filter: { user_id: { eq: $userId } }, first: 1) {
+    edges {
+      node {
+        ...ProfileFields
+      }
+    }
+  }
+  contactsCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        kind
+        value
+        label
+        is_primary
+        sort_order
+      }
+    }
+  }
+  experiencesCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        company
+        job_title
+        employment_type
+        location_type
+        start_date
+        end_date
+        is_present
+        achievements
+        responsibilities
+        key_contributions
+        additional_details
+        sort_order
+      }
+    }
+  }
+  educationsCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        name
+        degree_type
+        start_date
+        end_date
+        is_present
+        additional_details
+        sort_order
+      }
+    }
+  }
+  projectsCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        name
+        url
+        additional_details
+        sort_order
+      }
+    }
+  }
+  recommendationsCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        name
+        url
+        additional_details
+        sort_order
+      }
+    }
+  }
+  skillsCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        name
+        sort_order
+      }
+    }
+  }
+  toolsCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        name
+        sort_order
+      }
+    }
+  }
+  linksCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        type
+        value
+        sort_order
+      }
+    }
+  }
+  languagesCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 200
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        language
+        proficiency
+        sort_order
+      }
+    }
+  }
+}

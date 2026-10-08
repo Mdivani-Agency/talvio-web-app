@@ -144,7 +144,11 @@ export function DatePicker({
 
   return (
     <div className={cn('flex gap-2', className)}>
-      <Listbox value={selectedDate?.getMonth()} onChange={handleMonthChange} disabled={disabled}>
+      <Listbox
+        value={typeof selectedMonthValue === 'number' ? selectedMonthValue : null}
+        onChange={(month) => typeof month === 'number' && handleMonthChange(month)}
+        disabled={disabled}
+      >
         <div className="relative flex-1" ref={containerRef}>
           <ListboxButton
             className={cn(
@@ -152,7 +156,7 @@ export function DatePicker({
               'transition-colors duration-300 ease-in',
               !disabled && 'hover:bg-input/80',
               variant === 'primary' &&
-                'bg-input active:bg-input/80 placeholder:text-muted-foreground disabled:bg-input/80 disabled:text-muted-foreground',
+                'bg-input active:bg-input/80 placeholder:text-placeholder disabled:bg-input/80 disabled:text-muted-foreground',
               size === 'sm' && 'text-sm',
               size === 'md' && 'text-md',
               size === 'lg' && 'text-md',
@@ -221,7 +225,11 @@ export function DatePicker({
         </div>
       </Listbox>
 
-      <Listbox value={selectedDate?.getFullYear()} onChange={handleYearChange} disabled={disabled}>
+      <Listbox
+        value={typeof selectedYearValue === 'number' ? selectedYearValue : null}
+        onChange={(year) => typeof year === 'number' && handleYearChange(year)}
+        disabled={disabled}
+      >
         <div className="relative flex-1">
           <ListboxButton
             className={cn(
@@ -229,7 +237,7 @@ export function DatePicker({
               'transition-colors duration-300 ease-in',
               !disabled && 'hover:bg-input/80',
               variant === 'primary' &&
-                'bg-input active:bg-input/80 placeholder:text-muted-foreground disabled:bg-input/80 disabled:text-muted-foreground',
+                'bg-input active:bg-input/80 placeholder:text-placeholder disabled:bg-input/80 disabled:text-muted-foreground',
               size === 'sm' && 'text-sm',
               size === 'md' && 'text-md',
               size === 'lg' && 'text-md',

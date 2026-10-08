@@ -1,29 +1,33 @@
 import { UploadFile } from "@components/ui";
 import { useResumeParser } from "@hooks/use-resume-parser";
+import { profileToResumeDocument } from "@lib/models/resume-document";
 import { transformFromParsedToAccount } from "@lib/utils";
 import { useResumeContext } from "../providers/state-provider";
 import { toast } from "sonner";
 import { Loading } from "@components/views";
 import Image from "next/image";
 import { useUserSession } from "@lib/providers";
-import { redirect } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
+import { signInHref } from "@lib/auth/sign-in-href";
 
 export default function ImportResumePage() {
   const { session, isPending: isAuthenticating } = useUserSession();
-  const { send, state } = useResumeContext();
-  const { resumeDto } = state.context;
+  const { applyImportedResume, resume } = useResumeContext();
+  const searchParams = useSearchParams();
 
   const { parseResumeText, loading } = useResumeParser({
     onResumeParsed: (parsedResume) => {
       const transformed = transformFromParsedToAccount(parsedResume);
+      const document = profileToResumeDocument(transformed);
+      const name = `${transformed.profile.firstName} ${transformed.profile.lastName}`.trim() || 'my resume';
 
-      send({ type: 'UPLOAD_RESUME', value: {
-        resume: transformed,
-        name: `${transformed.profile.firstName} ${transformed.profile.lastName}`,
-        template: resumeDto.template,
-        color: resumeDto.color,
-        fontSize: resumeDto.fontSize,
-      } });
+      applyImportedResume({
+        resume: document,
+        name,
+        template: resume.template,
+        color: resume.color,
+        fontSize: resume.fontSize,
+      });
     },
     onError: (error) => {
       toast.error(error.message);
@@ -35,7 +39,8 @@ export default function ImportResumePage() {
   }
 
   if (!session) {
-    return redirect('/auth/sign-in?callbackURL=/resume');
+    const template = searchParams.get('template');
+    return redirect(signInHref(template ? `/resume?template=${encodeURIComponent(template)}` : '/resume'));
   }
 
   return (

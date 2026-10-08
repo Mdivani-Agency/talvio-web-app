@@ -11,9 +11,10 @@ export default function VerifyRequestPage() {
       <Icon type={'VerifyEmail'} className={'size-124'} />
       <h1 className="text-secondary-900 text-xl font-semibold">Check Your Email!</h1>
       <p className="text-lg text-center text-foreground">
-        We’ve just sent you an email, Tap on the link to verify your account
+        We’ve just sent you an email. Open the link on this same device and
+        browser to finish signing in.
       </p>
-      <Link className="w-full max-w-96" href={'/'}>
+      <Link className="w-full max-w-96" href={'/'} prefetch={false}>
         <Button className={'w-full'} variant={'default'}>
           Back to Home
         </Button>

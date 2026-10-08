@@ -1,23 +1,24 @@
 'use client';
-import { Button } from "@components/ui";
-import { AccountForm } from "./account.form";
-import { useState } from "react";
-import { UploadModal } from "@components/modals";
-import { useResumeParser } from "@hooks/use-resume-parser";
-import { transformFromParsedToAccount } from "@lib/utils/forms";
-import { toast } from "sonner";
-import { Loading } from "@components/views";
-import { UploadIcon } from "lucide-react";
-import { useAccountContext } from "../../providers/state-provider";
+
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { UploadIcon } from 'lucide-react';
+
+import { Button } from '@components/ui';
+import { ConfirmModal, UploadModal } from '@components/modals';
+import { useResumeParser } from '@hooks/use-resume-parser';
+import { transformFromParsedToAccount } from '@lib/utils/forms';
+
+import { useAccountContext } from '../../providers/state-provider';
+import { AccountForm } from './account.form';
 
 export default function AccountFormPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const { send } = useAccountContext();
+  const { offerImport, pendingImport, applyImport, cancelImport, submitProfile, formRevision } = useAccountContext();
 
   const { parseResumeText, loading } = useResumeParser({
     onResumeParsed: (parsedResume) => {
-      const transformed = transformFromParsedToAccount(parsedResume);
-      send({ type: 'SET_PARTIAL_DTO', value: transformed });
+      offerImport(transformFromParsedToAccount(parsedResume));
     },
     onError: (error) => {
       toast.error(error.message);
@@ -25,12 +26,9 @@ export default function AccountFormPage() {
   });
 
   const handleFileUpload = (file: File) => {
-    parseResumeText(file);
+    setIsUploadModalOpen(false);
+    void parseResumeText(file);
   };
-
-  if (loading) {
-    return <Loading message="Parsing resume..." />;
-  }
 
   return (
     <section className="container flex flex-col gap-4 mx-auto">
@@ -41,18 +39,25 @@ export default function AccountFormPage() {
         automatically review and polish the formatting at the end. Focus on sharing your key achievements, skills, and
         experience to make your profile stand out!
       </p>
-      <div className="flex justify-start">
-        <Button onClick={() => setIsUploadModalOpen(true)}>
+      <div className="flex items-center justify-start gap-3">
+        <Button onClick={() => setIsUploadModalOpen(true)} loading={loading}>
           <UploadIcon className="size-4" />
-          Import from resume
+          {loading ? 'Parsing resume...' : 'Import from resume'}
         </Button>
       </div>
-      <AccountForm onSubmit={(data) => send({ type: 'SET_ACCOUNT_DTO', value: data })} />
+      <AccountForm key={formRevision} onSubmit={submitProfile} />
       <UploadModal
         title="Upload Resume"
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onFileUpload={handleFileUpload}
+      />
+      <ConfirmModal
+        isOpen={pendingImport !== null}
+        title="Replace current profile?"
+        description="Imported resume details will replace the information you have already entered. Cancel to keep your current work."
+        onClose={cancelImport}
+        onConfirm={applyImport}
       />
     </section>
   );

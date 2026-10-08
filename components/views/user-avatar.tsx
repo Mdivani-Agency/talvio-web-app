@@ -1,6 +1,7 @@
 'use client';
 
-import { authClient } from '@lib/auth.client';
+import { createSupabaseBrowserClient } from '@lib/supabase/client';
+import { clearLegacyBearerToken } from '@lib/supabase/legacy-token';
 import { Icon } from '@components/icons';
 import {
   Avatar,
@@ -37,14 +38,18 @@ export function UserAvatar({ className, user }: UserAvatarProps) {
 
   const handleSignOut = async () => {
     setOpen(false);
-    await authClient.signOut();
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    clearLegacyBearerToken();
+    // A full document load finishes sign-out before the next navigation starts.
+    window.location.replace('/');
   };
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Avatar className={cn('size-8', className)}>
+          <Avatar aria-label="Account menu" data-testid="account-menu" className={cn('size-8', className)}>
             <AvatarImage src={user?.image || ''} />
             <AvatarFallback>
               {user?.name?.charAt(0) || 'A'}

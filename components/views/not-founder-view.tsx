@@ -16,7 +16,7 @@ export function NotFoundError() {
           </p>
         </article>
         <div className={'mt-6'}>
-          <Link href={'/'}>
+          <Link href={'/'} prefetch={false}>
             <Button variant={'default'}>Go Home</Button>
           </Link>
         </div>

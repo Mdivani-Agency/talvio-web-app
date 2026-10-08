@@ -72,7 +72,7 @@ export function AutocompleteInput<T extends string>({
 
   return (
     <div className={'w-full'} ref={containerRef}>
-      <Combobox value={selected || ''} onChange={onSelect}>
+      <Combobox value={selected || ''} onChange={(value) => value != null && onSelect?.(value as T)}>
         <div className="relative">
           <div className="group relative">
             <ComboboxInput

@@ -1,8 +1,10 @@
 import { AccountDto, Education, Experience, Language, Link, ParsedAccount, Project, Recommendation, Skill, Tool } from "@lib/types";
 import { AutoParseableTextFormat } from "openai/lib/parser.mjs";
-import { FieldErrors, FieldValues } from "react-hook-form";
 import { z } from "zod";
 import { ZodError } from "zod";
+import { hasFieldError } from '@lib/forms/errors';
+
+export { hasFieldError as hasError };
 
 export function jsonSchema(
   name: string,
@@ -14,8 +16,8 @@ export function jsonSchema(
     type: "json_schema",
     strict: true,
     $brand: "auto-parseable-response-format",
-    $parseRaw: (x) => x.match(/```json([\s\S]*?)```/)?.[1]?.trim(),
-  } as AutoParseableTextFormat<z.infer<typeof schema>>;
+    $parseRaw: (x: string) => x.match(/```json([\s\S]*?)```/)?.[1]?.trim(),
+  } as unknown as AutoParseableTextFormat<z.infer<typeof schema>>;
 }
 
 export function parseValidationErrors(errors: Record<string, string[]>) {
@@ -51,12 +53,6 @@ export function getHostname(url: string) {
 
   return domainName;
 }
-
-export const hasError = <T extends FieldValues>(errors: FieldErrors<T>, key: keyof T) => {
-  if (!errors || !errors[key]) return false;
-
-  return !!(errors?.[key]?.message || Object.keys(errors[key]).length);
-};
 
 export const transformToPartial = <T>(data: T): Partial<T> => {
   if (typeof data !== 'object') {
@@ -102,7 +98,7 @@ export const transformFromParsedToAccount = (parsed: ParsedAccount): AccountDto 
           jobTitle: experience.jobTitle,
           startDate: new Date(experience.startDate).toISOString(),
           endDate: experience.endDate ? new Date(experience.endDate).toISOString() : undefined,
-          isPresent: experience.isPresent ? new Date(experience.isPresent).toISOString() : undefined,
+          isPresent: Boolean(experience.isPresent),
           employmentType: experience.employmentType || undefined,
           locationType: experience.locationType || undefined,
           additionalDetails: experience.additionalDetails || undefined,
@@ -121,7 +117,7 @@ export const transformFromParsedToAccount = (parsed: ParsedAccount): AccountDto 
           degreeType: education.degreeType,
           startDate: new Date(education.startDate).toISOString(),
           endDate: education.endDate ? new Date(education.endDate).toISOString() : undefined,
-          isPresent: education.isPresent ? new Date(education.isPresent).toISOString() : undefined,
+          isPresent: Boolean(education.isPresent),
           additionalDetails: education.additionalDetails || undefined,
         }];
       } else {

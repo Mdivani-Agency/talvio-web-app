@@ -1,137 +1,219 @@
 'use client';
-import { useCallback, useMemo, useState } from 'react';
-import { AnimatedTransition, Button, Tooltip, TooltipContent, TooltipTrigger } from '@components/ui';
-import { PreviewDto, TemplateKey } from '@lib/types';
-import { Icon } from '@components/icons';
 
-import { EditResumeView } from './views/edit-resume-view';
-import { Preview } from './views/resume-preview';
-import { useResumeContext } from './providers/state-provider';
-import { Template } from '@pdf-tlv/resume';
-import TemplatesView from './views/templates-view';
-import { createResume, listResumeTemplates } from '@lib/clients/resume.client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useCallback, useRef, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+import { createResume } from '@app/resume/query/use-create-resume';
+import { triggerBrowserDownload, useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { fetchResume } from '@app/resume/query/use-resume';
+import { saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
+import { ResumeConflictError, updateResume } from '@app/resume/query/use-update-resume';
+import { isGeneratedResume } from '@lib/adapters/resume.adapter';
+import { signInHref } from '@lib/auth/sign-in-href';
+import { formatResumeFieldIssues, resumeSubmissionIssues, type ResumeFieldIssue } from '@lib/models/resume-document';
+import { filenameFromDocument } from '@lib/resume/resolve-editor';
+import type { SaveStatus } from '@lib/resume/save-queue';
 import { useUserSession } from '@lib/providers';
-import { redirect } from 'next/navigation';
-import { toast } from 'sonner';
+import type { PreviewDto, Resume } from '@lib/types';
 
-type ResumePreviewPageProps = {
-  level: 'entry' | 'mid' | 'senior';
-  initialMode?: 'edit' | 'template';
-};
+import { useResumeContext } from './providers/state-provider';
+import { ResumeEditorShell } from './views/resume-editor-shell';
 
-export function ResumePreviewPage({ initialMode = 'edit', level }: ResumePreviewPageProps) {
+function previewRevisionKey(body: PreviewDto) {
+  return JSON.stringify({
+    name: body.name,
+    label: body.label ?? '',
+    template: body.template,
+    color: body.color,
+    fontSize: body.fontSize,
+    resume: body.resume,
+  });
+}
+
+export function ResumePreviewPage() {
   const { session } = useUserSession();
-  const [current, setCurrent] = useState(initialMode === 'edit' ? 1 : 0);
-  const { state, send } = useResumeContext();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
+  const { resume, changeResume, clearResumeDraft, ensureDraftId } = useResumeContext();
+  const createdRef = useRef<Resume | null>(null);
+  const generatedKeyRef = useRef<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved-locally');
+  const [saveMessage, setSaveMessage] = useState<string>();
+  const downloadLock = useRef<Promise<Resume> | null>(null);
+  const generatePdf = useGenerateResumePdf(session?.user.id);
 
-  const resume = state.context.resumeDto;
-
-  const { data: templates } = useQuery({
-    queryKey: ['templates'],
-    refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const templates = await listResumeTemplates();
-      const template = [
-        ...templates.entry,
-        ...templates.mid,
-        ...templates.senior,
-      ].find(({ key }) => key === resume.template);
-
-      if (template) {
-        send({
-          type: 'SET_TEMPLATE',
-          value: template.template,
-        });
+  const { mutateAsync: createAndDownload, isPending: downloadPending } = useMutation({
+    mutationFn: async (body: PreviewDto) => {
+      if (downloadLock.current) {
+        return downloadLock.current;
       }
 
-      return templates;
-    },
-  });
+      const run = (async () => {
+        if (!session) {
+          const template = searchParams.get('template');
+          const returnPath = template
+            ? `/resume?template=${encodeURIComponent(template)}`
+            : '/resume';
+          router.push(signInHref(returnPath));
+          throw new Error('Please sign in');
+        }
 
-  const { mutateAsync: createResumeMutation } = useMutation({
-    mutationFn: async () => {
-      const body = state.context.resumeDto;
+        const fieldIssues = resumeSubmissionIssues(body.resume);
+        if (fieldIssues.length > 0) {
+          setIssues(fieldIssues);
+          throw new Error(formatResumeFieldIssues(fieldIssues));
+        }
+        setIssues([]);
+        setSaveMessage(undefined);
+        const clientDraftId = ensureDraftId();
+        const current = createdRef.current;
+        if (current && isGeneratedResume(current) && generatedKeyRef.current === previewRevisionKey(body)) {
+          setSaveStatus('generating');
+          try {
+            const generated = await generatePdf.mutateAsync(current);
+            createdRef.current = generated;
+            setSaveStatus('saved');
+            return generated;
+          } catch (error) {
+            setSaveStatus('failed');
+            setSaveMessage(error instanceof Error ? error.message : 'Failed to generate PDF');
+            throw error;
+          }
+        }
 
-      if (!session) {
-        return redirect('/auth/sign-in?callbackUrl=/resume');
-      }
+        setSaveStatus('saving');
+        let saved = current;
+        try {
+          if (current && isGeneratedResume(current)) {
+            const edited = await saveResumeEdit({
+              userId: session.user.id,
+              existing: current,
+              patch: {
+                name: body.name,
+                label: body.label,
+                template: body.template,
+                color: body.color,
+                fontSize: body.fontSize,
+                resume: body.resume,
+              },
+              baseUpdatedAt: current.updatedAt,
+              serverId: current.id,
+              clientDraftId,
+            });
+            saved = edited.resume;
+          } else if (saved) {
+            saved = await updateResume(saved.id, {
+              name: body.name,
+              label: body.label,
+              template: body.template,
+              color: body.color,
+              fontSize: body.fontSize,
+              resume: body.resume,
+            }, { baseUpdatedAt: saved.updatedAt });
+          } else {
+            saved = await createResume({
+              userId: session.user.id,
+              type: 'GENERAL',
+              body,
+              clientDraftId,
+            });
+          }
+        } catch (error) {
+          if (error instanceof ResumeConflictError && current) {
+            try {
+              const fresh = await fetchResume(current.id);
+              const next = { ...current, updatedAt: fresh.updatedAt };
+              createdRef.current = next;
+            } catch {
+              // The next download uses the same revision and conflicts again.
+            }
+          }
+          setSaveStatus(error instanceof ResumeConflictError ? 'conflict' : 'failed');
+          setSaveMessage(error instanceof Error ? error.message : 'Failed to save resume');
+          throw error;
+        }
+        createdRef.current = saved;
+        setSaveStatus('generating');
+        try {
+          const generated = await generatePdf.mutateAsync(saved);
+          createdRef.current = generated;
+          generatedKeyRef.current = previewRevisionKey(body);
+          setSaveStatus('saved');
+          clearResumeDraft();
+          return generated;
+        } catch (error) {
+          try {
+            const fresh = await fetchResume(saved.id);
+            if (isGeneratedResume(fresh) && fresh.media?.url) {
+              triggerBrowserDownload(fresh.media.url, fresh.name);
+              createdRef.current = fresh;
+              generatedKeyRef.current = previewRevisionKey(body);
+              setSaveStatus('saved');
+              clearResumeDraft();
+              return fresh;
+            }
+            createdRef.current = { ...saved, updatedAt: fresh.updatedAt };
+          } catch {
+            // Keep the saved row. The next download calls generate again.
+          }
+          setSaveStatus('failed');
+          setSaveMessage(error instanceof Error ? error.message : 'Failed to generate PDF');
+          throw error;
+        }
+      })();
 
+      downloadLock.current = run;
       try {
-        const data = await createResume({ userId: session.user.id, type: 'GENERAL', body });
-        return data;
-      } catch (error) {
-        console.error(error);
-        toast.error('Failed to create resume');
+        return await run;
+      } finally {
+        if (downloadLock.current === run) {
+          downloadLock.current = null;
+        }
       }
     },
   });
 
-  const handleStateUpdate = useCallback((state: Partial<{ color: string; template: Template; key: TemplateKey; data: PreviewDto['resume'] }>) => {
-    if (!resume) return;
-
-    const { color, template, key, data } = state;
-    send({
-      type: 'CHANGE_RESUME',
-      value: {
-        ...resume,
-        resume: data || resume.resume,
-        color: color || resume.color,
-        template: key || resume.template,
-        fontSize: resume.fontSize,
-        name: resume.resume.profile.firstName + ' ' + resume.resume.profile.lastName || 'my resume',
-      },
-    });
-
-    if (template) {
-      send({
-        type: 'SET_TEMPLATE',
-        value: template,
-      });
+  const handleChange = useCallback((patch: Partial<PreviewDto>) => {
+    const next = {
+      ...resume,
+      ...patch,
+      resume: patch.resume ?? resume.resume,
+    };
+    if (patch.resume) {
+      next.name = filenameFromDocument(next);
     }
-  }, [resume, send]);
-
-  const components = useMemo(() => {
-    return [
-      <TemplatesView
-        key="templates"
-        templates={templates}
-        initialLevel={level}
-        selectedTemplate={resume.template}
-        onChange={(template, key) => handleStateUpdate({ template, key })}
-      />,
-      <EditResumeView key="form" className="h-screen pt-16" onSubmit={(dto) => handleStateUpdate({ data: dto })} defaultValues={resume.resume} />,
-    ];
-  }, [level, resume?.resume, resume?.template, handleStateUpdate, templates]);
+    changeResume(next);
+  }, [changeResume, resume]);
 
   return (
-    <section className="grid grid-cols-5">
-      <AnimatedTransition direction="left" className="col-span-2 border-r border-input" current={current}>
-        {components[current]}
-      </AnimatedTransition>
-      <Preview
-        className="pt-16 col-span-3"
-        onDownload={createResumeMutation}
-        action={
-          <Button
-            variant="ghost"
-            className="text-muted-foreground font-medium size-8 hover:cursor-pointer"
-            title={current === 0 ? 'Edit Resume' : 'Switch Template'}
-            onClick={() => {
-              setCurrent(current === 0 ? 1 : 0);
-            }}
-          >
-            <Tooltip>
-              <TooltipTrigger>
-                <Icon type={current === 0 ? 'Edit' : 'Switch'} className="size-4" />
-              </TooltipTrigger>
-              <TooltipContent>
-                {current === 0 ? 'Edit Resume' : 'Switch Template'}
-              </TooltipContent>
-            </Tooltip>
-          </Button>
+    <ResumeEditorShell
+      document={resume}
+      formKey="new"
+      issues={issues}
+      downloadPending={downloadPending}
+      saveStatus={saveStatus}
+      saveMessage={saveMessage}
+      onRetrySave={() => {
+        void createAndDownload({ ...resume });
+      }}
+      onChange={(patch) => {
+        if (patch.resume) {
+          setIssues([]);
         }
-      />
-    </section>
+        handleChange(patch);
+      }}
+      onDownload={async (name, label) => {
+        const body = { ...resume, name, label };
+        changeResume(body);
+        try {
+          await createAndDownload(body);
+          return true;
+        } catch {
+          return false;
+        }
+      }}
+    />
   );
 }

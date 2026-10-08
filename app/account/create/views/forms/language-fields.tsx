@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
 
 import { Select, Pill, AutocompleteInput, Button, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@components/ui';
 import { languageSchema } from '@lib/schema/account.schema';
@@ -8,10 +7,12 @@ import { Language, LanguageProficiency as LanguageProficiencyType } from '@lib/t
 import { LanguageProficiency } from '@lib/schema/enums';
 import iso from 'iso-639-1';
 import { Icon } from '@components/icons';
+import type { AppForm } from '@lib/forms/use-form';
+import { useFormArray } from '@lib/forms/use-form-array';
 
 type LanguageFormFieldProps = {
   label?: string;
-  form: UseFormReturn<{ languages?: Language[] }>;
+  form: AppForm;
 };
 
 export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
@@ -20,22 +21,13 @@ export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
     proficiency: 'beginner',
   });
 
-  const { control, setError } = form;
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'languages',
-  });
+  const { fields, append, remove } = useFormArray<Language>(form, 'languages');
 
   const addLanguage = async () => {
-    const { success, data, error } = await languageSchema.safeParse(currentLanguage);
+    const { success, data } = languageSchema.safeParse(currentLanguage);
     if (success) {
       append(data);
       setLanguage({ language: '', proficiency: 'beginner' });
-    }
-
-    if (error) {
-      setError('languages', { message: error.message });
     }
   };
 
@@ -49,28 +41,19 @@ export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
     }
   };
 
-  const handleRemove = (index: number) => {
-    remove(index);
-  };
-
   return (
     <div className={'flex flex-col gap-2'}>
       <div className={'grid md:grid-cols-2 gap-2'}>
-        {/* Skill Name Field */}
-          <AutocompleteInput
-            placeholder={'Language'}
-            options={iso.getAllNames()}
-            selected={currentLanguage.language}
-            onSelect={handleLanguageChange}
-            onChange={handleLanguageChange}
-          />
+        <AutocompleteInput
+          placeholder={'Language'}
+          options={iso.getAllNames()}
+          selected={currentLanguage.language}
+          onSelect={handleLanguageChange}
+          onChange={handleLanguageChange}
+        />
 
-        {/* Proficiency Field */}
         <div className={'flex items-center gap-2'}>
-          <Select
-            value={currentLanguage.proficiency}
-            onValueChange={handleProficiencyChange}
-          >
+          <Select value={currentLanguage.proficiency} onValueChange={handleProficiencyChange}>
             <SelectTrigger>
               <SelectValue placeholder={'Select Proficiency'} />
             </SelectTrigger>
@@ -82,7 +65,7 @@ export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
               ))}
             </SelectContent>
           </Select>
-          <Button type={'button'} variant={'outline'} size={'icon'} onClick={addLanguage} >
+          <Button type={'button'} variant={'outline'} size={'icon'} onClick={addLanguage}>
             <Icon type={'Add'} className={'size-4'} />
           </Button>
         </div>
@@ -91,7 +74,7 @@ export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
       {fields.length > 0 && (
         <div className={'flex flex-wrap gap-1'}>
           {fields.map((skill, index) => (
-            <Pill key={index} title={skill.language} onRemove={() => handleRemove(index)} />
+            <Pill key={skill.id} title={skill.language} onRemove={() => remove(index)} />
           ))}
         </div>
       )}

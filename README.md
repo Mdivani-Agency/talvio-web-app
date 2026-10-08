@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Talvio web app
 
-## Getting Started
+Next.js 16 App Router project. Hosted on [Vercel](https://vercel.com).
 
-First, run the development server:
+## Getting started
+
+Requires [Node.js](https://nodejs.org) 20.9 or later (22 LTS recommended) and Yarn 4.
 
 ```bash
-npm run dev
-# or
+yarn install
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app listens on [http://localhost:3002](http://localhost:3002).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+yarn lint
+yarn typecheck
+yarn build
+yarn start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Pull requests run lint, typecheck, tests, the local database and Playwright suite, and a release gate. Pushes to `main` or `development` run those checks, then `supabase db push` and a Vercel CLI deploy only after the release gate succeeds. The quality job uses public `NEXT_PUBLIC_*` stubs only — no production secrets. `vercel.json` disables Vercel Git deployments for every branch. The deploy job installs Vercel CLI 60.1.3 and refuses to migrate or deploy when the checkout is no longer the branch tip.
 
-## Learn More
+## Local Supabase
 
-To learn more about Next.js, take a look at the following resources:
+Requires the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) (CI pins 2.117.0) and Docker. Next.js stays on port 3002; the local Data API is `http://127.0.0.1:54321`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+yarn db:start    # supabase start
+yarn db:reset    # drop + replay every migration + seed
+yarn db:diff     # generate a migration from the shadow DB
+yarn db:push     # apply pending migrations to a linked remote
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`yarn test:e2e:local` starts that stack, runs `supabase test db`, starts a loopback media/AI/font simulator on `127.0.0.1:3999`, builds the production app, serves it on port 3002, and runs Playwright on Chromium, Firefox, and WebKit. The mobile menu and mobile editor journey also run in a Pixel 5 Chromium project. The run fails when a required case is missing, skipped, or not passed in a required browser. It refuses hosted Supabase, media, OpenAI, or Google Fonts origins. `OPENAI_BASE_URL` and `GOOGLE_FONTS_API_BASE` stay unset in production, so those clients keep `api.openai.com` and `googleapis.com`. `yarn test:e2e` expects that stack and build to already be running.
+
+Copy URL and keys from `supabase status` into `.env.local`. GraphQL smoke test:
+
+```bash
+curl -sS -X POST http://127.0.0.1:54321/graphql/v1 \
+  -H "apikey: $NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
+  -H "Authorization: Bearer $NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ __typename }"}'
+```
+
+See [docs/supabase-schema.md](docs/supabase-schema.md) and [docs/data-api-grants.md](docs/data-api-grants.md).
+
+## Environment variables
+
+Copy [`.env.example`](.env.example) to `.env.local`. Set the same names in the Vercel project (Development / Preview / Production).
+
+| Name | Required | Used for |
+| --- | --- | --- |
+| `NEXT_PUBLIC_BASE_URL` | yes | Public site origin (auth redirect and error URLs) |
+| `NEXT_PUBLIC_API_BASE_URL` | yes | Media-service origin (`/media`). Account and resume data go through Supabase GraphQL. |
+| `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL (`http://127.0.0.1:54321` locally) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Supabase publishable / anon key |
+| `SUPABASE_SECRET_KEY` | yes (server) | Supabase secret / service-role key — never `NEXT_PUBLIC_` |
+| `MEDIA_SERVICE_API_KEY` | yes (server) | Media-service `X-API-KEY` for `POST /media/presign/{userId}` — never `NEXT_PUBLIC_` |
+| `GOOGLE_FONTS_API_KEY` | yes | Font file lookup at `/api/resume/fonts` |
+| `OPENAI_API_KEY` | no | Resume parse/QA; falls back to `TEST_KEY` if unset |
+
+## GitHub Actions
+
+Vercel deploy uses **repository** credentials (same values for `main` and `development`):
+
+| Name | Store as | Used for |
+| --- | --- | --- |
+| `VERCEL_TOKEN` | repository secret | Vercel CLI deploy |
+| `VERCEL_ORG_ID` | repository secret or variable | Vercel team / org |
+| `VERCEL_PROJECT_ID` | repository secret or variable | Vercel project |
+
+Supabase `db push` still reads GitHub Environment secrets when the hosted project differs per branch:
+
+| Environment | Branch | Hosted Supabase |
+| --- | --- | --- |
+| `development` | `development` | talvio-dev |
+| `production` | `main` | talvio-prod |
+
+| Name | Store as | Used for |
+| --- | --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | environment secret | Supabase CLI `db push` |
+| `SUPABASE_PROJECT_REF` | environment variable (secret also accepted) | Target project ref for that environment |
+
+`db push` fails until the access token secret and the project ref variable are set. Deploy fails until `VERCEL_TOKEN` is a repository secret and the Vercel org/project IDs are repository secrets or variables.
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Keep the repo connected to the Vercel project (Next.js framework preset) so CLI deploys can pull env vars. `vercel.json` sets `git.deploymentEnabled` to `false`, so Git pushes do not create Vercel deployments. GitHub Actions deploys `main` as production and `development` as preview, using the hosted Vercel environment from `vercel pull` rather than the local end-to-end build. Require the **Release gate** check in branch protection for `main` and `development`. A workflow file cannot remove a Vercel deploy hook or a person's CLI token.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Setting | Value |
+| --- | --- |
+| Framework | Next.js |
+| Node.js | 20.9 or later (22.x recommended) |
+| Install | `yarn install` |
+| Build | `yarn build` |
+| Output | `.next` (handled by the Next.js preset) |
+
+Add the environment variables above to the Vercel project. Preview and production should each use the matching public URLs for `NEXT_PUBLIC_BASE_URL`, the API origin, and the hosted Supabase project (`talvio-dev` / `talvio-prod`). Redirect URLs must include `/auth/callback`.
+
+Do not use AWS Amplify for this app. Amplify Hosting config has been removed.

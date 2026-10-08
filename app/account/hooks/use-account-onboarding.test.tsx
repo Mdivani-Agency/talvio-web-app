@@ -1,0 +1,357 @@
+import { act } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  ACCOUNT_DRAFT_STORAGE_KEY,
+  FLOW_USER_ID,
+  fullAccountDto,
+  versionedAccountDraft,
+} from '../../../test/fixtures/flow';
+import { renderHook } from '../../../test/utils/render';
+
+import { useAccountOnboarding } from './use-account-onboarding';
+
+const typedWork = {
+  profile: { firstName: 'Typed', lastName: 'Name' },
+};
+
+const importedWork = {
+  profile: { firstName: 'Imported', lastName: 'Resume' },
+};
+
+describe('useAccountOnboarding', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    window.localStorage.clear();
+    vi.useRealTimers();
+  });
+
+  it('starts from defaults and hydrates a stored draft', () => {
+    const empty = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+    expect(empty.result.current.step).toBe('form');
+    expect(empty.result.current.accountDto).toBeNull();
+    expect(empty.result.current.partialDto).toBeNull();
+    empty.unmount();
+
+    window.localStorage.setItem(ACCOUNT_DRAFT_STORAGE_KEY, JSON.stringify(versionedAccountDraft));
+    const restored = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+    expect(restored.result.current.step).toBe('questions');
+    expect(restored.result.current.accountDto?.profile.firstName).toBe('Ada');
+    expect(restored.result.current.currentQuestionId).toBe('question-2');
+    expect(restored.result.current.unsentAnswer).toBe('Cut render time');
+    restored.unmount();
+  });
+
+  it('applies an import immediately when there is no current work', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.offerImport(importedWork);
+    });
+
+    expect(result.current.pendingImport).toBeNull();
+    expect(result.current.partialDto).toEqual(importedWork);
+    expect(result.current.formRevision).toBe(1);
+    unmount();
+  });
+
+  it('keeps prior input when an import is cancelled and only replaces after confirm', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.setPartialDto(typedWork);
+    });
+    act(() => {
+      result.current.offerImport(importedWork);
+    });
+
+    expect(result.current.pendingImport).toEqual(importedWork);
+    expect(result.current.partialDto).toEqual(typedWork);
+    expect(result.current.formRevision).toBe(0);
+
+    act(() => {
+      result.current.cancelImport();
+    });
+    expect(result.current.pendingImport).toBeNull();
+    expect(result.current.partialDto).toEqual(typedWork);
+
+    act(() => {
+      result.current.offerImport(importedWork);
+    });
+    act(() => {
+      result.current.applyImport();
+    });
+    expect(result.current.pendingImport).toBeNull();
+    expect(result.current.partialDto).toEqual(importedWork);
+    expect(result.current.accountDto).toBeNull();
+    expect(result.current.formRevision).toBe(1);
+    unmount();
+  });
+
+  it('does not overwrite edits made while parsing unless the import is applied', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.setPartialDto(typedWork);
+      result.current.offerImport(importedWork);
+    });
+
+    expect(result.current.pendingImport).toEqual(importedWork);
+    expect(result.current.partialDto).toEqual(typedWork);
+    unmount();
+  });
+
+  it('advances to questions on valid submit and keeps values when going back', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    expect(result.current.step).toBe('questions');
+    expect(result.current.accountDto).toEqual(fullAccountDto);
+
+    act(() => {
+      result.current.goBackToForm();
+    });
+    expect(result.current.step).toBe('form');
+    expect(result.current.accountDto).toEqual(fullAccountDto);
+    expect(result.current.partialDto).toEqual(fullAccountDto);
+    unmount();
+  });
+
+  it('replaces the submitted profile when an import is applied after back', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.goBackToForm();
+    });
+    act(() => {
+      result.current.offerImport(importedWork);
+    });
+    act(() => {
+      result.current.applyImport();
+    });
+
+    expect(result.current.accountDto).toBeNull();
+    expect(result.current.partialDto).toEqual(importedWork);
+    expect(result.current.formRevision).toBe(1);
+    unmount();
+  });
+
+  it('does not rewrite a cleared draft after a pending persist', () => {
+    vi.useFakeTimers();
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.setPartialDto(typedWork);
+    });
+    act(() => {
+      result.current.completeSave();
+    });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY)).toBeNull();
+    unmount();
+    vi.useRealTimers();
+  });
+
+  it('keeps one debounced write across field updates', () => {
+    vi.useFakeTimers();
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.setPartialDto({ profile: { firstName: 'A' } });
+    });
+    act(() => {
+      result.current.setPartialDto({ profile: { firstName: 'Ada' } });
+    });
+    expect(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY)).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+
+    const stored = JSON.parse(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY) ?? 'null');
+    expect(stored?.content.partialDto).toEqual({ profile: { firstName: 'Ada' } });
+    unmount();
+    vi.useRealTimers();
+  });
+
+  it('clears the stored draft after a successful save', () => {
+    window.localStorage.setItem(ACCOUNT_DRAFT_STORAGE_KEY, JSON.stringify(versionedAccountDraft));
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.completeSave();
+    });
+
+    expect(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY)).toBeNull();
+    unmount();
+  });
+
+  it('records skip and back by question id and opens review on the last next', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+    const questions = [
+      { id: 'question-1', question: 'Which system?', example: 'PDF' },
+      { id: 'question-2', question: 'What was the result?', example: 'Faster' },
+    ];
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions(questions, result.current.profileRevision);
+    });
+    act(() => {
+      result.current.answerCurrent('skipped', '');
+    });
+    expect(result.current.currentQuestionId).toBe('question-2');
+    expect(result.current.answers[0]).toMatchObject({ questionId: 'question-1', status: 'skipped' });
+
+    act(() => {
+      result.current.goToPreviousQuestion();
+    });
+    expect(result.current.currentQuestionId).toBe('question-1');
+    act(() => {
+      result.current.answerCurrent('answered', 'Preview pipeline');
+    });
+    expect(result.current.answers[0].value).toBe('Preview pipeline');
+    expect(result.current.answers).toHaveLength(1);
+
+    act(() => {
+      result.current.answerCurrent('answered', 'Faster renders');
+    });
+    expect(result.current.step).toBe('answerReview');
+    unmount();
+  });
+
+  it('ignores a stale proposal and lets the user continue without AI', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions([
+        { id: 'question-1', question: 'Which system?', example: 'PDF' },
+      ], result.current.profileRevision);
+    });
+    const revision = {
+      profileRevision: result.current.profileRevision,
+      answerRevision: result.current.answerRevision,
+    };
+    act(() => {
+      result.current.answerCurrent('answered', 'Later edit');
+    });
+    act(() => {
+      result.current.receiveProposal({
+        ...fullAccountDto,
+        profile: { ...fullAccountDto.profile, tagline: 'Stale' },
+      }, revision);
+    });
+    expect(result.current.step).toBe('answerReview');
+    expect(result.current.tailoredAccount).toBeNull();
+
+    act(() => {
+      result.current.continueWithoutAi();
+    });
+    expect(result.current.step).toBe('profileReview');
+    expect(result.current.reviewedAccount).toEqual(fullAccountDto);
+    unmount();
+  });
+
+  it('keeps profile review edits when continuing without AI again', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+    const reviewed = {
+      ...fullAccountDto,
+      profile: { ...fullAccountDto.profile, tagline: 'Edited on review' },
+    };
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions([], result.current.profileRevision);
+    });
+    act(() => {
+      result.current.continueWithoutAi();
+    });
+    act(() => {
+      result.current.setReviewedAccount(reviewed);
+    });
+    act(() => {
+      result.current.goToAnswerReview();
+    });
+    act(() => {
+      result.current.continueWithoutAi();
+    });
+
+    expect(result.current.step).toBe('profileReview');
+    expect(result.current.reviewedAccount).toEqual(reviewed);
+    unmount();
+  });
+
+  it('accepts a matching proposal only while still on answer review', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+    const proposal = {
+      ...fullAccountDto,
+      profile: { ...fullAccountDto.profile, tagline: 'Tailored' },
+    };
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions([
+        { id: 'question-1', question: 'Which system?', example: 'PDF' },
+      ], result.current.profileRevision);
+    });
+    act(() => {
+      result.current.answerCurrent('answered', 'Preview pipeline');
+    });
+
+    const revision = {
+      profileRevision: result.current.profileRevision,
+      answerRevision: result.current.answerRevision,
+    };
+
+    act(() => {
+      result.current.goBackToForm();
+    });
+    act(() => {
+      result.current.receiveProposal(proposal, revision);
+    });
+    expect(result.current.step).toBe('form');
+    expect(result.current.tailoredAccount).toBeNull();
+
+    act(() => {
+      result.current.submitProfile(fullAccountDto);
+    });
+    act(() => {
+      result.current.receiveQuestions([
+        { id: 'question-1', question: 'Which system?', example: 'PDF' },
+      ], result.current.profileRevision);
+    });
+    act(() => {
+      result.current.answerCurrent('answered', 'Preview pipeline');
+    });
+    const acceptedRevision = {
+      profileRevision: result.current.profileRevision,
+      answerRevision: result.current.answerRevision,
+    };
+    act(() => {
+      result.current.receiveProposal(proposal, acceptedRevision);
+    });
+    expect(result.current.step).toBe('proposalReview');
+    expect(result.current.tailoredAccount).toEqual(proposal);
+    unmount();
+  });
+});

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { Toaster } from "sonner";
-import { QueryProvider, ThemeProvider } from "@lib/providers";
+import { QueryProvider, SessionProvider, ThemeProvider } from '@lib/providers';
+import { HOME_DESCRIPTION, SHARE_OPEN_GRAPH, SHARE_TWITTER } from '@/lib/public-metadata';
+import { siteOrigin } from '@/lib/site';
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -10,8 +12,12 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: "Talvio",
-  description: "Talvio - Your Career Success Partner",
+  description: HOME_DESCRIPTION,
+  // Pages without their own metadata, such as sign-in, still share with the image.
+  openGraph: SHARE_OPEN_GRAPH,
+  twitter: SHARE_TWITTER,
 };
 
 export default function RootLayout({
@@ -31,7 +37,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            {children}
+            <SessionProvider>
+              {children}
+            </SessionProvider>
             <Toaster />
           </QueryProvider>
         </ThemeProvider>

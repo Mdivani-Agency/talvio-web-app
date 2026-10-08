@@ -1,39 +1,38 @@
 'use client';
 import { useCallback, useState } from 'react';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
-import { AccountDto, Education } from '@lib/types';
+import { Education } from '@lib/types';
 import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
 import { Label } from '@components/ui';
 import { EducationForm } from './forms/education.form';
 import { FormList } from './form-list';
+import type { AppForm } from '@lib/forms/use-form';
+import { useFormArray } from '@lib/forms/use-form-array';
+import { preserveDocumentFields, resumeItemToAccountDialog } from '@lib/models/resume-document';
 
 type EducationViewProps = {
   className?: string;
-  form: UseFormReturn<AccountDto>;
+  form: AppForm;
+  /** Convert account-shaped dialogs into resume document items. */
+  documentMode?: boolean;
 };
 
-export const EducationView = ({
-  className,
-  form,
-}: EducationViewProps) => {
+export const EducationView = ({ className, form, documentMode = false }: EducationViewProps) => {
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
-  const { control } = form;
+  const { fields, append, remove, update } = useFormArray<Education>(form, 'education');
 
-  const { fields, append, remove, update } = useFieldArray({
-    control,
-    name: 'education',
-  });
-
-  const handleAddEducation = useCallback((education: Education) => {
-    append(education);
-  }, [append]);
+  const handleAddEducation = useCallback(
+    (education: Education) => {
+      append(documentMode ? preserveDocumentFields(undefined, education) : education);
+    },
+    [append, documentMode],
+  );
 
   const handleUpdateEducation = useCallback(
     (index: number, education: Education) => {
-      update(index, education);
+      update(index, documentMode ? preserveDocumentFields(fields[index], education) : education);
     },
-    [update],
+    [documentMode, fields, update],
   );
 
   const handleRemoveEducation = useCallback(
@@ -45,11 +44,10 @@ export const EducationView = ({
 
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">Education</Label>
-      <EducationForm
-        action="add"
-        onSubmit={handleAddEducation}
-      />
+      <Label size="lg" className="mb-6">
+        Education
+      </Label>
+      <EducationForm action="add" onSubmit={handleAddEducation} />
       <OrderedList fields={fields} label="Education">
         {({ items, onReorder }) => (
           <FormList
@@ -59,10 +57,13 @@ export const EducationView = ({
               <EducationForm
                 action="edit"
                 onSubmit={onSubmit}
-                defaultValues={item}
+                defaultValues={documentMode ? resumeItemToAccountDialog(item) : item}
               />
             )}
-            onReorder={onReorder}
+            onReorder={(nextItems) => {
+              form.setFieldValue('education', nextItems);
+              onReorder(nextItems);
+            }}
             handleUpdateForm={handleUpdateEducation}
             handleRemoveForm={setRemoveItemIndex}
           />

@@ -1,46 +1,93 @@
 'use client';
-import { Button, Card, CardContent, CardHeader, CardTitle, Separator } from "@components/ui";
-import { SignInForm } from "./sign-in.form";
-import { authClient } from "@lib/auth.client";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Icon } from "@components/icons";
 
-const magicLinkRedirectURL = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-request`;
-const magicLinkErrorURL = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/error`;
+import { Icon } from '@components/icons';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@components/ui';
+import { createSupabaseBrowserClient } from '@lib/supabase/client';
+import { Loading } from '@components/views';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import { toast } from 'sonner';
 
-export default function SignInPage() {
+import { safeRedirectPath } from '@/lib/auth/safe-redirect-path';
+import { signInSearchParams } from '@/lib/auth/sign-in-href';
+
+import { SignInForm } from './sign-in.form';
+import {
+  SIGN_IN_DIVIDER,
+  SIGN_IN_GOOGLE_LABEL,
+  SIGN_IN_HEADING,
+  SIGN_IN_INTRO,
+} from '@/lib/sign-in-copy';
+
+function authRedirectTo(next: string) {
+  return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+}
+
+function SignInPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = searchParams.get('callbackURL') || '/account';
-
-  const callbackURL = `${process.env.NEXT_PUBLIC_BASE_URL}${pathname}`;
+  const next = safeRedirectPath(signInSearchParams(searchParams));
 
   const handleEmailSignIn = async ({ email }: { email: string }) => {
-    await authClient.signIn.magicLink({ email, callbackURL, errorCallbackURL: magicLinkErrorURL });
-    router.push(magicLinkRedirectURL);
-  }
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: authRedirectTo(next) },
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    router.push('/auth/verify-request');
+  };
+
+  const handleGoogleSignIn = async () => {
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: authRedirectTo(next) },
+    });
+    if (error) {
+      toast.error(error.message);
+    }
+  };
 
   return (
-    <section className="flex flex-col items-center justify-center h-screen">
+    <section className="flex min-h-screen flex-col items-center justify-center px-4 py-24">
       <Card className="w-full max-w-96">
         <CardHeader>
-          <CardTitle className="text-primary text-xl font-semibold text-center">Access your account</CardTitle>
+          <CardTitle className="text-primary text-xl font-semibold text-center">
+            <h1>{SIGN_IN_HEADING}</h1>
+          </CardTitle>
+          <CardDescription className="text-md text-center">{SIGN_IN_INTRO}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <Button className="bg-[#FEFEFF] text-[#0d0d0d] flex items-center gap-2" onClick={() => authClient.signIn.social({ provider: 'google', callbackURL })} variant={'outline'}>
-            <Icon type="Google" className="size-4" /> Continue with Google
-          </Button>
-          <Button className="bg-[#0B66C2] text-white flex items-center gap-2" onClick={() => authClient.signIn.social({ provider: 'linkedin', callbackURL })} variant={'outline'}>
-            <Icon type="LinkedIn" className="size-4" /> Continue with Linkedin
+          <Button
+            className="bg-[#FEFEFF] text-[#0d0d0d] flex items-center gap-2"
+            onClick={() => void handleGoogleSignIn()}
+            variant={'outline'}
+          >
+            <Icon type="Google" className="size-4" /> {SIGN_IN_GOOGLE_LABEL}
           </Button>
           <div className="flex items-center gap-2">
             <Separator className="flex-1" />
-            <span className="text-sm text-muted-foreground px-2">or</span>
+            <span className="text-md text-muted-foreground px-2">{SIGN_IN_DIVIDER}</span>
             <Separator className="flex-1" />
           </div>
           <SignInForm onSubmit={handleEmailSignIn} />
+          <p className="text-center text-md text-muted-foreground">
+            Used LinkedIn before? Request an email link for that same address.
+          </p>
         </CardContent>
       </Card>
     </section>
-  )
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<Loading message={'Loading...'} />}>
+      <SignInPageContent />
+    </Suspense>
+  );
 }

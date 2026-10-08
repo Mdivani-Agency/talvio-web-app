@@ -36,7 +36,7 @@ const Root = ({ children, className, withActionButtons = true }: TabNavigationPr
         {withActionButtons && (
           <div
             className={
-              'fixed lg:absolute bottom-0 left-0 right-0 flex justify-between p-2.5 border-t border-input lg:pl-20'
+              'absolute bottom-0 left-0 right-0 flex justify-between p-2.5 border-t border-input lg:pl-20'
             }
           >
             <Button

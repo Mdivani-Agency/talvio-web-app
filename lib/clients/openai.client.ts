@@ -7,9 +7,16 @@ import { jsonSchema } from '@lib/utils/forms';
 
 const apiKey = process.env.OPENAI_API_KEY || 'TEST_KEY';
 
-const openai = new OpenAI({
-  apiKey,
-});
+function openAIClient(scenario?: string | null) {
+  const baseURL = process.env.OPENAI_BASE_URL;
+  return new OpenAI({
+    apiKey,
+    ...(baseURL ? { baseURL } : {}),
+    ...(baseURL && scenario ? { defaultHeaders: { 'x-e2e-scenario': scenario } } : {}),
+  });
+}
+
+const openai = openAIClient();
 
 export const questionSchema = z.array(
   z.object({
@@ -31,11 +38,12 @@ export const parseResume = async (resume: string, qaPairs: string) => {
   return completion.choices[0].message.content?.match(/```json([\s\S]*?)```/)?.[1]?.trim();
 };
 
-export const textToStructuredResume = async (text: string) => {
+export const textToStructuredResume = async (text: string, scenario?: string | null) => {
   try {
     const format = jsonSchema('account', parsedAccountSchema);
+    const client = scenario ? openAIClient(scenario) : openai;
 
-    const response = await openai.responses.parse({
+    const response = await client.responses.parse({
       model: 'gpt-4o-mini',
       input: [
         {

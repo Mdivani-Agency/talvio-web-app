@@ -6,35 +6,51 @@ import { cn } from '@lib/utils';
 interface TemplatesProps {
   level: 'entry' | 'mid' | 'senior';
   templatesContainerClassName?: string;
+  className?: string;
+  headingClassName?: string;
+  heading?: string;
+  intro?: string;
   onChangeLevel: (level: 'entry' | 'mid' | 'senior') => void;
 }
 
-export default function TemplatesSelector({ level, templatesContainerClassName, children, onChangeLevel }: PropsWithChildren<TemplatesProps>) {
+export default function TemplatesSelector({
+  level,
+  templatesContainerClassName,
+  className,
+  headingClassName,
+  heading = 'Choose Your Resume Template',
+  intro = 'Select a template based on your experience level to get the best layout for your career stage.',
+  children,
+  onChangeLevel,
+}: PropsWithChildren<TemplatesProps>) {
 
   return (
-    <section className="text-center text-secondary-900 gap-4 h-screen overflow-y-auto px-4 py-4 pt-16 col-span-2">
-      <h1 className="text-lg 2xl:text-xl font-bold mt-6 2xl:mt-4">Choose Your Resume Template</h1>
-      <p className="text-md 2xl:text-lg font-regular">
-        Select a template based on your experience level to get the best layout for your career stage.
+    <section className={cn("text-center text-secondary-900 gap-4 h-screen overflow-y-auto px-4 py-4 pt-16 col-span-2", className)}>
+      <h1 className={cn("text-lg 2xl:text-xl font-bold mt-6 2xl:mt-4", headingClassName)}>{heading}</h1>
+      <p className="text-md 2xl:text-lg font-regular mx-auto max-w-2xl">
+        {intro}
       </p>
-      <div className="flex gap-6 justify-center items-center my-4">
+      <div className="flex flex-wrap gap-x-1 gap-y-2 sm:gap-6 justify-center items-center my-4">
         <Button
-          className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'entry' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
+          className={`px-3 py-1 text-md 2xl:text-lg text-secondary-900 font-medium ${level === 'entry' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
+          aria-pressed={level === 'entry'}
           onClick={() => onChangeLevel('entry')}
         >
           Entry Level
         </Button>
         <Button
-          className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'mid' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
+          className={`px-3 py-1 text-md 2xl:text-lg text-secondary-900 font-medium ${level === 'mid' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
+          aria-pressed={level === 'mid'}
           onClick={() => onChangeLevel('mid')}
         >
           Mid Level
         </Button>
         <Button
-          className={`py-1 text-sm 2xl:text-lg text-secondary-900 font-medium ${level === 'senior' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
+          className={`px-3 py-1 text-md 2xl:text-lg text-secondary-900 font-medium ${level === 'senior' ? 'rounded-none border-b-2 border-primary-500' : ''}`}
           variant="ghost"
+          aria-pressed={level === 'senior'}
           onClick={() => onChangeLevel('senior')}
         >
           Senior Level

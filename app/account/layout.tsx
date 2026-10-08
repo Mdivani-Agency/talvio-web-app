@@ -1,17 +1,35 @@
-import { AccountProvider } from "./providers/state-provider";
-import { SessionProvider } from "@lib/providers";
-import { Sidebar } from "./views/sidebar";
+import { PRIVATE_ROBOTS } from '@/lib/public-metadata';
+import { SessionProvider } from '@lib/providers';
+import { ACCOUNT_RETURN_HEADER, accountSignInRedirect } from '@lib/auth/sign-in-href';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-export default function AccountLayout({ children }: { children: React.ReactNode }) {
+import { AccountProvider } from './providers/state-provider';
+import { Sidebar } from './views/sidebar';
+
+export const metadata = { robots: PRIVATE_ROBOTS };
+
+export default async function AccountLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const headerStore = await headers();
+  const signInURL = accountSignInRedirect(headerStore.get(ACCOUNT_RETURN_HEADER));
+
+  if (!user) {
+    redirect(signInURL);
+  }
+
   return (
     <div className="font-(family-var(--font-montserrat))">
-      <SessionProvider fallbackURL={'/auth/sign-in'}>
+      <SessionProvider fallbackURL={signInURL} returnToCurrentPath>
         <AccountProvider>
-          <section className="flex">
+          <section className="flex min-w-0 flex-col md:flex-row">
             <Sidebar />
-            <section className={'h-screen w-full overflow-y-auto'}>
-              {children}
-            </section>
+            <section className={'h-screen w-full min-w-0 overflow-y-auto'}>{children}</section>
           </section>
         </AccountProvider>
       </SessionProvider>

@@ -1,0 +1,9 @@
+query Credits($first: Int) {
+  user_creditsCollection(first: $first) {
+    edges {
+      node {
+        balance
+      }
+    }
+  }
+}

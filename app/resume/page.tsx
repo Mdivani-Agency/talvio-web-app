@@ -1,90 +1,109 @@
 'use client';
+import { useEffect, useRef } from 'react';
 import { Loading } from '@components/views';
-import { getAccount } from '@lib/clients/account.client';
+import { fetchProfile } from '@app/account/query/use-profile';
 import { useUserSession } from '@lib/providers';
 import { useQuery } from '@tanstack/react-query';
-import { DEFAULT_ACCOUNT_DTO } from '@app/account/create/views/account.form';
+import { EMPTY_RESUME_DOCUMENT, profileToResumeDocument } from '@lib/models/resume-document';
 import { ResumePreviewPage } from './resume-page';
 import { useSearchParams } from 'next/navigation';
-import { TemplateKey } from '@lib/types';
-import { useResumeContext } from './providers/state-provider';
+import type { AccountDto, PreviewDto, TemplateKey } from '@lib/types';
+import { ResumeProvider, useResumeContext } from './providers/state-provider';
 import { RESUME_COLORS_MAP } from '@lib/utils';
 import OptionsView from './views/options-view';
 import ImportResumePage from './views/import-page';
+import { normalizeResumeTemplate } from '@lib/drafts';
 
-export default function ResumePage() {
+function previewSeed(account: AccountDto | null, template: TemplateKey): PreviewDto {
+  if (!account) {
+    return {
+      resume: EMPTY_RESUME_DOCUMENT,
+      name: 'my resume',
+      template,
+      color: RESUME_COLORS_MAP.black,
+      fontSize: 'md',
+    };
+  }
+
+  const name = `${account.profile.firstName} ${account.profile.lastName}`.trim() || 'my resume';
+  return {
+    resume: profileToResumeDocument(account),
+    name,
+    template,
+    color: RESUME_COLORS_MAP.black,
+    fontSize: 'md',
+  };
+}
+
+function ResumeFlow() {
   const searchParams = useSearchParams();
-  const templatekey = searchParams.get('template') as TemplateKey;
+  const requestedTemplate = searchParams.get('template');
+  const templatekey = normalizeResumeTemplate(requestedTemplate);
   const { session, isPending: isAuthenticating } = useUserSession();
-  const { send, state } = useResumeContext();
+  const { seedIfFetching, step, resume, changeResume } = useResumeContext();
+  const consumedTemplate = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!requestedTemplate || step === 'fetchingResume' || consumedTemplate.current === requestedTemplate) {
+      return;
+    }
+    consumedTemplate.current = requestedTemplate;
+    if (resume.template === templatekey) {
+      return;
+    }
+    changeResume({ ...resume, template: templatekey });
+  }, [changeResume, requestedTemplate, resume, step, templatekey]);
 
   const userId = session?.user.id;
 
-  const { data: account, isLoading } = useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['account', userId],
     queryFn: async () => {
+      const seedIfNeeded = (value: PreviewDto) => {
+        seedIfFetching(value);
+      };
+
       try {
         if (!userId) {
-          send({
-            type: 'FETCHING_RESUME_FAILURE',
-            value: {
-              resume: DEFAULT_ACCOUNT_DTO,
-              name: `${DEFAULT_ACCOUNT_DTO.profile.firstName} ${DEFAULT_ACCOUNT_DTO.profile.lastName}`,
-              template: templatekey,
-              color: RESUME_COLORS_MAP.black,
-              fontSize: 'md',
-            },
-          });
+          seedIfNeeded(previewSeed(null, templatekey));
           return null;
         }
 
-        const account = await getAccount(userId);
+        const account = await fetchProfile(userId);
+        if (!account) {
+          throw new Error('No profile');
+        }
 
-        send({
-          type: 'FETCHING_RESUME_FAILURE',
-          value: {
-            resume: account,
-            name: `${account.profile.firstName} ${account.profile.lastName}`,
-            template: templatekey,
-            color: RESUME_COLORS_MAP.black,
-            fontSize: 'md',
-          },
-        });
-
+        seedIfNeeded(previewSeed(account, templatekey));
         return account;
       } catch (error) {
         console.error('Error fetching account', error);
-        send({
-          type: 'FETCHING_RESUME_FAILURE',
-          value: {
-            resume: DEFAULT_ACCOUNT_DTO,
-            name: `my resume`,
-            template: templatekey,
-            color: RESUME_COLORS_MAP.black,
-            fontSize: 'md',
-          },
-        });
+        seedIfNeeded(previewSeed(null, templatekey));
         return null;
       }
     },
     enabled: !isAuthenticating,
   });
 
-  if (isAuthenticating || isLoading) {
+  if (isAuthenticating || (isLoading && step === 'fetchingResume')) {
     return <Loading message="Preparing resume..." />;
   }
 
-  if (state.matches('options')) {
+  if (step === 'options') {
     return <OptionsView />;
   }
 
-  if (state.matches('importResume')) {
+  if (step === 'importResume') {
     return <ImportResumePage />;
   }
 
+  return <ResumePreviewPage />;
+}
+
+export default function ResumePage() {
   return (
-    <ResumePreviewPage
-      level={account?.profile.seniority ?? 'senior'}
-    />
+    <ResumeProvider resumeId="new">
+      <ResumeFlow />
+    </ResumeProvider>
   );
 }

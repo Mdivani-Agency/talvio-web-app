@@ -1,39 +1,38 @@
 'use client';
 import { useCallback, useState } from 'react';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
-import { AccountDto, Project } from '@lib/types';
+import { Project } from '@lib/types';
 import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
 import { Label } from '@components/ui';
 import { ProjectForm } from './forms/project.form';
 import { FormList } from './form-list';
+import type { AppForm } from '@lib/forms/use-form';
+import { useFormArray } from '@lib/forms/use-form-array';
+import { preserveDocumentFields, resumeItemToAccountDialog } from '@lib/models/resume-document';
 
 type ProjectsViewProps = {
   className?: string;
-  form: UseFormReturn<AccountDto>;
+  form: AppForm;
+  /** Convert account-shaped dialogs into resume document items. */
+  documentMode?: boolean;
 };
 
-export const ProjectsView = ({
-  className,
-  form,
-}: ProjectsViewProps) => {
+export const ProjectsView = ({ className, form, documentMode = false }: ProjectsViewProps) => {
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
-  const { control } = form;
+  const { fields, append, remove, update } = useFormArray<Project>(form, 'projects');
 
-  const { fields, append, remove, update } = useFieldArray({
-    control,
-    name: 'projects',
-  });
-
-  const handleAddProject = useCallback((project: Project) => {
-    append(project);
-  }, [append]);
+  const handleAddProject = useCallback(
+    (project: Project) => {
+      append(documentMode ? preserveDocumentFields(undefined, project) : project);
+    },
+    [append, documentMode],
+  );
 
   const handleUpdateProject = useCallback(
     (index: number, project: Project) => {
-      update(index, project);
+      update(index, documentMode ? preserveDocumentFields(fields[index], project) : project);
     },
-    [update],
+    [documentMode, fields, update],
   );
 
   const handleRemoveProject = useCallback(
@@ -45,11 +44,10 @@ export const ProjectsView = ({
 
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">Projects</Label>
-      <ProjectForm
-        action="add"
-        onSubmit={handleAddProject}
-      />
+      <Label size="lg" className="mb-6">
+        Projects
+      </Label>
+      <ProjectForm action="add" onSubmit={handleAddProject} />
       <OrderedList fields={fields} label="Projects">
         {({ items, onReorder }) => (
           <FormList
@@ -59,10 +57,13 @@ export const ProjectsView = ({
               <ProjectForm
                 action="edit"
                 onSubmit={onSubmit}
-                defaultValues={item}
+                defaultValues={documentMode ? resumeItemToAccountDialog(item) : item}
               />
             )}
-            onReorder={onReorder}
+            onReorder={(nextItems) => {
+              form.setFieldValue('projects', nextItems);
+              onReorder(nextItems);
+            }}
             handleUpdateForm={handleUpdateProject}
             handleRemoveForm={setRemoveItemIndex}
           />

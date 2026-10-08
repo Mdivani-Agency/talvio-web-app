@@ -12,7 +12,7 @@ interface LogoProps {
 
 export function Logo({ className, size = 'medium', containerClassName, onLogoClick }: LogoProps) {
   return (
-    <Link className={cn('flex items-center hover:cursor-pointer', containerClassName)} href="/" onClick={onLogoClick}>
+    <Link className={cn('flex items-center hover:cursor-pointer', containerClassName)} href="/" prefetch={false} onClick={onLogoClick}>
       <Icon
         type="Logo"
         className={cn(

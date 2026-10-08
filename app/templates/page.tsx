@@ -2,6 +2,7 @@
 import { redirect } from 'next/navigation';
 import Templates from '../resume/views/templates';
 import { useTemplates } from '@hooks/use-templates';
+import { TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO } from '@/lib/templates-page-copy';
 import { useState } from 'react';
 
 export default function TemplatesPage() {
@@ -13,14 +14,18 @@ export default function TemplatesPage() {
   });
 
   return (
-    <Templates
-      templatesContainerClassName='grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-      level='senior'
-      onChangeLevel={(level) => {
-        setLevel(level);
-      }}
-    >
-      {templates}
-    </Templates>
+    <main className="w-full">
+      <Templates
+        className="h-auto overflow-visible pt-24 pb-12"
+        headingClassName="text-2xl lg:text-3xl 2xl:text-3xl"
+        templatesContainerClassName='grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+        heading={TEMPLATES_PAGE_HEADING}
+        intro={TEMPLATES_PAGE_INTRO}
+        level={level}
+        onChangeLevel={setLevel}
+      >
+        {templates}
+      </Templates>
+    </main>
   );
 }

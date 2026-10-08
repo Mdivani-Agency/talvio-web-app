@@ -31,6 +31,8 @@
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-placeholder: var(--placeholder);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
@@ -104,9 +106,14 @@
   --primary: #0d0d0d;
   --primary-foreground: #E9EBF8;
   --secondary: #1E20D4;
+  /* Hover moves away from the button text colour, so contrast rises on hover. */
+  --secondary-hover: #1A1CBF;
   --secondary-foreground: #FEFEFE;
   --muted: #DFDFDF;
-  --muted-foreground: #87888C;
+  /* Darkest grey that keeps 4.5:1 on background, card and popover (WCAG AA). */
+  --muted-foreground: #696A6E;
+  /* Placeholders sit on --input (#DFDFDF), where --muted-foreground is only 4.05:1. */
+  --placeholder: #525356;
   --accent: #FEFEFE;
   --accent-foreground: #404040;
   --destructive: #FF1F1F;
@@ -133,10 +140,13 @@
   --popover-foreground: #fefefe;
   --primary: #fefefe;
   --primary-foreground: #0d0d0d;
-  --secondary: #686ae2;
-  --secondary-foreground: #FEFEFE;
+  /* No purple keeps 4.5:1 both as text on #0d0d0d and behind white text, so buttons use dark text (WCAG AA). */
+  --secondary: #7375E5;
+  --secondary-hover: #8688EA;
+  --secondary-foreground: #0D0D0D;
   --muted: #87888C;
   --muted-foreground: #F6F6FE;
+  --placeholder: #F6F6FE;
   --accent: #404040;
   --accent-foreground: #FEFEFE;
   --destructive: #FF1F1F;

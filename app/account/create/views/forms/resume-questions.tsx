@@ -1,8 +1,6 @@
 import { AnimatedTransition, Button, Card, CardContent, CardFooter, InfoBadge, Label, Separator, Textarea } from '@components/ui';
-import { FeedbackQuestions } from '@lib/types';
-
 export interface ResumeQuestionsProps {
-  questions: FeedbackQuestions;
+  questions: Array<{ question: string; example?: string | null }>;
   answers?: string[];
   current: number;
   input: string;
@@ -10,6 +8,7 @@ export interface ResumeQuestionsProps {
   handleSkip: () => void;
   handleNext: () => void;
   onSubmit: () => void;
+  onBack?: () => void;
 }
 export const ResumeQuestions = ({
   questions,
@@ -20,6 +19,7 @@ export const ResumeQuestions = ({
   handleSkip,
   handleNext,
   onSubmit,
+  onBack,
 }: ResumeQuestionsProps) => {
   if (!questions[current] && current >= questions.length) return (
     <div className="flex flex-col items-center min-h-screen mx-auto pt-16 md:pt-8">
@@ -55,6 +55,11 @@ export const ResumeQuestions = ({
         current={current}
         actions={
           <div className="flex justify-end gap-2">
+            {onBack ? (
+              <Button className="w-36" variant="secondary" onClick={onBack}>
+                Back
+              </Button>
+            ) : null}
             <Button className='w-36' variant="secondary" onClick={handleSkip}>
               Skip
             </Button>

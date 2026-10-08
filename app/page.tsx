@@ -1,14 +1,16 @@
-import { authClient } from "@lib/auth.client";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { homeMetadata } from '@/lib/public-metadata';
+import { homeStructuredData, serializeJsonLd } from '@/lib/structured-data';
 
-export default async function AppPage() {
-  const headersList = await headers();
-  const { data } = await authClient.getSession({ fetchOptions: { headers: headersList } });
+import { HomePage } from './home/home-page';
+import { HomeShell } from './home/home-shell';
 
-  if (data?.user) {
-    return redirect('/account');
-  }
+export const metadata = homeMetadata;
 
-  return redirect('/home');
+export default function AppPage() {
+  return (
+    <HomeShell>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(homeStructuredData()) }} />
+      <HomePage />
+    </HomeShell>
+  );
 }
