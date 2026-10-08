@@ -3,7 +3,8 @@
 Owner-only policies. A user reads and writes only rows where `auth.uid() = user_id`.
 There is no public / shareable resume access in v1 (`anon` has no table grants).
 
-Policies live in `20260101000700_profile_rls.sql` and `20260101000800_resumes_rls.sql`.
+Policies live next to their tables in `20261008000200_profiles.sql` and
+`20261008000300_resumes_credits.sql`.
 Each `CREATE POLICY` is paired with `DROP POLICY IF EXISTS`.
 
 ## Policy catalogue

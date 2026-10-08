@@ -1,6 +1,6 @@
 # Table definitions
 
-Shipped DDL for Talvio v1. Source: Notion [Supabase schema (unified)](https://app.notion.com/p/3daf87a6db5781d29b1ce0e579b8dd1c) and `supabase/migrations/20260101000100_*.sql` … `20260101000900_auth_hooks.sql`.
+Shipped DDL for Talvio v1. Source: Notion [Supabase schema (unified)](https://app.notion.com/p/3daf87a6db5781d29b1ce0e579b8dd1c) and `supabase/migrations/20261008000100_extensions_enums.sql` … `20261008000500_ai_daily_caps.sql`.
 
 `credit_prices` is an addition on top of the Notion SQL so clients cannot pass a debit amount.
 
@@ -209,7 +209,7 @@ Owned by `auth.users` (not `profiles`) so a user can build a resume before onboa
 | `pdf_url` | `text` | media-service URL |
 | `pdf_media_key` | `text` | media-service key |
 | `source_resume_id` | `uuid` | open draft / lineage → parent `resumes.id`; `on delete set null` |
-| `client_draft_id` | `uuid` | browser recovery id; unique per user when set (`20260923060000`) |
+| `client_draft_id` | `uuid` | browser recovery id; unique per user when set |
 | `generation_updated_at` | `timestamptz` | revision pinned by `generate_pdf`; null when idle |
 | `created_at` | `timestamptz not null default now()` | |
 | `updated_at` | `timestamptz not null default now()` | trigger `resumes_set_updated_at` |
@@ -262,7 +262,7 @@ Balance only in v1. Writes via `SECURITY DEFINER` functions
 
 Server-side catalog of paid-action prices. No Data API grants — hidden from
 `/graphql/v1`. RLS enabled, no policies. Seeded in
-`20260101000600_profile_rpcs.sql`.
+`20261008000300_resumes_credits.sql`.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -277,7 +277,7 @@ new resume PDFs. Change prices with a later migration, and review the public
 ## `monthly_allowance_runs`
 
 One row per UTC month the monthly allowance reset has applied
-(`20261005170000_monthly_allowance.sql`). Server-only: no Data API grants, RLS
+(`20261008000400_monthly_allowance.sql`). Server-only: no Data API grants, RLS
 enabled, no policies. Written only by `apply_monthly_allowance()`.
 
 | Column | Type | Notes |
@@ -288,7 +288,7 @@ enabled, no policies. Written only by `apply_monthly_allowance()`.
 
 ## `ai_daily_usage`
 
-AI requests per user per UTC day (`20261006100000_ai_daily_caps.sql`,
+AI requests per user per UTC day (`20261008000500_ai_daily_caps.sql`,
 [MDI-401](https://linear.app/mdivani/issue/MDI-401)). Server-only: no Data API
 grants, RLS enabled, no policies. Written only by `consume_ai_request_for()`
 (through the public `consume_ai_request()`), pruned by `prune_ai_daily_usage()`.

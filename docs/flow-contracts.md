@@ -102,7 +102,7 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 Preserved from MDI-174. Do not rebuild them.
 
 - Preview never debits. `GENERATE_PDF_CREDITS` in `lib/credits.ts` is display-only (`30`). The client never sends an amount and never calls `consume_credits`.
-- `generate_pdf` (`supabase/migrations/20260101000600_profile_rpcs.sql`) locks the owner’s row. An existing `pdf_url` is returned with no debit. Otherwise `require_credits` checks the catalog balance and the function returns `''`. It does not charge.
+- `generate_pdf` (`supabase/migrations/20261008000300_resumes_credits.sql`) locks the owner’s row. An existing `pdf_url` is returned with no debit. Otherwise `require_credits` checks the catalog balance and the function returns `''`. It does not charge.
 - `finalize_pdf` locks the row, returns an existing URL without debiting, and otherwise debits and writes `pdf_url` / `pdf_media_key` in one transaction. A concurrent caller that loses the lock sees the stored URL.
 - `resumes_validate_source` rejects content, template, color, font, type, and PDF-pointer changes once `pdf_url` is set. `name` and `label` stay editable. `source_resume_id` cannot be re-pointed. A source row must already be generated and owned by the same user.
 - Partial unique index `resumes_one_open_draft_per_source_idx`: at most one open draft (`pdf_url` is null) per `source_resume_id`.
@@ -165,7 +165,7 @@ This is the contract MDI-200 implements. Disabling a button is only a UX guard. 
 
 ### Resume create and update
 
-Implemented in `20260923060000_resume_save_idempotency.sql`. Apply that migration before the client draft id or generation lock is used.
+Implemented in `20261008000300_resumes_credits.sql`.
 
 - `resumes.client_draft_id uuid` is nullable.
 - Unique `(user_id, client_draft_id)` where `client_draft_id` is not null.
@@ -192,7 +192,7 @@ Keep the two-step RPC. Do not debit in `generate_pdf`. Do not add a second charg
 - Concurrent tabs: a second `generate_pdf` while the lock is held raises `resume_generation_in_progress` and does not call `release_resume_generation`. After the owner stores `pdf_url`, a retry returns that URL with no second debit. `finalize_pdf` still locks the row so only one debit can land.
 - `insufficient_credits` still renders and uploads nothing. `require_credits` runs before the lock is written.
 
-No further credit RPC is required. Apply the migration before relying on the column or the release RPC.
+No further credit RPC is required. The column and the release RPC are part of the baseline chain (`20261008000300_resumes_credits.sql`).
 
 ## Regression checklist
 
@@ -228,7 +228,7 @@ Use the fixtures for field, rich-text, enum, snapshot, and generated-family case
 Checked items above are covered by the repository tests, including `test/fixtures/flow/journeys.test.ts`. These limits stay open because this environment has no Supabase project and no signed-in browser session:
 
 - Manual clicks through onboarding, resume editing, guest adoption, and download were not run.
-- `supabase/tests/rls.test.sql` was not executed. Apply `20260923060000_resume_save_idempotency.sql` if an older copy is already on the database.
+- `supabase/tests/rls.test.sql` was not executed.
 - Dashboard and document lists invalidate `['resumes']`, `['resume-family']`, `['documents']`, and `['account']` after save, delete, and generate. Those cache updates were not watched in a browser.
 
 ## Source map

@@ -1,4 +1,4 @@
--- MDI-357 (MDI-320 Beta 1/5): monthly free allowance.
+-- MDI-357 (MDI-320 Beta 1/5): monthly free allowance and signup credits.
 --
 -- Every account holds 90 credits (3 new resume PDFs at 30 each). On the 1st
 -- of each month at 00:00 UTC a pg_cron job sets every balance to 90. It never
@@ -13,12 +13,7 @@
 --
 -- monthly_allowance_runs is server-only: RLS on, no policies, no Data API
 -- grants. The reset and allowance functions are not executable by clients.
-
--- 1. Extension. Supabase installs pg_cron in pg_catalog; its objects live in
---    schema cron.
-create extension if not exists pg_cron with schema pg_catalog;
-grant usage on schema cron to postgres;
-grant all privileges on all tables in schema cron to postgres;
+-- pg_cron itself is enabled in 20261008000100_extensions_enums.sql.
 
 -- 2. Table: one row per month the reset has applied.
 create table public.monthly_allowance_runs (
@@ -99,7 +94,10 @@ $$;
 
 revoke all on function public.apply_monthly_allowance(timestamptz) from public, anon, authenticated;
 
--- 8. Triggers: new accounts start with the monthly allowance, whatever the date.
+-- 8. Triggers: every new auth.users row starts with the monthly allowance,
+--    whatever the date. Preview is free; final PDF generation checks
+--    generate_pdf, then finalize_pdf looks up credit_prices and debits via
+--    consume_credits. Re-downloading an existing pdf_url is free.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -115,6 +113,11 @@ $$;
 
 revoke all on function public.handle_new_user() from public, anon, authenticated;
 
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+
 -- Schedule: hourly, on the hour (pg_cron runs in GMT). The first run of a month
 -- is 00:00 UTC on the 1st and applies the reset; the rest return 0. Scheduling
 -- by name replaces an existing job, so rerunning this file keeps one job.
@@ -124,9 +127,7 @@ select cron.schedule(
   $$select public.apply_monthly_allowance()$$
 );
 
--- 10. Cutover: apply the current month now. This mutates data on every
---     environment the migration reaches (CI pushes it with `supabase db push`):
---     every balance, including any above 90 or mid-generation, becomes 90 at
---     that moment, and the month is recorded. The next reset is the coming 1st,
---     even if this runs late in a month. There are no live users (MDI-320).
+-- 10. Record the current month so the first scheduled run after a reset
+--     returns 0 and the tests' "current month applied" check holds. On a
+--     fresh database there are no balances to touch.
 select public.apply_monthly_allowance();

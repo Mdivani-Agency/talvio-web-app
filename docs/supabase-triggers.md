@@ -5,7 +5,7 @@
 `public.set_updated_at()` — `BEFORE UPDATE` row trigger. Sets
 `new.updated_at = now()` and returns `new`. `search_path = public`.
 
-Defined in `20260101000200_generic_triggers.sql`. Attached to every table that
+Defined in `20261008000100_extensions_enums.sql`. Attached to every table that
 has an `updated_at` column:
 
 | Table | Trigger |
@@ -29,7 +29,7 @@ has an `updated_at` column:
 
 Inserts `public.user_credits (user_id, balance)` with the monthly allowance,
 **90** credits (`monthly_credit_allowance()`), for `new.id`, whatever the date.
-Set by `20261005170000_monthly_allowance.sql`
+Set by `20261008000400_monthly_allowance.sql`
 ([MDI-357](https://linear.app/mdivani/issue/MDI-357)); the original grant of 300
 came from [MDI-144](https://linear.app/mdivani/issue/MDI-144). Rules:
 
@@ -45,7 +45,7 @@ came from [MDI-144](https://linear.app/mdivani/issue/MDI-144). Rules:
 
 No profile row is created here. Onboarding inserts `profiles` with real values.
 
-Defined in `20260101000900_auth_hooks.sql`. Execute is revoked from
+Defined in `20261008000400_monthly_allowance.sql`. Execute is revoked from
 `public` / `anon` / `authenticated` — trigger-only.
 
 ## `resumes_validate_source`
@@ -67,12 +67,12 @@ that same timestamp. Content, template, color, font, or type changes while
 `generation_updated_at` is set and `pdf_url` is null raise
 `resume_generation_in_progress`.
 
-Defined in `20260923060000_resume_save_idempotency.sql`. Execute is revoked
+Defined in `20261008000300_resumes_credits.sql`. Execute is revoked
 from `public` / `anon` / `authenticated` — trigger-only.
 
 ## Scheduled job: `monthly-allowance-reset`
 
-`pg_cron` job created by `20261005170000_monthly_allowance.sql`
+`pg_cron` job created by `20261008000400_monthly_allowance.sql`
 ([MDI-357](https://linear.app/mdivani/issue/MDI-357)). Schedule `0 * * * *`
 (hourly; `pg_cron` runs in GMT). The first run of a month, 00:00 UTC on the
 1st, applies the reset; every other run returns 0 and writes nothing, so a
@@ -91,12 +91,12 @@ or `authenticated`). For the UTC month containing `p_now` it:
   any legacy balance all become 90;
 - returns the number of accounts reset.
 
-The migration runs it once at the end (cutover), so existing accounts move to
-90 and the current month is recorded. That is a data change on every
-environment the migration reaches (CI applies it with `supabase db push`):
-every balance becomes 90 at that moment, including balances above 90 and
-accounts mid-generation. Run late in a month, the next reset still comes on
-the 1st. There is no request-time catch-up: if
+The migration runs it once at the end so the month the chain was applied in
+is recorded. The baseline only applies to an empty database (its `create
+table` statements fail otherwise), so that run touches no balances; it exists
+so the first scheduled run returns 0 and the "current month applied" check in
+`supabase/tests/monthly_allowance.test.sql` holds. Applied late in a month,
+the next reset still comes on the 1st. There is no request-time catch-up: if
 the job stops running altogether, nobody renews until it runs again or is rerun. Manual rerun as
 `postgres`: `select public.apply_monthly_allowance();`. The operational check,
 rerun steps and rollback are in
@@ -109,7 +109,7 @@ the balance at finalize time, whichever month it started in.
 
 ## Scheduled job: `ai-daily-usage-prune`
 
-`pg_cron` job created by `20261006100000_ai_daily_caps.sql`
+`pg_cron` job created by `20261008000500_ai_daily_caps.sql`
 ([MDI-401](https://linear.app/mdivani/issue/MDI-401)). Schedule `10 0 * * *`
 (daily, 00:10 UTC). Command: `select public.prune_ai_daily_usage()`.
 
