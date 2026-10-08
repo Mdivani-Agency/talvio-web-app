@@ -7,7 +7,7 @@ rejects access at the role layer before RLS runs.
 
 Ask, for every new table: should this be reachable via the Data API? If yes, add
 grants in the same migration as the table's `CREATE POLICY` statements (the
-matching `*_rls.sql` file). If no, omit grants and note that in the migration
+migration that creates the table). If no, omit grants and note that in the migration
 comment.
 
 The Next app uses GraphQL only. REST stays available; do not add supabase-js
@@ -101,21 +101,21 @@ the GraphQL `JSON` scalar (serialized string).
 
 | Table | `anon` | `authenticated` | `service_role` | File |
 | --- | --- | --- | --- | --- |
-| `profiles` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `contacts` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `experiences` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `educations` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `projects` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `recommendations` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `skills` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `tools` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `links` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `languages` | none | SELECT, INSERT, UPDATE, DELETE | all | `00700_profile_rls.sql` |
-| `resumes` | none | SELECT, DELETE; INSERT/UPDATE without pdf pointers | all | `00800_resumes_rls.sql` |
-| `user_credits` | none | SELECT | all | `00800_resumes_rls.sql` |
-| `credit_prices` | none | none | none | `00600_profile_rpcs.sql` (server-side) |
-| `monthly_allowance_runs` | none | none | none | `20261005170000_monthly_allowance.sql` (server-side) |
-| `ai_daily_usage` | none | none | none | `20261006100000_ai_daily_caps.sql` (server-side) |
+| `profiles` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `contacts` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `experiences` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `educations` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `projects` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `recommendations` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `skills` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `tools` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `links` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `languages` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261008000200_profiles.sql` |
+| `resumes` | none | SELECT, DELETE; INSERT/UPDATE without pdf pointers | all | `20261008000300_resumes_credits.sql` |
+| `user_credits` | none | SELECT | all | `20261008000300_resumes_credits.sql` |
+| `credit_prices` | none | none | none | `20261008000300_resumes_credits.sql` (server-side) |
+| `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
+| `ai_daily_usage` | none | none | none | `20261008000500_ai_daily_caps.sql` (server-side) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

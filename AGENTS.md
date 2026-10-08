@@ -199,7 +199,7 @@ Mutations (reference: `app/resume/query/use-delete-resume.ts`, `use-create-resum
 
 Data API prerequisites:
 
-- A table is invisible to `/graphql/v1` until `authenticated` has a grant on it. Grants live with the RLS policies in the matching `*_rls.sql` migration. See `docs/data-api-grants.md`.
+- A table is invisible to `/graphql/v1` until `authenticated` has a grant on it. Grants live with the RLS policies in the migration that creates the table. See `docs/data-api-grants.md`.
 - Without `GRANT SELECT`, codegen fails with "Cannot query field …Collection".
 - Before using `insertInto*`, `update*` or `deleteFrom*`, check the table's grant tier:
   - Profile tables and `resumes`: owner CRUD, including hard `DELETE`. There is no soft-delete in v1.
@@ -222,8 +222,8 @@ Before you start:
 
 New migrations versus the baseline:
 
-- The baseline chain is `20260101000100` to `20260101000900`: extensions_enums, generic_triggers, profiles, profile_children, resumes, profile_rpcs, profile_rls, resumes_rls, auth_hooks. The full chain is listed in `docs/supabase-schema.md`.
-- CI pushes pending migrations to the hosted project (`supabase db push`). A migration that has merged has already been applied, so do not edit it. Add a new timestamped file instead (see `supabase/migrations/20260923060000_resume_save_idempotency.sql`).
+- The baseline chain is `20261008000100` to `20261008000500`: extensions_enums, profiles, resumes_credits, monthly_allowance, ai_daily_caps. It was squashed on 2026-10-08 from the original 13-file chain and every environment was reset onto it. The full chain is listed in `docs/supabase-schema.md`.
+- CI pushes pending migrations to the hosted project (`supabase db push`). A migration that has merged has already been applied, so do not edit it. Add a new timestamped file instead.
 - A new migration may `create or replace` a function defined earlier. Each object can depend only on objects created earlier in the chain.
 
 Structure order inside a migration file:

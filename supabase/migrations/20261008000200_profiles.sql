@@ -1,24 +1,459 @@
--- App-facing RPCs. Exposed to pg_graphql as mutations (VOLATILE + EXECUTE).
+-- Profile (1:1 with auth.users), CV contact channels and the profile-owned
+-- career collections, with their Data API grants, owner-only RLS and the
+-- save_profile RPC.
 --
--- jsonb is supported: pg_graphql maps it to the JSON scalar (a serialized
--- string, not an inline object). It is not in the unsupported-arg list
--- (tuple types, enums, void, overloads). Clients pass p_payload as a JSON
--- string, same as jsonb columns.
+-- No profiles.email / phone / website — those live in contacts.
+-- No auto-created profile row (onboarding inserts with real values).
+-- All children reference profiles(user_id). Rich tables share
+-- additional_details text + description jsonb (TipTap). degree_type is text
+-- (Zod in the app), not a Postgres enum.
+--
+-- Grants: authenticated full CRUD, service_role all, anon none. They live
+-- in the same migration as the policies so pg_graphql can see the collections.
 --
 -- save_profile is SECURITY INVOKER so RLS still applies. Never deletes
 -- child rows — upserts by id (or by unique key). Removals go through
 -- collection DELETE mutations. Job-specific variants live in
 -- resumes.content, not extra profiles (profiles.user_id is 1:1).
 -- Any user_id in the payload is ignored — writes always use auth.uid().
---
--- Credits: clients never pass an amount. consume_credits(user_id, action)
--- is a private DEFINER helper (no EXECUTE for authenticated / anon).
--- generate_pdf checks ownership + catalog balance and does not debit.
--- The Next generate route renders and uploads, then finalize_pdf
--- persists pointers and debits. Prices live in credit_prices
--- (server-side only — no Data API grants). generate_pdf is 30 credits
--- (300 signup / 10 job-specific resumes from the marketing packs).
+-- jsonb is supported: pg_graphql maps it to the JSON scalar (a serialized
+-- string, not an inline object). Clients pass p_payload as a JSON string.
 
+-- 2. Tables.
+create table public.profiles (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  first_name text not null,
+  last_name text not null,
+  role text not null,
+  tagline text,
+  seniority public.seniority_level not null default 'entry',
+  city text,
+  country text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.contacts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  kind public.contact_kind not null,
+  value text not null,
+  label text,
+  is_primary boolean not null default false,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table public.experiences (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  company text not null,
+  job_title text not null,
+  employment_type public.employment_type,
+  location_type public.location_type,
+  start_date date not null,
+  end_date date,
+  is_present boolean not null default false,
+  achievements text[] not null default '{}',
+  responsibilities text[] not null default '{}',
+  key_contributions text[] not null default '{}',
+  additional_details text,
+  description jsonb,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint experiences_dates_ck check (
+    is_present = true or end_date is null or end_date >= start_date
+  )
+);
+
+create table public.educations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  name text not null,
+  degree_type text not null,
+  start_date date not null,
+  end_date date,
+  is_present boolean not null default false,
+  additional_details text,
+  description jsonb,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.projects (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  name text not null,
+  url text,
+  additional_details text not null default '',
+  description jsonb,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.recommendations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  name text not null,
+  url text not null,
+  additional_details text not null default '',
+  description jsonb,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.skills (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  name text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table public.tools (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  name text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table public.links (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  type text not null,
+  value text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table public.languages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  language text not null,
+  proficiency public.language_proficiency not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  unique (user_id, language)
+);
+
+-- 3. Data API grants.
+revoke all on table public.profiles from anon, public;
+grant select, insert, update, delete on table public.profiles to authenticated;
+grant select, insert, update, delete on table public.profiles to service_role;
+
+revoke all on table public.contacts from anon, public;
+grant select, insert, update, delete on table public.contacts to authenticated;
+grant select, insert, update, delete on table public.contacts to service_role;
+
+revoke all on table public.experiences from anon, public;
+grant select, insert, update, delete on table public.experiences to authenticated;
+grant select, insert, update, delete on table public.experiences to service_role;
+
+revoke all on table public.educations from anon, public;
+grant select, insert, update, delete on table public.educations to authenticated;
+grant select, insert, update, delete on table public.educations to service_role;
+
+revoke all on table public.projects from anon, public;
+grant select, insert, update, delete on table public.projects to authenticated;
+grant select, insert, update, delete on table public.projects to service_role;
+
+revoke all on table public.recommendations from anon, public;
+grant select, insert, update, delete on table public.recommendations to authenticated;
+grant select, insert, update, delete on table public.recommendations to service_role;
+
+revoke all on table public.skills from anon, public;
+grant select, insert, update, delete on table public.skills to authenticated;
+grant select, insert, update, delete on table public.skills to service_role;
+
+revoke all on table public.tools from anon, public;
+grant select, insert, update, delete on table public.tools to authenticated;
+grant select, insert, update, delete on table public.tools to service_role;
+
+revoke all on table public.links from anon, public;
+grant select, insert, update, delete on table public.links to authenticated;
+grant select, insert, update, delete on table public.links to service_role;
+
+revoke all on table public.languages from anon, public;
+grant select, insert, update, delete on table public.languages to authenticated;
+grant select, insert, update, delete on table public.languages to service_role;
+
+-- 5. Indexes.
+create index contacts_user_id_idx on public.contacts (user_id, kind, sort_order);
+create unique index contacts_one_primary_email
+  on public.contacts (user_id)
+  where kind = 'email' and is_primary;
+create unique index contacts_one_primary_phone
+  on public.contacts (user_id)
+  where kind = 'phone' and is_primary;
+create unique index contacts_one_primary_url
+  on public.contacts (user_id)
+  where kind = 'url' and is_primary;
+create index experiences_user_id_idx on public.experiences (user_id, sort_order);
+create index educations_user_id_idx on public.educations (user_id, sort_order);
+create index projects_user_id_idx on public.projects (user_id, sort_order);
+create index recommendations_user_id_idx on public.recommendations (user_id, sort_order);
+create unique index skills_user_name_uq on public.skills (user_id, lower(name));
+create unique index tools_user_name_uq on public.tools (user_id, lower(name));
+create index links_user_id_idx on public.links (user_id, sort_order);
+
+-- 7. RLS policies.
+alter table public.profiles enable row level security;
+
+drop policy if exists profiles_select_own on public.profiles;
+create policy profiles_select_own
+on public.profiles for select
+using (auth.uid() = user_id);
+
+drop policy if exists profiles_insert_own on public.profiles;
+create policy profiles_insert_own
+on public.profiles for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists profiles_update_own on public.profiles;
+create policy profiles_update_own
+on public.profiles for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists profiles_delete_own on public.profiles;
+create policy profiles_delete_own
+on public.profiles for delete
+using (auth.uid() = user_id);
+
+alter table public.contacts enable row level security;
+
+drop policy if exists contacts_select_own on public.contacts;
+create policy contacts_select_own
+on public.contacts for select
+using (auth.uid() = user_id);
+
+drop policy if exists contacts_insert_own on public.contacts;
+create policy contacts_insert_own
+on public.contacts for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists contacts_update_own on public.contacts;
+create policy contacts_update_own
+on public.contacts for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists contacts_delete_own on public.contacts;
+create policy contacts_delete_own
+on public.contacts for delete
+using (auth.uid() = user_id);
+
+alter table public.experiences enable row level security;
+
+drop policy if exists experiences_select_own on public.experiences;
+create policy experiences_select_own
+on public.experiences for select
+using (auth.uid() = user_id);
+
+drop policy if exists experiences_insert_own on public.experiences;
+create policy experiences_insert_own
+on public.experiences for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists experiences_update_own on public.experiences;
+create policy experiences_update_own
+on public.experiences for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists experiences_delete_own on public.experiences;
+create policy experiences_delete_own
+on public.experiences for delete
+using (auth.uid() = user_id);
+
+alter table public.educations enable row level security;
+
+drop policy if exists educations_select_own on public.educations;
+create policy educations_select_own
+on public.educations for select
+using (auth.uid() = user_id);
+
+drop policy if exists educations_insert_own on public.educations;
+create policy educations_insert_own
+on public.educations for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists educations_update_own on public.educations;
+create policy educations_update_own
+on public.educations for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists educations_delete_own on public.educations;
+create policy educations_delete_own
+on public.educations for delete
+using (auth.uid() = user_id);
+
+alter table public.projects enable row level security;
+
+drop policy if exists projects_select_own on public.projects;
+create policy projects_select_own
+on public.projects for select
+using (auth.uid() = user_id);
+
+drop policy if exists projects_insert_own on public.projects;
+create policy projects_insert_own
+on public.projects for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists projects_update_own on public.projects;
+create policy projects_update_own
+on public.projects for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists projects_delete_own on public.projects;
+create policy projects_delete_own
+on public.projects for delete
+using (auth.uid() = user_id);
+
+alter table public.recommendations enable row level security;
+
+drop policy if exists recommendations_select_own on public.recommendations;
+create policy recommendations_select_own
+on public.recommendations for select
+using (auth.uid() = user_id);
+
+drop policy if exists recommendations_insert_own on public.recommendations;
+create policy recommendations_insert_own
+on public.recommendations for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists recommendations_update_own on public.recommendations;
+create policy recommendations_update_own
+on public.recommendations for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists recommendations_delete_own on public.recommendations;
+create policy recommendations_delete_own
+on public.recommendations for delete
+using (auth.uid() = user_id);
+
+alter table public.skills enable row level security;
+
+drop policy if exists skills_select_own on public.skills;
+create policy skills_select_own
+on public.skills for select
+using (auth.uid() = user_id);
+
+drop policy if exists skills_insert_own on public.skills;
+create policy skills_insert_own
+on public.skills for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists skills_update_own on public.skills;
+create policy skills_update_own
+on public.skills for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists skills_delete_own on public.skills;
+create policy skills_delete_own
+on public.skills for delete
+using (auth.uid() = user_id);
+
+alter table public.tools enable row level security;
+
+drop policy if exists tools_select_own on public.tools;
+create policy tools_select_own
+on public.tools for select
+using (auth.uid() = user_id);
+
+drop policy if exists tools_insert_own on public.tools;
+create policy tools_insert_own
+on public.tools for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists tools_update_own on public.tools;
+create policy tools_update_own
+on public.tools for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists tools_delete_own on public.tools;
+create policy tools_delete_own
+on public.tools for delete
+using (auth.uid() = user_id);
+
+alter table public.links enable row level security;
+
+drop policy if exists links_select_own on public.links;
+create policy links_select_own
+on public.links for select
+using (auth.uid() = user_id);
+
+drop policy if exists links_insert_own on public.links;
+create policy links_insert_own
+on public.links for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists links_update_own on public.links;
+create policy links_update_own
+on public.links for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists links_delete_own on public.links;
+create policy links_delete_own
+on public.links for delete
+using (auth.uid() = user_id);
+
+alter table public.languages enable row level security;
+
+drop policy if exists languages_select_own on public.languages;
+create policy languages_select_own
+on public.languages for select
+using (auth.uid() = user_id);
+
+drop policy if exists languages_insert_own on public.languages;
+create policy languages_insert_own
+on public.languages for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists languages_update_own on public.languages;
+create policy languages_update_own
+on public.languages for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists languages_delete_own on public.languages;
+create policy languages_delete_own
+on public.languages for delete
+using (auth.uid() = user_id);
+
+-- 8. Triggers.
+create trigger profiles_set_updated_at
+before update on public.profiles
+for each row execute function public.set_updated_at();
+
+create trigger experiences_set_updated_at
+before update on public.experiences
+for each row execute function public.set_updated_at();
+
+create trigger educations_set_updated_at
+before update on public.educations
+for each row execute function public.set_updated_at();
+
+create trigger projects_set_updated_at
+before update on public.projects
+for each row execute function public.set_updated_at();
+
+create trigger recommendations_set_updated_at
+before update on public.recommendations
+for each row execute function public.set_updated_at();
+
+-- 9. RPC exposed to pg_graphql.
 create or replace function public.save_profile(p_payload jsonb)
 returns text
 language plpgsql
@@ -450,214 +885,5 @@ begin
 end;
 $$;
 
--- Replace the client-amount signature. CREATE OR REPLACE cannot change
--- argument types, and authenticated must not keep EXECUTE on it.
-drop function if exists public.consume_credits(integer);
-
--- Server-side price catalog. Hidden from /graphql/v1 (no grants).
--- Price changes go through migrations. RLS on, no policies — even a
--- later SELECT grant would return no rows.
-create table public.credit_prices (
-  action text primary key,
-  amount integer not null check (amount > 0),
-  updated_at timestamptz not null default now()
-);
-
-comment on table public.credit_prices is
-  'Server-side credit price catalog. No Data API grants.';
-
-alter table public.credit_prices enable row level security;
-revoke all on table public.credit_prices from public, anon, authenticated;
-
-drop trigger if exists credit_prices_set_updated_at on public.credit_prices;
-create trigger credit_prices_set_updated_at
-before update on public.credit_prices
-for each row execute function public.set_updated_at();
-
-insert into public.credit_prices (action, amount)
-values ('generate_pdf', 30);
-
--- Private debit. Callers pass the billed user and an action key; this
--- function looks up the current price. Not exposed to pg_graphql.
-create or replace function public.consume_credits(p_user_id uuid, p_action text)
-returns integer
-language plpgsql
-volatile
-security definer
-set search_path = public
-as $$
-declare
-  v_amount integer;
-  v_balance integer;
-begin
-  if p_user_id is null then
-    raise exception 'invalid_user';
-  end if;
-  if p_action is null or btrim(p_action) = '' then
-    raise exception 'unknown_action';
-  end if;
-
-  select amount into v_amount
-  from public.credit_prices
-  where action = p_action;
-
-  if v_amount is null then
-    raise exception 'unknown_action';
-  end if;
-
-  update public.user_credits
-  set balance = balance - v_amount
-  where user_id = p_user_id
-    and balance >= v_amount
-  returning balance into v_balance;
-
-  if not found then
-    raise exception 'insufficient_credits';
-  end if;
-
-  return v_balance;
-end;
-$$;
-
--- Private balance check. Raises insufficient_credits without debiting.
-create or replace function public.require_credits(p_user_id uuid, p_action text)
-returns integer
-language plpgsql
-volatile
-security definer
-set search_path = public
-as $$
-declare
-  v_amount integer;
-  v_balance integer;
-begin
-  if p_user_id is null then
-    raise exception 'invalid_user';
-  end if;
-  if p_action is null or btrim(p_action) = '' then
-    raise exception 'unknown_action';
-  end if;
-
-  select amount into v_amount
-  from public.credit_prices
-  where action = p_action;
-
-  if v_amount is null then
-    raise exception 'unknown_action';
-  end if;
-
-  select balance into v_balance
-  from public.user_credits
-  where user_id = p_user_id;
-
-  if v_balance is null or v_balance < v_amount then
-    raise exception 'insufficient_credits';
-  end if;
-
-  return v_balance;
-end;
-$$;
-
--- Public check. Re-download of an existing pdf_url is free. First
--- generation confirms the catalog balance and returns '' so the Next
--- route can render + upload before finalize_pdf charges.
-create or replace function public.generate_pdf(p_resume_id uuid)
-returns text
-language plpgsql
-volatile
-security definer
-set search_path = public
-as $$
-declare
-  v_uid uuid := auth.uid();
-  v_pdf_url text;
-begin
-  if v_uid is null then
-    raise exception 'not authenticated';
-  end if;
-  if p_resume_id is null then
-    raise exception 'resume_not_found';
-  end if;
-
-  select pdf_url into v_pdf_url
-  from public.resumes
-  where id = p_resume_id
-    and user_id = v_uid
-  for update;
-
-  if not found then
-    raise exception 'resume_not_found';
-  end if;
-
-  if v_pdf_url is not null then
-    return v_pdf_url;
-  end if;
-
-  perform public.require_credits(v_uid, 'generate_pdf');
-
-  return '';
-end;
-$$;
-
--- Persist pointers and debit in one transaction. A concurrent caller
--- that loses the row lock sees the stored URL and does not debit.
-create or replace function public.finalize_pdf(
-  p_resume_id uuid,
-  p_pdf_url text,
-  p_pdf_media_key text
-)
-returns text
-language plpgsql
-volatile
-security definer
-set search_path = public
-as $$
-declare
-  v_uid uuid := auth.uid();
-  v_pdf_url text;
-begin
-  if v_uid is null then
-    raise exception 'not authenticated';
-  end if;
-  if p_resume_id is null then
-    raise exception 'resume_not_found';
-  end if;
-  if p_pdf_url is null or btrim(p_pdf_url) = ''
-     or p_pdf_media_key is null or btrim(p_pdf_media_key) = '' then
-    raise exception 'invalid_pdf';
-  end if;
-
-  select pdf_url into v_pdf_url
-  from public.resumes
-  where id = p_resume_id
-    and user_id = v_uid
-  for update;
-
-  if not found then
-    raise exception 'resume_not_found';
-  end if;
-
-  if v_pdf_url is not null then
-    return v_pdf_url;
-  end if;
-
-  perform public.consume_credits(v_uid, 'generate_pdf');
-
-  update public.resumes
-  set pdf_url = btrim(p_pdf_url),
-      pdf_media_key = btrim(p_pdf_media_key)
-  where id = p_resume_id
-    and user_id = v_uid;
-
-  return btrim(p_pdf_url);
-end;
-$$;
-
 revoke all on function public.save_profile(jsonb) from public, anon;
-revoke all on function public.consume_credits(uuid, text) from public, anon, authenticated;
-revoke all on function public.require_credits(uuid, text) from public, anon, authenticated;
-revoke all on function public.generate_pdf(uuid) from public, anon;
-revoke all on function public.finalize_pdf(uuid, text, text) from public, anon;
 grant execute on function public.save_profile(jsonb) to authenticated;
-grant execute on function public.generate_pdf(uuid) to authenticated;
-grant execute on function public.finalize_pdf(uuid, text, text) to authenticated;

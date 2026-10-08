@@ -175,21 +175,17 @@ rows stay immutable. Edit creates or reuses one open draft via
 Hand-authored, phase-ordered files in `supabase/migrations/`. Timestamp format
 `YYYYMMDDHHMMSS`. Column-level detail: [table-definitions.md](./table-definitions.md).
 
+The chain was squashed on 2026-10-08: the original 13 files became the 5
+below with the same end state. Every environment (local, dev, prod) was reset
+onto the new chain; nothing was migrated in place.
+
 | File | Concern |
 | --- | --- |
-| `20260101000100_extensions_enums.sql` | `pgcrypto`; enums; `comment on schema public` `max_rows: 100` |
-| `20260101000200_generic_triggers.sql` | `public.set_updated_at()` |
-| `20260101000300_profiles.sql` | `profiles`, `contacts`, primary-contact unique indexes, `updated_at` trigger |
-| `20260101000400_profile_children.sql` | experiences … languages, skill/tool uniqueness, `experiences_dates_ck`, `updated_at` triggers |
-| `20260101000500_resumes.sql` | `resumes`, `user_credits`, `source_resume_id`, indexes, `updated_at` + source triggers |
-| `20260101000600_profile_rpcs.sql` | `save_profile`; `credit_prices`; private `consume_credits` / `require_credits`; public `generate_pdf` + `finalize_pdf` |
-| `20260101000700_profile_rls.sql` | RLS + grants for profiles + 9 children; enum `USAGE` |
-| `20260101000800_resumes_rls.sql` | RLS + grants for `resumes` and `user_credits` |
-| `20260101000900_auth_hooks.sql` | `handle_new_user` → 300 signup credits (superseded by `20261005170000`) |
-| `20260923060000_resume_save_idempotency.sql` | `client_draft_id`, generation lock, `release_resume_generation` |
-| `20260924121500_enable_pg_graphql.sql` | `pg_graphql` in schema `graphql` |
-| `20261005170000_monthly_allowance.sql` | `pg_cron`; server-only `monthly_allowance_runs`; private `monthly_credit_allowance()` (90) and `apply_monthly_allowance()`; `handle_new_user` → 90; cron job `monthly-allowance-reset` (hourly, `0 * * * *`; applies once per month); cutover run |
-| `20261006100000_ai_daily_caps.sql` | Server-only `ai_daily_usage`; private `ai_daily_request_cap()` (20), `consume_ai_request_for()` and `prune_ai_daily_usage()`; public `consume_ai_request()`; cron job `ai-daily-usage-prune` (`10 0 * * *`) |
+| `20261008000100_extensions_enums.sql` | `pgcrypto`, `pg_graphql` (schema `graphql`), `pg_cron` (schema `pg_catalog`, objects in `cron`); `comment on schema public` `max_rows: 100`; the seven enums + `USAGE` grants; `public.set_updated_at()` |
+| `20261008000200_profiles.sql` | `profiles`, `contacts`, experiences … languages, their indexes, constraints and `updated_at` triggers; RLS + grants for all 10 tables; `save_profile` |
+| `20261008000300_resumes_credits.sql` | `resumes` (with `client_draft_id`, `generation_updated_at`, `source_resume_id`), `user_credits`, server-only `credit_prices` (seed `generate_pdf` = 30); indexes; RLS + grants; `resumes_validate_source` and `resumes_zz_keep_revision_clock` triggers; private `consume_credits` / `require_credits`; public `generate_pdf`, `finalize_pdf`, `release_resume_generation` |
+| `20261008000400_monthly_allowance.sql` | Server-only `monthly_allowance_runs`; private `monthly_credit_allowance()` (90) and `apply_monthly_allowance()`; `handle_new_user` → 90 + `on_auth_user_created` on `auth.users`; cron job `monthly-allowance-reset` (hourly, `0 * * * *`; applies once per month); records the current month at the end |
+| `20261008000500_ai_daily_caps.sql` | Server-only `ai_daily_usage`; private `ai_daily_request_cap()` (20), `consume_ai_request_for()` and `prune_ai_daily_usage()`; public `consume_ai_request()`; cron job `ai-daily-usage-prune` (`10 0 * * *`) |
 
 Constraint / RLS smokes: `supabase/tests/schema_constraints.sql`,
 `supabase/tests/rls.test.sql`, `supabase/tests/monthly_allowance.test.sql` and
