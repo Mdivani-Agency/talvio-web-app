@@ -17,6 +17,8 @@ Inspected on 2026-09-24:
 - Supported site keys already include `agency` and `talvio`.
 - These are source-code findings. The deployed API origin, deployed version, credentials, and production content have not been verified.
 
+The current contract, launch decisions and open verification blockers are in [`blog-api-contract.md`](blog-api-contract.md) (MDI-273). Where the two disagree, that note is newer.
+
 ## Existing API contract
 
 | Request | Response | Integration requirement |
