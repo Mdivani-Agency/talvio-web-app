@@ -125,6 +125,24 @@ test('PUB-05 the first template is above the fold on a phone', async ({ page }) 
   expect(box!.y + box!.height / 2).toBeLessThan(page.viewportSize()!.height);
 });
 
+test('PUB-05b every template preview PNG loads for each experience level', async ({ page }) => {
+  await page.goto('/templates');
+  const main = page.getByRole('main');
+  for (const level of ['Entry Level', 'Mid Level', 'Senior Level']) {
+    await main.getByRole('button', { name: level, exact: true }).click();
+    const previews = main.getByRole('img');
+    await expect(previews).toHaveCount(4);
+    for (const preview of await previews.all()) {
+      await preview.scrollIntoViewIfNeeded();
+      // A missing asset still renders a visible <img>, so check the decoded size.
+      await expect
+        .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0), { message: level })
+        .toBe(true);
+      expect(decodeURIComponent((await preview.getAttribute('src')) ?? '')).toMatch(/\/templates\/[a-z-]+\.png/);
+    }
+  }
+});
+
 test('PUB-06 public pages render complete search and share metadata', async ({ page, request }) => {
   const pages = [
     ['/', 'Free PDF resume generator | Talvio Beta'],
