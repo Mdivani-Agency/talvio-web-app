@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  BLOG_CACHE_REVALIDATE_SECONDS,
   BLOG_CDN_MAX_AGE_SECONDS,
+  BLOG_LIST_WINDOW_SECONDS,
   BLOG_MAX_CONCURRENT_UPSTREAM,
   blogCacheControl,
   createBlogReader,
@@ -12,7 +12,9 @@ import {
 import type { BlogPost, BlogPostSummary } from './contract';
 import type { BlogResult } from './server';
 
-const T0 = Date.parse('2026-10-09T12:00:00.000Z');
+const WINDOW_MS = BLOG_LIST_WINDOW_SECONDS * 1000;
+/** The start of a list window, so offsets in the tests are offsets into the window. */
+const T0 = Math.floor(Date.parse('2026-10-09T12:00:00.000Z') / WINDOW_MS) * WINDOW_MS;
 const SCOPE = ['test', 'https://blog-api.example.test'];
 
 function summary(slug: string): BlogPostSummary {
@@ -43,6 +45,8 @@ class FakeUpstream {
   active = 0;
   maxActive = 0;
   delayMs = 0;
+  /** Seconds the fake clock moves while a list walk runs, as a slow multi-page walk would. */
+  listWalkSeconds = 0;
 
   /** Like the backend, every write sets `updated_at`. */
   publish(slug: string, content?: string) {
@@ -64,6 +68,7 @@ class FakeUpstream {
 
   fetchAll = (): Promise<BlogResult<BlogPostSummary[]>> => {
     this.listCalls += 1;
+    now += this.listWalkSeconds * 1000;
     return this.track(() =>
       this.down
         ? { status: 'unavailable', reason: this.down }
@@ -159,62 +164,66 @@ afterEach(() => {
 });
 
 describe('freshness budget', () => {
-  it('serves a cached post at 299 seconds, refetches at 300, and fails closed at 301 when the API is down', async () => {
+  it('serves a post until 299 seconds during an outage, then fails closed at 300 and 301', async () => {
     const reader = instance();
     expect(await reader.getBlogPost('first-post')).toMatchObject({ status: 'ok', fetchedAt: T0 });
-    expect([upstream.listCalls, upstream.detailCalls]).toEqual([1, 1]);
-
-    // Keep the shared cache from refreshing so the entry really ages.
     upstream.down = 'upstream_error';
-    advance(299);
+
+    advance(BLOG_LIST_WINDOW_SECONDS - 1); // same window: cached list
     expect(await reader.getBlogPost('first-post')).toMatchObject({ status: 'ok', fetchedAt: T0 });
-    await shared.settle();
+    advance(1); // new window, API down: the previous window's list is still inside the budget
+    expect(await reader.getBlogPost('first-post')).toMatchObject({ status: 'ok', fetchedAt: T0 });
 
-    advance(1); // 300 s: past the budget, so the reader asks the API and gets an outage.
+    now = T0 + 299_000;
+    expect(await reader.getBlogPost('first-post')).toMatchObject({ status: 'ok', fetchedAt: T0 });
+    now = T0 + 300_000;
     expect(await reader.getBlogPost('first-post')).toEqual({ status: 'unavailable', reason: 'upstream_error' });
-    await shared.settle();
-
-    advance(1); // 301 s: still unavailable, never the expired article.
+    now = T0 + 301_000;
     expect(await reader.getBlogPost('first-post')).toEqual({ status: 'unavailable', reason: 'upstream_error' });
     expect(await reader.getBlogPosts()).toEqual({ status: 'unavailable', reason: 'upstream_error' });
   });
 
-  it('serves fresh data at 300 seconds when the API is up, with a new validation time', async () => {
+  it('loads a new list in each window when the API is up', async () => {
     const reader = instance();
     await reader.getBlogPosts();
-    upstream.down = 'upstream_error';
-    advance(BLOG_CACHE_REVALIDATE_SECONDS);
-    await reader.getBlogPosts();
-    await shared.settle(); // the background refresh fails and keeps the old entry
-    upstream.down = false;
-    advance(300 - BLOG_CACHE_REVALIDATE_SECONDS);
+    advance(BLOG_LIST_WINDOW_SECONDS);
     expect(await reader.getBlogPosts()).toMatchObject({ status: 'ok', fetchedAt: now });
+    expect(upstream.listCalls).toBe(2);
   });
 
-  it('shows an edit within the budget', async () => {
+  it('times a list from before its walk started', async () => {
+    upstream.listWalkSeconds = 50;
+    const reader = instance();
+    expect(await reader.getBlogPosts()).toMatchObject({ status: 'ok', fetchedAt: T0 });
+  });
+
+  it('shows an edit in the next window', async () => {
     const reader = instance();
     await reader.getBlogPost('first-post');
     advance(1);
     upstream.publish('first-post', 'Edited body');
-
-    advance(BLOG_CACHE_REVALIDATE_SECONDS); // stale-while-revalidate: one more old answer, then the list refresh lands
     expect(await reader.getBlogPost('first-post')).toMatchObject({ data: { content: 'Body of first-post' } });
-    await shared.settle();
+    advance(BLOG_LIST_WINDOW_SECONDS);
     expect(await reader.getBlogPost('first-post')).toMatchObject({ data: { content: 'Edited body' } });
+  });
+
+  it('shows a newly published post in the next window', async () => {
+    const reader = instance();
+    await reader.getBlogPosts();
+    upstream.publish('second-post');
+    expect(await reader.getBlogPost('second-post')).toEqual({ status: 'not_found' });
+    advance(BLOG_LIST_WINDOW_SECONDS);
+    expect(await reader.getBlogPost('second-post')).toMatchObject({ status: 'ok' });
   });
 
   it.each([
     ['unpublished', () => upstream.posts.delete('first-post')],
     ['removed from Talvio', () => upstream.posts.delete('first-post')],
-  ])('drops a post that was %s from the detail and the list within the budget, even during an outage', async (_case, remove) => {
+  ])('drops a post that was %s from the detail and the list in the next window', async (_case, remove) => {
     const reader = instance();
     await reader.getBlogPost('first-post');
     remove();
-
-    // The API can confirm the removal: gone after the next background refresh.
-    advance(BLOG_CACHE_REVALIDATE_SECONDS);
-    await reader.getBlogPosts();
-    await shared.settle();
+    advance(BLOG_LIST_WINDOW_SECONDS);
     expect(await reader.getBlogPost('first-post')).toEqual({ status: 'not_found' });
     expect(await reader.getBlogPosts()).toMatchObject({ status: 'ok', data: [] });
   });
@@ -224,24 +233,19 @@ describe('freshness budget', () => {
     await reader.getBlogPost('first-post');
     upstream.posts.delete('first-post');
     upstream.down = 'upstream_error';
-
-    advance(299);
-    expect((await reader.getBlogPost('first-post')).status).toBe('ok'); // inside the budget
-    advance(1);
+    now = T0 + 299_000;
+    expect((await reader.getBlogPost('first-post')).status).toBe('ok');
+    now = T0 + 300_000;
     expect(await reader.getBlogPost('first-post')).toEqual({ status: 'unavailable', reason: 'upstream_error' });
   });
 
-  it('keeps a post valid through fresh lists without refetching it', async () => {
+  it('keeps a post valid across windows without refetching it', async () => {
     const reader = instance();
     await reader.getBlogPost('first-post');
     for (let round = 0; round < 5; round += 1) {
-      advance(BLOG_CACHE_REVALIDATE_SECONDS);
-      await reader.getBlogPosts();
-      await shared.settle();
+      advance(BLOG_LIST_WINDOW_SECONDS);
+      expect(await reader.getBlogPost('first-post')).toMatchObject({ status: 'ok', fetchedAt: now });
     }
-    const result = await reader.getBlogPost('first-post');
-    expect(result).toMatchObject({ status: 'ok' });
-    expect(now - (result.status === 'ok' ? result.fetchedAt : 0)).toBeLessThan(300_000);
     expect(upstream.detailCalls).toBe(1);
   });
 
@@ -250,9 +254,8 @@ describe('freshness budget', () => {
     await reader.getBlogPost('first-post');
     advance(1);
     upstream.publish('first-post', 'Edited body');
-    advance(BLOG_CACHE_REVALIDATE_SECONDS);
-    await reader.getBlogPosts();
-    await shared.settle(); // the list now carries the new updated_at
+    advance(BLOG_LIST_WINDOW_SECONDS);
+    await reader.getBlogPosts(); // the list now carries the new updated_at
 
     upstream.down = 'upstream_error';
     expect(await reader.getBlogPost('first-post')).toEqual({ status: 'unavailable', reason: 'upstream_error' });
@@ -262,12 +265,11 @@ describe('freshness budget', () => {
     expect(upstream.detailCalls).toBe(3);
   });
 
-  it('counts a post response from its oldest validation', async () => {
+  it('dates a post response from the list that vouches for it', async () => {
     const reader = instance();
-    await reader.getBlogPosts(); // list validated at T0
+    await reader.getBlogPosts();
     advance(100);
-    const result = await reader.getBlogPost('first-post'); // detail validated at T0 + 100 s
-    expect(result).toMatchObject({ status: 'ok', fetchedAt: T0 });
+    expect(await reader.getBlogPost('first-post')).toMatchObject({ status: 'ok', fetchedAt: T0 });
   });
 });
 
@@ -279,18 +281,14 @@ describe('negative and failed reads', () => {
     expect(upstream.detailCalls).toBe(0);
   });
 
-  it('trusts a not-found answer for at most 30 seconds', async () => {
+  it('does not store a detail not-found, so a post removed and restored between reads recovers at once', async () => {
     const reader = instance();
-    upstream.publish('second-post');
     await reader.getBlogPosts();
-    upstream.posts.delete('second-post'); // list still has it, detail says not found
-    expect(await reader.getBlogPost('second-post')).toEqual({ status: 'not_found' });
-    upstream.publish('second-post');
-
-    advance(29);
-    expect(await reader.getBlogPost('second-post')).toEqual({ status: 'not_found' });
-    advance(1);
-    expect(await reader.getBlogPost('second-post')).toMatchObject({ status: 'ok' });
+    const restored = upstream.posts.get('first-post');
+    upstream.posts.delete('first-post');
+    expect(await reader.getBlogPost('first-post')).toEqual({ status: 'not_found' });
+    upstream.posts.set('first-post', restored as BlogPost);
+    expect(await reader.getBlogPost('first-post')).toMatchObject({ status: 'ok' });
   });
 
   it('does not cache a failure, so the next request after an outage recovers', async () => {
@@ -365,7 +363,16 @@ describe('capacity', () => {
     expect([upstream.listCalls, upstream.detailCalls]).toEqual([1, 1]);
   });
 
-  it('keeps steady-state upstream reads to list refreshes in a simulated launch load', async () => {
+  it('makes one list read per window after a quiet period, with no second background read', async () => {
+    const reader = instance();
+    await reader.getBlogPosts();
+    advance(BLOG_LIST_WINDOW_SECONDS * 3 + 30); // nobody read the blog for three windows
+    await reader.getBlogPosts();
+    await shared.settle();
+    expect(upstream.listCalls).toBe(2);
+  });
+
+  it('keeps steady-state upstream reads to one list read per instance per window in a simulated launch load', async () => {
     // 50 posts, 4 instances, 10 minutes: steady readers on every post, a crawler hitting every post plus 500 unknown
     // slugs each minute, and an editor publishing one post a minute. Counts upstream requests per minute.
     for (let index = 0; index < 50; index += 1) {
@@ -396,7 +403,7 @@ describe('capacity', () => {
     }
 
     // Cold start: every instance may fill the shared cache at once (no cross-instance lock), so up to
-    // instances x (list + posts). After that only list refreshes and edits reach the API.
+    // instances x (list + posts). After that only list windows and edits reach the API.
     expect(perMinute[0]).toBeLessThanOrEqual(instances.length * (1 + 50));
     expect(Math.max(...perMinute.slice(1))).toBeLessThanOrEqual(instances.length);
   });

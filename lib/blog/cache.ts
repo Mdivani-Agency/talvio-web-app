@@ -9,23 +9,21 @@ import type { BlogResult, BlogUnavailableReason } from './server';
 
 /** End-to-end limit from the upstream validation to any response, including CDN time (MDI-273 decision). */
 export const BLOG_FRESHNESS_BUDGET_SECONDS = 300;
-/** A not-found answer is trusted only this long, so a newly published slug appears promptly. */
-export const BLOG_NOT_FOUND_MAX_AGE_SECONDS = 30;
 /**
- * Age at which the shared cache refreshes an entry in the background. Each instance may trigger its own refresh (the
- * data cache has no cross-instance lock), so upstream reads scale with instances x entries / this interval. 240 s
- * leaves 60 s of the budget for the refresh to land before an entry expires.
+ * The list is cached in fixed windows: every request in one window shares one entry, and the first request of the
+ * next window loads a new one. Nothing refreshes in the background, so each instance reads the list at most once per
+ * window, and a new or removed post shows up within one window. 240 s leaves 60 s of the budget for a fallback.
  */
-export const BLOG_CACHE_REVALIDATE_SECONDS = 240;
-/** Background refresh age for post entries. They are valid by `updated_at`, so this only bounds stored versions. */
-export const BLOG_POST_ENTRY_LIFETIME_SECONDS = 24 * 60 * 60;
+export const BLOG_LIST_WINDOW_SECONDS = 240;
+/** How long the shared cache keeps any entry. List entries are superseded after one window; posts by an edit. */
+export const BLOG_CACHE_ENTRY_LIFETIME_SECONDS = 24 * 60 * 60;
 /** Longest a CDN may keep a blog response. The header helper also caps it by the data's remaining budget. */
 export const BLOG_CDN_MAX_AGE_SECONDS = 60;
 /** Upstream requests one instance may have in flight. Each is bounded by the client's 5 s timeout. */
 export const BLOG_MAX_CONCURRENT_UPSTREAM = 4;
 
-/** What the shared cache stores: a successful answer and when the API validated it. Failures are never stored. */
-export type BlogCacheEntry<T> = { result: { status: 'ok'; data: T } | { status: 'not_found' }; fetchedAt: number };
+/** What the shared cache stores: a successful answer and when the API validated it. Nothing else is stored. */
+export type BlogCacheEntry<T> = { data: T; fetchedAt: number };
 
 /** `ok` results carry `fetchedAt`, the oldest validation time behind them, for response headers. */
 export type BlogCachedResult<T> =
@@ -34,9 +32,9 @@ export type BlogCachedResult<T> =
   | { status: 'unavailable'; reason: BlogUnavailableReason };
 
 /**
- * A shared, stale-while-revalidate cache: returns the stored entry for `key` (loading it on a miss) and refreshes it
- * in the background after `revalidateSeconds`. A thrown error is never stored. Entries can be older than
- * `revalidateSeconds`, which is why the reader checks `fetchedAt` itself.
+ * A shared cache: returns the stored entry for `key`, calling `load` only on a miss. A thrown error is never stored.
+ * The reader picks keys that change before an entry could go stale (time windows, `updated_at`), so the cache's own
+ * stale-while-revalidate never runs; `revalidateSeconds` only bounds how long an orphaned entry is kept.
  */
 export type CachedLoad = <T>(
   key: readonly string[],
@@ -59,10 +57,10 @@ export type BlogReader = {
   getBlogPost: (slug: string) => Promise<BlogCachedResult<BlogPost>>;
 };
 
-/** Thrown inside a cache load so the failure is not stored. */
-class BlogUnavailableError extends Error {
-  constructor(readonly reason: BlogUnavailableReason) {
-    super(`blog unavailable: ${reason}`);
+/** Thrown inside a cache load so the answer is not stored. */
+class BlogUncachedResult extends Error {
+  constructor(readonly result: { status: 'not_found' } | { status: 'unavailable'; reason: BlogUnavailableReason }) {
+    super(`blog result not cached: ${result.status}`);
   }
 }
 
@@ -90,56 +88,6 @@ export function createBlogReader(deps: BlogReaderDeps): BlogReader {
   // lives no longer than one upstream call (bounded by the client timeout).
   const inFlight = new Map<string, Promise<BlogCachedResult<unknown>>>();
 
-  /** List entries: `ok` for the whole budget. Post entries: `ok` for as long as the list vouches for them. */
-  function isFresh(entry: BlogCacheEntry<unknown>, okMaxAgeSeconds: number): boolean {
-    const maxAge = entry.result.status === 'ok' ? okMaxAgeSeconds : BLOG_NOT_FOUND_MAX_AGE_SECONDS;
-    return now() - entry.fetchedAt < maxAge * 1000;
-  }
-
-  function toResult<T>(entry: BlogCacheEntry<T>): BlogCachedResult<T> {
-    return entry.result.status === 'ok'
-      ? { status: 'ok', data: entry.result.data, fetchedAt: entry.fetchedAt }
-      : { status: 'not_found' };
-  }
-
-  async function read<T>(
-    key: readonly string[],
-    fetch: () => Promise<BlogResult<T>>,
-    policy: { revalidateSeconds: number; okMaxAgeSeconds: number },
-  ): Promise<BlogCachedResult<T>> {
-    const load = async (): Promise<BlogCacheEntry<T>> => {
-      const result = await limit(fetch);
-      if (result.status === 'unavailable') {
-        throw new BlogUnavailableError(result.reason);
-      }
-      // The time is taken after validation, so an entry's age always counts from the API's answer.
-      return { result, fetchedAt: now() };
-    };
-
-    let entry: BlogCacheEntry<T> | null = null;
-    try {
-      entry = await deps.cachedLoad(key, load, policy.revalidateSeconds);
-    } catch (error) {
-      if (error instanceof BlogUnavailableError) {
-        return { status: 'unavailable', reason: error.reason };
-      }
-      // The cache itself failed. Read through to the API rather than failing the page.
-      console.error('blog cache: read failed');
-    }
-    if (entry && isFresh(entry, policy.okMaxAgeSeconds)) {
-      return toResult(entry);
-    }
-    // Missing or past its budget: never serve it, even if the API is down. The shared cache refreshes on its own.
-    try {
-      return toResult(await load());
-    } catch (error) {
-      if (error instanceof BlogUnavailableError) {
-        return { status: 'unavailable', reason: error.reason };
-      }
-      throw error;
-    }
-  }
-
   function singleFlight<T>(key: readonly string[], run: () => Promise<BlogCachedResult<T>>): Promise<BlogCachedResult<T>> {
     const id = key.join('\u0000');
     const existing = inFlight.get(id);
@@ -151,18 +99,65 @@ export function createBlogReader(deps: BlogReaderDeps): BlogReader {
     return promise;
   }
 
+  /** Calls the API. Only an `ok` answer becomes an entry, timed from before the request was sent. */
+  function loader<T>(fetch: () => Promise<BlogResult<T>>): () => Promise<BlogCacheEntry<T>> {
+    return async () => {
+      // Taken before the request (and before waiting for a slot), so a multi-page list counts from its first page.
+      const startedAt = now();
+      const result = await limit(fetch);
+      if (result.status !== 'ok') {
+        throw new BlogUncachedResult(result);
+      }
+      return { data: result.data, fetchedAt: startedAt };
+    };
+  }
+
+  /** Reads `key` through the shared cache. If the cache itself fails, reads straight from the API. */
+  async function readThrough<T>(key: readonly string[], load: () => Promise<BlogCacheEntry<T>>): Promise<BlogCachedResult<T>> {
+    let entry: BlogCacheEntry<T>;
+    try {
+      try {
+        entry = await deps.cachedLoad(key, load, BLOG_CACHE_ENTRY_LIFETIME_SECONDS);
+      } catch (error) {
+        if (error instanceof BlogUncachedResult) {
+          throw error;
+        }
+        console.error('blog cache: read failed');
+        entry = await load();
+      }
+    } catch (error) {
+      if (error instanceof BlogUncachedResult) {
+        return error.result;
+      }
+      throw error;
+    }
+    return { status: 'ok', data: entry.data, fetchedAt: entry.fetchedAt };
+  }
+
+  function isFresh(fetchedAt: number): boolean {
+    return now() - fetchedAt < BLOG_FRESHNESS_BUDGET_SECONDS * 1000;
+  }
+
   async function getBlogPosts(): Promise<BlogCachedResult<BlogPostSummary[]>> {
     const scope = deps.scope();
     if (!scope) {
       return { status: 'unavailable', reason: 'not_configured' };
     }
-    const key = [...scope, 'list'];
-    return singleFlight(key, () =>
-      read(key, deps.fetchAll, {
-        revalidateSeconds: BLOG_CACHE_REVALIDATE_SECONDS,
-        okMaxAgeSeconds: BLOG_FRESHNESS_BUDGET_SECONDS,
-      }),
-    );
+    const window = Math.floor(now() / (BLOG_LIST_WINDOW_SECONDS * 1000));
+    const key = [...scope, 'list', String(window)];
+    return singleFlight(key, async () => {
+      // A window's entry was loaded during that window, so it is never older than one window (240 s) while in use.
+      const current = await readThrough(key, loader(deps.fetchAll));
+      if (current.status !== 'unavailable') {
+        return current;
+      }
+      // The API is down at the start of a window. The previous window's list may still be inside the budget; use it
+      // without asking the API again (a miss there loads nothing).
+      const previous = await readThrough<BlogPostSummary[]>([...scope, 'list', String(window - 1)], () =>
+        Promise.reject(new BlogUncachedResult(current)),
+      );
+      return previous.status === 'ok' && isFresh(previous.fetchedAt) ? previous : current;
+    });
   }
 
   async function getBlogPost(slug: string): Promise<BlogCachedResult<BlogPost>> {
@@ -174,7 +169,8 @@ export function createBlogReader(deps: BlogReaderDeps): BlogReader {
       return { status: 'unavailable', reason: 'not_configured' };
     }
     // The list decides which slugs exist. Unknown slugs (crawler noise, typos) cost no upstream request, and a post
-    // removed from the list stops rendering even while its detail entry is still cached.
+    // removed from the list stops rendering even while its detail entry is still cached. This is also the only
+    // negative cache: a new post appears when the next list window loads.
     const list = await getBlogPosts();
     if (list.status !== 'ok') {
       return list.status === 'unavailable' ? list : { status: 'not_found' };
@@ -186,14 +182,10 @@ export function createBlogReader(deps: BlogReaderDeps): BlogReader {
     // The backend sets `updated_at` on every write, so a post stored under the `updated_at` that a fresh list still
     // shows is current: the list re-validates it, and its own age does not matter. An edit changes the key, so the
     // new version is fetched once and old versions are never served. Upstream reads therefore scale with list
-    // refreshes and edits, not with the number of posts.
+    // windows and edits, not with the number of posts. A detail `not_found` (removed between the list and this read)
+    // is not stored.
     const key = [...scope, 'post', slug, listed.updatedAt];
-    const detail = await singleFlight(key, () =>
-      read(key, () => deps.fetchOne(slug), {
-        revalidateSeconds: BLOG_POST_ENTRY_LIFETIME_SECONDS,
-        okMaxAgeSeconds: Number.POSITIVE_INFINITY,
-      }),
-    );
+    const detail = await singleFlight(key, () => readThrough(key, loader(() => deps.fetchOne(slug))));
     if (detail.status !== 'ok') {
       return detail;
     }

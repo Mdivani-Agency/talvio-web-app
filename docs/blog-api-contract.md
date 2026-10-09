@@ -118,7 +118,7 @@ Pages, metadata, the sitemap and feeds read through `getBlogPosts()` and `getBlo
 | -- | -- |
 | Backend response | `Cache-Control: private, no-store`, `force-dynamic`. Nothing cached upstream |
 | Talvio fetch | `cache: 'no-store'` in `server.ts`. The Next fetch cache is not used |
-| Shared data cache | `unstable_cache`, which Vercel shares across instances and deployments. Keyed by `VERCEL_ENV`, API origin and entry (`list`, or `post` + slug + `updated_at`). Tag `talvio-blog`. Holds only public content, never request or session data |
+| Shared data cache | `unstable_cache`, which Vercel shares across instances and deployments. Keyed by `VERCEL_ENV`, API origin and entry: `list` plus a 240 s window number, or `post` + slug + `updated_at`. Every key changes before its entry could go stale, so the data cache never refreshes in the background. Tag `talvio-blog`. Holds only public content, never request or session data |
 | Per render | React `cache()` dedupes a page and its metadata to one read |
 | Per instance | Concurrent reads of one key share a single call. At most 4 upstream calls in flight per instance, each bounded by the 5 s client timeout |
 | Rendered route | Blog routes must render per request (no ISR, no `revalidate` export), so no rendered HTML outlives the data |
@@ -127,20 +127,21 @@ Pages, metadata, the sitemap and feeds read through `getBlogPosts()` and `getBlo
 
 ### Freshness rules
 
-- **Budget.** A response never carries data validated more than 300 s earlier. Age counts from the API's answer (`fetchedAt`, set after validation). A refresh that fails keeps the old `fetchedAt`, so wrapping an old value never resets its age.
-- **List.** Served from the shared cache while younger than 300 s. The cache refreshes it in the background once it is 240 s old. At 300 s the reader ignores the cached copy and asks the API. If that fails, the result is `unavailable` (pages return `503`), never the expired list.
-- **Posts.** The list decides which slugs exist. A slug that is not in the current list is `not_found` without an upstream call, so unknown slugs from crawlers cost nothing, and a post that leaves the list stops rendering even if its detail is still cached. A post's detail is stored under its `updated_at`. The backend sets `updated_at` on every write, so a fresh list vouches for that version and a response's age is the list's age. An edit changes the key, so the new version is fetched once and the old one is never served.
-- **Not found.** A `not_found` entry is trusted for 30 s, so a newly published slug recovers quickly.
+- **Budget.** A response never carries data validated more than 300 s earlier. Age counts from when the request to the API started (`fetchedAt`), so a slow multi-page list walk is counted from its first page.
+- **List.** Cached per 240 s window: every request in a window shares one entry, and the first request in the next window loads a new list. Nothing refreshes in the background, so each instance reads the list at most once per window, and there is never a second read alongside an expiry.
+- **List outage.** If the new window's load fails, the previous window's list is served while it is younger than 300 s. Once it reaches 300 s, the result is `unavailable` (pages return `503`), never the expired list.
+- **Posts.** The list decides which slugs exist. A slug that is not in the current list is `not_found` without an upstream call, so unknown slugs from crawlers cost nothing. A post that leaves the list stops rendering, even if its detail is still cached. A post's detail is stored under its `updated_at`, which the backend sets on every write. A fresh list vouches for that version, so a response's age is the list's age. An edit changes the key, so the new version is fetched once and the old one is never served.
+- **Not found.** The list is the only negative cache, so a newly published post appears when the next window loads (within 240 s). A detail `not_found` for a listed slug, such as a post removed between the two reads, is not stored.
 - **Failures** (`unavailable`) are never stored, so an outage or a `429` cannot become a cached not-found.
 - **Cache outage.** If the data cache throws, the reader goes straight to the API.
 - **Credential rotation.** Cache keys exclude the token, so rotating `BLOG_API_TOKEN` keeps the cache. A wrong token shows up as `unavailable: unauthorized` on the next upstream call.
-- **Removal latency.** Unpublishing or removing a post from Talvio takes effect when the list next refreshes: normally 240–300 s, and never more than 300 s plus the CDN time left on an already-cached response (which `blogCacheControl` keeps inside the same 300 s). Faster removal would need authenticated invalidation from the backend, which is not built.
+- **Removal latency.** Unpublishing or removing a post from Talvio takes effect at the next window: within 240 s plus any CDN time left on an already-cached response. It is never more than 300 s in total, even if the API goes down before confirming the removal, because `blogCacheControl` keeps CDN copies inside the same budget. Faster removal would need authenticated invalidation from the backend, which is not built.
 
 ### Capacity
 
 The API allows 120 requests per minute per token. Upstream requests come from:
 
-- **Steady state:** one list refresh per instance every 240 s (plus one more per 100 posts), and one detail fetch per instance for each new or edited post.
+- **Steady state:** one list read per instance per 240 s window (plus one more per 100 posts), and one detail fetch per instance for each new or edited post.
 - **Cold start:** each instance that misses an empty cache may fetch the list and every post it is asked for. The data cache has no cross-instance lock, so N instances cold at the same moment can make N × (1 + posts) requests.
 
 Simulated in `cache.test.ts` ("simulated launch load"): 50 posts, 4 instances, 10 minutes. Each instance reads the list and every post six times a minute, a crawler requests 500 unknown slugs a minute, and one post is published per minute.
@@ -149,9 +150,9 @@ Simulated in `cache.test.ts` ("simulated launch load"): 50 posts, 4 instances, 1
 | -- | -- |
 | 0 (all four instances cold at once) | 204 |
 | 1–3 | 0 |
-| 4 | 4 |
+| 4 (new window) | 4 |
 | 5–7 | 0 |
-| 8 | 4 |
+| 8 (new window) | 4 |
 | 9 | 0 |
 
 Unknown slugs cost 0 requests. **Risk:** a simultaneous cold start on 3 or more instances with a 50-post catalog exceeds 120 requests in a minute. The excess requests get `429` and return `503` until the cache fills, typically within a minute. They never return wrong content. This was not measured against the deployed API (see Blockers).
