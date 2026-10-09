@@ -10,6 +10,7 @@ import {
   BLOG_PATH,
   BLOG_UNAVAILABLE_BODY,
   blogPostPath,
+  blogUpdatedDate,
   formatBlogDate,
 } from './blog-copy';
 
@@ -35,5 +36,12 @@ describe('blog copy', () => {
 
   it('builds post paths under /blog', () => {
     expect(blogPostPath('resume-tips')).toBe('/blog/resume-tips');
+  });
+
+  it('shows an update date only for a change on a later UTC day', () => {
+    const publishedAt = '2026-09-20T23:30:00.000Z';
+    expect(blogUpdatedDate({ publishedAt, updatedAt: '2026-09-20T23:59:00.000Z' })).toBeNull();
+    expect(blogUpdatedDate({ publishedAt, updatedAt: '2026-09-19T08:00:00.000Z' })).toBeNull();
+    expect(blogUpdatedDate({ publishedAt, updatedAt: '2026-09-21T00:10:00.000Z' })).toBe('2026-09-21T00:10:00.000Z');
   });
 });

@@ -122,20 +122,20 @@ Pages, metadata, the sitemap and feeds read through `getBlogPosts()` and `getBlo
 | Per render | React `cache()` dedupes a page and its metadata to one read |
 | Per instance | Concurrent reads of one key share a single call. At most 4 upstream calls in flight per instance, each bounded by the 5 s client timeout |
 | Rendered route | Blog routes must render per request (no ISR, no `revalidate` export), so no rendered HTML outlives the data |
-| CDN | Only what a route sets with `blogCacheControl(fetchedAt)`: `s-maxage` is at most 60 s **and** at most the data's unused budget, `max-age=0` for browsers, `no-store` once the budget is spent |
+| CDN | None. Blog pages are dynamic, and Next.js sends `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` for them (checked on a production build, MDI-277). A page cannot override it. `blogCacheControl(fetchedAt)` (`s-maxage` at most 60 s **and** at most the unused budget) stays for a route handler or `proxy.ts` if CDN caching is ever needed |
 | Browser | Revalidates every time. Content a browser already downloaded cannot be revoked and is outside the contract |
 
 ### Freshness rules
 
 - **Budget.** A response never carries data validated more than 300 s earlier. Age counts from when the request to the API started (`fetchedAt`), so a slow multi-page list walk is counted from its first page.
 - **List.** Cached per 240 s window: every request in a window shares one entry, and the first request in the next window loads a new list. Nothing refreshes in the background, so each instance reads the list at most once per window, and there is never a second read alongside an expiry.
-- **List outage.** If the new window's load fails, the previous window's list is served while it is younger than 300 s. Once it reaches 300 s, the result is `unavailable` (pages return `503`), never the expired list.
+- **List outage.** If the new window's load fails, the previous window's list is served while it is younger than 300 s. Once it reaches 300 s, the result is `unavailable` (pages return `500`, see Routes), never the expired list.
 - **Posts.** The list decides which slugs exist. A slug that is not in the current list is `not_found` without an upstream call, so unknown slugs from crawlers cost nothing. A post that leaves the list stops rendering, even if its detail is still cached. A post's detail is stored under its `updated_at`, which the backend sets on every write. A fresh list vouches for that version, so a response's age is the list's age. An edit changes the key, so the new version is fetched once and the old one is never served.
 - **Not found.** The list is the only negative cache, so a newly published post appears when the next window loads (within 240 s). A detail `not_found` for a listed slug, such as a post removed between the two reads, is not stored.
 - **Failures** (`unavailable`) are never stored, so an outage or a `429` cannot become a cached not-found.
 - **Cache outage.** If the data cache throws, the reader goes straight to the API.
 - **Credential rotation.** Cache keys exclude the token, so rotating `BLOG_API_TOKEN` keeps the cache. A wrong token shows up as `unavailable: unauthorized` on the next upstream call.
-- **Removal latency.** Unpublishing or removing a post from Talvio takes effect at the next window: within 240 s plus any CDN time left on an already-cached response. It is never more than 300 s in total, even if the API goes down before confirming the removal, because `blogCacheControl` keeps CDN copies inside the same budget. Faster removal would need authenticated invalidation from the backend, which is not built.
+- **Removal latency.** Unpublishing or removing a post from Talvio takes effect at the next window: within 240 s, because no CDN copy is kept. It is never more than 300 s in total, even if the API goes down before confirming the removal. Faster removal would need authenticated invalidation from the backend, which is not built.
 
 ### Capacity
 
@@ -155,22 +155,31 @@ Simulated in `cache.test.ts` ("simulated launch load"): 50 posts, 4 instances, 1
 | 8 (new window) | 4 |
 | 9 | 0 |
 
-Unknown slugs cost 0 requests. **Risk:** a simultaneous cold start on 3 or more instances with a 50-post catalog exceeds 120 requests in a minute. The excess requests get `429` and return `503` until the cache fills, typically within a minute. They never return wrong content. This was not measured against the deployed API (see Blockers).
+Unknown slugs cost 0 requests. **Risk:** a simultaneous cold start on 3 or more instances with a 50-post catalog exceeds 120 requests in a minute. The excess requests get `429` and return `500` until the cache fills, typically within a minute. They never return wrong content. This was not measured against the deployed API (see Blockers).
 
 ## Routes
 
 | Route | Reads | Outcome mapping | Since |
 | -- | -- | -- | -- |
 | `/blog` | `getBlogPosts()` | `ok` lists every eligible post (newest first, `slug` tie-break), `ok` with no posts shows the empty state, `unavailable` throws `BlogUnavailableError` and the response is `500` | MDI-276 |
+| `/blog/[slug]` | `getBlogPost(slug)` (list-gated) | An invalid slug is a `404` without a read. `not_found` (missing, draft, agency-only, future or withheld) is a `404` with no article content. `unavailable` throws `BlogUnavailableError` and the response is `500`. `ok` renders the article | MDI-277 |
 
-`/blog` is `force-dynamic`, so no rendered HTML is cached past the freshness budget. It sets no CDN `Cache-Control` yet. `blogCacheControl` is wired in with the article route and HTTP semantics (MDI-277), which may also turn the outage status into `503`. The agency site's `featured` flag is not used on Talvio, so no post is listed twice. Covers resolve against the API origin and render unoptimised, with an empty `alt`, because the title is the link text.
+Both routes are `force-dynamic`, so no rendered HTML outlives the freshness budget. No `loading.tsx` or Suspense boundary sits above them, so the status is set before any byte is sent. `e2e/blog.spec.ts` asserts `200`, `404` and `500` against a production build. The agency site's `featured` flag is not used on Talvio, so no post is listed twice. Covers resolve against the API origin and load directly in the browser (no image optimiser), with an empty `alt`, because the API has no alt text and the title says what the post is.
+
+**Outage status.** An outage returns `500`, not `503`. An App Router page can only choose its status through `notFound()` (404), `redirect()` or a thrown error (500), and cannot set `Retry-After`. A `503` with `Retry-After` would need `proxy.ts` to read the blog before the page renders, which duplicates the reader for a marginal gain. Crawlers treat any `5xx` as a temporary server error, so a short outage does not drop articles from the index.
+
+**Article page** (`app/blog/[slug]`). Breadcrumbs (Home, Blog, title), one `h1` (the title), the description, the publication date, an update date only when the post changed on a later UTC day, the cover, the body, and the homepage CTA (`Start free`, `See templates`). Until MDI-278, article metadata has the post's title and description, `noindex`, and no canonical, so an article never inherits the `/blog` canonical. `generateMetadata` reads the same `getBlogPost` result as the page (React `cache()`), never a separate unfiltered fetch.
+
+**Markdown** (`app/blog/views/blog-markdown.tsx`, `lib/blog/markdown-urls.ts`). markdown-it parses with raw HTML off and GFM tables, strikethrough and autolinks on. Tokens become React elements from a fixed list. Nothing is set as HTML, unknown tokens keep only their text, and content is never compiled or executed (no MDX). Headings shift so the highest is an `h2`. Links keep `http`, `https`, `mailto`, `#fragments` and `/blog` paths. Other root-relative paths resolve against the content origin, and external links get `rel="noopener noreferrer"`. Everything else, including encoded `javascript:` variants, protocol-relative URLs and relative paths, keeps its text and loses the link. Images load only from the content origin and the Talvio origin, in a fixed 16:9 frame, lazily, with their Markdown alt text. An image from any other host becomes a link. The Talvio server never fetches a URL from content.
+
+**Slugs.** There is no slug history and no renamed slug, so no redirect mapping exists. If one is ever needed, it goes in `next.config.ts` `redirects()` as an explicit permanent mapping, with a test that each target exists and no mapping loops.
 
 ## Findings that still shape later issues
 
 1. **`published_at` survives unpublishing.** Eligibility checks `status`, not just a date.
 2. **No build-time prerendering.** Blog routes render per request through `reader.ts` (see Caching and freshness). Prerendering every article at build would bypass the freshness budget and spend one request per article.
-3. **Cover paths are relative to the backend.** `next.config.ts` `images.remotePatterns` does not include `mdivani.agency` yet (MDI-277).
-4. **Markdown images are unrestricted.** Body content can reference any host. The backend renders with `react-markdown` and `remark-gfm` without `rehype-raw` (MDI-277).
+3. **Cover paths are relative to the backend.** They resolve against the API origin and load directly in the browser, so `images.remotePatterns` is unchanged (MDI-277).
+4. **Markdown images are unrestricted on the backend.** Body content can reference any host. Talvio loads only allowed origins and turns the rest into links (MDI-277).
 
 ## Launch decisions
 
@@ -184,9 +193,9 @@ Rows marked **Decided** follow from shipped code. The rest are **proposals** unt
 | Completeness | Walk pages until `total`; anything short is `unavailable` | The API now returns `total` | Decided (MDI-274) |
 | Shared-article canonical | A post the agency site shows (`sites` has `agency` and its tags do not withhold it) is **agency-primary**. Talvio may render it, sets `canonical` to `https://mdivani.agency/blog/{slug}` and leaves it out of the Talvio sitemap. Every other eligible post is **Talvio-primary** and self-canonicalises | The agency site already self-canonicalises every post it shows. Authors who want a shared post owned by Talvio tag it `talvio` | Proposed |
 | Authorship | No author in metadata or JSON-LD. Publisher is Talvio only for Talvio-primary posts | The API has no author field | Proposed |
-| Cover image host | `mdivani.agency` only, added to `images.remotePatterns` with a path pattern once the storage path is confirmed | The write API allows only same-origin cover paths | Proposed |
-| Markdown links and images | No raw HTML. Links keep `http`, `https` and `mailto`. Images only from the cover host and `https://www.talvio.co`; others render as links | Same defaults as the backend, plus a host allowlist for image optimisation | Proposed |
-| Freshness and removal budget | 300 seconds end to end, enforced by `lib/blog/cache.ts`. No stale serving past that: after expiry an upstream failure returns `503` | The backend sends no invalidation | Implemented (MDI-275); value awaits owner sign-off |
+| Cover image host | The API origin only. Covers load directly in the browser, without the image optimiser, so `images.remotePatterns` is not widened | The write API allows only same-origin cover paths, and Talvio's server never fetches content URLs | Decided (MDI-277) |
+| Markdown links and images | No raw HTML. Links keep `http`, `https` and `mailto`, plus fragments and `/blog` paths. Images only from the content origin and the Talvio origin; others render as links. See Routes | Same defaults as the backend, plus a host allowlist so no other host is contacted | Decided (MDI-277) |
+| Freshness and removal budget | 300 seconds end to end, enforced by `lib/blog/cache.ts`. No stale serving past that: after expiry an upstream failure returns `500` | The backend sends no invalidation | Implemented (MDI-275); value awaits owner sign-off |
 | Launch traffic envelope | Steady state: one list read per instance every 240 s plus one read per edit. Cold start: up to instances × (1 + posts) | Simulated in `cache.test.ts`. Unknown slugs cost nothing | Simulated; not measured against the deployed API |
 
 ## Fixtures
@@ -204,7 +213,9 @@ Rows marked **Decided** follow from shipped code. The rest are **proposals** unt
 | `talvioPublishedDetailResponse` | Detail response |
 | `blogErrorResponses` | Each error envelope with its status |
 
-`fixtures.test.ts` checks that each fixture is a row the backend could produce. Hostile Markdown fixtures belong to MDI-277.
+`fixtures.test.ts` checks that each fixture is a row the backend could produce.
+
+`test/fixtures/blog/markdown.ts` holds `HOSTILE_MARKDOWN` (raw HTML, event handlers, encoded `javascript:` links, `data:` URLs, images from other hosts and the metadata address, MDX-style imports) and `RICH_MARKDOWN` (every supported element). For browser tests, `e2e/services/blog-api.mjs` serves the read API from the e2e simulator. It includes an article whose detail read fails, and a draft and an agency-only row that Talvio must drop.
 
 ## Blockers
 

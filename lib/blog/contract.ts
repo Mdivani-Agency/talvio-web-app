@@ -46,7 +46,8 @@ export const blogPostSummaryWireSchema = z.object({
 });
 
 export const blogPostWireSchema = blogPostSummaryWireSchema.extend({
-  content: z.string().min(1),
+  /** Markdown. A blank body is malformed, so an empty article is never published as a page. */
+  content: z.string().refine((value) => value.trim().length > 0),
 });
 
 export type BlogPostSummaryWire = z.infer<typeof blogPostSummaryWireSchema>;
