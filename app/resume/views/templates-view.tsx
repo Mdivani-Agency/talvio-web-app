@@ -34,7 +34,12 @@ export default function TemplatesView({ selectedTemplate, initialLevel, template
               selectedTemplate === key ? 'border-2 border-blue-500' : ''
             }`}
           >
-            <Image src={imageUrl} fill alt={`${currentLevel} ${name}`} />
+            <Image
+              src={imageUrl}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              alt={`${currentLevel} ${name}`}
+            />
           </div>
         </button>
       ))}
