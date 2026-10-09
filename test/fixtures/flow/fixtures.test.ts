@@ -211,7 +211,11 @@ describe('flow baseline fixtures', () => {
       responsibilities: ['Owned the editor'],
       keyContributions: ['Shipped template gallery'],
     });
-    expect(converted.experience?.[0]?.description?.content?.[0]?.content?.[0]?.content?.[0]).toMatchObject({
+    expect(converted.experience?.[0]?.description?.content?.[0]).toEqual({
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'Platform group' }],
+    });
+    expect(converted.experience?.[0]?.description?.content?.[1]?.content?.[0]?.content?.[0]).toMatchObject({
       type: 'paragraph',
       marks: [{ type: 'keyContributions' }],
     });
