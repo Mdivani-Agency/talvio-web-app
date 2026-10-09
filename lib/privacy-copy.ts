@@ -46,6 +46,14 @@ export const PRIVACY: LegalDocument = {
           ' How many resume PDFs you have created this month, and how often you use AI features.',
         ),
         p(
+          strong('Usage statistics.'),
+          ' The pages you visit on Talvio, your referrer, and your approximate country, browser and device type, recorded as anonymous page-view counts.',
+        ),
+        p(
+          strong('Error and session reports.'),
+          ' On our production website, when an error occurs we send Sentry the error details, the page address, your browser and device type, and your IP address. We also record a replay of some visits (about one in ten, and every visit in which an error occurs). The replay masks the text you type and the text shown on the page by default, but it captures how the page is laid out and how you click and scroll.',
+        ),
+        p(
           strong('Technical data.'),
           ' Your IP address, browser type and request logs, which our hosting providers record to run and protect the service.',
         ),
@@ -55,7 +63,7 @@ export const PRIVACY: LegalDocument = {
       heading: '3. Cookies and browser storage',
       blocks: [
         p(
-          "We use cookies only to keep you signed in. Your browser's local storage holds unsaved drafts and your display theme on your own device. We do not use advertising cookies, and we do not currently use analytics tools. If that changes, we will update this policy first.",
+          "We use cookies only to keep you signed in. Your browser's local storage holds unsaved drafts and your display theme on your own device. We do not use advertising cookies. We measure how the website is used with Vercel Web Analytics, which counts page views without cookies and without following you across other websites. Sentry's error reporting and session replay may use your browser's storage to link the events of one visit.",
         ),
       ],
     },
@@ -67,7 +75,7 @@ export const PRIVACY: LegalDocument = {
           ['To store your profile, build your resumes and create your PDFs.'],
           ['To run AI features when you choose to use them.'],
           ['To apply the monthly and daily limits and prevent abuse.'],
-          ['To fix problems and keep the service secure.'],
+          ['To fix problems, monitor errors and keep the service secure.'],
           ['To send emails needed to run your account, such as sign-in codes.'],
           ['To meet legal obligations.'],
         ),
@@ -91,8 +99,9 @@ export const PRIVACY: LegalDocument = {
         p('We share personal data only with the providers that help us run Talvio:'),
         ul(
           [strong('Supabase:'), ' sign-in, database and storage of your profile and resumes.'],
-          [strong('Vercel:'), ' website hosting.'],
+          [strong('Vercel:'), ' website hosting and anonymous page-view statistics.'],
           [strong('Amazon Web Services:'), ' storage of generated PDF files and delivery of account emails.'],
+          [strong('Sentry:'), ' error monitoring and session replay on our production website.'],
           [strong('OpenAI:'), ' AI features, when you use them.'],
           [strong('Google:'), ' sign-in, if you choose to sign in with it.'],
         ),
