@@ -24,31 +24,45 @@ type AccountDialogItem = {
 };
 
 function paragraphDoc(text: string): JSONContent {
+  const paragraphs = detailParagraphs(text);
   return {
     type: 'doc',
-    content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+    content: paragraphs.length ? paragraphs : [{ type: 'paragraph', content: [{ type: 'text', text }] }],
   };
 }
 
-function bulletDoc(items: Array<{ text: string; mark: string }>): JSONContent {
+function bulletList(items: Array<{ text: string; mark: string }>): JSONContent {
   return {
-    type: 'doc',
-    content: [
-      {
-        type: 'bulletList',
-        content: items.map(({ text, mark }) => ({
-          type: 'listItem',
-          content: [
-            {
-              type: 'paragraph',
-              marks: [{ type: mark }],
-              content: [{ type: 'text', text }],
-            },
-          ],
-        })),
-      },
-    ],
+    type: 'bulletList',
+    content: items.map(({ text, mark }) => ({
+      type: 'listItem',
+      content: [
+        {
+          type: 'paragraph',
+          marks: [{ type: mark }],
+          content: [{ type: 'text', text }],
+        },
+      ],
+    })),
   };
+}
+
+/** One paragraph per non-empty line, so the PDF never draws a raw newline. */
+function detailParagraphs(details: string | undefined): JSONContent[] {
+  return (details ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] }));
+}
+
+/** Experience rich text: the job description paragraphs, then the categorized bullets. */
+function experienceDoc(
+  additionalDetails: string | undefined,
+  items: Array<{ text: string; mark: string }>,
+): JSONContent | undefined {
+  const content = [...detailParagraphs(additionalDetails), ...(items.length ? [bulletList(items)] : [])];
+  return content.length ? { type: 'doc', content } : undefined;
 }
 
 function collectText(node: unknown, parts: string[]) {
@@ -68,6 +82,41 @@ function plainTextFromDoc(description: unknown): string {
   const parts: string[] = [];
   collectText(description, parts);
   return parts.join('');
+}
+
+function isCategoryParagraph(node: JSONContent) {
+  return node.type === 'paragraph' && !!node.marks?.some((entry) =>
+    entry.type === 'keyContributions'
+    || entry.type === 'achievements'
+    || entry.type === 'responsibilities',
+  );
+}
+
+/** Text outside the categorized bullets, one line per paragraph. */
+function detailsFromDoc(description: unknown): string {
+  const lines: string[] = [];
+  const walk = (node: unknown) => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    const value = node as JSONContent;
+    if (isCategoryParagraph(value)) {
+      return;
+    }
+    if (value.type === 'paragraph') {
+      const text = plainTextFromDoc(value);
+      if (text) {
+        lines.push(text);
+      }
+      return;
+    }
+    for (const child of value.content ?? []) {
+      walk(child);
+    }
+  };
+
+  walk(description);
+  return lines.join('\n');
 }
 
 function arraysFromBulletDoc(description: unknown) {
@@ -170,7 +219,7 @@ export function profileToResumeDocument(account: AccountDto): ResumeForm {
   const city = profile.city?.trim() ?? '';
   const country = profile.country?.trim() ?? '';
   const experience = (account.experience ?? []).map((item) => {
-    const bullets = experienceBullets(item);
+    const description = experienceDoc(item.additionalDetails, experienceBullets(item));
     return withId({
       company: item.company,
       jobTitle: item.jobTitle,
@@ -182,7 +231,7 @@ export function profileToResumeDocument(account: AccountDto): ResumeForm {
       ...(item.achievements ? { achievements: item.achievements } : {}),
       ...(item.responsibilities ? { responsibilities: item.responsibilities } : {}),
       ...(item.keyContributions ? { keyContributions: item.keyContributions } : {}),
-      ...(bullets.length ? { description: bulletDoc(bullets) } : {}),
+      ...(description ? { description } : {}),
       id: item.id,
     });
   });
@@ -287,7 +336,7 @@ export function normalizeResumeDocument<T>(document: T): T {
 
 /**
  * Seed account-shaped dialogs from a resume document item.
- * Education and projects map description text into additionalDetails.
+ * Description text outside the marked bullets maps into additionalDetails, one line per paragraph.
  * Experience keeps categorized arrays and rebuilds them from marked bullets when needed.
  */
 export function resumeItemToAccountDialog<T extends AccountDialogItem>(
@@ -306,7 +355,7 @@ export function resumeItemToAccountDialog<T extends AccountDialogItem>(
   }
 
   if (typeof item.additionalDetails !== 'string') {
-    next.additionalDetails = plainTextFromDoc(item.description);
+    next.additionalDetails = detailsFromDoc(item.description);
   }
 
   return next as T & { additionalDetails?: string };
@@ -314,7 +363,8 @@ export function resumeItemToAccountDialog<T extends AccountDialogItem>(
 
 /**
  * Dialog saves replace an item with an account-shaped object.
- * Rebuild description when dialog content fields change. Keep a real UUID id.
+ * Rebuild description when dialog content fields change: experience writes the job
+ * description paragraphs before its bullets. Keep a real UUID id.
  * Strip account-only additionalDetails from the stored resume item.
  */
 export function preserveDocumentFields<T extends AccountDialogItem>(
@@ -334,8 +384,7 @@ export function preserveDocumentFields<T extends AccountDialogItem>(
     || 'keyContributions' in next;
 
   if (hasExperienceLists) {
-    const bullets = experienceBullets(next);
-    description = bullets.length ? bulletDoc(bullets) : undefined;
+    description = experienceDoc(next.additionalDetails, experienceBullets(next));
   } else if (hasDetails) {
     description = paragraphDoc(next.additionalDetails ?? '');
   } else if (next.description !== undefined) {

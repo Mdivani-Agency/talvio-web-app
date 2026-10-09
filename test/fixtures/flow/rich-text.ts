@@ -1,12 +1,17 @@
 import type { JSONContent } from '@tiptap/react';
 
-/** TipTap doc written when a profile experience list becomes resume rich text. */
+/**
+ * TipTap doc written when a profile experience list becomes resume rich text.
+ * `details` are the job description lines, written as paragraphs before the bullets.
+ */
 export function markedBulletDoc(
   items: Array<{ text: string; mark: string }>,
+  details: string[] = [],
 ): JSONContent {
   return {
     type: 'doc',
     content: [
+      ...details.map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })),
       {
         type: 'bulletList',
         content: items.map(({ text, mark }) => ({

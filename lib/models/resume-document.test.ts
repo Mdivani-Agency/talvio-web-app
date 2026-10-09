@@ -56,11 +56,14 @@ describe('profileToResumeDocument', () => {
       endDate: '2024-06-01T00:00:00.000Z',
     });
     expect(converted.experience?.[0]?.description).toEqual(
-      markedBulletDoc([
-        { text: 'Shipped template gallery', mark: 'keyContributions' },
-        { text: 'Cut PDF render time', mark: 'achievements' },
-        { text: 'Owned the editor', mark: 'responsibilities' },
-      ]),
+      markedBulletDoc(
+        [
+          { text: 'Shipped template gallery', mark: 'keyContributions' },
+          { text: 'Cut PDF render time', mark: 'achievements' },
+          { text: 'Owned the editor', mark: 'responsibilities' },
+        ],
+        ['Platform group'],
+      ),
     );
     expect(converted.education?.[0]).toMatchObject({
       id: EDUCATION_ID,
@@ -75,6 +78,46 @@ describe('profileToResumeDocument', () => {
 
     converted.profile.firstName = 'Changed';
     expect(fullAccountDto.profile.firstName).toBe('Ada');
+  });
+
+  it('keeps a job description that has no bullets, one paragraph per line', () => {
+    const converted = profileToResumeDocument({
+      ...fullAccountDto,
+      experience: [
+        {
+          ...fullAccountDto.experience![0]!,
+          additionalDetails: 'Led the platform group.\n\n  Owned PDF rendering.  ',
+          achievements: [],
+          responsibilities: [],
+          keyContributions: [],
+        },
+      ],
+    });
+
+    expect(converted.experience?.[0]?.description).toEqual({
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Led the platform group.' }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'Owned PDF rendering.' }] },
+      ],
+    });
+  });
+
+  it('omits the description when an experience has no details and no bullets', () => {
+    const converted = profileToResumeDocument({
+      ...fullAccountDto,
+      experience: [
+        {
+          ...fullAccountDto.experience![0]!,
+          additionalDetails: '  ',
+          achievements: [],
+          responsibilities: [],
+          keyContributions: [],
+        },
+      ],
+    });
+
+    expect(converted.experience?.[0]).not.toHaveProperty('description');
   });
 });
 
@@ -212,6 +255,26 @@ describe('preserveDocumentFields', () => {
     );
   });
 
+  it('writes the job description before the bullets when an experience dialog saves', () => {
+    const saved = preserveDocumentFields(
+      { id: EXPERIENCE_ID, company: 'Talvio', jobTitle: 'Engineer' },
+      {
+        id: EXPERIENCE_ID,
+        company: 'Talvio',
+        jobTitle: 'Engineer',
+        achievements: ['Shipped faster previews'],
+        responsibilities: [] as string[],
+        keyContributions: [] as string[],
+        additionalDetails: 'Led the platform group.',
+      },
+    );
+
+    expect(saved).not.toHaveProperty('additionalDetails');
+    expect(saved.description).toEqual(
+      markedBulletDoc([{ text: 'Shipped faster previews', mark: 'achievements' }], ['Led the platform group.']),
+    );
+  });
+
   it('converts a new project dialog into a resume description', () => {
     const next = {
       name: 'Preview pipeline',
@@ -282,6 +345,19 @@ describe('resumeItemToAccountDialog', () => {
     expect(experience.keyContributions).toEqual(['Shipped template gallery']);
     expect(experience.achievements).toEqual(['Cut PDF render time']);
     expect(experience.responsibilities).toEqual(['Owned the editor']);
+  });
+
+  it('seeds an experience job description without the bullet text', () => {
+    const item = profileToResumeDocument({
+      ...fullAccountDto,
+      experience: [{ ...fullAccountDto.experience![0]!, additionalDetails: 'Led the platform group.\nOwned PDF rendering.' }],
+    }).experience![0]!;
+
+    const dialog = resumeItemToAccountDialog(item);
+    expect(dialog.additionalDetails).toBe('Led the platform group.\nOwned PDF rendering.');
+
+    const saved = preserveDocumentFields(item, dialog);
+    expect(saved.description).toEqual(item.description);
   });
 });
 

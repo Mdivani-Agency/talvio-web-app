@@ -26,7 +26,12 @@ export const useTemplates = ({ selectedTemplate, level, onSelect }: TemplatePara
           selectedTemplate === key ? 'border-2 border-blue-500' : ''
         }`}
       >
-        <Image src={imageUrl} fill alt={`${level} ${name}`} unoptimized />
+        <Image
+          src={imageUrl}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          alt={`${level} ${name}`}
+        />
       </div>
     </button>
   ));

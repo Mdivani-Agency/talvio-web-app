@@ -20,7 +20,7 @@ function item(level: TemplateLevel, style: (typeof STYLES)[number]): TemplateIte
     name: style.name,
     template: style.template as Template,
     color: style.color,
-    imageUrl: `/templates/${key}.svg`,
+    imageUrl: `/templates/${key}.png`,
     description: style.description,
     key,
   };

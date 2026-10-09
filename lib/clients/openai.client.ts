@@ -52,6 +52,7 @@ export const textToStructuredResume = async (text: string, scenario?: string | n
             You are a resume parser. Your task is to extract the information and format text. Do not include explanations, only formatted data.
             **Important:** Dates should be in ISO8601 format. example: 2025-01-01T00:00:00.000Z
             **Important:** Do not hallucinate values, if the field is missing set it to null, if date is missing set it to null. isPresent field is also a date string set it to current date if end date is missing.
+            **Important:** For each experience, put every bullet point or listed duty into exactly one of achievements (measurable results), responsibilities (ongoing duties) or keyContributions (things the person built, led or shipped). Keep the original wording and do not repeat a bullet across lists. additionalDetails holds only a short prose job description, without bullets; set it to null when there is none.
             `,
         },
         {
