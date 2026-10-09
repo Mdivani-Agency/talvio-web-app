@@ -25,6 +25,9 @@ on:
 permissions:
   contents: read
 
+env:
+  SUPABASE_CLI_VERSION: 2.117.0
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -50,6 +53,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: yarn
 
       - name: Install
         run: yarn install --immutable
@@ -84,15 +88,54 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: yarn
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
 
       - name: Install
         run: yarn install --immutable
 
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # Skips binaries already restored from the cache; the OS packages are installed every run.
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium firefox webkit
 
+      # The build bakes in the local Supabase URL and keys, so it cannot reuse the
+      # quality job's output. Next's own cache (.next/cache) is still valid across
+      # runs. Only pushes save it, so PR runs do not fill the repository cache quota.
+      - name: Restore Next.js build cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('yarn.lock') }}-${{ github.sha }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('yarn.lock') }}-
+            nextjs-${{ runner.os }}-
+
       - name: Local database tests and Playwright
+        env:
+          E2E_SUPABASE_CLI: supabase
         run: yarn test:e2e:local
+
+      # A failed Playwright run does not invalidate the build cache, so keep it unless the job was cancelled.
+      - name: Save Next.js build cache
+        if: github.event_name == 'push' && !cancelled()
+        uses: actions/cache/save@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('yarn.lock') }}-${{ github.sha }}
 
       - name: Upload Playwright report
         if: always()
@@ -146,7 +189,7 @@ jobs:
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v3
         with:
-          version: 2.117.0
+          version: ${{ env.SUPABASE_CLI_VERSION }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
