@@ -21,7 +21,8 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    // Recording slows every test, and with no retries the trace and screenshot already cover a failure.
+    video: process.env.CI ? 'off' : 'retain-on-failure',
   },
   projects: [
     {

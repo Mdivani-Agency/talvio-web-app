@@ -7,7 +7,24 @@ import { confirmSimulatorReady } from './e2e-simulator-ready.mjs';
 
 const SIMULATOR_PORT = 3999;
 
-const SUPABASE = ['npx', '--yes', 'supabase@2.117.0'];
+// CI installs the pinned CLI once (supabase/setup-cli) and sets E2E_SUPABASE_CLI; local runs fall back to npx.
+// The variable is a command line, so `supabase` and `npx supabase@2.117.0` both work.
+const SUPABASE = process.env.E2E_SUPABASE_CLI?.trim()
+  ? process.env.E2E_SUPABASE_CLI.trim().split(/\s+/)
+  : ['npx', '--yes', 'supabase@2.117.0'];
+
+// The tests use Postgres, Auth, the REST/GraphQL gateway and the mail catcher (mailpit).
+// Everything else only adds image pulls and startup time. The pooler is already off in config.toml.
+const UNUSED_SERVICES = [
+  'studio',
+  'postgres-meta',
+  'imgproxy',
+  'realtime',
+  'edge-runtime',
+  'logflare',
+  'vector',
+  'storage-api',
+];
 
 function run(command, args, { env = process.env, cwd = process.cwd() } = {}) {
   return new Promise((resolve, reject) => {
@@ -102,7 +119,7 @@ async function main() {
   let simulator;
   let testCode = 1;
   try {
-    await supabase(['start']);
+    await supabase(['start', '-x', UNUSED_SERVICES.join(',')]);
     started = true;
     await supabase(['db', 'reset']);
     await supabase(['test', 'db']);
