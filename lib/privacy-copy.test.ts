@@ -22,7 +22,7 @@ describe('privacy policy copy', () => {
       ...PRIVACY,
       sections: PRIVACY.sections.filter((s) => s.heading === '6. Who we share data with'),
     });
-    for (const processor of ['Supabase', 'Vercel', 'Amazon Web Services', 'OpenAI', 'Google']) {
+    for (const processor of ['Supabase', 'Vercel', 'Amazon Web Services', 'Sentry', 'OpenAI', 'Google']) {
       expect(sharing).toContain(processor);
     }
   });
@@ -32,6 +32,12 @@ describe('privacy policy copy', () => {
     expect(text).toContain('without cookies');
     expect(text).not.toContain('we do not currently use analytics tools');
     expect(text).not.toMatch(/posthog/i);
+  });
+
+  it('discloses Sentry error monitoring and session replay', () => {
+    expect(text).toContain('Error and session reports.');
+    expect(text).toContain('session replay');
+    expect(text).toContain('masks the text you type');
   });
 
   it('says an imported PDF is read in the browser and only its text is sent', () => {

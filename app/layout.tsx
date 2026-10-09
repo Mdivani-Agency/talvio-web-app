@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { QueryProvider, SessionProvider, ThemeProvider } from '@lib/providers';
 import { HOME_DESCRIPTION, SHARE_OPEN_GRAPH, SHARE_TWITTER } from '@/lib/public-metadata';
 import { siteOrigin } from '@/lib/site';
+import { WebAnalytics } from './web-analytics';
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -44,7 +44,7 @@ export default function RootLayout({
             <Toaster />
           </QueryProvider>
         </ThemeProvider>
-        <Analytics />
+        <WebAnalytics />
       </body>
     </html>
   );
