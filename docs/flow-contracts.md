@@ -39,7 +39,7 @@ Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in
 | Import | `useResumeParser` + `offerImport` | Session (MDI-401) | `POST /api/resume/parse` | Parse stays on the mounted form. Success stages a temporary DTO. Current work prompts replace/cancel. Failed or cancelled import leaves prior input. Applying remounts the form via `formRevision`. |
 | Questions / tailor | `AccountQuestions` | Session | `POST /api/resume/qa`, `POST /api/resume/account` | Up to five questions with stable ids. Answers are keyed by question id. Final Next opens answer review. AI is optional. Save uses the reviewed profile and does not rerun AI. |
 
-Templates are the in-repo catalogue in `lib/templates.ts` (`TEMPLATE_LIST`, `findTemplate`). The selected value stored on a draft is the template key (`senior-level-talvio` and the other `TemplateKeyEnum` values). SVG previews are `/public/templates/*.svg`. There is no templates REST service.
+Templates are the in-repo catalogue in `lib/templates.ts` (`TEMPLATE_LIST`, `findTemplate`). The selected value stored on a draft is the template key (`senior-level-talvio` and the other `TemplateKeyEnum` values). PNG previews are `/public/templates/*.png`; regenerate them with `yarn templates:previews` (macOS only, uses `qlmanage`). There is no templates REST service.
 
 Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the server layout check. Data hooks are `useProfile`, `useSaveProfile`, `useResume`, `useCreateResume`, `useUpdateResume`, `useGenerateResumePdf`, and `fetchResumeFamily`. GraphQL errors are classified by `parseGraphqlError` / `shouldRetryGraphqlQuery`.
 
