@@ -108,10 +108,58 @@ The read routes are `force-dynamic` and send `private, no-store`. Backend writes
 - Rows the API should not have returned are dropped and reported to Sentry by count, without content.
 - Failures are logged and reported to Sentry with the reason and HTTP status only. Never the token, headers or article content.
 
+## Caching and freshness (`lib/blog/cache.ts`, `lib/blog/reader.ts`)
+
+Pages, metadata, the sitemap and feeds read through `getBlogPosts()` and `getBlogPost(slug)` in `lib/blog/reader.ts`. Nothing else calls `server.ts`. Both return `ok` (with `fetchedAt`), `not_found` or `unavailable`.
+
+### Cache inventory
+
+| Layer | Behaviour |
+| -- | -- |
+| Backend response | `Cache-Control: private, no-store`, `force-dynamic`. Nothing cached upstream |
+| Talvio fetch | `cache: 'no-store'` in `server.ts`. The Next fetch cache is not used |
+| Shared data cache | `unstable_cache`, which Vercel shares across instances and deployments. Keyed by `VERCEL_ENV`, API origin and entry (`list`, or `post` + slug + `updated_at`). Tag `talvio-blog`. Holds only public content, never request or session data |
+| Per render | React `cache()` dedupes a page and its metadata to one read |
+| Per instance | Concurrent reads of one key share a single call. At most 4 upstream calls in flight per instance, each bounded by the 5 s client timeout |
+| Rendered route | Blog routes must render per request (no ISR, no `revalidate` export), so no rendered HTML outlives the data |
+| CDN | Only what a route sets with `blogCacheControl(fetchedAt)`: `s-maxage` is at most 60 s **and** at most the data's unused budget, `max-age=0` for browsers, `no-store` once the budget is spent |
+| Browser | Revalidates every time. Content a browser already downloaded cannot be revoked and is outside the contract |
+
+### Freshness rules
+
+- **Budget.** A response never carries data validated more than 300 s earlier. Age counts from the API's answer (`fetchedAt`, set after validation). A refresh that fails keeps the old `fetchedAt`, so wrapping an old value never resets its age.
+- **List.** Served from the shared cache while younger than 300 s. The cache refreshes it in the background once it is 240 s old. At 300 s the reader ignores the cached copy and asks the API. If that fails, the result is `unavailable` (pages return `503`), never the expired list.
+- **Posts.** The list decides which slugs exist. A slug that is not in the current list is `not_found` without an upstream call, so unknown slugs from crawlers cost nothing, and a post that leaves the list stops rendering even if its detail is still cached. A post's detail is stored under its `updated_at`. The backend sets `updated_at` on every write, so a fresh list vouches for that version and a response's age is the list's age. An edit changes the key, so the new version is fetched once and the old one is never served.
+- **Not found.** A `not_found` entry is trusted for 30 s, so a newly published slug recovers quickly.
+- **Failures** (`unavailable`) are never stored, so an outage or a `429` cannot become a cached not-found.
+- **Cache outage.** If the data cache throws, the reader goes straight to the API.
+- **Credential rotation.** Cache keys exclude the token, so rotating `BLOG_API_TOKEN` keeps the cache. A wrong token shows up as `unavailable: unauthorized` on the next upstream call.
+- **Removal latency.** Unpublishing or removing a post from Talvio takes effect when the list next refreshes: normally 240–300 s, and never more than 300 s plus the CDN time left on an already-cached response (which `blogCacheControl` keeps inside the same 300 s). Faster removal would need authenticated invalidation from the backend, which is not built.
+
+### Capacity
+
+The API allows 120 requests per minute per token. Upstream requests come from:
+
+- **Steady state:** one list refresh per instance every 240 s (plus one more per 100 posts), and one detail fetch per instance for each new or edited post.
+- **Cold start:** each instance that misses an empty cache may fetch the list and every post it is asked for. The data cache has no cross-instance lock, so N instances cold at the same moment can make N × (1 + posts) requests.
+
+Simulated in `cache.test.ts` ("simulated launch load"): 50 posts, 4 instances, 10 minutes. Each instance reads the list and every post six times a minute, a crawler requests 500 unknown slugs a minute, and one post is published per minute.
+
+| Minute | Upstream requests |
+| -- | -- |
+| 0 (all four instances cold at once) | 204 |
+| 1–3 | 0 |
+| 4 | 4 |
+| 5–7 | 0 |
+| 8 | 4 |
+| 9 | 0 |
+
+Unknown slugs cost 0 requests. **Risk:** a simultaneous cold start on 3 or more instances with a 50-post catalog exceeds 120 requests in a minute. The excess requests get `429` and return `503` until the cache fills, typically within a minute. They never return wrong content. This was not measured against the deployed API (see Blockers).
+
 ## Findings that still shape later issues
 
 1. **`published_at` survives unpublishing.** Eligibility checks `status`, not just a date.
-2. **Prerendering costs requests.** Each detail page is one request and each 100 list rows one more, against 120 per minute per token. Prerendering more than about 100 articles at build would need throttling (MDI-275).
+2. **No build-time prerendering.** Blog routes render per request through `reader.ts` (see Caching and freshness). Prerendering every article at build would bypass the freshness budget and spend one request per article.
 3. **Cover paths are relative to the backend.** `next.config.ts` `images.remotePatterns` does not include `mdivani.agency` yet (MDI-277).
 4. **Markdown images are unrestricted.** Body content can reference any host. The backend renders with `react-markdown` and `remark-gfm` without `rehype-raw` (MDI-277).
 
@@ -129,8 +177,8 @@ Rows marked **Decided** follow from shipped code. The rest are **proposals** unt
 | Authorship | No author in metadata or JSON-LD. Publisher is Talvio only for Talvio-primary posts | The API has no author field | Proposed |
 | Cover image host | `mdivani.agency` only, added to `images.remotePatterns` with a path pattern once the storage path is confirmed | The write API allows only same-origin cover paths | Proposed |
 | Markdown links and images | No raw HTML. Links keep `http`, `https` and `mailto`. Images only from the cover host and `https://www.talvio.co`; others render as links | Same defaults as the backend, plus a host allowlist for image optimisation | Proposed |
-| Freshness and removal budget | 300 seconds end to end. No stale serving past that: after expiry an upstream failure returns `503` | The backend sends no invalidation | Proposed |
-| Launch traffic envelope | Talvio stays under 60 reads per minute, half the per-token limit | Leaves headroom for build and crawler bursts | Proposed; load not measured |
+| Freshness and removal budget | 300 seconds end to end, enforced by `lib/blog/cache.ts`. No stale serving past that: after expiry an upstream failure returns `503` | The backend sends no invalidation | Implemented (MDI-275); value awaits owner sign-off |
+| Launch traffic envelope | Steady state: one list read per instance every 240 s plus one read per edit. Cold start: up to instances × (1 + posts) | Simulated in `cache.test.ts`. Unknown slugs cost nothing | Simulated; not measured against the deployed API |
 
 ## Fixtures
 
@@ -169,3 +217,4 @@ These keep MDI-273 open. Each needs someone with production access.
 
    Then check: `jq '.total, (.posts | length)' list.json` for the launch inventory; no `3xx`; `Cache-Control: private, no-store`; `missing.json` is the `404` envelope; `unauthorized.json` is the `401` envelope.
 4. **Owner sign-off** on every **Proposed** row in [Launch decisions](#launch-decisions).
+5. **Deployed load check.** After the blog routes ship, watch the backend's `429` count for the read token during the first deploy and a crawl. If cold starts across several instances exceed the limit, raise the backend's per-token limit or add a cross-instance lock (a shared Redis/KV store).
