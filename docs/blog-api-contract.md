@@ -1,179 +1,171 @@
 # Blog API contract and launch decisions
 
-Contract note for [MDI-273](https://linear.app/mdivani/issue/MDI-273) (Blog 1/9) under the epic [MDI-249](https://linear.app/mdivani/issue/MDI-249). The epic scope is in [`blog-epic.md`](blog-epic.md). This note records what the existing landing-page API does, what has and has not been verified, and the decisions the rest of the blog depends on.
+Contract note for the Talvio blog under the epic [MDI-249](https://linear.app/mdivani/issue/MDI-249). It was written for [MDI-273](https://linear.app/mdivani/issue/MDI-273) (Blog 1/9) against the landing-page editor API, then revised when [MDI-412](https://linear.app/mdivani/issue/MDI-412) added a read-only Talvio API. Talvio uses only that read API, through `lib/blog/server.ts` ([MDI-274](https://linear.app/mdivani/issue/MDI-274)). The epic scope is in [`blog-epic.md`](blog-epic.md).
 
 ## Verification status
 
 | Item | Status | Evidence |
 | -- | -- | -- |
-| Backend source | **Verified from source** on 2026-10-09 | `Mdivani-Agency/landing-page` at `development` = `82e04278f1dc8449b27edaa0716c08772e4ce0aa` (2026-09-27, "fix(blog): hide posts tagged only for Talvio (#6)") |
-| Production branch mapping | **Verified from source** | `docs/vercel-cutover.md` in the backend: production deploys only from pushes to `development`, through CI (`deploy_production`), to `https://mdivani.agency` |
-| Deployed revision | **Not verified** | Needs the Vercel production deployment's commit SHA. See [Blockers](#blockers) |
-| Deployed list and detail responses | **Not verified** | `mdivani.agency` is not reachable from the environment this note was written in |
-| Credential provisioning on Talvio | **Not verified** | No `BLOG_API_*` variables exist in Talvio yet |
-| Hosted row cap (`max_rows`) | **Not verified** | Backend `supabase/config.toml` sets `max_rows = 1000` locally; the hosted project's setting was not read |
-| Launch inventory | **Not verified** | Needs an authenticated list against production |
-| Rate-limit behaviour under load | **Not verified** | Derived from source only |
+| Backend source | **Verified from source** on 2026-10-09 | `Mdivani-Agency/landing-page` at `development` = `bb96162` (merge of landing-page PR #7, MDI-412). The backend's own docs are `docs/blog-read-api.md` and `docs/blog-write-api.md` |
+| Production branch mapping | **Verified from source** | The backend's `docs/vercel-cutover.md`: production deploys only from pushes to `development`, through CI, to `https://mdivani.agency` |
+| Deployed revision | **Not verified** | Needs the commit SHA of the landing-page Vercel production deployment |
+| Deployed responses | **Not verified** | `mdivani.agency` is not reachable from the environment this note was written in |
+| `BLOG_READ_TOKEN_TALVIO` on the backend, `BLOG_API_*` on Talvio | **Not verified** | Both are set by hand in Vercel. Until the backend token is set, the read API returns `500` |
+| Launch inventory | **Not verified** | Needs one authenticated list call against production (`total`) |
+| Rate limit under load | **Not verified** | Derived from source only |
 
-Nothing in this note describes a live endpoint, credential or deployed revision as verified. Fixtures in `test/fixtures/blog` are built from the source serializers, not captured from production.
+Nothing in this note describes a live endpoint, credential or deployed revision as verified. Fixtures in `test/fixtures/blog` are built from the source, not captured from production.
 
-## Origins
+## Origins and configuration
 
-| Origin | Value | Source |
+| Setting | Value | Notes |
 | -- | -- | -- |
-| Blog API origin | `https://mdivani.agency` (proposed `BLOG_API_BASE_URL`) | Backend production environment URL |
-| Content asset origin | `https://mdivani.agency` | Cover images must be same-origin paths on the backend (`isSameOriginCoverPath`), served from its `public/` directory |
-| Talvio canonical origin | `https://www.talvio.co` | `DEFAULT_SITE_ORIGIN` in `lib/site.ts`, overridable with `SITE_URL` |
+| `BLOG_API_BASE_URL` | `https://mdivani.agency` | Origin only. `readBlogApiConfig` rejects a path, query, credentials, or `http` on anything but a local host |
+| `BLOG_API_TOKEN` | The backend's `BLOG_READ_TOKEN_TALVIO` | At least 32 bytes. Never `BLOG_WRITE_TOKEN`: the read API rejects it with `401`, and the backend fails closed if the two are equal |
+| Content asset origin | `https://mdivani.agency` | `cover_image_url` is a same-origin path on the backend. The schema rejects anything else (an absolute URL, `//`, `..`, `?`, `#`) as malformed. The domain type calls it `coverImagePath`; the renderer (MDI-277) resolves it |
+| Talvio canonical origin | `https://www.talvio.co` | `siteOrigin()` in `lib/site.ts` |
 
-Whether `https://mdivani.agency` redirects to `www` (or the reverse) is not verified. The Talvio client must not follow a redirect with the token attached (see [Rules for the client](#rules-for-the-talvio-client)).
+Both `BLOG_API_*` variables are server-only and listed in `.env.example`.
 
 ## Endpoints
 
-Both handlers live in the backend's `app/api/posts`. Both run the same gate first (`authorizeBlogWrite` in `lib/blog-write-auth.ts`): rate limit, then token check.
+Both routes live in the backend's `app/api/talvio/posts`. The token is checked first, then the rate limit. Every response sends `Cache-Control: private, no-store` and no CORS headers.
 
-### `GET /api/posts?status=published&site=talvio`
+### `GET /api/talvio/posts?limit={1–100}&offset={0–100000}`
 
-- `200` `{ "ok": true, "posts": PostSummary[] }`.
-- Filters run in the database query: `status = 'published'` and `sites @> '{talvio}'`. Both parameters are optional; an unknown value returns `400`.
-- Ordered by `updated_at` descending. Not by publication date.
-- No `limit`, `offset`, cursor or total count. The query has no `.range()`, so PostgREST's `max_rows` silently caps the result.
-- Does not apply the agency site's tag backstop (below).
+- `200` `{ ok: true, posts: PostSummary[], limit, offset, total }`. `limit` defaults to 20, `offset` to 0.
+- `total` is the exact count of eligible rows. A client proves completeness by walking `offset` until it has seen `total` rows.
+- Ordered by `published_at` descending, then `slug` ascending.
+- `limit` or `offset` out of range: `400` with `errors.limit` or `errors.offset`.
 
-### `GET /api/posts/{slug}`
+### `GET /api/talvio/posts/{slug}`
 
-- `200` `{ "ok": true, "post": Post }`.
-- **No status or site filter.** Drafts and agency-only posts return `200` to a valid token. Talvio must enforce eligibility itself.
-- Slug must match `^[a-z0-9]+(?:-[a-z0-9]+)*$` and be at most 80 characters, otherwise `400`. `page` is reserved on writes but not rejected on reads.
-- Unknown slug: `404`.
+- `200` `{ ok: true, post: Post }`.
+- Draft, agency-only, future-dated, tag-withheld and unknown slugs all return the same `404` `{ ok: false, errors: { slug: "Post not found." } }`.
+- A slug that fails `^[a-z0-9]+(?:-[a-z0-9]+)*$` or is longer than 80 characters returns `400`.
+
+### Publication rule
+
+The backend applies it in the query (`publishedOnSite` in its `lib/blog.ts`), and Talvio applies it again in `isEligibleForTalvio` (`lib/blog/eligibility.ts`):
+
+- `status = 'published'`
+- `sites` contains `talvio`
+- `published_at` is set and not after now
+- tag backstop: a post whose tags name the agency site (`agency`, `Agency` or `AGENCY`) without also naming Talvio is the agency's. Overlap is the whole tag, so `agency-story` does not count.
+
+The backstop is symmetric: a shared post tagged only `talvio` is hidden on the agency site. A shared post with no site-key tag, or with both, appears on both sites.
 
 ### Fields
 
-`PostSummary` (in serializer order): `slug`, `title`, `description`, `cover_image_url`, `tags`, `sites`, `status`, `featured`, `published_at`, `created_at`, `updated_at`. `Post` adds `content` (Markdown) after `description`.
+`PostSummary` (serializer order): `slug`, `title`, `description`, `cover_image_url`, `tags`, `sites`, `status`, `featured`, `published_at`, `created_at`, `updated_at`. `Post` adds `content` (Markdown) after `description`.
 
 | Field | Type | Guarantees |
 | -- | -- | -- |
-| `slug` | string | Unique; pattern above; 1–80 chars (table check) |
-| `title` | string | 3–160 chars (write API only) |
-| `description` | string | 10–320 chars (write API only) |
-| `content` | string | Non-empty (table); at least 20 chars (write API) |
-| `cover_image_url` | string or null | Write API accepts only a same-origin path: starts with `/`, no `//`, `://`, `\`, `..`, `?` or `#` |
+| `slug` | string | Unique; pattern above; 1–80 chars |
+| `title` | string | 3–160 chars (write API) |
+| `description` | string | 10–320 chars (write API) |
+| `content` | string | At least 20 chars (write API) |
+| `cover_image_url` | string or null | Same-origin path: starts with `/`, no `//`, `://`, `\`, `..`, `?` or `#` |
 | `tags` | string[] | Free text, case preserved |
-| `sites` | `('agency' \| 'talvio')[]` | Table check: subset of both keys, no nulls; non-empty when published |
-| `status` | `'draft' \| 'published'` | Table check |
-| `featured` | boolean | Agency-only presentation flag |
-| `published_at` | ISO string or null | Table check: non-null when published. Set on first publish and kept across later edits, **including after unpublishing** |
+| `sites` | `('agency' \| 'talvio')[]` | Non-empty when published |
+| `status` | `'draft' \| 'published'` | Always `published` from this API |
+| `featured` | boolean | Agency presentation flag |
+| `published_at` | ISO string or null | Set on first publish and kept across edits, including after unpublishing |
 | `created_at`, `updated_at` | ISO string | `updated_at` set on every write |
 
 There is no author, canonical URL, image alt text, SEO override or slug history field.
 
 ### Errors
 
-Every error uses `{ "ok": false, "errors": { "<field>": "<message>" } }`. The exact bodies are in `blogErrorResponses` in `test/fixtures/blog/index.ts`.
+Every error is `{ ok: false, errors: { "<field>": "<message>" } }`. Exact bodies are in `blogErrorResponses` in `test/fixtures/blog/index.ts`.
 
 | Status | When |
 | -- | -- |
-| `400` | Invalid slug (detail), unknown `status` or `site` filter (list) |
-| `401` | Missing, malformed or wrong bearer token |
-| `404` | Detail: no row for the slug |
-| `429` | Rate limit exceeded. No `Retry-After` header |
-| `500` | `BLOG_WRITE_TOKEN` unset or under 32 bytes on the backend, or the database read failed (reported to Sentry) |
+| `400` | Invalid slug, `limit` or `offset` |
+| `401` | Missing or wrong token, including the write token |
+| `404` | Detail: ineligible or unknown slug |
+| `429` | More than 120 requests in 60 seconds for one token. `Retry-After` is set |
+| `500` | Backend read token missing, too short or equal to the write token, or the database read failed |
 
-## Authentication and rate limit
+## Authentication, rate limit and rotation
 
-- One credential: `Authorization: Bearer <BLOG_WRITE_TOKEN>`. It also authorises `POST /api/posts` (create, edit, publish, unpublish). There is no read-only token.
-- The limit is checked **before** the token, at 30 requests per 60 seconds per client IP, in a process-local `Map` (`consumeWriteRateLimit`). GET and POST share the bucket.
-- The client IP is the first `x-forwarded-for` entry. Talvio's server-side requests are bucketed by the Vercel function egress IP they leave from.
-- Each warm backend instance keeps its own counters, so the effective ceiling is somewhere between 30 per minute and 30 per minute per instance. Only the 30 per minute floor can be relied on.
-- Rotation: a new `BLOG_WRITE_TOKEN` on the backend's Vercel project takes effect on its next deploy. The backend accepts only one token, so Talvio's copy has to change at the same time, and reads fail with `401` in between.
+- `BLOG_READ_TOKEN_TALVIO` authorises only the two read routes. It cannot write.
+- The limit is 120 requests per 60 seconds per accepted token, held in the backend's Upstash/KV store, so it holds across instances. It is separate from the write API's 30 per minute per IP. A store outage fails open.
+- Rotation without downtime: set `BLOG_READ_TOKEN_TALVIO_NEXT` on the backend, move Talvio's `BLOG_API_TOKEN` to it and redeploy, then promote it to `BLOG_READ_TOKEN_TALVIO` and remove `_NEXT`. Each token has its own rate-limit bucket.
 
 ## Caching on the backend
 
-The backend's writes call `revalidatePath` on its own `/blog`, `/blog/[slug]`, `/feed.xml` and `/sitemap.xml`. The API responses are not cached (route handlers that read the request), and nothing notifies Talvio. Freshness on Talvio comes entirely from Talvio's own cache lifetimes.
+The read routes are `force-dynamic` and send `private, no-store`. Backend writes revalidate only the backend's own pages. Freshness on Talvio comes from Talvio's own caches (MDI-275).
 
-## Agency tag backstop
+## The Talvio client (`lib/blog/server.ts`)
 
-The agency site's public pages show a post only when `sites` contains `agency` **and** `tags` does not name another site key without also naming `agency` (case variants `talvio`, `Talvio`, `TALVIO`). So a post with `sites: ['agency', 'talvio']` and the tag `Talvio` appears only on Talvio. The authenticated API does not apply this rule. Canonical ownership below relies on it.
+- Imports `server-only`, so importing it into a client component fails the build. It reads no `NEXT_PUBLIC_*` variable.
+- `fetchBlogPost(slug)`, `fetchBlogPostPage({ limit, offset })` and `fetchAllBlogPosts()` return `BlogResult<T>`: `ok`, `not_found`, or `unavailable` with a reason (`not_configured`, `timeout`, `network`, `redirect`, `unauthorized`, `rate_limited`, `upstream_error`, `unexpected_status`, `too_large`, `malformed`, `incomplete`).
+- Only the API's own `404` envelope (`errors.slug` and nothing else), an invalid slug, or an ineligible post becomes `not_found`. A bare `404` (for example from a deployment without the route) is `unexpected_status`. A `401`, `429`, `5xx`, timeout, redirect or malformed body never becomes an empty list or a missing post.
+- Requests use `redirect: 'manual'` (a redirect is an outage, so the token is never forwarded), `cache: 'no-store'` (caching belongs to MDI-275), a 5-second timeout, and a 1 MB body limit, checked against both the declared length and the bytes read. There are no automatic retries.
+- Every response is validated with Zod (`lib/blog/contract.ts`) and mapped from snake_case once. The detail slug must equal the requested slug. A list page must echo the requested `limit` and `offset`.
+- `fetchAllBlogPosts` walks pages of 100 until it has seen `total` rows (at most 20 pages, 2,000 posts). If `total` changes mid-walk, a page comes back empty early, or slugs repeat, the result is `unavailable`, never a partial list. The result is sorted by `published_at` descending, then `slug`.
+- Rows the API should not have returned are dropped and reported to Sentry by count, without content.
+- Failures are logged and reported to Sentry with the reason and HTTP status only. Never the token, headers or article content.
 
-## Findings that change the plan
+## Findings that still shape later issues
 
-1. **Detail does not filter.** The publication boundary in MDI-274 must check `status`, `sites` and `published_at` on every detail response, not just the list.
-2. **`published_at` survives unpublishing.** A non-null timestamp does not mean a post is live. Eligibility must check `status`.
-3. **Missing timestamps cannot occur through the API.** The table rejects a published row without `published_at`. A future timestamp needs a direct table edit.
-4. **Build-time prerendering of every slug can trip the limit.** Generating N article pages at build sends N + 1 requests from one IP. At more than 29 articles, the build gets `429`s. MDI-275 should render on demand, or throttle prerendering under the limit.
-5. **Truncation is silent.** With no count, a list of exactly `max_rows` rows cannot be told apart from a complete one.
-6. **Cover paths are relative to the backend.** `cover_image_url` such as `/assets/blog/x.png` resolves against `https://mdivani.agency`, not Talvio. Talvio's `next.config.ts` `images.remotePatterns` does not include that host yet.
-7. **Markdown images are unrestricted.** Body content can link images on any host. The backend renders with `react-markdown` and `remark-gfm`, without `rehype-raw`. Its default URL transform drops non-http(s) schemes.
+1. **`published_at` survives unpublishing.** Eligibility checks `status`, not just a date.
+2. **Prerendering costs requests.** Each detail page is one request and each 100 list rows one more, against 120 per minute per token. Prerendering more than about 100 articles at build would need throttling (MDI-275).
+3. **Cover paths are relative to the backend.** `next.config.ts` `images.remotePatterns` does not include `mdivani.agency` yet (MDI-277).
+4. **Markdown images are unrestricted.** Body content can reference any host. The backend renders with `react-markdown` and `remark-gfm` without `rehype-raw` (MDI-277).
 
 ## Launch decisions
 
-Each row is a **proposal** until the owner confirms it. The proposed owner for all rows is Giorgi Mdivani, who owns both repositories and the epic.
+Rows marked **Decided** follow from shipped code. The rest are **proposals** until the owner confirms them. The proposed owner for all rows is Giorgi Mdivani, who owns both repositories and the epic.
 
-| Decision | Proposed value | Rationale | Status |
+| Decision | Value | Rationale | Status |
 | -- | -- | -- | -- |
-| Publication eligibility | `status === 'published'` **and** `sites` includes `talvio` **and** `published_at` parses as a valid date **and** `published_at <= now`. Anything else is not found (`404`). A malformed published row is reported to Sentry and excluded, never given a made-up date | Matches the epic rule. The table already guarantees a timestamp on published rows, so the date check guards only direct edits. | Proposed |
-| Future `published_at` | Excluded until its time passes. The freshness budget (below) bounds when it appears | Avoids showing a post the author scheduled by hand | Proposed |
-| Shared-article canonical | A post the agency site shows (`sites` has `agency` and the tag backstop does not hide it) is **agency-primary**. Talvio may render it, sets `canonical` to `https://mdivani.agency/blog/{slug}` and leaves it out of the Talvio sitemap. Every other eligible post is **Talvio-primary** and self-canonicalises | The agency site already self-canonicalises every post it shows. Following that avoids two primaries without a backend change. Authors who want a shared post owned by Talvio tag it `talvio` | Proposed |
-| Authorship | No author in metadata or JSON-LD. Publisher is Talvio only for Talvio-primary posts | The API has no author field. The epic forbids invented attribution | Proposed |
-| Cover image host | `mdivani.agency` only, by resolving `cover_image_url` against the API origin. Add it to `images.remotePatterns` with a `/assets/**` path, after confirming where covers are stored | It is the only origin the write API allows for covers | Proposed; path not verified |
-| Markdown links and images | No raw HTML. Links keep only `http`, `https` and `mailto`. Images only from the cover host and `https://www.talvio.co`; other images render as links, not fetched | Same defaults the backend relies on, plus a host allowlist because Talvio optimises images on its own server | Proposed |
-| Freshness and removal budget | 300 seconds end to end. List and detail data cached at most 300 seconds from the last successful validation. No stale serving past that: after expiry an upstream failure returns `503` | The backend sends no invalidation. A time budget is the only bound available without backend work | Proposed |
-| Launch traffic envelope | Talvio's total upstream reads stay under 20 per minute (two thirds of the 30 per minute floor), leaving room for authoring. With a 300-second cache, steady state is 1 list read plus 1 read per article viewed in each window | Keeps reads clear of the shared write gate. A larger corpus or traffic spike needs a backend read-capacity change first | Proposed; load not measured |
-| Completeness | Launch without pagination only if the authenticated count of eligible rows is well under 1000. Talvio treats a list of 1000 or more rows as possibly truncated and fails the sitemap instead of publishing a partial one | `max_rows` is the only cap. Pagination would be a backend change | Proposed; inventory not measured |
-| Credential | Reuse `BLOG_WRITE_TOKEN` as Talvio's server-only `BLOG_API_TOKEN` for launch. Follow up with a read-only token in the backend if the shared write credential is not acceptable | No read-only token exists; adding one is backend work with writer regression tests | Needs owner decision |
-| Rotation | Rotate on the backend and Talvio in the same window, accepting a short `401` gap (reads fail closed with `503`) | The backend accepts one token | Proposed |
-
-## Rules for the Talvio client
-
-These follow from the contract and apply to MDI-274 and MDI-275:
-
-- Server-only module. `BLOG_API_BASE_URL` and `BLOG_API_TOKEN` are never `NEXT_PUBLIC_*`, never logged and never sent to the browser.
-- Fixed origin. `redirect: 'manual'`; treat any `3xx` as an upstream failure rather than following it with the token.
-- Validate envelopes and fields at runtime. A malformed `200` is an upstream failure, not an empty list.
-- Always send both list filters and still check every field (the list, the detail and the cache all go through the same eligibility function).
-- Validate the slug before fetching. An invalid slug is a `404` on Talvio without an upstream call.
-- Map `401`, `429`, `5xx`, timeouts and malformed responses to a temporary failure (`503`). Map only an upstream `404`, or an ineligible post, to `404`.
-- Do not retry a `429` inside the same request. A bounded retry (one, with a short delay) is acceptable only for network errors and `5xx`.
-- Sort by `published_at` descending, then `slug`, on Talvio. Do not rely on the list order.
+| Credential | Read-only `BLOG_READ_TOKEN_TALVIO`, stored in Talvio as `BLOG_API_TOKEN` | MDI-412 | Decided |
+| Publication eligibility | The rule above, applied by the backend and again by Talvio. A malformed row is dropped and reported, never given an invented date | Defence in depth against backend regressions | Decided (MDI-412, MDI-274) |
+| Tag backstop | Symmetric between the two sites | MDI-412 | Decided |
+| Completeness | Walk pages until `total`; anything short is `unavailable` | The API now returns `total` | Decided (MDI-274) |
+| Shared-article canonical | A post the agency site shows (`sites` has `agency` and its tags do not withhold it) is **agency-primary**. Talvio may render it, sets `canonical` to `https://mdivani.agency/blog/{slug}` and leaves it out of the Talvio sitemap. Every other eligible post is **Talvio-primary** and self-canonicalises | The agency site already self-canonicalises every post it shows. Authors who want a shared post owned by Talvio tag it `talvio` | Proposed |
+| Authorship | No author in metadata or JSON-LD. Publisher is Talvio only for Talvio-primary posts | The API has no author field | Proposed |
+| Cover image host | `mdivani.agency` only, added to `images.remotePatterns` with a path pattern once the storage path is confirmed | The write API allows only same-origin cover paths | Proposed |
+| Markdown links and images | No raw HTML. Links keep `http`, `https` and `mailto`. Images only from the cover host and `https://www.talvio.co`; others render as links | Same defaults as the backend, plus a host allowlist for image optimisation | Proposed |
+| Freshness and removal budget | 300 seconds end to end. No stale serving past that: after expiry an upstream failure returns `503` | The backend sends no invalidation | Proposed |
+| Launch traffic envelope | Talvio stays under 60 reads per minute, half the per-token limit | Leaves headroom for build and crawler bursts | Proposed; load not measured |
 
 ## Fixtures
 
-`test/fixtures/blog/index.ts` holds wire-format fixtures for later sub-issues:
+`test/fixtures/blog/index.ts` holds wire-format fixtures:
 
 | Fixture | Case |
 | -- | -- |
 | `talvioPublishedPost` | Published, Talvio only |
-| `agencyOnlyPost` | Published, agency only |
-| `talvioDraftPost` | Draft listing Talvio, never published |
-| `unpublishedTalvioPost` | Draft that keeps an earlier `published_at` |
-| `sharedPost` | Published on both sites, agency-primary |
-| `sharedTalvioTaggedPost` | Published on both sites, hidden on agency by the tag backstop, Talvio-primary |
-| `futureTalvioPost` | Published with `published_at` after `FIXTURE_NOW` |
-| `talvioPublishedListResponse`, `emptyListResponse` | List responses |
-| `talvioPublishedDetailResponse`, `draftDetailResponse`, `agencyOnlyDetailResponse` | Detail responses |
+| `sharedPost` | Published on both sites, no site-key tag |
+| `sharedTalvioTaggedPost` | Published on both sites, tagged `Talvio` (hidden on agency) |
+| `agencyOnlyPost`, `talvioDraftPost`, `unpublishedTalvioPost`, `futureTalvioPost`, `sharedAgencyTaggedPost` | Rows the API must not return. Talvio rejects each one if it does |
+| `eligibleFixturePosts`, `ineligibleFixturePosts`, `allFixturePosts` | The groups above |
+| `listEnvelope()`, `talvioListResponse`, `emptyListResponse` | List responses |
+| `talvioPublishedDetailResponse` | Detail response |
 | `blogErrorResponses` | Each error envelope with its status |
 
-`fixtures.test.ts` checks that each fixture is a row the backend could produce (table checks and write-API bounds). Hostile Markdown fixtures belong to MDI-277.
+`fixtures.test.ts` checks that each fixture is a row the backend could produce. Hostile Markdown fixtures belong to MDI-277.
 
 ## Blockers
 
-These stop MDI-273 from closing. Each needs someone with production access.
+These keep MDI-273 open. Each needs someone with production access.
 
-1. **Deployed revision.** Read the commit SHA of the current production deployment of the landing-page Vercel project and compare it with `82e04278`.
-2. **Deployed responses.** From a machine that can reach `https://mdivani.agency`, with the token from the secret manager, capture redacted responses and compare them with the fixtures:
+1. **Deployed revision.** Confirm the landing-page production deployment is at or after `bb96162`.
+2. **Secrets.** Generate `BLOG_READ_TOKEN_TALVIO` (at least 32 random bytes, different from `BLOG_WRITE_TOKEN`) on the landing-page Vercel project after the deploy. Set the same value as `BLOG_API_TOKEN` on Talvio's Vercel project, with `BLOG_API_BASE_URL=https://mdivani.agency`.
+3. **Deployed responses.** From a machine that can reach the backend:
 
    ```sh
-   # Token comes from the secret manager. Do not paste it into files, tickets or shell history.
+   # The token comes from the secret manager. Do not paste it into files, tickets or shell history.
    read -rs BLOG_API_TOKEN
    curl -sS -D - -o list.json -H "Authorization: Bearer $BLOG_API_TOKEN" \
-     'https://mdivani.agency/api/posts?status=published&site=talvio'
-   curl -sS -D - -o all.json -H "Authorization: Bearer $BLOG_API_TOKEN" 'https://mdivani.agency/api/posts'
+     'https://mdivani.agency/api/talvio/posts?limit=100&offset=0'
    curl -sS -D - -o missing.json -H "Authorization: Bearer $BLOG_API_TOKEN" \
-     'https://mdivani.agency/api/posts/fixture-does-not-exist'
-   curl -sS -D - -o unauthorized.json 'https://mdivani.agency/api/posts'
+     'https://mdivani.agency/api/talvio/posts/fixture-does-not-exist'
+   curl -sS -D - -o unauthorized.json 'https://mdivani.agency/api/talvio/posts'
    ```
 
-   Then check: `jq '.posts | length' list.json all.json` for inventory and headroom under 1000; that no response `3xx`-redirects; that `unauthorized.json` is the `401` envelope; and the detail for one Talvio slug, one agency slug and one draft.
-3. **Hosted `max_rows`.** Read it from the hosted Supabase project's API settings.
-4. **Credential decision.** Confirm reuse of the write token or schedule a read-only token in the backend. Then add `BLOG_API_BASE_URL` and `BLOG_API_TOKEN` to Talvio's Vercel project (production only, not preview unless previews need the blog).
-5. **Owner sign-off** on every row in [Launch decisions](#launch-decisions).
-6. **Rate limit under load.** A controlled burst from one IP (31 requests in a minute) against production confirms the `429` threshold. Do this only after agreeing a window, because it also blocks authoring from that IP for up to a minute.
+   Then check: `jq '.total, (.posts | length)' list.json` for the launch inventory; no `3xx`; `Cache-Control: private, no-store`; `missing.json` is the `404` envelope; `unauthorized.json` is the `401` envelope.
+4. **Owner sign-off** on every **Proposed** row in [Launch decisions](#launch-decisions).

@@ -7,7 +7,7 @@ import {
   blogErrorResponses,
   FIXTURE_NOW,
   futureTalvioPost,
-  talvioPublishedListResponse,
+  talvioListResponse,
 } from './index';
 
 /** Backend slug rule (`SLUG_PATTERN`, `SLUG_MAX_LENGTH` in the landing-page `lib/blog-schema.ts`). */
@@ -46,15 +46,16 @@ describe('blog API fixtures', () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
-  it('lists summaries without content, filtered and ordered as the backend query is', () => {
-    const { posts } = talvioPublishedListResponse.body;
+  it('lists summaries without content, filtered and ordered as the read API is', () => {
+    const { posts, total } = talvioListResponse.body;
+    expect(total).toBe(posts.length);
     for (const post of posts) {
       expect(Object.keys(post)).toEqual([...BLOG_SUMMARY_KEYS]);
       expect(post.status).toBe('published');
       expect(post.sites).toContain('talvio');
     }
-    const updated = posts.map((post) => post.updated_at);
-    expect(updated).toEqual([...updated].sort().reverse());
+    const published = posts.map((post) => post.published_at ?? '');
+    expect(published).toEqual([...published].sort().reverse());
   });
 
   it('dates the future fixture after the fixture clock', () => {
