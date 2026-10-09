@@ -38,3 +38,12 @@ export const getBlogPosts = cache(reader.getBlogPosts);
 export const getBlogPost = cache(reader.getBlogPost);
 
 export { blogCacheControl, BLOG_FRESHNESS_BUDGET_SECONDS, type BlogCachedResult } from './cache';
+
+/**
+ * Absolute URL for a cover path. Covers are same-origin paths on the API origin (checked in `contract.ts`), so they
+ * resolve against it, never against Talvio. `null` when the API is not configured.
+ */
+export function blogAssetUrl(path: string): string | null {
+  const config = readBlogApiConfig();
+  return config ? `${config.origin}${path}` : null;
+}

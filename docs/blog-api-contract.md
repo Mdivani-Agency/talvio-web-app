@@ -157,6 +157,14 @@ Simulated in `cache.test.ts` ("simulated launch load"): 50 posts, 4 instances, 1
 
 Unknown slugs cost 0 requests. **Risk:** a simultaneous cold start on 3 or more instances with a 50-post catalog exceeds 120 requests in a minute. The excess requests get `429` and return `503` until the cache fills, typically within a minute. They never return wrong content. This was not measured against the deployed API (see Blockers).
 
+## Routes
+
+| Route | Reads | Outcome mapping | Since |
+| -- | -- | -- | -- |
+| `/blog` | `getBlogPosts()` | `ok` lists every eligible post (newest first, `slug` tie-break), `ok` with no posts shows the empty state, `unavailable` throws `BlogUnavailableError` and the response is `500` | MDI-276 |
+
+`/blog` is `force-dynamic`, so no rendered HTML is cached past the freshness budget. It sets no CDN `Cache-Control` yet. `blogCacheControl` is wired in with the article route and HTTP semantics (MDI-277), which may also turn the outage status into `503`. The agency site's `featured` flag is not used on Talvio, so no post is listed twice. Covers resolve against the API origin and render unoptimised, with an empty `alt`, because the title is the link text.
+
 ## Findings that still shape later issues
 
 1. **`published_at` survives unpublishing.** Eligibility checks `status`, not just a date.
