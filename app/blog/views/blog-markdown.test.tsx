@@ -63,6 +63,15 @@ describe('BlogMarkdown with rich content', () => {
     expect([...container.querySelectorAll('h2, h3, h4, h5, h6')].map((heading) => heading.tagName)).toEqual(['H2', 'H3']);
     expect(html('## Only h2\n\n### Then h3').match(/<h[1-6]/g)).toEqual(['<h2', '<h3']);
     expect(html('###### Deep\n\n# Top').match(/<h[1-6]/g)).toEqual(['<h6', '<h2']);
+    expect(html('### Details\n\n#### More\n\n### Again').match(/<h[1-6]/g)).toEqual(['<h2', '<h3', '<h2']);
+  });
+
+  it('gives headings unique ids that in-page links reach', () => {
+    expect(container.querySelector('a[href="#content-heading-two"]')).not.toBeNull();
+    expect(container.querySelector('#content-heading-two')?.tagName).toBe('H3');
+    const repeated = document.createElement('div');
+    repeated.innerHTML = html('## Notes\n\n## Notes\n\n## Écrire un CV!\n\n## ***');
+    expect([...repeated.querySelectorAll('h2')].map((heading) => heading.id)).toEqual(['notes', 'notes-2', 'écrire-un-cv', '']);
   });
 
   it('renders tables, code blocks, lists, quotes and breaks', () => {

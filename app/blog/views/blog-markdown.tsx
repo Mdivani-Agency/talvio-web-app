@@ -10,12 +10,13 @@ import { type BlogMarkdownOrigins, safeBlogImageSrc, safeBlogLink } from '@/lib/
  * HTML: raw HTML is off, text is escaped by React, only the token types below become elements, and every URL passes
  * through `markdown-urls.ts`. Content is never compiled or executed (no MDX, no components).
  *
- * Headings are shifted so the highest one is an `h2`: the page title is the only `h1`.
+ * Headings are shifted so the highest one is an `h2`: the page title is the only `h1`. Each heading gets an `id` from
+ * its text (lowercase, words joined by `-`, `-2`, `-3` for repeats), so `#fragment` links in the content reach it.
  */
 
 const parser = new MarkdownIt('default', { html: false, linkify: true, typographer: false });
 
-type Context = BlogMarkdownOrigins & { headingShift: number; key: number };
+type Context = BlogMarkdownOrigins & { headingShift: number; headingIds: Map<Token, string>; key: number };
 
 const HEADING_CLASS: Record<number, string> = {
   2: 'mt-10 text-2xl font-semibold',
@@ -35,9 +36,36 @@ function textOf(tokens: Token[] | null): string {
   return (tokens ?? []).map((token) => (token.children ? textOf(token.children) : token.content)).join('');
 }
 
+/** Moves the highest heading to `h2`, up or down. Levels are clamped to `h2`..`h6` when rendered. */
 function headingShift(tokens: Token[]): number {
   const levels = tokens.filter((token) => token.type === 'heading_open').map((token) => Number(token.tag.slice(1)));
-  return levels.length > 0 ? Math.max(0, 2 - Math.min(...levels)) : 0;
+  return levels.length > 0 ? 2 - Math.min(...levels) : 0;
+}
+
+function headingSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/** A unique `id` per heading, from the text of the inline token that follows its opening token. */
+function headingIds(tokens: Token[]): Map<Token, string> {
+  const ids = new Map<Token, string>();
+  const seen = new Map<string, number>();
+  tokens.forEach((token, index) => {
+    if (token.type !== 'heading_open') {
+      return;
+    }
+    const base = headingSlug(textOf(tokens[index + 1]?.children ?? null));
+    if (!base) {
+      return;
+    }
+    const count = (seen.get(base) ?? 0) + 1;
+    seen.set(base, count);
+    ids.set(token, count === 1 ? base : `${base}-${count}`);
+  });
+  return ids;
 }
 
 function element(open: Token, children: ReactNode[], ctx: Context): ReactNode {
@@ -47,10 +75,10 @@ function element(open: Token, children: ReactNode[], ctx: Context): ReactNode {
       // Tight list items mark their paragraphs hidden.
       return open.hidden ? <Fragment key={key}>{children}</Fragment> : <p key={key}>{children}</p>;
     case 'heading_open': {
-      const level = Math.min(6, Number(open.tag.slice(1)) + ctx.headingShift) as 2 | 3 | 4 | 5 | 6;
+      const level = Math.min(6, Math.max(2, Number(open.tag.slice(1)) + ctx.headingShift)) as 2 | 3 | 4 | 5 | 6;
       const Heading = `h${level}` as const;
       return (
-        <Heading key={key} className={HEADING_CLASS[level]}>
+        <Heading key={key} id={ctx.headingIds.get(open)} className={`scroll-mt-24 ${HEADING_CLASS[level]}`}>
           {children}
         </Heading>
       );
@@ -211,6 +239,6 @@ function render(tokens: Token[], ctx: Context): ReactNode[] {
 
 export function BlogMarkdown({ content, origins }: { content: string; origins: BlogMarkdownOrigins }) {
   const tokens = parser.parse(content, {});
-  const ctx: Context = { ...origins, headingShift: headingShift(tokens), key: 0 };
+  const ctx: Context = { ...origins, headingShift: headingShift(tokens), headingIds: headingIds(tokens), key: 0 };
   return <div className="flex flex-col gap-4 text-md leading-7 break-words">{render(tokens, ctx)}</div>;
 }
