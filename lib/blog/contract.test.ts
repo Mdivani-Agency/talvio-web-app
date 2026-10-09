@@ -53,6 +53,26 @@ describe('wire schemas', () => {
     }
   });
 
+  it.each([
+    'https://elsewhere.test/cover.png',
+    '//elsewhere.test/cover.png',
+    'cover.png',
+    '/assets/../secret.png',
+    '/assets/cover.png?w=1',
+    '/assets/cover.png#x',
+    '/assets\\cover.png',
+  ])('reject the cover %j, which is not a same-origin path', (cover) => {
+    const result = blogDetailEnvelopeSchema.safeParse({ ok: true, post: { ...talvioPublishedPost, cover_image_url: cover } });
+    expect(result.error?.issues.map((issue) => issue.path)).toEqual([['post', 'cover_image_url']]);
+  });
+
+  it('accept a same-origin cover path or no cover', () => {
+    for (const cover of ['/assets/blog/cover.png', null]) {
+      const result = blogDetailEnvelopeSchema.safeParse({ ok: true, post: { ...talvioPublishedPost, cover_image_url: cover } });
+      expect(result.success).toBe(true);
+    }
+  });
+
   it('reject a list without its pagination fields', () => {
     const withoutTotal: Record<string, unknown> = { ...talvioListResponse.body };
     delete withoutTotal.total;

@@ -135,6 +135,14 @@ describe('fetchBlogPost', () => {
     });
   });
 
+  it('treats a JSON 404 without the slug error as an outage', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(404, { ok: false, errors: { form: 'Not found' } }));
+    expect(await fetchBlogPost('fixture-talvio-published', { now })).toEqual({
+      status: 'unavailable',
+      reason: 'unexpected_status',
+    });
+  });
+
   it.each([
     ['draft', talvioDraftPost],
     ['agency-only', agencyOnlyPost],

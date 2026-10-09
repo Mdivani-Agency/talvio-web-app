@@ -18,11 +18,24 @@ export type BlogSiteKey = (typeof BLOG_SITE_KEYS)[number];
 
 const isoDateTime = z.iso.datetime({ offset: true });
 
+/** Backend cover rule (`isSameOriginCoverPath` in the landing-page `lib/blog-schema.ts`): a path on the API origin, never a URL. */
+export function isSameOriginCoverPath(value: string): boolean {
+  return (
+    value.startsWith('/') &&
+    !value.startsWith('//') &&
+    !value.includes('://') &&
+    !value.includes('\\') &&
+    !value.includes('..') &&
+    !value.includes('?') &&
+    !value.includes('#')
+  );
+}
+
 export const blogPostSummaryWireSchema = z.object({
   slug: z.string().refine(isValidBlogSlug),
   title: z.string().min(1),
   description: z.string().min(1),
-  cover_image_url: z.string().nullable(),
+  cover_image_url: z.string().refine(isSameOriginCoverPath).nullable(),
   tags: z.array(z.string()),
   sites: z.array(z.enum(BLOG_SITE_KEYS)),
   status: z.enum(['draft', 'published']),
@@ -55,6 +68,12 @@ export const blogDetailEnvelopeSchema = z.object({
 export const blogErrorEnvelopeSchema = z.object({
   ok: z.literal(false),
   errors: z.record(z.string(), z.string()),
+});
+
+/** The detail route's not-found body. Any other 404 (a missing route, a proxy page) is an outage, not a missing post. */
+export const blogNotFoundEnvelopeSchema = z.object({
+  ok: z.literal(false),
+  errors: z.strictObject({ slug: z.string() }),
 });
 
 export type BlogListEnvelope = z.infer<typeof blogListEnvelopeSchema>;

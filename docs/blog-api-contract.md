@@ -22,7 +22,7 @@ Nothing in this note describes a live endpoint, credential or deployed revision 
 | -- | -- | -- |
 | `BLOG_API_BASE_URL` | `https://mdivani.agency` | Origin only. `readBlogApiConfig` rejects a path, query, credentials, or `http` on anything but a local host |
 | `BLOG_API_TOKEN` | The backend's `BLOG_READ_TOKEN_TALVIO` | At least 32 bytes. Never `BLOG_WRITE_TOKEN`: the read API rejects it with `401`, and the backend fails closed if the two are equal |
-| Content asset origin | `https://mdivani.agency` | `cover_image_url` is a same-origin path on the backend. The domain type calls it `coverImagePath`; the renderer (MDI-277) resolves it |
+| Content asset origin | `https://mdivani.agency` | `cover_image_url` is a same-origin path on the backend. The schema rejects anything else (an absolute URL, `//`, `..`, `?`, `#`) as malformed. The domain type calls it `coverImagePath`; the renderer (MDI-277) resolves it |
 | Talvio canonical origin | `https://www.talvio.co` | `siteOrigin()` in `lib/site.ts` |
 
 Both `BLOG_API_*` variables are server-only and listed in `.env.example`.
@@ -101,7 +101,7 @@ The read routes are `force-dynamic` and send `private, no-store`. Backend writes
 
 - Imports `server-only`, so importing it into a client component fails the build. It reads no `NEXT_PUBLIC_*` variable.
 - `fetchBlogPost(slug)`, `fetchBlogPostPage({ limit, offset })` and `fetchAllBlogPosts()` return `BlogResult<T>`: `ok`, `not_found`, or `unavailable` with a reason (`not_configured`, `timeout`, `network`, `redirect`, `unauthorized`, `rate_limited`, `upstream_error`, `unexpected_status`, `too_large`, `malformed`, `incomplete`).
-- Only the API's own `404` envelope, an invalid slug, or an ineligible post becomes `not_found`. A bare `404` (for example from a deployment without the route) is `unexpected_status`. A `401`, `429`, `5xx`, timeout, redirect or malformed body never becomes an empty list or a missing post.
+- Only the API's own `404` envelope (`errors.slug` and nothing else), an invalid slug, or an ineligible post becomes `not_found`. A bare `404` (for example from a deployment without the route) is `unexpected_status`. A `401`, `429`, `5xx`, timeout, redirect or malformed body never becomes an empty list or a missing post.
 - Requests use `redirect: 'manual'` (a redirect is an outage, so the token is never forwarded), `cache: 'no-store'` (caching belongs to MDI-275), a 5-second timeout, and a 1 MB body limit, checked against both the declared length and the bytes read. There are no automatic retries.
 - Every response is validated with Zod (`lib/blog/contract.ts`) and mapped from snake_case once. The detail slug must equal the requested slug. A list page must echo the requested `limit` and `offset`.
 - `fetchAllBlogPosts` walks pages of 100 until it has seen `total` rows (at most 20 pages, 2,000 posts). If `total` changes mid-walk, a page comes back empty early, or slugs repeat, the result is `unavailable`, never a partial list. The result is sorted by `published_at` descending, then `slug`.

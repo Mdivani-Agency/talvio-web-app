@@ -4,8 +4,8 @@ import * as Sentry from '@sentry/nextjs';
 
 import {
   blogDetailEnvelopeSchema,
-  blogErrorEnvelopeSchema,
   blogListEnvelopeSchema,
+  blogNotFoundEnvelopeSchema,
   compareBlogPosts,
   isValidBlogSlug,
   toBlogPost,
@@ -266,7 +266,7 @@ export async function fetchBlogPost(slug: string, options: { now?: Date } = {}):
   }
   if (raw.status === 404) {
     // Only the API's own not-found envelope counts. A bare 404 (no route on an older deployment, a CDN page) is an outage.
-    return blogErrorEnvelopeSchema.safeParse(raw.body).success
+    return blogNotFoundEnvelopeSchema.safeParse(raw.body).success
       ? { status: 'not_found' }
       : unavailable('unexpected_status', raw.status);
   }
