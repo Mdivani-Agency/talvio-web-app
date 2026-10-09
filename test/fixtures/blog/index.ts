@@ -1,10 +1,12 @@
 /**
- * Wire fixtures for the landing-page blog API (`GET /api/posts`, `GET /api/posts/{slug}`).
+ * Wire fixtures for the landing-page Talvio read API (`GET /api/talvio/posts`, `GET /api/talvio/posts/{slug}`).
  *
- * Built from the backend source at the revision in `docs/blog-api-contract.md`: the serializers
- * in `lib/blog-write.ts`, the handlers in `app/api/posts`, and the `blog_posts` table checks.
- * They are not captured from the deployed API. Replace or confirm them once the deployed
- * contract has been checked (MDI-273).
+ * Built from the backend source (MDI-412, landing-page `development` at `bb96162`): the serializers in
+ * `lib/blog-write.ts`, the handlers in `app/api/talvio/posts`, `lib/blog-read-auth.ts` and the `blog_posts` table
+ * checks. They are not captured from the deployed API.
+ *
+ * The post fixtures also include rows the API should never return (drafts, agency-only, future-dated). They test
+ * that Talvio's own publication boundary rejects them if the backend regresses.
  *
  * Every value is invented test content. None of it is production editorial content.
  */
@@ -59,7 +61,7 @@ export type BlogPostSummaryWire = {
 
 export type BlogPostWire = BlogPostSummaryWire & { content: string };
 
-export type BlogListEnvelope = { ok: true; posts: BlogPostSummaryWire[] };
+export type BlogListEnvelope = { ok: true; posts: BlogPostSummaryWire[]; limit: number; offset: number; total: number };
 export type BlogDetailEnvelope = { ok: true; post: BlogPostWire };
 export type BlogErrorEnvelope = { ok: false; errors: Record<string, string> };
 
@@ -152,7 +154,7 @@ export const sharedPost: BlogPostWire = {
 
 /**
  * Published on both sites but tagged only `talvio`. The agency site's public reads hide it
- * (tag backstop in the backend's `lib/blog.ts`), while `GET /api/posts?site=agency` still lists it.
+ * (tag backstop in the backend's `lib/blog.ts`). Talvio may show it.
  */
 export const sharedTalvioTaggedPost: BlogPostWire = {
   ...sharedPost,
@@ -181,32 +183,54 @@ export const futureTalvioPost: BlogPostWire = {
 /** Clock for fixtures that depend on "now". */
 export const FIXTURE_NOW = '2026-10-09T12:00:00.000Z';
 
-export const allFixturePosts: readonly BlogPostWire[] = [
-  talvioPublishedPost,
+/** Shared post tagged only `Agency`. The backend tag backstop withholds it from Talvio. */
+export const sharedAgencyTaggedPost: BlogPostWire = {
+  ...sharedPost,
+  slug: 'fixture-shared-agency-tagged',
+  title: 'Fixture: a shared article tagged for the agency',
+  tags: ['Agency'],
+  published_at: '2026-09-12T09:00:00.000Z',
+  created_at: '2026-09-12T08:00:00.000Z',
+  updated_at: '2026-09-12T09:00:00.000Z',
+};
+
+/** Posts the read API returns, newest `published_at` first, then slug. */
+export const eligibleFixturePosts: readonly BlogPostWire[] = [talvioPublishedPost, sharedPost, sharedTalvioTaggedPost];
+
+/** Rows the read API must not return. Talvio rejects each one if it does. */
+export const ineligibleFixturePosts: readonly BlogPostWire[] = [
   agencyOnlyPost,
   talvioDraftPost,
   unpublishedTalvioPost,
-  sharedPost,
-  sharedTalvioTaggedPost,
   futureTalvioPost,
+  sharedAgencyTaggedPost,
 ];
 
-/**
- * `GET /api/posts?status=published&site=talvio`. The backend filters in the query and orders by
- * `updated_at` descending, not by publication date.
- */
-export const talvioPublishedListResponse: BlogWireResponse<BlogListEnvelope> = {
-  status: 200,
-  body: {
+export const allFixturePosts: readonly BlogPostWire[] = [...eligibleFixturePosts, ...ineligibleFixturePosts];
+
+export function listEnvelope(
+  posts: readonly BlogPostWire[],
+  page: { limit?: number; offset?: number; total?: number } = {},
+): BlogListEnvelope {
+  return {
     ok: true,
-    posts: [futureTalvioPost, sharedPost, talvioPublishedPost, sharedTalvioTaggedPost].map(toSummary),
-  },
+    posts: posts.map(toSummary),
+    limit: page.limit ?? 20,
+    offset: page.offset ?? 0,
+    total: page.total ?? posts.length,
+  };
+}
+
+/** `GET /api/talvio/posts?limit=100&offset=0` */
+export const talvioListResponse: BlogWireResponse<BlogListEnvelope> = {
+  status: 200,
+  body: listEnvelope(eligibleFixturePosts, { limit: 100 }),
 };
 
 /** A successful list with no rows. Only this response may render the empty blog state. */
 export const emptyListResponse: BlogWireResponse<BlogListEnvelope> = {
   status: 200,
-  body: { ok: true, posts: [] },
+  body: listEnvelope([], { limit: 100 }),
 };
 
 export const talvioPublishedDetailResponse: BlogWireResponse<BlogDetailEnvelope> = {
@@ -214,45 +238,26 @@ export const talvioPublishedDetailResponse: BlogWireResponse<BlogDetailEnvelope>
   body: { ok: true, post: talvioPublishedPost },
 };
 
-/** Detail applies no status or site filter, so a draft or agency-only slug returns 200. */
-export const draftDetailResponse: BlogWireResponse<BlogDetailEnvelope> = {
-  status: 200,
-  body: { ok: true, post: talvioDraftPost },
-};
-
-export const agencyOnlyDetailResponse: BlogWireResponse<BlogDetailEnvelope> = {
-  status: 200,
-  body: { ok: true, post: agencyOnlyPost },
-};
-
-/** Error envelopes, with the exact bodies from the backend handlers. */
+/** Error envelopes, with the exact bodies from the backend handlers. Every response sends `Cache-Control: private, no-store`. */
 export const blogErrorResponses = {
-  /** Detail: a slug that matches the pattern but has no row. */
+  /** Detail: unknown, draft, agency-only, future-dated or tag-withheld slug. One body for all of them. */
   notFound: { status: 404, body: { ok: false, errors: { slug: 'Post not found.' } } },
   /** Detail: a slug that fails the pattern or is longer than 80 characters. */
   invalidSlug: {
     status: 400,
     body: { ok: false, errors: { slug: 'Use a lowercase slug with letters, numbers, and hyphens.' } },
   },
-  /** List: an unknown `status` filter. */
-  invalidStatusFilter: {
-    status: 400,
-    body: { ok: false, errors: { status: 'Status must be draft or published.' } },
-  },
-  /** List: an unknown `site` filter. */
-  invalidSiteFilter: {
-    status: 400,
-    body: { ok: false, errors: { site: 'Site must be any of: agency, talvio.' } },
-  },
-  /** Missing, malformed or wrong bearer token. */
+  /** List: `limit` outside 1–100. */
+  invalidLimit: { status: 400, body: { ok: false, errors: { limit: 'Limit must be an integer from 1 to 100.' } } },
+  /** Missing or wrong bearer token, including the write token. */
   unauthorized: { status: 401, body: { ok: false, errors: { form: 'Unauthorized.' } } },
-  /** More than 30 requests in 60 seconds from one client IP on one instance. No `Retry-After` header. */
+  /** More than 120 requests in 60 seconds for one read token. Sent with `Retry-After`. */
   rateLimited: {
     status: 429,
     body: { ok: false, errors: { form: 'Too many requests. Try again in a minute.' } },
   },
-  /** `BLOG_WRITE_TOKEN` unset or shorter than 32 bytes on the backend. */
-  notConfigured: { status: 500, body: { ok: false, errors: { form: 'Write API is not configured.' } } },
+  /** `BLOG_READ_TOKEN_TALVIO` unset, too short or equal to the write token on the backend. */
+  notConfigured: { status: 500, body: { ok: false, errors: { form: 'Read API is not configured.' } } },
   /** List: the database read failed. */
   listFailed: { status: 500, body: { ok: false, errors: { form: 'Could not load posts.' } } },
   /** Detail: the database read failed. */
