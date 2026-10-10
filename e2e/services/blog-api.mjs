@@ -6,6 +6,8 @@
  * - `hostile-markdown`: content that must not run script or load images from other hosts.
  * - `detail-outage`: listed, but its detail read fails, so the article route must answer with an outage status.
  * - `agency-only-leak` and `talvio-draft-leak`: rows a buggy backend could return. Talvio must never show them.
+ * - `shared-agency-post`: shown on both sites, so its canonical is the agency URL.
+ * - `seo-special-chars`: a title and description that try to break out of HTML attributes and JSON-LD.
  */
 
 export const BLOG_E2E_TOKEN = 'local-e2e-blog-read-token-0123456789abcdef';
@@ -77,6 +79,15 @@ const POSTS = [
   { ...row('detail-outage', { published_at: '2026-09-17T09:00:00.000Z' }), content: 'Never served.' },
   { ...row('agency-only-leak', { sites: ['agency'] }), content: 'Agency-only leak body.' },
   { ...row('talvio-draft-leak', { status: 'draft', published_at: null }), content: 'Draft leak body.' },
+  { ...row('shared-agency-post', { sites: ['agency', 'talvio'], published_at: '2026-09-16T09:00:00.000Z' }), content: 'Shared body.' },
+  {
+    ...row('seo-special-chars', {
+      title: 'Résumé "tips" & </script><script>window.__pwned=1</script>',
+      description: 'A description with <b>tags</b>, "quotes" & </script> in it.',
+      published_at: '2026-09-15T09:00:00.000Z',
+    }),
+    content: 'Special characters body.',
+  },
 ];
 
 function summary(post) {

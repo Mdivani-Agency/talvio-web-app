@@ -91,13 +91,14 @@ describe('/blog/[slug]', () => {
 });
 
 describe('generateMetadata', () => {
-  it('describes the served post without indexing or a canonical until MDI-278', async () => {
+  it('describes the served post with its canonical and cover, from the same read as the page', async () => {
     reader.getBlogPost.mockResolvedValue({ status: 'ok', data: post, fetchedAt: 0 });
     const metadata = await generateMetadata(props('resume-tips'));
     expect(metadata.title).toEqual({ absolute: 'Resume tips | Talvio' });
     expect(metadata.description).toBe(post.description);
-    expect(metadata.alternates).toEqual({ canonical: null });
-    expect(metadata.robots).toEqual({ index: false, follow: false });
+    expect(metadata.alternates).toEqual({ canonical: 'https://www.talvio.co/blog/resume-tips' });
+    expect(metadata.openGraph).toMatchObject({ type: 'article', images: [{ url: 'https://blog-api.example.test/uploads/cover.png' }] });
+    expect(reader.getBlogPost).toHaveBeenCalledWith('resume-tips');
   });
 
   it.each([
@@ -106,6 +107,24 @@ describe('generateMetadata', () => {
   ])('describes nothing for %j', async (result) => {
     reader.getBlogPost.mockResolvedValue(result);
     const metadata = await generateMetadata(props('resume-tips'));
-    expect(metadata).toEqual({ robots: { index: false, follow: false } });
+    expect(metadata).toEqual({ alternates: { canonical: null }, robots: { index: false, follow: false }, openGraph: null, twitter: null });
+  });
+
+  it('describes nothing for an invalid slug without a read', async () => {
+    const metadata = await generateMetadata(props('Not_A_Slug'));
+    expect(metadata.openGraph).toBeNull();
+    expect(reader.getBlogPost).not.toHaveBeenCalled();
+  });
+});
+
+describe('structured data', () => {
+  it('renders one BlogPosting and one BreadcrumbList that agree with the canonical', async () => {
+    reader.getBlogPost.mockResolvedValue({ status: 'ok', data: post, fetchedAt: 0 });
+    const html = await render('resume-tips');
+    const scripts = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((match) => JSON.parse(match[1]));
+    expect(scripts).toHaveLength(1);
+    const [posting, breadcrumbs] = scripts[0]['@graph'];
+    expect(posting).toMatchObject({ '@type': 'BlogPosting', url: 'https://www.talvio.co/blog/resume-tips', headline: 'Resume tips' });
+    expect(breadcrumbs['@type']).toBe('BreadcrumbList');
   });
 });

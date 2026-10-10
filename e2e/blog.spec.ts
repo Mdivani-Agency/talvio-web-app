@@ -119,3 +119,70 @@ test('BLOG-05 an article is keyboard reachable, fits a phone, and survives a mis
   expect((await missing.boundingBox())?.height).toBeGreaterThan(100);
   expect(requests.filter((url) => url.includes('/blog-assets/')).every((url) => url.startsWith(BLOG_API_ORIGIN))).toBe(true);
 });
+
+/** The `content` of a head tag, read from raw HTML so the check needs no JavaScript. */
+function metaContent(html: string, attribute: 'name' | 'property', key: string): string[] {
+  return [...html.matchAll(/<meta\b[^>]*>/g)]
+    .map((match) => match[0])
+    .filter((tag) => tag.includes(`${attribute}="${key}"`))
+    .map((tag) => tag.match(/content="([^"]*)"/)?.[1] ?? '');
+}
+
+function canonicals(html: string): string[] {
+  return [...html.matchAll(/<link\b[^>]*rel="canonical"[^>]*>/g)].map((match) => match[0].match(/href="([^"]*)"/)?.[1] ?? '');
+}
+
+function jsonLd(html: string): Array<{ '@graph'?: Array<Record<string, unknown>> }> {
+  return [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((match) => JSON.parse(match[1]));
+}
+
+const CRAWLER = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+
+test('BLOG-06 article metadata and structured data agree, for browsers and crawlers, and stay off missing pages', async ({ request }) => {
+  for (const userAgent of [undefined, CRAWLER]) {
+    const headers = userAgent ? { 'User-Agent': userAgent } : undefined;
+
+    const article = await (await request.get('/blog/talvio-guide?utm_source=newsletter', { headers })).text();
+    expect(canonicals(article)).toEqual(['https://www.talvio.co/blog/talvio-guide']);
+    expect(metaContent(article, 'property', 'og:url')).toEqual(['https://www.talvio.co/blog/talvio-guide']);
+    expect(metaContent(article, 'property', 'og:type')).toEqual(['article']);
+    expect(metaContent(article, 'property', 'og:image')).toEqual([`${BLOG_API_ORIGIN}/blog-assets/cover.png`]);
+    expect(article).toContain('<title>E2E talvio guide | Talvio</title>');
+    const [graph] = jsonLd(article);
+    expect(graph['@graph']?.map((node) => node['@type'])).toEqual(['BlogPosting', 'BreadcrumbList']);
+    expect(graph['@graph']?.[0]).toMatchObject({ url: 'https://www.talvio.co/blog/talvio-guide', publisher: { name: 'Talvio' } });
+    expect(graph['@graph']?.[0]).not.toHaveProperty('author');
+
+    const shared = await (await request.get('/blog/shared-agency-post', { headers })).text();
+    expect(canonicals(shared)).toEqual(['https://mdivani.agency/blog/shared-agency-post']);
+    expect(jsonLd(shared)[0]['@graph']?.[0]).not.toHaveProperty('publisher');
+
+    const special = await (await request.get('/blog/seo-special-chars', { headers })).text();
+    expect(special).not.toContain('<script>window.__pwned');
+    const [specialGraph] = jsonLd(special);
+    expect(specialGraph['@graph']?.[0].headline).toBe('Résumé "tips" & </script><script>window.__pwned=1</script>');
+    expect(metaContent(special, 'property', 'og:image')).toEqual(['https://www.talvio.co/share-image-v1.png']);
+
+    for (const path of ['/blog/no-such-post', '/blog/agency-only-leak']) {
+      const missing = await (await request.get(path, { headers })).text();
+      expect(canonicals(missing), path).toEqual([]);
+      // Only the site-wide share card from the root layout remains; nothing describes an article.
+      expect(metaContent(missing, 'property', 'og:type'), path).not.toContain('article');
+      expect(metaContent(missing, 'property', 'og:url'), path).toEqual([]);
+      expect(missing, path).not.toContain('BlogPosting');
+      // Next adds its own `noindex` to a 404 alongside the page's; every robots tag must say noindex.
+      const robots = metaContent(missing, 'name', 'robots');
+      expect(robots.length, path).toBeGreaterThan(0);
+      expect(robots.every((value) => value.includes('noindex')), path).toBe(true);
+    }
+
+    const index = await (await request.get('/blog', { headers })).text();
+    expect(canonicals(index)).toEqual(['https://www.talvio.co/blog']);
+    expect(index).not.toContain('BlogPosting');
+  }
+
+  // The fallback social image is a real asset.
+  const share = await request.get('/share-image-v1.png');
+  expect(share.status()).toBe(200);
+  expect(share.headers()['content-type']).toBe('image/png');
+});
