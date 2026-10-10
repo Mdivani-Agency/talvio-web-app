@@ -74,7 +74,7 @@ Create a server-only client with proposed configuration `BLOG_API_BASE_URL` and 
 
 - Generate index and article metadata on the server, with unique titles, descriptions, absolute canonical URLs, Open Graph fields, and Twitter summary cards. Use one shared post loader for page and metadata rendering.
 - Use the article title and description from the existing contract; do not require a new SEO schema for launch. Set a site-wide metadata base and test nested metadata inheritance. See [Next.js metadata](https://nextjs.org/docs/app/api-reference/functions/generate-metadata).
-- Talvio-only articles self-canonicalize. For identical articles assigned to both sites, select one primary origin before launch and store that decision in an explicit frontend configuration/mapping until the backend supports it. Coordinate the same canonical on both sites. Do not silently declare both copies primary. Canonical annotations are signals, not a guarantee of Google's selection. See [Google canonical guidance](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls).
+- Talvio-only articles self-canonicalize. For articles assigned to both sites, ownership is derived from the post data instead of a mapping (decided in MDI-278; `isAgencyPrimary` in `lib/blog/eligibility.ts`). A post the agency site shows is agency-primary and canonicalizes to `https://mdivani.agency/blog/{slug}`. A shared post tagged `talvio` (hidden on the agency site) is Talvio-primary. Authors move ownership with that tag, so no copy is silently declared primary on both sites. Before launch, check that the agency site renders the same canonical for each shared post. Canonical annotations are signals, not a guarantee of Google's selection. See [Google canonical guidance](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls).
 - Emit `BlogPosting` and breadcrumb JSON-LD consistent with the visible article, canonical URL, real publication/modification dates, and valid image URLs. Omit unknown fields; the current API does not justify attributing posts to an invented person or automatically claiming Talvio authored them. See [Google article structured data](https://developers.google.com/search/docs/appearance/structured-data/article).
 - Missing or ineligible articles have no article schema. Preview/staging deployments are noindex; production blog pages are indexable.
 - Verify metadata and social previews against the actual server response, including crawler user agents; hydration must not be required to populate them.
@@ -109,7 +109,7 @@ Create a server-only client with proposed configuration `BLOG_API_BASE_URL` and 
 
 1. Confirm deployed backend origin/version, server credential provisioning, canonical Talvio production origin, and content asset origin.
 2. Confirm complete launch inventory, realistic read volume, and cache strategy against the existing rate limiter and list response limits.
-3. Assign canonical ownership for any dual-site articles and confirm factual author attribution where supplied.
+3. Confirm on the rendered agency site that each dual-site article's canonical matches the derived ownership (MDI-278). No author is attributed, because the API has none.
 4. Accept the proposed five-minute removal budget or scope authenticated invalidation in the existing backend.
 
 ## Definition of done
