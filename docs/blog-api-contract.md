@@ -220,6 +220,8 @@ Rows marked **Decided** follow from shipped code. The rest are **proposals** unt
 
 ## Fixtures
 
+`docs/blog-test-matrix.md` maps every epic acceptance criterion to the test that proves it.
+
 `test/fixtures/blog/index.ts` holds wire-format fixtures:
 
 | Fixture | Case |
