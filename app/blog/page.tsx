@@ -1,16 +1,22 @@
 import {
   BLOG_EMPTY_BODY,
   BLOG_EMPTY_HEADING,
+  BLOG_PAGE_DESCRIPTION,
   BLOG_PAGE_HEADING,
   BLOG_PAGE_INTRO,
+  BLOG_PAGE_TITLE,
+  BLOG_PATH,
 } from '@/lib/blog-copy';
 import { blogAssetUrl, getBlogPosts } from '@/lib/blog/reader';
+import { publicPageMetadata } from '@/lib/public-metadata';
 
 import { BlogUnavailableError } from './blog-unavailable';
 import { BlogPostList } from './views/blog-post-list';
 
 // Rendered per request through the cached reader: no ISR, so no rendered HTML outlives the 300 s freshness budget.
 export const dynamic = 'force-dynamic';
+
+export const metadata = publicPageMetadata(BLOG_PATH, BLOG_PAGE_TITLE, BLOG_PAGE_DESCRIPTION);
 
 export default async function BlogPage() {
   const result = await getBlogPosts();

@@ -8,12 +8,13 @@ import {
   ineligibleFixturePosts,
   sharedAgencyTaggedPost,
   sharedPost,
+  sharedTalvioTaggedPost,
   talvioDraftPost,
   talvioPublishedPost,
   unpublishedTalvioPost,
 } from '@/test/fixtures/blog';
 
-import { isEligibleForTalvio } from './eligibility';
+import { isAgencyPrimary, isEligibleForTalvio } from './eligibility';
 
 const now = new Date(FIXTURE_NOW);
 
@@ -53,5 +54,20 @@ describe('isEligibleForTalvio', () => {
     expect(isEligibleForTalvio({ ...sharedPost, tags: ['agency', 'talvio'] }, now)).toBe(true);
     expect(isEligibleForTalvio({ ...sharedPost, tags: ['agency-story'] }, now)).toBe(true);
     expect(isEligibleForTalvio({ ...sharedPost, tags: ['aGeNcY'] }, now)).toBe(true);
+  });
+});
+
+describe('isAgencyPrimary', () => {
+  it('marks a post both sites show as the agency’s', () => {
+    expect(isAgencyPrimary(sharedPost)).toBe(true);
+  });
+
+  it('leaves Talvio-only posts and shared posts tagged for Talvio with Talvio', () => {
+    expect(isAgencyPrimary(talvioPublishedPost)).toBe(false);
+    expect(isAgencyPrimary(sharedTalvioTaggedPost)).toBe(false);
+  });
+
+  it('treats a post tagged for both sites as shown on both', () => {
+    expect(isAgencyPrimary({ sites: ['agency', 'talvio'], tags: ['talvio', 'Agency'] })).toBe(true);
   });
 });
