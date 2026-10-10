@@ -36,7 +36,7 @@ export function BlogPostList({ posts, coverUrl }: BlogPostListProps) {
                   </Link>
                 </h2>
                 <p className="text-md break-words text-muted-foreground">{post.description}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-md text-muted-foreground">
                   <span className="sr-only">{BLOG_PUBLISHED_LABEL} </span>
                   <time dateTime={post.publishedAt}>{formatBlogDate(post.publishedAt)}</time>
                 </p>

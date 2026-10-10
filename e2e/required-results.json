@@ -59,6 +59,7 @@
     "BLOG-04 drafts and agency-only posts stay out of HTML and RSC payloads",
     "BLOG-05 an article is keyboard reachable, fits a phone, and survives a missing image",
     "BLOG-06 article metadata and structured data agree, for browsers and crawlers, and stay off missing pages",
+    "BLOG-07 the sitemap keeps public pages, lists each Talvio article once, and robots leaves the blog crawlable",
     "TPL-01 level tabs and every template open the matching resume preview",
     "TPL-01 a restored editor draft uses the newly selected template once",
     "TPL-01 a restored import draft uses the newly selected template",

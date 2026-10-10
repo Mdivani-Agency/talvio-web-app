@@ -148,6 +148,7 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
     ['/', 'Free PDF resume generator | Talvio Beta'],
     ['/templates', 'Free resume templates by experience level | Talvio'],
     ['/ats-friendly-resume', 'How to make an ATS-friendly resume | Talvio'],
+    ['/blog', 'Resume and job search articles | Talvio'],
     ['/terms', 'Terms of Service | Talvio'],
     ['/privacy-policy', 'Privacy Policy | Talvio'],
   ] as const;

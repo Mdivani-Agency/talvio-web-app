@@ -186,3 +186,38 @@ test('BLOG-06 article metadata and structured data agree, for browsers and crawl
   expect(share.status()).toBe(200);
   expect(share.headers()['content-type']).toBe('image/png');
 });
+
+test('BLOG-07 the sitemap keeps public pages, lists each Talvio article once, and robots leaves the blog crawlable', async ({ request }) => {
+  const response = await request.get('/sitemap.xml');
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('application/xml');
+  const xml = await response.text();
+  const urls = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]);
+  expect(new Set(urls).size).toBe(urls.length);
+  expect(urls.every((url) => url.startsWith('https://www.talvio.co'))).toBe(true);
+
+  for (const path of ['', '/templates', '/ats-friendly-resume', '/blog', '/privacy-policy', '/terms']) {
+    expect(urls, path).toContain(`https://www.talvio.co${path}`);
+  }
+  for (const slug of ['talvio-guide', 'hostile-markdown', 'detail-outage', 'seo-special-chars']) {
+    expect(urls.filter((url) => url === `https://www.talvio.co/blog/${slug}`), slug).toHaveLength(1);
+  }
+  for (const slug of ['shared-agency-post', 'agency-only-leak', 'talvio-draft-leak']) {
+    expect(xml, slug).not.toContain(slug);
+  }
+  // Articles carry their real updated_at, never the time the sitemap was generated.
+  expect(xml).toMatch(/<loc>https:\/\/www\.talvio\.co\/blog\/talvio-guide<\/loc>\s*<lastmod>2026-09-25T09:00:00\.000Z<\/lastmod>/);
+
+  const robots = await (await request.get('/robots.txt')).text();
+  expect(robots).toContain('Sitemap: https://www.talvio.co/sitemap.xml');
+  const disallowed = [...robots.matchAll(/^Disallow: (.*)$/gm)].map((match) => match[1]);
+  expect(disallowed.some((path) => '/blog/talvio-guide'.startsWith(path))).toBe(false);
+
+  // Crawl routes and blog assets need no session and set no cookies.
+  for (const path of ['/sitemap.xml', '/robots.txt', '/blog', '/blog/talvio-guide']) {
+    const anonymous = await request.get(path, { maxRedirects: 0 });
+    expect(anonymous.status(), path).toBe(200);
+    expect(anonymous.headers()['set-cookie'], path).toBeUndefined();
+  }
+  expect((await request.get(`${BLOG_API_ORIGIN}/blog-assets/cover.png`)).status()).toBe(200);
+});
