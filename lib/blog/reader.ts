@@ -3,7 +3,10 @@ import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 
+import { siteOrigin } from '../site';
+
 import { createBlogReader, type BlogCacheEntry, type CachedLoad } from './cache';
+import type { BlogMarkdownOrigins } from './markdown-urls';
 import { fetchAllBlogPosts, fetchBlogPost, readBlogApiConfig } from './server';
 
 /**
@@ -12,7 +15,7 @@ import { fetchAllBlogPosts, fetchBlogPost, readBlogApiConfig } from './server';
  * The shared cache is the Next.js data cache (`unstable_cache`), which Vercel shares across instances and
  * deployments. Entries are keyed by environment and API origin, never by anything from the request, and hold only
  * public content. Pages that call this must render per request (no ISR), because the data cache's age is the only
- * age the freshness budget accounts for; set CDN headers with `blogCacheControl`.
+ * age the freshness budget accounts for. Next.js marks those pages `no-store`, so no CDN copy outlives it either.
  */
 
 const cachedLoad: CachedLoad = <T>(
@@ -46,4 +49,9 @@ export { blogCacheControl, BLOG_FRESHNESS_BUDGET_SECONDS, type BlogCachedResult 
 export function blogAssetUrl(path: string): string | null {
   const config = readBlogApiConfig();
   return config ? `${config.origin}${path}` : null;
+}
+
+/** Origins article Markdown may link to and load images from (see `markdown-urls.ts`). */
+export function blogMarkdownOrigins(): BlogMarkdownOrigins {
+  return { contentOrigin: readBlogApiConfig()?.origin ?? null, siteOrigin: siteOrigin() };
 }

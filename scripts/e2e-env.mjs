@@ -1,3 +1,5 @@
+import { BLOG_E2E_TOKEN } from '../e2e/services/blog-api.mjs';
+
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 
 const ORIGIN_KEYS = [
@@ -7,6 +9,7 @@ const ORIGIN_KEYS = [
   'MEDIA_API_BASE_URL',
   'OPENAI_BASE_URL',
   'GOOGLE_FONTS_API_BASE',
+  'BLOG_API_BASE_URL',
 ];
 
 export function assertLocalServiceOrigins(env) {
@@ -50,6 +53,8 @@ export function localE2EEnv(status) {
     OPENAI_BASE_URL: 'http://127.0.0.1:3999/v1',
     GOOGLE_FONTS_API_KEY: 'local-e2e-dummy',
     GOOGLE_FONTS_API_BASE: 'http://127.0.0.1:3999',
+    BLOG_API_BASE_URL: 'http://127.0.0.1:3999',
+    BLOG_API_TOKEN: BLOG_E2E_TOKEN,
   };
   assertLocalServiceOrigins(env);
   return env;

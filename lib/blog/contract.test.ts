@@ -39,13 +39,14 @@ describe('wire schemas', () => {
     expect(result.error?.issues.map((issue) => issue.path)).toEqual([['post', 'featured']]);
   });
 
-  it('reject an unknown site, an unknown status, a bad date and an empty body', () => {
+  it('reject an unknown site, an unknown status, a bad date and an empty or blank body', () => {
     const post = talvioPublishedPost;
     const cases = [
       [{ ...post, sites: ['other'] }, ['post', 'sites', 0]],
       [{ ...post, status: 'scheduled' }, ['post', 'status']],
       [{ ...post, updated_at: '21 Sep 2026' }, ['post', 'updated_at']],
       [{ ...post, content: '' }, ['post', 'content']],
+      [{ ...post, content: ' \n\t ' }, ['post', 'content']],
     ] as const;
     for (const [bad, path] of cases) {
       const result = blogDetailEnvelopeSchema.safeParse({ ok: true, post: bad });
