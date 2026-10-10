@@ -1,6 +1,11 @@
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { expect, test, type Page } from '@playwright/test';
 
 import { BLOG_UNAVAILABLE_TITLE } from '../lib/blog-copy';
+
+import { BLOG_E2E_TOKEN } from './services/blog-api.mjs';
 
 // Posts come from `e2e/services/blog-api.mjs`, served by the simulator at the blog API origin.
 const BLOG_API_ORIGIN = 'http://127.0.0.1:3999';
@@ -220,4 +225,86 @@ test('BLOG-07 the sitemap keeps public pages, lists each Talvio article once, an
     expect(anonymous.headers()['set-cookie'], path).toBeUndefined();
   }
   expect((await request.get(`${BLOG_API_ORIGIN}/blog-assets/cover.png`)).status()).toBe(200);
+});
+
+function filesUnder(directory: string): string[] {
+  return readdirSync(directory).flatMap((name) => {
+    const path = join(directory, name);
+    return statSync(path).isDirectory() ? filesUnder(path) : [path];
+  });
+}
+
+test('BLOG-08 the API token never reaches the browser: bundles, pages, RSC payloads or requests', async ({ page, request }) => {
+  // Client bundles are built ahead of time; the token must not be inlined into any of them.
+  const leakedBundles = filesUnder(join(process.cwd(), '.next', 'static')).filter((file) =>
+    readFileSync(file).includes(BLOG_E2E_TOKEN),
+  );
+  expect(leakedBundles).toEqual([]);
+
+  for (const path of ['/blog', '/blog/talvio-guide', '/blog/no-such-post', '/blog/detail-outage', '/sitemap.xml']) {
+    for (const headers of [undefined, { RSC: '1' }]) {
+      const body = await (await request.get(path, { headers })).text();
+      expect(body.includes(BLOG_E2E_TOKEN), `${path} ${headers ? 'RSC' : 'HTML'}`).toBe(false);
+    }
+  }
+
+  // `allHeaders()` includes the security headers (`Cookie`, `Set-Cookie`) that `headers()` leaves out.
+  const pending: Promise<string>[] = [];
+  page.on('request', (outgoing) =>
+    pending.push(outgoing.allHeaders().then((headers) => `${outgoing.url()} ${JSON.stringify(headers)}`)),
+  );
+  page.on('response', (incoming) =>
+    pending.push(incoming.allHeaders().then((headers) => `response ${incoming.url()} ${JSON.stringify(headers)}`)),
+  );
+  await page.goto('/blog');
+  await page.getByRole('link', { name: 'E2E talvio guide' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'E2E talvio guide' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  const sent = await Promise.all(pending);
+  expect(sent.length).toBeGreaterThan(0);
+  expect(sent.filter((line) => line.includes(BLOG_E2E_TOKEN))).toEqual([]);
+  // The browser never calls the blog API itself; only assets come from its origin.
+  expect(sent.filter((line) => !line.startsWith('response ') && line.includes('/api/talvio/'))).toEqual([]);
+});
+
+test('BLOG-09 the blog works without JavaScript and long titles fit a phone', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 360, height: 740 } });
+  const page = await context.newPage();
+  try {
+    await page.goto('/blog');
+    const card = page.getByRole('link', { name: /A very long article title/ });
+    await expect(card).toHaveAttribute('href', '/blog/long-title');
+    await card.click();
+    await expect(page).toHaveURL(/\/blog\/long-title$/);
+    await expect(page.getByRole('heading', { level: 1, name: /A very long article title/ })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    await page.goto('/blog/talvio-guide');
+    await expect(page.getByText('Use numbers where you have them')).toBeVisible();
+    await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Blog' }).click();
+    await expect(page).toHaveURL(/\/blog$/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  } finally {
+    await context.close();
+  }
+});
+
+test('BLOG-10 Talvio calls the blog API only with its token and valid list windows', async ({ request }) => {
+  await request.get('/blog');
+  await request.get('/blog/talvio-guide');
+  const { requests } = (await (await request.get(`${BLOG_API_ORIGIN}/__e2e/blog-requests`)).json()) as {
+    requests: Array<{ path: string; query: string; authorized: boolean }>;
+  };
+  expect(requests.length).toBeGreaterThan(0);
+  expect(requests.filter((entry) => !entry.authorized)).toEqual([]);
+  const lists = requests.filter((entry) => entry.path === '/api/talvio/posts');
+  expect(lists.length).toBeGreaterThan(0);
+  for (const entry of lists) {
+    const query = new URLSearchParams(entry.query);
+    expect(query.get('limit')).toBe('100');
+    expect(Number(query.get('offset')) % 100).toBe(0);
+  }
+  for (const entry of requests.filter((item) => item.path !== '/api/talvio/posts')) {
+    expect(entry.path).toMatch(/^\/api\/talvio\/posts\/[a-z0-9]+(?:-[a-z0-9]+)*$/);
+  }
 });

@@ -8,6 +8,10 @@
  * - `agency-only-leak` and `talvio-draft-leak`: rows a buggy backend could return. Talvio must never show them.
  * - `shared-agency-post`: shown on both sites, so its canonical is the agency URL.
  * - `seo-special-chars`: a title and description that try to break out of HTML attributes and JSON-LD.
+ * - `long-title`: a title long enough to wrap on a phone.
+ *
+ * Like the real API, it rejects a missing or wrong token (401) and an invalid `limit` or `offset` (400), and it keeps
+ * a log of what it was asked, which `GET /__e2e/blog-requests` returns, so tests can assert how Talvio calls it.
  */
 
 export const BLOG_E2E_TOKEN = 'local-e2e-blog-read-token-0123456789abcdef';
@@ -88,7 +92,24 @@ const POSTS = [
     }),
     content: 'Special characters body.',
   },
+  {
+    ...row('long-title', {
+      title: `A very long article title about ${'writing resumes for every stage of a long career, '.repeat(3)}and beyond`,
+      published_at: '2026-09-14T09:00:00.000Z',
+    }),
+    content: 'Long title body.',
+  },
 ];
+
+const requests = [];
+
+export function blogApiRequests() {
+  return requests;
+}
+
+function isInteger(value, min, max) {
+  return /^\d+$/.test(value) && Number(value) >= min && Number(value) <= max;
+}
 
 function summary(post) {
   return Object.fromEntries(Object.entries(post).filter(([key]) => key !== 'content'));
@@ -104,16 +125,28 @@ export function handleBlogApi(request, url, send) {
     }
     return true;
   }
+  if (request.method === 'GET' && url.pathname === '/__e2e/blog-requests') {
+    send(200, { requests });
+    return true;
+  }
   if (request.method !== 'GET' || !url.pathname.startsWith('/api/talvio/posts')) {
     return false;
   }
-  if (request.headers.authorization !== `Bearer ${BLOG_E2E_TOKEN}`) {
+  const authorized = request.headers.authorization === `Bearer ${BLOG_E2E_TOKEN}`;
+  requests.push({ path: url.pathname, query: url.search, authorized });
+  if (!authorized) {
     send(401, { ok: false, errors: { auth: 'Unauthorized.' } });
     return true;
   }
   if (url.pathname === '/api/talvio/posts') {
-    const limit = Number(url.searchParams.get('limit') ?? 20);
-    const offset = Number(url.searchParams.get('offset') ?? 0);
+    const rawLimit = url.searchParams.get('limit') ?? '20';
+    const rawOffset = url.searchParams.get('offset') ?? '0';
+    if (!isInteger(rawLimit, 1, 100) || !isInteger(rawOffset, 0, Number.MAX_SAFE_INTEGER)) {
+      send(400, { ok: false, errors: { query: 'Invalid limit or offset.' } });
+      return true;
+    }
+    const limit = Number(rawLimit);
+    const offset = Number(rawOffset);
     send(200, { ok: true, posts: POSTS.slice(offset, offset + limit).map(summary), limit, offset, total: POSTS.length });
     return true;
   }

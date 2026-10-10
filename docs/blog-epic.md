@@ -1,6 +1,6 @@
 # Epic: Public Talvio blog with SEO and shared backend integration
 
-Status: Ready for implementation planning. This document defines the work; the blog is not implemented yet.
+Status: In progress on the epic branch `feature/mdi-249-blog`. The API contract is in `docs/blog-api-contract.md`; test coverage per criterion is in `docs/blog-test-matrix.md`.
 
 ## Outcome
 
