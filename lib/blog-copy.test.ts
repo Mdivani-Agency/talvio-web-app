@@ -19,7 +19,8 @@ describe('blog copy', () => {
     expect(BLOG_PATH).toBe('/blog');
     expect(BLOG_PAGE_TITLE).toMatch(/\| Talvio$/);
     expect(BLOG_PAGE_TITLE.length).toBeLessThanOrEqual(60);
-    expect(BLOG_PAGE_DESCRIPTION.length).toBeLessThanOrEqual(160);
+    expect(BLOG_PAGE_DESCRIPTION.length).toBeGreaterThanOrEqual(120);
+    expect(BLOG_PAGE_DESCRIPTION.length).toBeLessThanOrEqual(155);
     expect(BLOG_PAGE_HEADING).toMatch(/blog/i);
   });
 

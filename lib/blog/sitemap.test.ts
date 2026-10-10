@@ -63,6 +63,11 @@ describe('withBlogEntries', () => {
     expect(blog(withBlogEntries(base, [post('new', '2027-01-02T00:00:00.000Z'), post('older', '2026-12-01T00:00:00.000Z')]))?.lastModified).toBe(
       '2027-01-02T00:00:00.000Z',
     );
+    // Offsets are compared as instants: 00:30+02:00 on the 11th is 22:30Z on the 10th.
+    expect(
+      blog(withBlogEntries(base, [post('offset', '2027-03-11T00:30:00+02:00'), post('utc', '2027-03-10T23:00:00.000Z')]))?.lastModified,
+    ).toBe('2027-03-10T23:00:00.000Z');
+    expect(blog(withBlogEntries(base, [post('offset', '2027-03-11T00:30:00+02:00')]))?.lastModified).toBe('2027-03-10T22:30:00.000Z');
     // An agency-primary post does not date Talvio's index.
     expect(blog(withBlogEntries(base, [post('shared', '2027-05-01T00:00:00.000Z', { sites: ['agency', 'talvio'] })]))?.lastModified).toBe(
       BLOG_LAST_MODIFIED,

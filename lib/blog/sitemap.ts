@@ -17,7 +17,9 @@ export function withBlogEntries(
 ): MetadataRoute.Sitemap {
   const listed = posts.filter(isListedInTalvioSitemap);
   const indexUrl = `${siteOrigin()}${BLOG_PATH}`;
-  const newest = listed.reduce<string | null>((latest, post) => (!latest || post.updatedAt > latest ? post.updatedAt : latest), null);
+  // Timestamps may carry offsets, so compare instants, not strings.
+  const newestMs = Math.max(...listed.map((post) => Date.parse(post.updatedAt)));
+  const newest = Number.isFinite(newestMs) ? new Date(newestMs).toISOString() : null;
   const indexDate = newest && newest.slice(0, 10) > BLOG_LAST_MODIFIED ? newest : BLOG_LAST_MODIFIED;
 
   const entries: MetadataRoute.Sitemap = [
