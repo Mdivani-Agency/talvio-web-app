@@ -36,7 +36,7 @@ export function BlogArticle({ post, origins, coverUrl }: BlogArticleProps) {
   const updatedAt = blogUpdatedDate(post);
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 pb-12 pt-24 text-primary lg:px-6">
-      <nav aria-label={BLOG_BREADCRUMB_LABEL} className="text-sm text-muted-foreground">
+      <nav aria-label={BLOG_BREADCRUMB_LABEL} className="text-md text-muted-foreground">
         <ol className="flex flex-wrap items-center gap-2">
           <li>
             <Link href="/" className="underline-offset-4 hover:underline">
@@ -60,7 +60,7 @@ export function BlogArticle({ post, origins, coverUrl }: BlogArticleProps) {
         <header className="flex flex-col gap-4">
           <h1 className="text-3xl font-semibold break-words">{post.title}</h1>
           <p className="text-lg break-words text-muted-foreground">{post.description}</p>
-          <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          <p className="flex flex-wrap gap-x-4 gap-y-1 text-md text-muted-foreground">
             <span>
               {BLOG_PUBLISHED_LABEL} <time dateTime={post.publishedAt}>{formatBlogDate(post.publishedAt)}</time>
             </span>

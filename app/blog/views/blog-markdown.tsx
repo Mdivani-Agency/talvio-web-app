@@ -195,14 +195,14 @@ function leaf(token: Token, ctx: Context): ReactNode {
       return <br key={ctx.key++} />;
     case 'code_inline':
       return (
-        <code key={ctx.key++} className="rounded bg-muted px-1 py-0.5 font-mono text-sm">
+        <code key={ctx.key++} className="rounded bg-muted px-1 py-0.5 font-mono text-md">
           {token.content}
         </code>
       );
     case 'fence':
     case 'code_block':
       return (
-        <pre key={ctx.key++} className="overflow-x-auto rounded-lg bg-muted p-4 text-sm" tabIndex={0}>
+        <pre key={ctx.key++} className="overflow-x-auto rounded-lg bg-muted p-4 text-md" tabIndex={0}>
           <code className="font-mono">{token.content}</code>
         </pre>
       );

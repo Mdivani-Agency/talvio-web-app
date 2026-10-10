@@ -185,6 +185,15 @@ Both routes are `force-dynamic`, so no rendered HTML outlives the freshness budg
 - **Evidence.** `e2e/blog.spec.ts` BLOG-06 checks raw production HTML with a browser user agent and with Googlebot. It covers a Talvio post with a query string, a shared post, a post whose title and description contain `</script>` and quotes, a 404, an ineligible slug and the index.
 - **Validation.** Google's Rich Results Test and the schema.org validator need the deployed site, so they have not been run. The expected warning is a missing `author` on `BlogPosting`. It is optional for Article rich results and is omitted on purpose.
 
+**Sitemap and robots** (`app/sitemap.ts`, `lib/blog/sitemap.ts`, MDI-279). `/blog` is in `PUBLIC_PAGE_PATHS`, so it gets the public-page treatment: sitemap entry, metadata and the PUB-07 accessibility checks.
+- **Building it.** The sitemap is built per request (`force-dynamic`) from `getBlogPosts()`, so it follows the same 300 s freshness budget as the pages. A publish, unpublish or site removal shows up there at the same time as on `/blog`.
+- **What it lists.** Every public page, then each Talvio-primary article (`isListedInTalvioSitemap`) once, at the same canonical its page declares.
+- **Dates.** Each article's `lastmod` is its `updated_at`. `/blog` takes the newest listed article's `updated_at` when that is later than `BLOG_LAST_MODIFIED`. Nothing uses the generation time.
+- **Outage.** If the reader is `unavailable`, including `not_configured`, the sitemap throws and answers `500`, never a `200` that silently drops the articles.
+- **Robots and the proxy.** `robots.txt` is unchanged: it allows `/`, disallows only `PRIVATE_ROBOTS_PREFIXES`, and names the canonical sitemap. The proxy refreshes sessions but sets no cookie and needs no user on anonymous `/sitemap.xml`, `/robots.txt` or blog requests.
+- **Splitting.** One sitemap holds 50,000 URLs and the list reader caps at 2,000 posts (20 pages of 100), so no split is needed.
+- **Evidence.** `e2e/blog.spec.ts` BLOG-07 checks all of this on a production build.
+
 ## Findings that still shape later issues
 
 1. **`published_at` survives unpublishing.** Eligibility checks `status`, not just a date.

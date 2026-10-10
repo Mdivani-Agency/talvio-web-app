@@ -4,7 +4,7 @@ export const BLOG_PATH = '/blog';
 
 export const BLOG_PAGE_TITLE = 'Resume and job search articles | Talvio';
 export const BLOG_PAGE_DESCRIPTION =
-  'Articles from Talvio on writing resumes, preparing PDFs for applications and searching for jobs.';
+  'Articles from Talvio on writing resumes, preparing resume PDFs for job applications and searching for jobs. New articles appear here as they are published.';
 
 export const BLOG_PAGE_HEADING = 'Talvio blog';
 export const BLOG_PAGE_INTRO = 'Articles on writing resumes, preparing them for applications and searching for jobs.';
@@ -15,8 +15,8 @@ export const BLOG_EMPTY_BODY = 'Check back soon. New articles appear here when t
 
 export const BLOG_PUBLISHED_LABEL = 'Published';
 
-/** Date of the last change to this copy. The sitemap entry for `/blog` (MDI-279) uses the newest post date instead. */
-export const BLOG_LAST_MODIFIED = '2026-10-09';
+/** Date of the last change to this copy. The `/blog` sitemap entry uses the newest post date when that is later. */
+export const BLOG_LAST_MODIFIED = '2026-10-10';
 
 /** Publication date as shown on cards, fixed to UTC so server and client agree. */
 export function formatBlogDate(iso: string): string {
