@@ -248,16 +248,23 @@ test('BLOG-08 the API token never reaches the browser: bundles, pages, RSC paylo
     }
   }
 
-  const sent: string[] = [];
-  page.on('request', (outgoing) => sent.push(`${outgoing.url()} ${JSON.stringify(outgoing.headers())}`));
+  // `allHeaders()` includes the security headers (`Cookie`, `Set-Cookie`) that `headers()` leaves out.
+  const pending: Promise<string>[] = [];
+  page.on('request', (outgoing) =>
+    pending.push(outgoing.allHeaders().then((headers) => `${outgoing.url()} ${JSON.stringify(headers)}`)),
+  );
+  page.on('response', (incoming) =>
+    pending.push(incoming.allHeaders().then((headers) => `response ${incoming.url()} ${JSON.stringify(headers)}`)),
+  );
   await page.goto('/blog');
   await page.getByRole('link', { name: 'E2E talvio guide' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'E2E talvio guide' })).toBeVisible();
   await page.waitForLoadState('networkidle');
+  const sent = await Promise.all(pending);
   expect(sent.length).toBeGreaterThan(0);
   expect(sent.filter((line) => line.includes(BLOG_E2E_TOKEN))).toEqual([]);
   // The browser never calls the blog API itself; only assets come from its origin.
-  expect(sent.filter((line) => line.includes('/api/talvio/'))).toEqual([]);
+  expect(sent.filter((line) => !line.startsWith('response ') && line.includes('/api/talvio/'))).toEqual([]);
 });
 
 test('BLOG-09 the blog works without JavaScript and long titles fit a phone', async ({ browser }) => {
