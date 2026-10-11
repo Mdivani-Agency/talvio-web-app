@@ -17,3 +17,8 @@ export function accountDraftStorageKey(owner: Extract<DraftOwner, { kind: 'user'
 export function resumeDraftStorageKey(owner: DraftOwner, documentId = 'new') {
   return draftIdentityKey('resume', owner, documentId);
 }
+
+/** The Improve with AI session for a resume draft key (MDI-426). */
+export function aiImproveStorageKey(resumeDraftKey: string) {
+  return `${resumeDraftKey}:ai-improve`;
+}

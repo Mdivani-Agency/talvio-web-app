@@ -13,87 +13,81 @@ import {
 } from './account-draft';
 
 describe('account drafts', () => {
-  it('builds and parses onboarding progress including question cursor', () => {
+  it('builds and parses a form draft without question fields', () => {
     const draft = buildAccountDraft({
       owner: { kind: 'user', userId: FLOW_USER_ID },
       fields: {
         ...emptyAccountDraftFields(),
-        step: 'questions',
+        scrapedResume: 'Ada Owner\nEngineer',
         accountDto: fullAccountDto,
-        questions: [{ id: 'question-1', question: 'Which system?', example: 'PDF' }],
-        answers: [{ questionId: 'question-1', status: 'answered', value: 'Preview pipeline' }],
-        currentQuestionId: 'question-1',
-        unsentAnswer: 'Cut render time',
-        profileRevision: 1,
-        answerRevision: 1,
+        partialDto: fullAccountDto,
       },
     });
 
     expect(draft).not.toBeNull();
     const parsed = parseAccountDraft(draft!);
-    expect(parsed?.progress).toMatchObject({
-      step: 'accountQuestions',
-      questionId: 'question-1',
-      questionIndex: 0,
-      unsentAnswer: 'Cut render time',
-      profileRevision: 1,
-      answerRevision: 1,
-    });
+    expect(parsed?.progress).toEqual({ step: 'accountForm' });
+    expect(parsed?.content.scrapedResume).toBe('Ada Owner\nEngineer');
     expect(parsed?.content.accountDto).toMatchObject({
       profile: { firstName: 'Ada', lastName: 'Owner' },
     });
+    expect(Object.keys(parsed!.content).sort()).toEqual(['accountDto', 'partialDto', 'scrapedResume']);
   });
 
-  it('does not persist guest owners and maps steps without machine states', () => {
+  it('does not persist guest owners and maps the form and voice steps', () => {
     expect(accountProgressFromStep('form')).toEqual({ step: 'accountForm' });
-    expect(accountProgressFromStep('questions')).toEqual({ step: 'accountQuestions' });
-    expect(accountProgressFromStep('answerReview')).toEqual({ step: 'accountAnswerReview' });
+    expect(accountProgressFromStep('voice')).toEqual({ step: 'accountVoice' });
     expect(buildAccountDraft({
       owner: { kind: 'guest', guestId: 'guest-1' },
       fields: emptyAccountDraftFields(),
     })).toBeNull();
   });
 
-  it('hydrates a versioned draft into keyed answers without XState events', () => {
+  it('reopens a legacy questions draft on the form with the submitted profile', () => {
     const parsed = parseAccountDraft(versionedAccountDraft);
-    expect(parsed).not.toBeNull();
+    expect(parsed?.progress.step).toBe('accountQuestions');
     const fields = hydrateAccountDraft(parsed!.content, parsed!.progress);
 
-    expect(fields.step).toBe('questions');
-    expect(fields.accountDto?.profile.firstName).toBe('Ada');
-    expect(fields.questions?.[0].id).toBe('question-1');
-    expect(fields.currentQuestionId).toBe('question-2');
-    expect(fields.unsentAnswer).toBe('Cut render time');
-    expect(fields.answers[0]).toEqual({
-      questionId: 'question-1',
-      status: 'answered',
-      value: 'Preview pipeline',
+    expect(fields).toEqual({
+      step: 'form',
+      scrapedResume: parsed!.content.scrapedResume,
+      partialDto: parsed!.content.accountDto,
+      accountDto: parsed!.content.accountDto,
     });
-    expect(fields).not.toHaveProperty('status');
+    expect(fields.partialDto?.profile?.firstName).toBe('Ada');
   });
 
-  it('returns to the form when questions progress has no submitted profile', () => {
+  it('parses every legacy post-form step and keeps the latest values', () => {
     const parsed = parseAccountDraft(versionedAccountDraft);
-    const fields = hydrateAccountDraft(
-      { ...parsed!.content, accountDto: null },
+    const reviewed = { ...fullAccountDto, profile: { ...fullAccountDto.profile, firstName: 'Ada Reviewed' } };
+    const content = { ...parsed!.content, reviewedAccount: reviewed };
+
+    for (const step of ['accountAnswerReview', 'accountProposalReview'] as const) {
+      const fields = hydrateAccountDraft(content, { step });
+      expect(fields.step).toBe('form');
+      expect(fields.partialDto?.profile?.firstName).toBe('Ada');
+    }
+
+    const review = hydrateAccountDraft(content, { step: 'accountProfileReview' });
+    expect(review.step).toBe('form');
+    expect(review.partialDto?.profile?.firstName).toBe('Ada Reviewed');
+    expect(review.accountDto?.profile.firstName).toBe('Ada');
+  });
+
+  it('keeps typed form values and ignores a legacy step without a submitted profile', () => {
+    const parsed = parseAccountDraft(versionedAccountDraft);
+    const typed = { profile: { firstName: 'Typed' } };
+
+    const fromForm = hydrateAccountDraft({ ...parsed!.content, partialDto: typed }, { step: 'accountForm' });
+    expect(fromForm.partialDto).toEqual(typed);
+
+    const noProfile = hydrateAccountDraft(
+      { ...parsed!.content, accountDto: null, partialDto: typed },
       parsed!.progress,
     );
-    expect(fields.step).toBe('form');
-    expect(fields.accountDto).toBeNull();
-  });
-
-  it('restores a finished legacy question cursor as answer review', () => {
-    const parsed = parseAccountDraft(versionedAccountDraft);
-    const fields = hydrateAccountDraft(parsed!.content, {
-      ...parsed!.progress,
-      step: 'accountQuestions',
-      questionIndex: parsed!.content.questions!.length,
-      questionId: undefined,
-    });
-
-    expect(fields.step).toBe('answerReview');
-    expect(fields.currentQuestionId).toBeNull();
-    expect(fields.questions).toHaveLength(2);
+    expect(noProfile.step).toBe('form');
+    expect(noProfile.accountDto).toBeNull();
+    expect(noProfile.partialDto).toEqual(typed);
   });
 
   it('asks for import confirmation only when current work exists', () => {

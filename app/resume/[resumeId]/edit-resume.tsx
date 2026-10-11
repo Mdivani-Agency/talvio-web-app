@@ -15,6 +15,7 @@ import { ConfirmModal } from '@components/modals';
 import { ErrorView, Loading } from '@components/views';
 import { isGeneratedResume } from '@lib/adapters/resume.adapter';
 import {
+  aiImproveStorageKey,
   browserStorage,
   buildResumeDocumentDraft,
   clearDraft,
@@ -53,6 +54,8 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const [viewingOriginal, setViewingOriginal] = useState(false);
   const [pendingPatch, setPendingPatch] = useState<Partial<Resume>>();
   const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
+  const [forkForImprove, setForkForImprove] = useState(false);
+  const [improveToken, setImproveToken] = useState(0);
   const draftRef = useRef<VersionedDraft | null>(null);
   const writerRef = useRef<DebouncedWriter<VersionedDraft | null> | null>(null);
   const failedGenerationRef = useRef<Resume | null>(null);
@@ -365,6 +368,20 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           onDiscard: () => setDiscardOpen(true),
         } : null}
         onChange={handleChange}
+        improve={userId ? {
+          storageKey: aiImproveStorageKey(resumeDraftStorageKey({ kind: 'user', userId }, resumeId)),
+          startToken: improveToken,
+          onRequest: () => {
+            if (!isGeneratedResume(displayed)) {
+              return true;
+            }
+            // A generated resume is immutable: fork the draft first, then start on it.
+            setPendingPatch({ metadata: editorDocument.resume });
+            setForkForImprove(true);
+            setForkOpen(true);
+            return false;
+          },
+        } : null}
         onDownload={async (name, label) => {
           if (viewingOriginal && original) {
             return generateSaved(original);
@@ -426,11 +443,13 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         onClose={() => {
           setForkOpen(false);
           setPendingPatch(undefined);
+          setForkForImprove(false);
         }}
         onConfirm={() => {
           if (!pendingPatch) {
             return;
           }
+          const improveAfterFork = forkForImprove;
           void submitWrapper({
             fn: async () => {
               const saved = await autosave.flush(pendingPatch);
@@ -438,6 +457,11 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
                 throw new Error('Resume not found');
               }
               return { id: saved.id };
+            },
+            onSuccess: () => {
+              if (improveAfterFork) {
+                setImproveToken((value) => value + 1);
+              }
             },
             successMessage: 'Draft created',
           });
