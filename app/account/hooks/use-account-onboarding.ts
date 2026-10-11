@@ -20,14 +20,6 @@ import {
   type OnboardingStep,
   type VersionedDraft,
 } from '@lib/drafts';
-import {
-  nextQuestionId,
-  previousQuestionId,
-  sameRevision,
-  upsertAnswer,
-  type OnboardingQuestion,
-  type OnboardingRevision,
-} from '@lib/onboarding/questions';
 import type { AccountDto, DeepPartial } from '@lib/types';
 
 export type { OnboardingStep };
@@ -101,149 +93,10 @@ export function useAccountOnboarding(userId: string) {
     updateFields({ partialDto });
   }, [updateFields]);
 
+  /** Records the validated profile. The caller saves it (`useSaveProfileFlow`). */
   const submitProfile = useCallback((accountDto: AccountDto) => {
-    setFields((current) => {
-      liveValuesRef.current = accountDto;
-      return {
-        ...current,
-        accountDto,
-        partialDto: accountDto,
-        step: 'questions',
-        profileRevision: current.profileRevision + 1,
-        answerRevision: 0,
-        questions: null,
-        answers: [],
-        currentQuestionId: null,
-        unsentAnswer: '',
-        tailoredAccount: null,
-        reviewedAccount: null,
-        proposalFor: null,
-      };
-    });
-  }, []);
-
-  const goBackToForm = useCallback(() => {
-    updateFields({ step: 'form' });
-  }, [updateFields]);
-
-  const receiveQuestions = useCallback((questions: OnboardingQuestion[], profileRevision: number) => {
-    setFields((current) => {
-      if (current.profileRevision !== profileRevision) {
-        return current;
-      }
-      if (questions.length === 0) {
-        return {
-          ...current,
-          questions,
-          currentQuestionId: null,
-          unsentAnswer: '',
-          step: 'answerReview',
-        };
-      }
-      return {
-        ...current,
-        questions,
-        currentQuestionId: current.currentQuestionId ?? questions[0].id,
-        unsentAnswer: current.unsentAnswer ?? '',
-      };
-    });
-  }, []);
-
-  const setUnsentAnswer = useCallback((unsentAnswer: string) => {
-    updateFields({ unsentAnswer });
-  }, [updateFields]);
-
-  const answerCurrent = useCallback((status: 'answered' | 'skipped', value: string) => {
-    setFields((current) => {
-      const questionId = current.currentQuestionId;
-      if (!questionId || !current.questions) {
-        return current;
-      }
-      const answers = upsertAnswer(current.answers, { questionId, status, value });
-      const nextId = nextQuestionId(current.questions, questionId);
-      return {
-        ...current,
-        answers,
-        answerRevision: current.answerRevision + 1,
-        proposalFor: null,
-        tailoredAccount: null,
-        currentQuestionId: nextId,
-        unsentAnswer: nextId
-          ? current.answers.find((answer) => answer.questionId === nextId)?.value ?? ''
-          : '',
-        step: nextId ? 'questions' : 'answerReview',
-      };
-    });
-  }, []);
-
-  const goToPreviousQuestion = useCallback(() => {
-    setFields((current) => {
-      if (!current.questions) {
-        return current;
-      }
-      const previousId = previousQuestionId(current.questions, current.currentQuestionId);
-      if (!previousId) {
-        return current;
-      }
-      return {
-        ...current,
-        currentQuestionId: previousId,
-        unsentAnswer: current.answers.find((answer) => answer.questionId === previousId)?.value ?? '',
-      };
-    });
-  }, []);
-
-  const continueWithoutAi = useCallback(() => {
-    setFields((current) => ({
-      ...current,
-      tailoredAccount: null,
-      reviewedAccount: current.reviewedAccount ?? current.accountDto,
-      step: 'profileReview',
-    }));
-  }, []);
-
-  const receiveProposal = useCallback((proposal: AccountDto, revision: OnboardingRevision) => {
-    setFields((current) => {
-      if (current.step !== 'answerReview') {
-        return current;
-      }
-      if (!sameRevision({
-        profileRevision: current.profileRevision,
-        answerRevision: current.answerRevision,
-      }, revision)) {
-        return current;
-      }
-      return {
-        ...current,
-        tailoredAccount: proposal,
-        proposalFor: revision,
-        step: 'proposalReview',
-      };
-    });
-  }, []);
-
-  const acceptProposal = useCallback(() => {
-    setFields((current) => ({
-      ...current,
-      reviewedAccount: current.tailoredAccount ?? current.accountDto,
-      step: 'profileReview',
-    }));
-  }, []);
-
-  const rejectProposal = useCallback(() => {
-    setFields((current) => ({
-      ...current,
-      reviewedAccount: current.accountDto,
-      step: 'profileReview',
-    }));
-  }, []);
-
-  const setReviewedAccount = useCallback((reviewedAccount: AccountDto) => {
-    updateFields({ reviewedAccount });
-  }, [updateFields]);
-
-  const goToAnswerReview = useCallback(() => {
-    updateFields({ step: 'answerReview' });
+    liveValuesRef.current = accountDto;
+    updateFields({ accountDto, partialDto: accountDto });
   }, [updateFields]);
 
   const completeSave = useCallback(() => {
@@ -339,29 +192,10 @@ export function useAccountOnboarding(userId: string) {
     partialDto: fields.partialDto,
     accountDto: fields.accountDto,
     scrapedResume: fields.scrapedResume,
-    questions: fields.questions,
-    answers: fields.answers,
-    currentQuestionId: fields.currentQuestionId,
-    unsentAnswer: fields.unsentAnswer,
-    tailoredAccount: fields.tailoredAccount,
-    reviewedAccount: fields.reviewedAccount,
-    profileRevision: fields.profileRevision,
-    answerRevision: fields.answerRevision,
     pendingImport: pendingImport?.values ?? null,
     formRevision,
     setPartialDto,
     submitProfile,
-    goBackToForm,
-    receiveQuestions,
-    setUnsentAnswer,
-    answerCurrent,
-    goToPreviousQuestion,
-    continueWithoutAi,
-    receiveProposal,
-    acceptProposal,
-    rejectProposal,
-    setReviewedAccount,
-    goToAnswerReview,
     completeSave,
     offerImport,
     applyImport,

@@ -17,6 +17,7 @@ export const accountProgressSchema = z.object({
     'accountAnswerReview',
     'accountProposalReview',
     'accountProfileReview',
+    'accountVoice',
   ]),
   questionIndex: z.number().int().min(0).optional(),
   questionId: z.string().optional(),
