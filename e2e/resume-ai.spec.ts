@@ -24,12 +24,12 @@ test.beforeEach(async ({ page }) => {
 });
 
 function overlay(page: Page) {
-  return page.getByRole('dialog', { name: 'Improve with AI' });
+  return page.getByRole('dialog', { name: 'Improve with AI', exact: true });
 }
 
 async function improveFromActionBar(page: Page) {
   await waitForPreview(page);
-  await page.getByRole('button', { name: 'Improve with AI' }).click();
+  await page.getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await expect(overlay(page)).toBeVisible();
 }
 
@@ -45,7 +45,7 @@ async function answerQuestions(page: Page) {
 
 async function acceptProposal(page: Page) {
   const panel = overlay(page);
-  await panel.getByRole('button', { name: 'Improve with AI' }).click();
+  await panel.getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await expect(panel.getByRole('heading', { name: 'Suggested edits' })).toBeVisible({ timeout: 30_000 });
   await expect(panel.getByText(POLISHED)).toBeVisible();
   await panel.getByRole('button', { name: 'Accept' }).click();
@@ -90,7 +90,7 @@ test('RES-10 improves from the download dialog, and Reject leaves the resume as 
   await dialog.getByRole('button', { name: 'Improve with AI first' }).click();
   await expect(dialog).toHaveCount(0);
   await answerQuestions(page);
-  await overlay(page).getByRole('button', { name: 'Improve with AI' }).click();
+  await overlay(page).getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await expect(overlay(page).getByText(POLISHED)).toBeVisible({ timeout: 30_000 });
   await overlay(page).getByRole('button', { name: 'Reject' }).click();
   await expect(overlay(page)).toHaveCount(0);
@@ -119,7 +119,7 @@ test('RES-11 provider failures and the daily cap leave the resume unchanged and 
   await answerQuestions(page);
 
   await setScenario('tailor_error');
-  await overlay(page).getByRole('button', { name: 'Improve with AI' }).click();
+  await overlay(page).getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await expect(overlay(page).getByRole('heading', { name: 'Could not write suggestions' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('');
   await overlay(page).getByRole('button', { name: 'Cancel' }).click();
@@ -134,9 +134,9 @@ test('RES-11 provider failures and the daily cap leave the resume unchanged and 
       break;
     }
   }
-  await page.getByRole('button', { name: 'Improve with AI' }).click();
+  await page.getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await expect(overlay(page).getByRole('heading', { name: 'Daily AI limit reached' })).toBeVisible({ timeout: 30_000 });
-  await overlay(page).getByRole('button', { name: 'Close' }).click();
+  await overlay(page).getByRole('button', { name: 'Close', exact: true }).click();
   await expect(overlay(page)).toHaveCount(0);
   await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
   expect(await seededTagline(owner.userId, resumeId)).toBeNull();
@@ -149,7 +149,7 @@ test('RES-12 a guest is sent to sign-in and gets the draft back', async ({ page,
   await page.waitForFunction(() => Object.values(localStorage).some((value) => value?.includes('Guestai')));
   await waitForPreview(page);
 
-  await page.getByRole('button', { name: 'Improve with AI' }).click();
+  await page.getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await page.waitForURL(/\/auth\/sign-in/);
   expect(new URL(page.url()).searchParams.get('callbackURL')).toBe('/resume');
   expect(await page.evaluate(() => Object.values(localStorage).some((value) => value?.includes('Guestai')))).toBe(true);
@@ -173,7 +173,7 @@ test('RES-13 a generated resume forks a draft first, and the draft takes the edi
 
   await openSignedIn(page, owner, `/resume/${originalId}`);
   await waitForPreview(page);
-  await page.getByRole('button', { name: 'Improve with AI' }).click();
+  await page.getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Create a draft' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByText('Draft created')).toBeVisible();
@@ -189,7 +189,7 @@ test('RES-13 a generated resume forks a draft first, and the draft takes the edi
 
   await page.getByRole('button', { name: 'View original' }).click();
   await expect(page.getByText('Viewing the generated PDF. This version is read-only.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Improve with AI' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Improve with AI', exact: true })).toHaveCount(0);
 });
 
 test('RES-14 reload keeps the session, and an edited resume drops it', async ({ page, personas }) => {
@@ -203,14 +203,16 @@ test('RES-14 reload keeps the session, and an edited resume drops it', async ({ 
   await expect(overlay(page).getByRole('heading', { name: 'Review your answers' })).toBeVisible();
   await expect(overlay(page).getByText('Cut deploy time in half')).toBeVisible();
 
-  // Another tab changes the stored resume; the session was made for the old one.
+  // Another tab changes the stored resume; the session was made for the old one. Leave the editor
+  // first: it flushes its own draft on pagehide, which would overwrite an edit made while it is open.
   const key = `talvio-draft-v1:resume:user:${empty.userId}:new`;
+  await page.goto('/templates');
   await page.evaluate((draftKey) => {
     const draft = JSON.parse(window.localStorage.getItem(draftKey) ?? 'null');
     draft.content.resume.profile.role = 'Edited Elsewhere';
     window.localStorage.setItem(draftKey, JSON.stringify(draft));
   }, key);
-  await page.reload();
+  await page.goto('/resume');
   await expect(page.getByPlaceholder('Role')).toHaveValue('Edited Elsewhere');
   await expect(overlay(page)).toHaveCount(0);
   expect(await page.evaluate((sessionKey) => window.localStorage.getItem(sessionKey), `${key}:ai-improve`)).toBeNull();
