@@ -35,7 +35,7 @@ describe('resolveAccountEntry', () => {
     expect(resolveAccountEntry({
       surface: 'account',
       lookup: 'missing',
-      step: 'questions',
+      step: 'voice',
       hasSubmittedProfile: true,
     })).toBe('redirect-create');
   });
@@ -68,20 +68,14 @@ describe('resolveAccountEntry', () => {
     expect(resolveAccountEntry({
       surface: 'create',
       lookup: 'missing',
-      step: 'questions',
+      step: 'voice',
       hasSubmittedProfile: false,
     })).toBe('form');
     expect(resolveAccountEntry({
       surface: 'create',
       lookup: 'missing',
-      step: 'questions',
+      step: 'voice',
       hasSubmittedProfile: true,
-    })).toBe('questions');
-    expect(resolveAccountEntry({
-      surface: 'create',
-      lookup: 'missing',
-      step: 'profileReview',
-      hasSubmittedProfile: true,
-    })).toBe('questions');
+    })).toBe('voice');
   });
 });

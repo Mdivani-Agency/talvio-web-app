@@ -11,7 +11,6 @@ import { accountLookupFromQuery, resolveAccountEntry } from '../hooks/resolve-ac
 import { useAccountContext } from '../providers/state-provider';
 import { AccountLookupError } from '../views/lookup-error';
 import AccountFormPage from './views/account-form.page';
-import { AccountQuestions } from './views/account-questions.page';
 
 export default function CreateAccountPage() {
   const { userId, step, accountDto } = useAccountContext();
@@ -42,9 +41,6 @@ export default function CreateAccountPage() {
     return redirect('/account');
   }
 
-  if (view === 'questions') {
-    return <AccountQuestions userId={userId} />;
-  }
-
+  // 'voice' renders the writing-voice step once MDI-418 adds it; until then nothing enters it.
   return <AccountFormPage />;
 }

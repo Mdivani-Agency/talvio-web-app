@@ -14,6 +14,7 @@ import {
   setScenario,
   uploadResume,
 } from './fixtures/profile-ui';
+import { mediaStats } from './fixtures/resume-ui';
 import { expect, test } from './fixtures/test';
 
 const PDF = 'e2e/assets/resume-import.pdf';
@@ -32,8 +33,8 @@ async function openCreate(page: import('@playwright/test').Page, person: Persona
   await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
 }
 
-async function continueForm(page: import('@playwright/test').Page) {
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+async function saveForm(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: 'Save profile', exact: true }).click();
 }
 
 test.describe.configure({ timeout: 180_000 });
@@ -52,7 +53,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('PROF-01 manual profile answers questions and survives reload', async ({ page, personas }) => {
+test('PROF-01 manual profile saves from the form without AI and survives reload', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openCreate(page, empty);
   await fillIdentity(page, {
@@ -60,7 +61,7 @@ test('PROF-01 manual profile answers questions and survives reload', async ({ pa
     lastName: 'Manual',
     role: 'Staff Engineer',
     email: 'ada.manual@talvio.test',
-    tagline: 'Typed summary before AI.',
+    tagline: 'Typed summary saved without AI.',
     phone: '+15555550123',
     website: 'https://ada.manual.talvio.test',
     city: 'Tbilisi',
@@ -102,35 +103,12 @@ test('PROF-01 manual profile answers questions and survives reload', async ({ pa
   await language.locator('xpath=ancestor::div[contains(@class,"grid")][1]').getByRole('button').last().click();
   await expect(page.getByText('English', { exact: true }).first()).toBeVisible();
 
-  await continueForm(page);
-  await expect(page.getByText('What impact did you deliver in your latest role?')).toBeVisible();
-  await page.getByPlaceholder('Your answer...').fill('Cut deploy time in half');
-  await page.getByRole('button', { name: 'Next' }).click();
-  await expect(page.getByText('Which tools mattered most on that work?')).toBeVisible();
-  await page.getByPlaceholder('Your answer...').fill('unfinished tools');
-  await page.waitForTimeout(600);
-  await page.reload();
-  await expect(page.getByPlaceholder('Your answer...')).toHaveValue('unfinished tools');
-  await page.getByRole('button', { name: 'Back', exact: true }).click();
-  await expect(page.getByText('What impact did you deliver in your latest role?')).toBeVisible();
-  await expect(page.getByPlaceholder('Your answer...')).toHaveValue('Cut deploy time in half');
-  await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Skip' }).click();
-
-  await expect(page.getByRole('heading', { name: 'Review your answers' })).toBeVisible();
-  await expect(page.getByText('Cut deploy time in half')).toBeVisible();
-  await expect(page.getByText('Skipped')).toBeVisible();
-  await page.getByRole('button', { name: 'Improve with AI' }).click();
-  await expect(page.getByRole('heading', { name: 'AI suggested updates' })).toBeVisible();
-  await expect(page.getByText('Suggested tagline: AI polished summary for the local profile.')).toBeVisible();
-  await page.getByRole('button', { name: 'Accept' }).click();
-  await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('AI polished summary for the local profile.');
-  await page.getByRole('button', { name: 'Save profile' }).click();
+  await saveForm(page);
 
   await expect(page.getByRole('link', { name: 'Create Resume' })).toBeVisible();
   await expect(page.getByText('Ada Manual')).toBeVisible();
   await expect(page.getByText('Staff Engineer')).toBeVisible();
-  await expect(page.getByText('AI polished summary for the local profile.')).toBeVisible();
+  await expect(page.getByText('Typed summary saved without AI.')).toBeVisible();
   await expect(page.getByText('Alpha Corp')).toBeVisible();
   await expect(page.getByText('Talvio Institute')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Signal Board' })).toBeVisible();
@@ -144,12 +122,13 @@ test('PROF-01 manual profile answers questions and survives reload', async ({ pa
   expect(await orderedColumn('skills', empty.userId, 'name')).toEqual(['TypeScript', 'React']);
   expect(await orderedColumn('tools', empty.userId, 'name')).toEqual(['Playwright']);
   expect(await orderedColumn('links', empty.userId, 'value')).toEqual(['https://github.com/talvio']);
+  expect((await mediaStats()).ai).toEqual({ parse: 0, questions: 0, tailor: 0 });
 });
 
 test('PROF-02 rejects invalid profile input and keeps optional sections empty', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openCreate(page, empty);
-  await continueForm(page);
+  await saveForm(page);
   await expect(page.getByText('Invalid email address').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
 
@@ -159,7 +138,7 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
     role: 'Engineer',
     email: 'not-an-email',
   });
-  await continueForm(page);
+  await saveForm(page);
   await expect(page.getByText('Invalid email address').first()).toBeVisible();
 
   await page.getByPlaceholder('Email').fill('ada.invalid@talvio.test');
@@ -185,12 +164,8 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
   await projects.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByText(/Invalid URL|at least 150 characters/).first()).toBeVisible();
 
-  await setScenario('zero_questions');
   await page.getByPlaceholder('First Name').fill('Ada');
-  await continueForm(page);
-  await expect(page.getByText('There are no extra questions for this profile.')).toBeVisible();
-  await page.getByRole('button', { name: 'Continue without AI' }).click();
-  await page.getByRole('button', { name: 'Save profile' }).click();
+  await saveForm(page);
   await expect(page.getByText('Ada Invalid')).toBeVisible();
   await expect(page.getByText('Experience', { exact: true })).toHaveCount(0);
   await page.reload();
@@ -250,10 +225,7 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   await dragItem(page, 'Second', 'First');
   await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
 
-  await setScenario('zero_questions');
-  await continueForm(page);
-  await page.getByRole('button', { name: 'Continue without AI' }).click();
-  await page.getByRole('button', { name: 'Save profile' }).click();
+  await saveForm(page);
   await expect(page.getByText('Ada Order')).toBeVisible();
   const experienceCard = page.locator('section').filter({ hasText: 'Experience' }).last();
   await expect(experienceCard.locator('p').filter({ hasText: 'Beta Edited' })).toBeVisible();
@@ -287,13 +259,7 @@ test('PROF-03 imported resume stays editable through save', async ({ page, perso
   }, `talvio-draft-v1:account:user:${empty.userId}:profile`)).toBe(true);
   await page.getByPlaceholder('First Name').fill('Ada Edited');
 
-  await continueForm(page);
-  await page.getByPlaceholder('Your answer...').fill('Kept the imported company');
-  await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Skip' }).click();
-  await page.getByRole('button', { name: 'Continue without AI' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada Edited');
-  await page.getByRole('button', { name: 'Save profile' }).click();
+  await saveForm(page);
 
   await expect(page.getByText('Ada Edited')).toBeVisible();
   await expect(page.getByText('Imported Labs')).toBeVisible();
@@ -332,37 +298,12 @@ test('PROF-04 provider failures recover without stranding the profile', async ({
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
   await page.getByPlaceholder('First Name').fill('Ada Recovered');
 
-  await setScenario('qa_error');
-  await continueForm(page);
-  await expect(page.getByRole('heading', { name: 'Could not load questions' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Continue without AI' })).toBeVisible();
-  await setScenario('success');
-  await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(page.getByText('What impact did you deliver in your latest role?')).toBeVisible();
-  await page.getByPlaceholder('Your answer...').fill('Recovered after the question error');
-  await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Skip' }).click();
-
-  await setScenario('tailor_error');
-  await page.getByRole('button', { name: 'Improve with AI' }).click();
-  await expect(page.getByText(/Could not improve your profile/)).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Review your answers' })).toBeVisible();
-  await expect(page.getByText('Recovered after the question error')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Improve with AI' })).toBeEnabled();
-
-  await setScenario('delayed');
-  await page.getByRole('button', { name: 'Improve with AI' }).click();
-  await page.getByRole('button', { name: 'Continue without AI' }).click();
-  await expect(page.getByRole('heading', { name: 'Review your profile' })).toBeVisible();
-  await page.waitForTimeout(2500);
-  await expect(page.getByRole('heading', { name: 'AI suggested updates' })).toHaveCount(0);
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada Recovered');
-  await expect(page.getByPlaceholder('Write a brief summary')).not.toHaveValue('AI polished summary for the local profile.');
-
-  await page.getByRole('button', { name: 'Save profile' }).click();
+  await saveForm(page);
   await expect(page.getByText('Ada Recovered')).toBeVisible();
   expect(await profileCount(empty.userId)).toBe(1);
+  const ai = (await mediaStats()).ai;
+  expect(ai.questions).toBe(0);
+  expect(ai.tailor).toBe(0);
 });
 
 test('PROF-04 a failed save keeps the form and does not duplicate the profile', async ({ page, personas }) => {
@@ -374,10 +315,6 @@ test('PROF-04 a failed save keeps the form and does not duplicate the profile', 
     role: 'Engineer',
     email: 'ada.retry@talvio.test',
   });
-  await setScenario('zero_questions');
-  await continueForm(page);
-  await page.getByRole('button', { name: 'Continue without AI' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
 
   let failed = false;
   await page.route('**/graphql/v1', async (route) => {
@@ -394,14 +331,15 @@ test('PROF-04 a failed save keeps the form and does not duplicate the profile', 
     await route.continue();
   });
 
-  await page.getByRole('button', { name: 'Save profile' }).click();
+  await saveForm(page);
   await expect(page.getByText(/Failed to save your profile/)).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Review your profile' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
+  await expect(page.getByRole('button', { name: 'Save profile', exact: true })).toBeEnabled();
   expect(await profileCount(empty.userId)).toBe(0);
 
   await page.getByPlaceholder('First Name').fill('Ada Retried');
-  await page.getByRole('button', { name: 'Save profile' }).click();
+  await saveForm(page);
   await expect(page.getByText('Ada Retried')).toBeVisible();
   await page.reload();
   await expect(page.getByText('Ada Retried')).toBeVisible();
