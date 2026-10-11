@@ -18,18 +18,22 @@ export type FeatureFlags = {
    * Keep it off until the purchase pages ship: `/account/credits` and `/account/upgrade` have no page, so turning it on links to a 404.
    */
   creditPurchaseUi: boolean;
+  /** Shows Improve with AI in the resume editor and the download dialog (MDI-426). Off in production until the pilot. */
+  resumeAiImprove: boolean;
 };
 
 export type FeatureFlagEnv = {
   NEXT_PUBLIC_FLAG_BETA_MODE?: string;
   NEXT_PUBLIC_FLAG_PLANS_PAGE?: string;
   NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI?: string;
+  NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE?: string;
 };
 
 export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   betaMode: true,
   plansPage: false,
   creditPurchaseUi: false,
+  resumeAiImprove: false,
 };
 
 function parseFlag(value: string | undefined, fallback: boolean): boolean {
@@ -52,6 +56,7 @@ function processFlagEnv(): FeatureFlagEnv {
     NEXT_PUBLIC_FLAG_BETA_MODE: process.env.NEXT_PUBLIC_FLAG_BETA_MODE,
     NEXT_PUBLIC_FLAG_PLANS_PAGE: process.env.NEXT_PUBLIC_FLAG_PLANS_PAGE,
     NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI: process.env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI,
+    NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE,
   };
 }
 
@@ -60,5 +65,6 @@ export function featureFlags(env: FeatureFlagEnv = processFlagEnv()): FeatureFla
     betaMode: parseFlag(env.NEXT_PUBLIC_FLAG_BETA_MODE, DEFAULT_FEATURE_FLAGS.betaMode),
     plansPage: parseFlag(env.NEXT_PUBLIC_FLAG_PLANS_PAGE, DEFAULT_FEATURE_FLAGS.plansPage),
     creditPurchaseUi: parseFlag(env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI, DEFAULT_FEATURE_FLAGS.creditPurchaseUi),
+    resumeAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.resumeAiImprove),
   };
 }

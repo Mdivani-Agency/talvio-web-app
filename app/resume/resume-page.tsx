@@ -11,6 +11,7 @@ import { saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
 import { ResumeConflictError, updateResume } from '@app/resume/query/use-update-resume';
 import { isGeneratedResume } from '@lib/adapters/resume.adapter';
 import { signInHref } from '@lib/auth/sign-in-href';
+import { aiImproveStorageKey, resumeDraftStorageKey } from '@lib/drafts';
 import { formatResumeFieldIssues, resumeSubmissionIssues, type ResumeFieldIssue } from '@lib/models/resume-document';
 import { filenameFromDocument } from '@lib/resume/resolve-editor';
 import type { SaveStatus } from '@lib/resume/save-queue';
@@ -36,13 +37,18 @@ export function ResumePreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
-  const { resume, changeResume, clearResumeDraft, ensureDraftId } = useResumeContext();
+  const { resume, resumeId, changeResume, clearResumeDraft, ensureDraftId } = useResumeContext();
   const createdRef = useRef<Resume | null>(null);
   const generatedKeyRef = useRef<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved-locally');
   const [saveMessage, setSaveMessage] = useState<string>();
   const downloadLock = useRef<Promise<Resume> | null>(null);
   const generatePdf = useGenerateResumePdf(session?.user.id);
+
+  const signInReturn = useCallback(() => {
+    const template = searchParams.get('template');
+    return signInHref(template ? `/resume?template=${encodeURIComponent(template)}` : '/resume');
+  }, [searchParams]);
 
   const { mutateAsync: createAndDownload, isPending: downloadPending } = useMutation({
     mutationFn: async (body: PreviewDto) => {
@@ -52,11 +58,7 @@ export function ResumePreviewPage() {
 
       const run = (async () => {
         if (!session) {
-          const template = searchParams.get('template');
-          const returnPath = template
-            ? `/resume?template=${encodeURIComponent(template)}`
-            : '/resume';
-          router.push(signInHref(returnPath));
+          router.push(signInReturn());
           throw new Error('Please sign in');
         }
 
@@ -197,6 +199,19 @@ export function ResumePreviewPage() {
       saveMessage={saveMessage}
       onRetrySave={() => {
         void createAndDownload({ ...resume });
+      }}
+      improve={{
+        storageKey: session
+          ? aiImproveStorageKey(resumeDraftStorageKey({ kind: 'user', userId: session.user.id }, resumeId))
+          : null,
+        onRequest: () => {
+          if (session) {
+            return true;
+          }
+          // Guests sign in first; the guest draft is offered back after sign-in, as for download.
+          router.push(signInReturn());
+          return false;
+        },
       }}
       onChange={(patch) => {
         if (patch.resume) {

@@ -6,7 +6,7 @@ vi.mock('@/lib/supabase/authed-fetch', () => ({ authedFetch }));
 
 import { AiCapError, aiCapBody } from '@/lib/ai-cap';
 
-import { aiRequestError, fetchQuestions, parseResume } from './llm.client';
+import { aiRequestError, fetchAccountProposal, fetchQuestions, parseResume } from './llm.client';
 
 describe('aiRequestError', () => {
   it('turns a 429 cap body into an AiCapError with the reset time', async () => {
@@ -50,6 +50,25 @@ describe('AI requests', () => {
     authedFetch.mockRejectedValue(new Error('No token found'));
 
     await expect(fetchQuestions('resume text')).rejects.toThrow('Please sign in');
+  });
+
+  it('return the proposal and the writing-voice version when the route reports one', async () => {
+    authedFetch.mockResolvedValueOnce(Response.json({
+      account: { profile: { tagline: 'Sharper summary', phone: '' } },
+      writingVoice: { version: 3 },
+    }));
+
+    await expect(fetchAccountProposal('{}', ['Q'], ['A'])).resolves.toEqual({
+      account: { profile: { tagline: 'Sharper summary' } },
+      writingVoiceVersion: 3,
+    });
+
+    authedFetch.mockResolvedValueOnce(Response.json({ account: { profile: { tagline: 'Plain' } } }));
+    await expect(fetchAccountProposal('{}', ['Q'], ['A'])).resolves.toMatchObject({ writingVoiceVersion: null });
+    expect(authedFetch).toHaveBeenLastCalledWith('/api/resume/account', {
+      method: 'POST',
+      body: JSON.stringify({ account: '{}', questions: ['Q'], answers: ['A'] }),
+    });
   });
 
   it('surface the daily cap message from parse', async () => {

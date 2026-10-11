@@ -1,6 +1,7 @@
 export { DRAFT_SCHEMA_VERSION } from './schema';
 export type {
   AccountDraftContent,
+  AiImproveSession,
   AccountProgress,
   DraftOwner,
   DraftPersistStatus,
@@ -9,7 +10,14 @@ export type {
   ResumeProgress,
   VersionedDraft,
 } from './schema';
-export { accountDraftStorageKey, DRAFT_KEY_PREFIX, GUEST_ID_KEY, resumeDraftStorageKey } from './keys';
+export {
+  accountDraftStorageKey,
+  aiImproveStorageKey,
+  DRAFT_KEY_PREFIX,
+  GUEST_ID_KEY,
+  resumeDraftStorageKey,
+} from './keys';
+export { readAiImproveSession, writeAiImproveSession } from './ai-improve';
 export { getOrCreateGuestId, readGuestId } from './guest';
 export {
   adoptDraft,
