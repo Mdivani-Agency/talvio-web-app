@@ -16,8 +16,11 @@ import { isAgencyPrimary } from './eligibility';
  * - Nothing here names an author: the API has none.
  */
 
-/** Production origin of the agency site. Its blog serves every post it shows at `/blog/{slug}`. */
-export const AGENCY_BLOG_ORIGIN = 'https://mdivani.agency';
+/**
+ * Production origin of the agency site. Its blog serves every post it shows at `/blog/{slug}`. The apex
+ * `mdivani.agency` answers with a 308 to this host, so a canonical on the apex would point at a redirect.
+ */
+export const AGENCY_BLOG_ORIGIN = 'https://www.mdivani.agency';
 
 export type BlogPrimarySite = 'talvio' | 'agency';
 

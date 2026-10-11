@@ -51,7 +51,7 @@ describe('blogCanonical', () => {
   });
 
   it('points a post both sites show at the agency copy and keeps it out of the Talvio sitemap', () => {
-    expect(blogCanonical(shared)).toEqual({ url: 'https://mdivani.agency/blog/shared-post', primary: 'agency' });
+    expect(blogCanonical(shared)).toEqual({ url: 'https://www.mdivani.agency/blog/shared-post', primary: 'agency' });
     expect(isListedInTalvioSitemap(shared)).toBe(false);
   });
 
@@ -88,8 +88,8 @@ describe('blogArticleMetadata', () => {
 
   it('gives a shared post the agency canonical in both the link and Open Graph', () => {
     const metadata = blogArticleMetadata(shared, cover);
-    expect(metadata.alternates?.canonical).toBe('https://mdivani.agency/blog/shared-post');
-    expect(metadata.openGraph).toMatchObject({ url: 'https://mdivani.agency/blog/shared-post' });
+    expect(metadata.alternates?.canonical).toBe('https://www.mdivani.agency/blog/shared-post');
+    expect(metadata.openGraph).toMatchObject({ url: 'https://www.mdivani.agency/blog/shared-post' });
   });
 
   it('describes nothing for a slug that is not served', () => {
@@ -133,7 +133,7 @@ describe('blogArticleStructuredData', () => {
     const [posting, breadcrumbs] = blogArticleStructuredData(shared, null)['@graph'];
     expect(posting).not.toHaveProperty('image');
     expect(posting).not.toHaveProperty('publisher');
-    expect(posting).toMatchObject({ url: 'https://mdivani.agency/blog/shared-post' });
+    expect(posting).toMatchObject({ url: 'https://www.mdivani.agency/blog/shared-post' });
     expect(breadcrumbs.itemListElement[2].item).toBe('https://www.talvio.co/blog/shared-post');
   });
 

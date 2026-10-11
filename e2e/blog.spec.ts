@@ -159,7 +159,7 @@ test('BLOG-06 article metadata and structured data agree, for browsers and crawl
     expect(graph['@graph']?.[0]).not.toHaveProperty('author');
 
     const shared = await (await request.get('/blog/shared-agency-post', { headers })).text();
-    expect(canonicals(shared)).toEqual(['https://mdivani.agency/blog/shared-agency-post']);
+    expect(canonicals(shared)).toEqual(['https://www.mdivani.agency/blog/shared-agency-post']);
     expect(jsonLd(shared)[0]['@graph']?.[0]).not.toHaveProperty('publisher');
 
     const special = await (await request.get('/blog/seo-special-chars', { headers })).text();

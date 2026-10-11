@@ -7,22 +7,22 @@ Contract note for the Talvio blog under the epic [MDI-249](https://linear.app/md
 | Item | Status | Evidence |
 | -- | -- | -- |
 | Backend source | **Verified from source** on 2026-10-09 | `Mdivani-Agency/landing-page` at `development` = `bb96162` (merge of landing-page PR #7, MDI-412). The backend's own docs are `docs/blog-read-api.md` and `docs/blog-write-api.md` |
-| Production branch mapping | **Verified from source** | The backend's `docs/vercel-cutover.md`: production deploys only from pushes to `development`, through CI, to `https://mdivani.agency` |
+| Production branch mapping | **Verified from source** | The backend's `docs/vercel-cutover.md`: production deploys only from pushes to `development`, through CI, to `https://mdivani.agency`, which answers with a `308` to `https://www.mdivani.agency` |
 | Deployed revision | **Not verified** | Needs the commit SHA of the landing-page Vercel production deployment |
-| Deployed responses | **Not verified** | `mdivani.agency` is not reachable from the environment this note was written in |
+| Deployed responses | **Verified** on 2026-10-10 against `https://www.mdivani.agency` | List envelope (`ok`, `posts`, `limit`, `offset`, `total`); unknown slug is `404` `{"ok":false,"errors":{"slug":"Post not found."}}`; an invalid slug, `limit=0`, `limit=101` and `offset=-1` are `400`; `Cache-Control: private, no-store`. The apex `https://mdivani.agency` answers every path with a `308` to `www`, which `lib/blog/server.ts` treats as an outage, so the base URL must be the `www` host. The `401` for a missing or wrong token could not be checked: the network path used injects a token |
 | `BLOG_READ_TOKEN_TALVIO` on the backend, `BLOG_API_*` on Talvio | **Not verified** | Both are set by hand in Vercel. Until the backend token is set, the read API returns `500` |
-| Launch inventory | **Not verified** | Needs one authenticated list call against production (`total`) |
+| Launch inventory | **Verified empty** on 2026-10-10 | The authenticated list returns `total: 0`. `/blog` would launch as an empty blog. See Blockers |
 | Rate limit under load | **Not verified** | Derived from source only |
 
-Nothing in this note describes a live endpoint, credential or deployed revision as verified. Fixtures in `test/fixtures/blog` are built from the source, not captured from production.
+Apart from the deployed responses and launch inventory above, nothing in this note describes a live endpoint, credential or deployed revision as verified. Fixtures in `test/fixtures/blog` are built from the source, not captured from production.
 
 ## Origins and configuration
 
 | Setting | Value | Notes |
 | -- | -- | -- |
-| `BLOG_API_BASE_URL` | `https://mdivani.agency` | Origin only. `readBlogApiConfig` rejects a path, query, credentials, or `http` on anything but a local host |
+| `BLOG_API_BASE_URL` | `https://www.mdivani.agency` | Origin only. Not the apex: it redirects, and the client treats a redirect as `unavailable`. `readBlogApiConfig` rejects a path, query, credentials, or `http` on anything but a local host |
 | `BLOG_API_TOKEN` | The backend's `BLOG_READ_TOKEN_TALVIO` | At least 32 bytes. Never `BLOG_WRITE_TOKEN`: the read API rejects it with `401`, and the backend fails closed if the two are equal |
-| Content asset origin | `https://mdivani.agency` | `cover_image_url` is a same-origin path on the backend. The schema rejects anything else (an absolute URL, `//`, `..`, `?`, `#`) as malformed. The domain type calls it `coverImagePath`; the renderer (MDI-277) resolves it |
+| Content asset origin | `https://www.mdivani.agency` | `cover_image_url` is a same-origin path on the backend. The schema rejects anything else (an absolute URL, `//`, `..`, `?`, `#`) as malformed. The domain type calls it `coverImagePath`; the renderer (MDI-277) resolves it |
 | Talvio canonical origin | `https://www.talvio.co` | `siteOrigin()` in `lib/site.ts` |
 
 Both `BLOG_API_*` variables are server-only and listed in `.env.example`.
@@ -175,7 +175,7 @@ Both routes are `force-dynamic`, so no rendered HTML outlives the freshness budg
 **Slugs.** There is no slug history and no renamed slug, so no redirect mapping exists. If one is ever needed, it goes in `next.config.ts` `redirects()` as an explicit permanent mapping, with a test that each target exists and no mapping loops.
 
 **Metadata and structured data** (`lib/blog/seo.ts`, MDI-278). Each page sets its own metadata. The `/blog` layout sets none, so articles and 404s never inherit the index's canonical.
-- **Canonical.** Built from the slug, so query strings and tracking parameters (`?utm_source=…`) get the clean URL. A Talvio-primary post uses `siteOrigin()/blog/{slug}`. An agency-primary post (`isAgencyPrimary` in `eligibility.ts`, the agency's side of the tag backstop) uses `https://mdivani.agency/blog/{slug}`. `isListedInTalvioSitemap` gives MDI-279 the same rule. There is no list pagination, so no page URLs to keep apart.
+- **Canonical.** Built from the slug, so query strings and tracking parameters (`?utm_source=…`) get the clean URL. A Talvio-primary post uses `siteOrigin()/blog/{slug}`. An agency-primary post (`isAgencyPrimary` in `eligibility.ts`, the agency's side of the tag backstop) uses `https://www.mdivani.agency/blog/{slug}`. `isListedInTalvioSitemap` gives MDI-279 the same rule. There is no list pagination, so no page URLs to keep apart.
 - **Article metadata.** Title `{title} | Talvio`, the post description, the canonical, `index` except on preview deployments (`allowPublicIndexing()`), and Open Graph `article` with `url`, `publishedTime` and `modifiedTime`. Twitter uses `summary_large_image`. The image is the cover (absolute, on the API origin), or the shared `share-image-v1.png` when there is none.
 - **Missing, ineligible or failed slugs.** No canonical, no Open Graph or Twitter fields of their own, `noindex`, and no JSON-LD. Only the root layout's site-wide share card remains. Next adds its own `noindex` to a 404.
 - **JSON-LD.** One `<script type="application/ld+json">` with a `@graph` of `BlogPosting` and `BreadcrumbList` (Home, Blog, title).
@@ -211,7 +211,7 @@ Rows marked **Decided** follow from shipped code. The rest are **proposals** unt
 | Publication eligibility | The rule above, applied by the backend and again by Talvio. A malformed row is dropped and reported, never given an invented date | Defence in depth against backend regressions | Decided (MDI-412, MDI-274) |
 | Tag backstop | Symmetric between the two sites | MDI-412 | Decided |
 | Completeness | Walk pages until `total`; anything short is `unavailable` | The API now returns `total` | Decided (MDI-274) |
-| Shared-article canonical | A post the agency site shows (`sites` has `agency` and its tags do not withhold it) is **agency-primary**. Talvio may render it, sets `canonical` to `https://mdivani.agency/blog/{slug}` and leaves it out of the Talvio sitemap. Every other eligible post is **Talvio-primary** and self-canonicalises | The agency site already self-canonicalises every post it shows. Authors who want a shared post owned by Talvio tag it `talvio` | Decided (MDI-278). Before launch, check the agency site's rendered canonical for each shared post |
+| Shared-article canonical | A post the agency site shows (`sites` has `agency` and its tags do not withhold it) is **agency-primary**. Talvio may render it, sets `canonical` to `https://www.mdivani.agency/blog/{slug}` and leaves it out of the Talvio sitemap. Every other eligible post is **Talvio-primary** and self-canonicalises | The agency site already self-canonicalises every post it shows. Authors who want a shared post owned by Talvio tag it `talvio` | Decided (MDI-278). Before launch, check the agency site's rendered canonical for each shared post |
 | Authorship | No author in metadata or JSON-LD. Publisher is Talvio only for Talvio-primary posts | The API has no author field | Decided (MDI-278) |
 | Cover image host | The API origin only. Covers load directly in the browser, without the image optimiser, so `images.remotePatterns` is not widened | The write API allows only same-origin cover paths, and Talvio's server never fetches content URLs | Decided (MDI-277) |
 | Markdown links and images | No raw HTML. Links keep `http`, `https` and `mailto`, plus fragments and `/blog` paths. Images only from the content origin and the Talvio origin; others render as links. See Routes | Same defaults as the backend, plus a host allowlist so no other host is contacted | Decided (MDI-277) |
@@ -244,19 +244,20 @@ Rows marked **Decided** follow from shipped code. The rest are **proposals** unt
 These keep MDI-273 open. Each needs someone with production access.
 
 1. **Deployed revision.** Confirm the landing-page production deployment is at or after `bb96162`.
-2. **Secrets.** Generate `BLOG_READ_TOKEN_TALVIO` (at least 32 random bytes, different from `BLOG_WRITE_TOKEN`) on the landing-page Vercel project after the deploy. Set the same value as `BLOG_API_TOKEN` on Talvio's Vercel project, with `BLOG_API_BASE_URL=https://mdivani.agency`.
+2. **Secrets.** Generate `BLOG_READ_TOKEN_TALVIO` (at least 32 random bytes, different from `BLOG_WRITE_TOKEN`) on the landing-page Vercel project after the deploy. Set the same value as `BLOG_API_TOKEN` on Talvio's Vercel project, with `BLOG_API_BASE_URL=https://www.mdivani.agency`.
 3. **Deployed responses.** From a machine that can reach the backend:
 
    ```sh
    # The token comes from the secret manager. Do not paste it into files, tickets or shell history.
    read -rs BLOG_API_TOKEN
    curl -sS -D - -o list.json -H "Authorization: Bearer $BLOG_API_TOKEN" \
-     'https://mdivani.agency/api/talvio/posts?limit=100&offset=0'
+     'https://www.mdivani.agency/api/talvio/posts?limit=100&offset=0'
    curl -sS -D - -o missing.json -H "Authorization: Bearer $BLOG_API_TOKEN" \
-     'https://mdivani.agency/api/talvio/posts/fixture-does-not-exist'
-   curl -sS -D - -o unauthorized.json 'https://mdivani.agency/api/talvio/posts'
+     'https://www.mdivani.agency/api/talvio/posts/fixture-does-not-exist'
+   curl -sS -D - -o unauthorized.json 'https://www.mdivani.agency/api/talvio/posts'
    ```
 
-   Then check: `jq '.total, (.posts | length)' list.json` for the launch inventory; no `3xx`; `Cache-Control: private, no-store`; `missing.json` is the `404` envelope; `unauthorized.json` is the `401` envelope.
-4. **Owner sign-off** on every **Proposed** row in [Launch decisions](#launch-decisions).
-5. **Deployed load check.** After the blog routes ship, watch the backend's `429` count for the read token during the first deploy and a crawl. If cold starts across several instances exceed the limit, raise the backend's per-token limit or add a cross-instance lock (a shared Redis/KV store).
+   Done on 2026-10-10 for the list, `404` and `400` cases (see Verification status); the `401` case is still open. Then check: `jq '.total, (.posts | length)' list.json` for the launch inventory; no `3xx`; `Cache-Control: private, no-store`; `missing.json` is the `404` envelope; `unauthorized.json` is the `401` envelope.
+4. **Launch inventory.** The production list has `total: 0`. Publish at least one post with `status: published`, a past `published_at` and `talvio` in `sites` before the blog is linked from navigation or submitted to Search Console, or accept an empty `/blog` at launch.
+5. **Owner sign-off** on every **Proposed** row in [Launch decisions](#launch-decisions).
+6. **Deployed load check.** After the blog routes ship, watch the backend's `429` count for the read token during the first deploy and a crawl. If cold starts across several instances exceed the limit, raise the backend's per-token limit or add a cross-instance lock (a shared Redis/KV store).
