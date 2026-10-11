@@ -8,13 +8,13 @@ This document does not reintroduce REST profile/resume clients or better-auth. T
 
 ## Ownership
 
-[MDI-201](https://linear.app/mdivani/issue/MDI-201) removed XState. `useAccountOnboarding` owns account `form` / `questions`, import staging, and draft persist. `ResumeProvider` owns the new-resume step (`fetchingResume`, `options`, `importResume`, `resumePreview`) and the preview document. Form values remain the live source of truth; storage is a recovery copy. Do not add another global store or workflow engine.
+[MDI-201](https://linear.app/mdivani/issue/MDI-201) removed XState. `useAccountOnboarding` owns the account `form` step (and `voice`, reserved for MDI-418), import staging, and draft persist. `ResumeProvider` owns the new-resume step (`fetchingResume`, `options`, `importResume`, `resumePreview`) and the preview document. Form values remain the live source of truth; storage is a recovery copy. Do not add another global store or workflow engine.
 
 | Concern | Owner | Notes |
 | --- | --- | --- |
 | Saved profile, resumes, credits, documents | React Query | Queries return server data. They must not write drafts or advance steps. |
 | Editable profile and resume values | TanStack Form via `useAppForm` in `lib/forms/use-form.ts` | One form instance per surface. Dynamic question ids use bare `form.Field`. |
-| Step, question cursor, import/download UI | Small feature hooks | Explicit actions only. No actor snapshots. |
+| Step, import/download UI | Small feature hooks | Explicit actions only. No actor snapshots. |
 | Resume editor chrome | `ResumeEditorShell` | Shared by `/resume` and `/resume/[resumeId]`. Presentation-only panel state stays local. |
 | Recovery copy | Versioned plain JSON in storage | Schema version, draft id, owner, optional document id, timestamps, base server revision, content, and onboarding progress. Never `status`, `historyValue`, `children`, or template class instances. |
 | Preview images | Derived hook | Document + template key + style in, images out. Preview never writes source values. |
@@ -26,7 +26,7 @@ Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in
 | Surface | Entry | Session | Data | What happens now |
 | --- | --- | --- | --- | --- |
 | `/account` | `app/account/page.tsx` | Required by `app/account/layout.tsx` | Independent `useQuery(['account', userId], fetchProfile)` | `null` profile redirects to `/account/create`. A thrown query renders `AccountLookupError` and never opens create. An existing profile shows the dashboard and clears the onboarding draft. |
-| `/account/create` | `app/account/create/page.tsx` | Same layout | Independent `useQuery(['account', userId], fetchProfile)` | Fetches itself. Existing profile redirects to `/account`. `null` profile restores a draft or opens the form. Lookup failures render `AccountLookupError`, not the create form. Questions render only after an explicit valid submit (`step === 'questions'` and `accountDto`). |
+| `/account/create` | `app/account/create/page.tsx` | Same layout | Independent `useQuery(['account', userId], fetchProfile)` | Fetches itself. Existing profile redirects to `/account`. `null` profile restores a draft or opens the form. Lookup failures render `AccountLookupError`, not the create form. **Save profile** on a valid form saves and opens `/account` (MDI-425). |
 | `/account/documents` | `app/account/documents/page.tsx` | Same layout. The gate uses `x-talvio-pathname` through `accountSignInRedirect`. | Media list | An expired session returns to the requested account path, including the query string. |
 | `/resume` | `app/resume/page.tsx` | Optional. Layout does not redirect. | `fetchProfile` when a session exists | Seeds from the query only while the step is still `fetchingResume`. A recovered or dirty draft is not replaced by a later refetch. The editor is `ResumeEditorShell`. |
 | `/resume/[resumeId]` | `app/resume/[resumeId]/edit-resume.tsx` | Optional until a mutation | `fetchResumeFamily` | Initializes from matching recovery, then the saved draft/original. Draft by default when a family exists. Original is read-only. Query refetch does not replace live edits. The editor is `ResumeEditorShell`. |
@@ -37,7 +37,7 @@ Profile (`AccountDto` / `profiles` and child tables) and resume (`ResumeForm` in
 | Final PDF | `POST /api/resume/generate-pdf` | `requireApiUser` | `generate_pdf` then `finalize_pdf` | See generation below. |
 | Preview | `useResumePreview` in `app/resume/hooks/use-resume-preview.ts` | None | `loadPreviewImages` → `generateResumePreview` | Free and one-way. TanStack Query derives page images from resume + template key + color + font size. Filename and label do not regenerate. A newer key aborts the previous query. Last good images stay visible with loading, error, and retry. Blob URLs, pdf.js documents, and the debounce timer are released. Does not call `generate_pdf`. |
 | Import | `useResumeParser` + `offerImport` | Session (MDI-401) | `POST /api/resume/parse` | PDF text or pasted text (onboarding only, 2,000 characters, MDI-424). Parse stays on the mounted form. Success stages a temporary DTO with its source text. Current work prompts replace/cancel. Failed or cancelled import leaves prior input. Applying remounts the form via `formRevision`. |
-| Questions / tailor | `AccountQuestions` | Session | `POST /api/resume/qa`, `POST /api/resume/account` | Up to five questions with stable ids. Answers are keyed by question id. Final Next opens answer review. AI is optional. Save uses the reviewed profile and does not rerun AI. |
+| Questions / tailor | No caller since MDI-425 | Session | `POST /api/resume/qa`, `POST /api/resume/account` | Routes unchanged. Onboarding no longer calls them. The question UI and helpers moved to `components/ai-improve/` and `lib/ai-improve/` for Improve with AI in the resume editor (MDI-426). |
 
 Templates are the in-repo catalogue in `lib/templates.ts` (`TEMPLATE_LIST`, `findTemplate`). The selected value stored on a draft is the template key (`senior-level-talvio` and the other `TemplateKeyEnum` values). PNG previews are `/public/templates/*.png`; regenerate them with `yarn templates:previews` (macOS only, uses `qlmanage`). There is no templates REST service.
 
@@ -49,7 +49,7 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 - Blob fields: `schemaVersion`, `draftId`, `owner`, `kind`, optional `documentId`, `createdAt`, `updatedAt`, optional `baseUpdatedAt`, `content`, `progress`. Never `status`, `historyValue`, `children`, or template class instances.
 - Hydrate after `useUserSession` is ready, once per draft identity. Account drafts become hook fields via `hydrateAccountDraft`. Resume drafts become the provider step and preview document. Do not persist actor snapshots.
 - Writes are debounced (400ms) and flushed on step changes, `pagehide`, and `visibilitychange` hidden.
-- Account drafts persist only while onboarding (`form` / `questions` / review steps) and clear after a successful save or when `/account` finds an existing profile.
+- Account drafts persist only while onboarding (the `form` step) and clear after a successful save or when `/account` finds an existing profile. Drafts written by the removed questions flow still parse; any post-form step (`accountQuestions`, `accountAnswerReview`, `accountProposalReview`, `accountProfileReview`) reopens the form with the submitted profile, or the reviewed one from profile review. Their `questions`, `answers`, `tailoredAccount`, `reviewedAccount` and `proposalFor` fields are read once and no longer written.
 - Resume `/resume` drafts persist options / import / preview. They clear after a successful create-and-download. A guest draft is offered for adoption after sign-in when the signed-in user has no resume draft.
 - Quota, unavailable, invalid, and newer-server conflict statuses render `DraftStatusBanner`. Editing stays available.
 - Legacy `account-state-snapshot-*` and `resume-state-snapshot-*` values migrate once into the versioned draft. The source snapshot stays on disk. A marker is required for the migration to count; if that write fails, the versioned copy is removed and the screen reports quota or unavailable. `resume-state-snapshot-new_resume` migrates as a guest draft and is not assigned to the signed-in user. A failed unscoped migration is included in the resume banner when the current draft is empty. Malformed snapshots stay on disk and the screen opens empty.
@@ -59,23 +59,21 @@ Auth hooks are `useUserSession` (`lib/providers/session-provider.tsx`) plus the 
 - `/account` and `/account/create` each run `useQuery(['account', userId], fetchProfile)`. They do not share actor state for lookup.
 - `fetchProfile` returns `null` when the profile row is missing and throws for GraphQL/network errors. Only `null` is “no account.”
 - `resolveAccountEntry` maps lookup + `step` + submitted `accountDto` to a view. Failed lookup is never the create form.
-- `useAccountOnboarding` hydrates `form`, `questions`, `answerReview`, `proposalReview`, or `profileReview` when `accountDto` exists.
+- `useAccountOnboarding` always hydrates to `form` (MDI-425). `voice` is reserved for the writing-voice step (MDI-418); `resolveAccountEntry` returns `'voice'` only for that step with a submitted `accountDto`, and nothing enters it yet.
 - One `AccountForm` handles manual input and applied imports. **Import from resume** extracts PDF text in the browser; **Paste resume text** (`PasteResumeModal`, `MAX_PASTED_RESUME_CHARS = 2000`, a client limit) takes typed or pasted text. Both send the text to `/api/resume/parse` (one AI request). The form stays mounted while parsing.
 - `offerImport` reads live typed values. Current work opens replace/cancel. Cancel and parse errors leave prior input. Apply remounts through `formRevision` and stores the source text as `scrapedResume` in the account draft (MDI-424); a cancelled import does not. Nothing reads `scrapedResume` yet.
-- Valid submit writes `accountDto` and moves to questions. Back returns to the same values. Applying an import replaces `accountDto` so the form remounts from the imported values.
+- **Save profile** validates the form, records `accountDto` through `submitProfile` and saves through `useSaveProfileFlow`. There is no AI step before the first save. Applying an import replaces `accountDto` so the form remounts from the imported values.
 - `completeSave` cancels pending draft writes and clears storage. A successful save seeds `['account', userId]` before routing so `/account` does not treat the cached missing profile as a new account.
 - Account UI does not send workflow events. The account machine is removed.
 
-## Questions, review, and save (MDI-197)
+## Onboarding save (MDI-425)
 
-- Questions are capped at five. Client-assigned ids (`question-1`…) are persisted. Answers are `{ questionId, status, value }` with `answered` or `skipped`.
-- Next writes the supplied text. Skip writes `skipped`. Back moves the cursor and reloads that answer. Refresh restores `questionId` and `unsentAnswer`.
-- The last Next opens answer review. Improve with AI or Continue without AI are explicit. Zero questions and question-request errors also offer Continue without AI.
-- AI daily cap (MDI-401): `parse`, `qa`, `complete` and `account` require a session and spend one of 20 AI requests per user per UTC day through the `ConsumeAiRequest` pg_graphql mutation (`consume_ai_request`) before the provider. A request that reaches the provider stays counted even when the provider fails or times out, because the provider may already have spent tokens on it. Invalid bodies are rejected first and do not count. At the cap the route returns 429 with `{ error, code: 'ai_daily_cap', resetAt }` (next 00:00 UTC) and `Retry-After`; `llm.client.ts` throws `AiCapError`. Import shows the message as a toast, the questions step shows it with Continue without AI, and tailoring toasts it. Editing, saving and PDF generation do not use the cap, and AI requests never touch `user_credits`. If the count cannot be checked, the route returns 503 (fails closed); if auth itself fails (not a missing session), it returns 500.
-- Questions query key is `['questions', userId, profileRevision]`. A later proposal is ignored unless `profileRevision` and `answerRevision` still match.
-- `mergeAccountProposal` keeps omitted source fields. Accept/Edit apply the proposal into profile review. Reject keeps the source profile.
-- Save persists `reviewedAccount` (or the source profile) and does not call tailor again. A failed save stays on profile review.
-- After save, `['account', userId]` is seeded, the draft is cleared, and `/account` shows Create Resume.
+MDI-197's questions, answer review, proposal review and profile review were removed from onboarding in MDI-425. The flow is form → **Save profile** → `/account`, with no AI request beyond an optional parse.
+
+- `useSaveProfileFlow` (`app/account/hooks/use-save-profile-flow.ts`) runs `useSaveProfile` (which seeds `['account', userId]`) inside `submitWrapper`, then clears the draft through `completeSave` and routes to `/account`. `AccountForm` is the only validator: it passes `accountSchema` to `useAppForm` and calls `onSubmit` only for a valid form, and `accountDtoToSavePayload` drops client list keys that are not row UUIDs. The writing-voice step (MDI-418) will end in the same save.
+- A failed save toasts the `parseGraphqlError` message through `submitWrapper`, keeps the form and its values, and leaves **Save profile** enabled. A retry sends the same values; `save_profile` upserts the profile by `auth.uid()`, so it is not duplicated (`PROF-04`).
+- The question UI (`ResumeQuestions`) and the helpers in `lib/ai-improve/questions.ts` and `lib/ai-improve/proposal.ts` (`mergeAccountProposal`) are unchanged and have no onboarding caller. Improve with AI in the resume editor (MDI-426) reuses them.
+- AI daily cap (MDI-401): `parse`, `qa`, `complete` and `account` require a session and spend one of 20 AI requests per user per UTC day through the `ConsumeAiRequest` pg_graphql mutation (`consume_ai_request`) before the provider. A request that reaches the provider stays counted even when the provider fails or times out, because the provider may already have spent tokens on it. Invalid bodies are rejected first and do not count. At the cap the route returns 429 with `{ error, code: 'ai_daily_cap', resetAt }` (next 00:00 UTC) and `Retry-After`; `llm.client.ts` throws `AiCapError`. Import shows the message as a toast. Editing, saving and PDF generation do not use the cap, and AI requests never touch `user_credits`. If the count cannot be checked, the route returns 503 (fails closed); if auth itself fails (not a missing session), it returns 500.
 
 ## Shared resume editor (MDI-198)
 
@@ -198,15 +196,14 @@ No further credit RPC is required. The column and the release RPC are part of th
 
 Use the fixtures for field, rich-text, enum, snapshot, and generated-family cases. Check the behavior column against the code, not against the removed XState design.
 
-- [x] New profile manual entry reaches questions only after a valid `submitProfile`, then explicit save lands on `/account`.
+- [x] New profile manual entry saves only after a valid **Save profile** and lands on `/account` with no AI request (MDI-425).
 - [x] PDF import stages a temporary DTO. Cancel, and a failed parse, leave typed edits in place. Applying requires confirm when current work exists.
 - [x] `/account` with no profile row opens create. A profile query error stays on `AccountLookupError` and does not open create.
 - [x] Direct `/account/create` with an existing account reaches the dashboard. With no account, it opens the form. It does not sit on the loading message.
 - [x] Expired auth from `/account/documents` returns to that path. Resume download returns to `/resume`, including a selected template. The account layout calls `accountSignInRedirect` with the forwarded path. A signed-in browser session was not available to click the redirect.
-- [x] Next stores the submitted answer by question id. Skip stores an explicit skipped status. Back edits the same answer. Refresh restores the cursor and the unfinished text.
-- [x] The last answer opens review. Save of a valid profile still works when tailoring fails.
-- [x] A question-request failure shows an error with retry, not an infinite loader.
-- [x] Profile refetch and resume refetch do not replace unsaved form values. Onboarding ignores a stale proposal. The resume editor initializes once from recovery.
+- [x] A draft from the removed questions flow reopens the form with the submitted values (MDI-425).
+- [x] A failed profile save keeps the form and a retry does not duplicate the profile.
+- [x] Profile refetch and resume refetch do not replace unsaved form values. The resume editor initializes once from recovery.
 - [x] Guest resume recovery stays on its own draft id. Signing in offers adoption and does not merge another user’s draft into the account.
 - [x] `fullAccountDto` keeps every profile field, including child ids. `fullResumeContent` keeps contacts, location, skills, tools, links, languages, education, recommendations, projects, persisted ids, dates, enums, and TipTap documents.
 - [x] Experience and education rich text reload as TipTap documents, including unknown node attrs and marks. Categorized experience arrays stay on the document created from a profile.

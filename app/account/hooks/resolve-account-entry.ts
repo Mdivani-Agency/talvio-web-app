@@ -9,7 +9,7 @@ export type AccountEntryView =
   | 'redirect-create'
   | 'redirect-account'
   | 'form'
-  | 'questions';
+  | 'voice';
 
 export function accountLookupFromQuery(input: {
   isLoading: boolean;
@@ -50,7 +50,7 @@ export function resolveAccountEntry(input: {
     return 'redirect-create';
   }
   if (isPostFormStep(input.step) && input.hasSubmittedProfile) {
-    return 'questions';
+    return 'voice';
   }
   return 'form';
 }

@@ -9,6 +9,7 @@ import { ConfirmModal, PasteResumeModal, UploadModal } from '@components/modals'
 import { useResumeParser } from '@hooks/use-resume-parser';
 import { transformFromParsedToAccount } from '@lib/utils/forms';
 
+import { useSaveProfileFlow } from '../../hooks/use-save-profile-flow';
 import { useAccountContext } from '../../providers/state-provider';
 import { AccountForm } from './account.form';
 
@@ -16,6 +17,7 @@ export default function AccountFormPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const { offerImport, pendingImport, applyImport, cancelImport, submitProfile, formRevision } = useAccountContext();
+  const { save, isSaving } = useSaveProfileFlow();
 
   const { parseResumeText, parsePastedText, loading } = useResumeParser({
     onResumeParsed: (parsedResume, sourceText) => {
@@ -41,9 +43,8 @@ export default function AccountFormPage() {
       <h1 className="text-2xl font-bold mt-8">Let&apos;s Build Your Profile!</h1>
       <p className="text-sm font-medium text-muted-foreground">
         Please fill out your details as thoroughly as possible. The more information you provide, the more tailored
-        and professional your resume will be. Don&apos;t worry about perfect wording or grammar—our AI will
-        automatically review and polish the formatting at the end. Focus on sharing your key achievements, skills, and
-        experience to make your profile stand out!
+        and professional your resume will be. Focus on sharing your key achievements, skills, and experience to make
+        your profile stand out!
       </p>
       <div className="flex items-center justify-start gap-3">
         <Button onClick={() => setIsUploadModalOpen(true)} loading={loading}>
@@ -55,7 +56,15 @@ export default function AccountFormPage() {
           Paste resume text
         </Button>
       </div>
-      <AccountForm key={formRevision} onSubmit={submitProfile} />
+      <AccountForm
+        key={formRevision}
+        submitLabel={isSaving ? 'Saving...' : 'Save profile'}
+        submitting={isSaving}
+        onSubmit={(dto) => {
+          submitProfile(dto);
+          save(dto);
+        }}
+      />
       <UploadModal
         title="Upload Resume"
         isOpen={isUploadModalOpen}

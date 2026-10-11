@@ -40,6 +40,7 @@ const state = {
   unexpected: [],
   presigns: 0,
   uploads: 0,
+  ai: { parse: 0, questions: 0, tailor: 0 },
 };
 
 export function resetSimulator() {
@@ -49,6 +50,7 @@ export function resetSimulator() {
   state.unexpected = [];
   state.presigns = 0;
   state.uploads = 0;
+  state.ai = { parse: 0, questions: 0, tailor: 0 };
 }
 
 function slugify(input) {
@@ -220,6 +222,7 @@ function scenarioFails(scenario, kind) {
 async function handleAi(request, response, body) {
   const scenario = request.headers['x-e2e-scenario'] || state.scenario;
   const kind = requestKind(body);
+  state.ai[kind] += 1;
   if (scenario === 'timeout') {
     await new Promise((resolve) => setTimeout(resolve, TIMEOUT_MS));
     send(response, 504, { error: { message: 'simulated timeout', type: 'timeout' } });
@@ -334,7 +337,7 @@ export function createSimulator() {
         return;
       }
       if (request.method === 'GET' && path === '/__e2e/stats') {
-        send(response, 200, { presigns: state.presigns, uploads: state.uploads });
+        send(response, 200, { presigns: state.presigns, uploads: state.uploads, ai: state.ai });
         return;
       }
       if (request.method === 'POST' && path === '/v1/responses') {
