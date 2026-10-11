@@ -20,6 +20,8 @@ interface ResumePreviewProps {
   handleChange: (key: 'color' | 'fontSize', value: string) => void;
   onDownload: () => void;
   readOnly?: boolean;
+  onImprove?: () => void;
+  improveDisabled?: boolean;
 }
 
 export function ResumePreview({
@@ -32,6 +34,8 @@ export function ResumePreview({
   onDownload,
   handleChange,
   readOnly = false,
+  onImprove,
+  improveDisabled = false,
 }: ResumePreviewProps) {
   const [isFullSizeResumeModalOpen, setIsFullSizeResumeModalOpen] = useState(false);
   const { images, isLoading, error, pageIndex, retry, goToNext, goToPrevious } = useResumePreview({
@@ -75,6 +79,8 @@ export function ResumePreview({
             }
           }}
           disabled={readOnly}
+          onImprove={readOnly ? undefined : onImprove}
+          improveDisabled={improveDisabled}
           handleDownload={() => onDownload()}
           handlePreviewOpen={() => setIsFullSizeResumeModalOpen(true)}
         />

@@ -66,12 +66,33 @@ export const resumeDraftContentSchema = z.object({
   fontSize: z.enum(['sm', 'md', 'lg']),
 });
 
+/**
+ * Improve with AI session for one resume (MDI-426). Stored under `aiImproveStorageKey` next to the
+ * resume draft rather than inside its content: both editors rebuild the content from the document on
+ * every write, which would drop the session. `proposalFor` is the `documentHash` the questions were
+ * asked about; a session for another hash is discarded on read.
+ */
+export const aiImproveSessionSchema = z.object({
+  questions: z.array(z.object({ id: z.string(), question: z.string(), example: z.string() })).nullable(),
+  answers: z.array(z.object({
+    questionId: z.string(),
+    status: z.enum(['answered', 'skipped']),
+    value: z.string(),
+  })),
+  currentQuestionId: z.string().nullable(),
+  unsentAnswer: z.string(),
+  proposal: z.record(z.string(), z.unknown()).nullable(),
+  writingVoiceVersion: z.number().nullable().optional(),
+  proposalFor: z.string(),
+});
+
 export type DraftOwner = z.infer<typeof draftOwnerSchema>;
 export type VersionedDraft = z.infer<typeof versionedDraftSchema>;
 export type AccountDraftContent = z.infer<typeof accountDraftContentSchema>;
 export type ResumeDraftContent = z.infer<typeof resumeDraftContentSchema>;
 export type AccountProgress = z.infer<typeof accountProgressSchema>;
 export type ResumeProgress = z.infer<typeof resumeProgressSchema>;
+export type AiImproveSession = z.infer<typeof aiImproveSessionSchema>;
 
 export type DraftPersistStatus = 'ok' | 'unavailable' | 'quota' | 'invalid' | 'conflict';
 

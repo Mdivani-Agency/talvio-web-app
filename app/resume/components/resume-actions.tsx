@@ -1,6 +1,18 @@
 'use client';
+import { SparklesIcon } from 'lucide-react';
+
 import { Icon } from '@components/icons';
-import { Button, ColorPaletteSelector, Select, SelectContent, SelectItem, SelectTrigger } from '@components/ui';
+import {
+  Button,
+  ColorPaletteSelector,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@components/ui';
 import { cn } from '@lib/utils/tailwind';
 
 type ResumeActionBarProps = {
@@ -17,6 +29,9 @@ type ResumeActionBarProps = {
   handlePreviewOpen: () => void;
   action?: React.ReactNode;
   disabled?: boolean;
+  /** Shows Improve with AI before Download (MDI-426). */
+  onImprove?: () => void;
+  improveDisabled?: boolean;
 };
 
 export const ResumeActionBar = ({
@@ -33,6 +48,8 @@ export const ResumeActionBar = ({
   handleDownload,
   handlePreviewOpen,
   disabled = false,
+  onImprove,
+  improveDisabled = false,
 }: ResumeActionBarProps) => {
   return (
     <div
@@ -76,6 +93,24 @@ export const ResumeActionBar = ({
       </div>
 
       <div className="flex gap-2">
+        {onImprove ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className="h-8 gap-1 px-2 text-muted-foreground"
+                type="button"
+                variant="ghost"
+                aria-label="Improve with AI"
+                onClick={onImprove}
+                disabled={improveDisabled || imageCount === 0}
+              >
+                <SparklesIcon className="size-4" />
+                <span className="hidden md:inline">Improve with AI</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Answer a few questions and get suggested edits</TooltipContent>
+          </Tooltip>
+        ) : null}
         <Button
           className="shadow-sm"
           type="button"

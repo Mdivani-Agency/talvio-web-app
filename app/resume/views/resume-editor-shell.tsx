@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Icon } from '@components/icons';
 import { useAllowance } from '@app/account/hooks/use-allowance';
+import { AiImproveOverlay } from '@components/ai-improve';
 import { DownloadResumeModal } from '@components/modals';
 import { AnimatedTransition, Button, Input, Tooltip, TooltipContent, TooltipTrigger } from '@components/ui';
 import { normalizeResumeLabel } from '@lib/adapters/resume.adapter';
+import { featureFlags } from '@lib/flags';
 import type { ResumeFieldIssue } from '@lib/models/resume-document';
 import { resolveAvailableTemplate, templateLevelFromKey, type TemplateLevel } from '@lib/resume/resolve-editor';
 import { SAVE_STATUS_LABEL, type SaveStatus } from '@lib/resume/save-queue';
@@ -16,6 +18,7 @@ import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
 
 import { ResumePreview } from '../components/resume-preview';
+import { useAiImprove } from '../hooks/use-ai-improve';
 import { EditResumeView } from './edit-resume-view';
 import TemplatesView from './templates-view';
 
@@ -24,6 +27,16 @@ export type ResumeFamilyControls = {
   onViewOriginal: () => void;
   onViewDraft: () => void;
   onDiscard: () => void;
+};
+
+/** Improve with AI wiring from the page (MDI-426). Shown only with `NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE`. */
+export type ResumeImproveControls = {
+  /** Where the session is kept next to the resume draft; null keeps it in memory. */
+  storageKey: string | null;
+  /** Runs before a session starts; return false to stop (guest sign-in, fork confirmation). */
+  onRequest?: () => boolean;
+  /** A new value starts a session, for a page that confirmed a fork first. */
+  startToken?: number;
 };
 
 type ResumeEditorShellProps = {
@@ -40,6 +53,7 @@ type ResumeEditorShellProps = {
   onRetrySave?: () => void;
   onChange: (patch: Partial<PreviewDto>) => void;
   onDownload: (filename: string, label?: string) => boolean | void | Promise<boolean | void>;
+  improve?: ResumeImproveControls | null;
 };
 
 export function ResumeEditorShell({
@@ -56,12 +70,43 @@ export function ResumeEditorShell({
   onRetrySave,
   onChange,
   onDownload,
+  improve,
 }: ResumeEditorShellProps) {
   const [panel, setPanel] = useState<'templates' | 'form'>('form');
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloadName, setDownloadName] = useState(document.name);
   const [downloadLabel, setDownloadLabel] = useState(document.label ?? '');
   const { allowance } = useAllowance();
+  const [aiRevision, setAiRevision] = useState(0);
+  const improveEnabled = Boolean(improve) && featureFlags().resumeAiImprove && !readOnly;
+  const ai = useAiImprove({
+    resume: document.resume,
+    storageKey: improveEnabled ? improve?.storageKey ?? null : null,
+    onApply: (resume) => {
+      onChange({ resume });
+      setAiRevision((value) => value + 1);
+    },
+  });
+  const startToken = improve?.startToken;
+  const lastStartToken = useRef(startToken);
+  const startSession = ai.start;
+
+  useEffect(() => {
+    if (startToken === lastStartToken.current) {
+      return;
+    }
+    lastStartToken.current = startToken;
+    if (improveEnabled) {
+      startSession();
+    }
+  }, [improveEnabled, startSession, startToken]);
+
+  const requestImprove = () => {
+    if (improve?.onRequest && improve.onRequest() === false) {
+      return;
+    }
+    ai.start();
+  };
 
   const { data: templates } = useQuery({
     queryKey: ['templates'],
@@ -84,7 +129,8 @@ export function ResumeEditorShell({
 
   return (
     <section className="grid h-dvh min-h-0 min-w-0 grid-cols-1 grid-rows-2 overflow-hidden md:h-auto md:grid-cols-5 md:grid-rows-1 md:overflow-visible">
-      <div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:col-span-2">
+      <div className="relative flex min-h-0 min-w-0 flex-col overflow-hidden md:col-span-2">
+        {improveEnabled ? <AiImproveOverlay session={ai} /> : null}
         <div className="flex flex-col gap-3 border-b border-input px-4 py-3 pt-16">
           {family ? (
             <div className="flex items-center justify-between gap-2">
@@ -150,7 +196,7 @@ export function ResumeEditorShell({
             />
           ) : (
             <EditResumeView
-              key={formKey}
+              key={`${formKey}:ai${aiRevision}`}
               className="h-full min-h-0 pt-4 md:h-screen"
               issues={issues}
               defaultValues={document.resume}
@@ -168,6 +214,8 @@ export function ResumeEditorShell({
         readOnly={readOnly}
         handleChange={(key, value) => onChange({ [key]: value })}
         onDownload={requestDownload}
+        onImprove={improveEnabled ? requestImprove : undefined}
+        improveDisabled={ai.active}
         action={(
           <Tooltip>
             <TooltipTrigger asChild>
@@ -204,6 +252,10 @@ export function ResumeEditorShell({
           }).catch(() => undefined);
         }}
         onClose={() => setDownloadOpen(false)}
+        onImprove={improveEnabled ? () => {
+          setDownloadOpen(false);
+          requestImprove();
+        } : undefined}
       />
     </section>
   );
