@@ -39,7 +39,7 @@ describe('homepage copy', () => {
     );
     expect(BENEFITS_TITLE).toBe('Write your experience once. Reuse it in every resume.');
     expect(WHATS_FREE_BODY).toBe(
-      'Every account can create 3 new resume PDFs each month, free forever. Edits, previews and downloading a resume again do not count. The count resets on the 1st.',
+      'Every account can create 3 new resume PDFs each month, free forever. Edits, previews and re-downloads are free. New PDFs of edited resumes count. The count resets on the 1st.',
     );
     expect(CTA_TITLE).toBe('Start your first resume');
     expect(CTA_BODY).toBe('Free forever, no card needed. Talvio is in beta, and more features are on the way.');
@@ -108,6 +108,8 @@ describe('homepage copy', () => {
       'How do I get support?',
     ]);
     expect(HOME_FAQ[1]?.answer).toContain('00:00 UTC');
+    expect(HOME_FAQ[2]?.answer).toContain('A new PDF from an edited resume counts as one.');
+    expect(HOME_FAQ[3]?.answer).toContain('A new PDF of your edits also waits until then.');
   });
 
   it('links the "What\'s free" navigation item to its section', () => {

@@ -6,7 +6,7 @@ import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, SUPPORT_ANSWER } from './p
  */
 
 /** Sitemap date (ISO). Change it with the homepage copy. */
-export const HOME_LAST_MODIFIED = '2026-10-07';
+export const HOME_LAST_MODIFIED = '2026-10-11';
 
 /** New visitors sign in here. There is no separate sign-up route. */
 export const PRIMARY_CTA_HREF = '/auth/sign-in';
@@ -61,7 +61,7 @@ export const WHATS_FREE_NAME = "What's free";
 export const WHATS_FREE_TITLE = '3 new resume PDFs every month';
 // As written.
 export const WHATS_FREE_BODY =
-  'Every account can create 3 new resume PDFs each month, free forever. Edits, previews and downloading a resume again do not count. The count resets on the 1st.';
+  'Every account can create 3 new resume PDFs each month, free forever. Edits, previews and re-downloads are free. New PDFs of edited resumes count. The count resets on the 1st.';
 
 export const FAQ_TITLE = 'Frequently asked questions';
 
@@ -86,7 +86,7 @@ export const HOME_FAQ: readonly FaqItem[] = [
   {
     question: 'What happens when I reach the limit?',
     answer:
-      'You can keep editing, previewing and downloading the PDFs you already made. You can create new ones again on the 1st of next month.',
+      'You can keep editing, previewing and downloading the PDFs you already made. You can create new ones again on the 1st of next month. A new PDF of your edits also waits until then.',
   },
   {
     question: 'What does beta mean?',
