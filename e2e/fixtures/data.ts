@@ -62,6 +62,7 @@ export function serviceClient(): SupabaseClient {
     MEDIA_API_BASE_URL: process.env.MEDIA_API_BASE_URL ?? 'http://127.0.0.1:3999',
     OPENAI_BASE_URL: requireEnv('OPENAI_BASE_URL'),
     GOOGLE_FONTS_API_BASE: requireEnv('GOOGLE_FONTS_API_BASE'),
+    BLOG_API_BASE_URL: requireEnv('BLOG_API_BASE_URL'),
   };
   assertLocalServiceOrigins(env);
   return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY, {

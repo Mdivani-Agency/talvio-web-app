@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { handleBlogApi } from './blog-api.mjs';
+
 const API_KEY = process.env.MEDIA_SERVICE_API_KEY || 'local-e2e-dummy';
 const APP_ORIGIN = 'http://localhost:3002';
 const TIMEOUT_MS = 1200;
@@ -407,6 +409,10 @@ export function createSimulator() {
           return;
         }
         send(response, 200, recordsFor(decodeURIComponent(records[1])));
+        return;
+      }
+
+      if (handleBlogApi(request, url, (status, payload, headers) => send(response, status, payload, headers))) {
         return;
       }
 

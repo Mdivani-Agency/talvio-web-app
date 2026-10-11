@@ -106,11 +106,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
       # Skips binaries already restored from the cache; the OS packages are installed every run.
       - name: Install Playwright browsers
-        run: yarn playwright install --with-deps chromium firefox webkit
+        run: yarn playwright install --with-deps chromium
 
       # The build bakes in the local Supabase URL and keys, so it cannot reuse the
       # quality job's output. Next's own cache (.next/cache) is still valid across
