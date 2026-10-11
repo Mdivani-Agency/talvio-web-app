@@ -3,10 +3,11 @@ export type NavLink = { name: string; href: string };
 export const SIGN_IN_HREF = '/auth/sign-in';
 export const SIGN_IN_LABEL = 'Sign in';
 
-/** Links to other public pages. Shown in the header on every public page. A blog link is added here when `/blog` exists (MDI-249). */
+/** Links to other public pages. Shown in the header on every public page. */
 export const PUBLIC_PAGE_LINKS: NavLink[] = [
   { name: 'Templates', href: '/templates' },
   { name: 'ATS-friendly resume', href: '/ats-friendly-resume' },
+  { name: 'Blog', href: '/blog' },
 ];
 
 /** In-page anchors, shown before the page links on the homepage only. */

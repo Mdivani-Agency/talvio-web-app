@@ -11,6 +11,7 @@ const localEnv = {
   MEDIA_API_BASE_URL: 'http://127.0.0.1:3999',
   OPENAI_BASE_URL: 'http://127.0.0.1:3999/v1',
   GOOGLE_FONTS_API_BASE: 'http://127.0.0.1:3999',
+  BLOG_API_BASE_URL: 'http://127.0.0.1:3999',
 };
 
 describe('local E2E origins', () => {
@@ -44,6 +45,8 @@ describe('local E2E origins', () => {
     expect(env.NEXT_PUBLIC_BASE_URL).toBe('http://localhost:3002');
     expect(env.OPENAI_BASE_URL).toBe('http://127.0.0.1:3999/v1');
     expect(env.GOOGLE_FONTS_API_BASE).toBe('http://127.0.0.1:3999');
+    expect(env.BLOG_API_BASE_URL).toBe('http://127.0.0.1:3999');
+    expect(env.BLOG_API_TOKEN?.length).toBeGreaterThanOrEqual(32);
   });
 
   it('rejects a hosted model or font origin', () => {
@@ -55,5 +58,12 @@ describe('local E2E origins', () => {
       ...localEnv,
       GOOGLE_FONTS_API_BASE: 'https://www.googleapis.com',
     })).toThrow(/GOOGLE_FONTS_API_BASE/);
+  });
+
+  it('rejects the hosted blog API', () => {
+    expect(() => assertLocalServiceOrigins({
+      ...localEnv,
+      BLOG_API_BASE_URL: 'https://mdivani.agency',
+    })).toThrow(/BLOG_API_BASE_URL/);
   });
 });

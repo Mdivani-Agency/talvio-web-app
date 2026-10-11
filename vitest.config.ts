@@ -10,6 +10,8 @@ const alias = {
   '@hooks': path.resolve(__dirname, 'hooks'),
   '@ui': path.resolve(__dirname, 'components/ui'),
   '@utils': path.resolve(__dirname, 'lib/utils'),
+  // Tests run server modules outside React Server Components, so resolve the package's server build as Next does.
+  'server-only': path.resolve(__dirname, 'node_modules/server-only/empty.js'),
 };
 
 export default defineConfig({
