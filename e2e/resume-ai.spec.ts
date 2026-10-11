@@ -7,6 +7,7 @@ import {
   generateFromModal,
   mediaStats,
   openFinalReview,
+  openResumeSection,
   openSignedIn,
   persona,
   resetAndGuard,
@@ -110,6 +111,8 @@ test('RES-10 improves from the download dialog, and Reject leaves the resume as 
   // A session kept for later (Close at the daily cap) goes with the draft once the PDF is generated,
   // so the next new resume does not reopen it.
   await page.evaluate((sessionKey) => window.localStorage.setItem(sessionKey, '{"kept":true}'), `${key}:ai-improve`);
+  await openResumeSection(page, 'Contact Information', 'Email');
+  await page.getByPlaceholder('Email').fill('dialog.owner@talvio.test');
   await generateFromModal(page, 'Dialog Owner');
   expect(await page.evaluate((sessionKey) => window.localStorage.getItem(sessionKey), `${key}:ai-improve`)).toBeNull();
 });
