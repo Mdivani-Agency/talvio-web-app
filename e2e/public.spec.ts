@@ -105,6 +105,7 @@ test('PUB-04 the homepage says what is free and mentions no credits or prices', 
   await page.locator('header').first().getByRole('link', { name: "What's free" }).click();
   await expect(page).toHaveURL(/#whats-free$/);
   await expect(page.getByRole('heading', { name: '3 new resume PDFs every month' })).toBeVisible();
+  await expect(page.getByText('New PDFs of edited resumes count.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Start your first resume' })).toBeVisible();
   const text = await page.locator('main').innerText();
   expect(text).not.toMatch(/credit|\$\d|subscription|pay as you go|never expire/i);
