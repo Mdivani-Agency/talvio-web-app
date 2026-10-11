@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { allowanceStatus } from '@/lib/allowance';
@@ -68,6 +68,17 @@ describe('DownloadResumeModal', () => {
     const dialog = renderModal({ allowance: allowanceStatus(30, NOW) });
 
     expect(dialog.textContent).not.toMatch(/credit/i);
+  });
+
+  it('offers Improve with AI first only when the editor passes onImprove', () => {
+    renderModal();
+    expect(screen.queryByRole('button', { name: 'Improve with AI first' })).toBeNull();
+    cleanup();
+
+    const onImprove = vi.fn();
+    renderModal({ onImprove });
+    fireEvent.click(screen.getByRole('button', { name: 'Improve with AI first' }));
+    expect(onImprove).toHaveBeenCalledTimes(1);
   });
 
   it('stays disabled while a PDF is being generated', () => {

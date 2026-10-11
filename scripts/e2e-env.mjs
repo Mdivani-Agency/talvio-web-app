@@ -55,6 +55,7 @@ export function localE2EEnv(status) {
     GOOGLE_FONTS_API_BASE: 'http://127.0.0.1:3999',
     BLOG_API_BASE_URL: 'http://127.0.0.1:3999',
     BLOG_API_TOKEN: BLOG_E2E_TOKEN,
+    NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: 'true',
   };
   assertLocalServiceOrigins(env);
   return env;
