@@ -4,6 +4,7 @@ import { expect, test } from './fixtures/test';
 import { setScenario } from './fixtures/profile-ui';
 import {
   chooseManual,
+  generateFromModal,
   mediaStats,
   openFinalReview,
   openSignedIn,
@@ -100,10 +101,17 @@ test('RES-10 improves from the download dialog, and Reject leaves the resume as 
   await again.getByRole('button', { name: 'Improve with AI first' }).click();
   await answerQuestions(page);
   await acceptProposal(page);
-  await expect.poll(() => page.evaluate((key) => {
-    const draft = JSON.parse(window.localStorage.getItem(key) ?? 'null');
+  const key = `talvio-draft-v1:resume:user:${empty.userId}:new`;
+  await expect.poll(() => page.evaluate((draftKey) => {
+    const draft = JSON.parse(window.localStorage.getItem(draftKey) ?? 'null');
     return draft?.content?.resume?.profile?.tagline ?? null;
-  }, `talvio-draft-v1:resume:user:${empty.userId}:new`)).toBe(POLISHED);
+  }, key)).toBe(POLISHED);
+
+  // A session kept for later (Close at the daily cap) goes with the draft once the PDF is generated,
+  // so the next new resume does not reopen it.
+  await page.evaluate((sessionKey) => window.localStorage.setItem(sessionKey, '{"kept":true}'), `${key}:ai-improve`);
+  await generateFromModal(page, 'Dialog Owner');
+  expect(await page.evaluate((sessionKey) => window.localStorage.getItem(sessionKey), `${key}:ai-improve`)).toBeNull();
 });
 
 test('RES-11 provider failures and the daily cap leave the resume unchanged and recover in the overlay', async ({ page, personas }) => {

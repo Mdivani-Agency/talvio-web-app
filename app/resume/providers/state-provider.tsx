@@ -4,6 +4,7 @@ import { Loading } from '@components/views';
 import { DraftStatusBanner } from '@components/views/draft-status';
 import {
   adoptDraft,
+  aiImproveStorageKey,
   browserStorage,
   buildResumeDraft,
   clearDraft,
@@ -25,6 +26,7 @@ import {
   type DraftPersistStatus,
   type ResumeProgress,
   type VersionedDraft,
+  writeAiImproveSession,
 } from '@lib/drafts';
 import { useUserSession } from '@lib/providers';
 import type { PreviewDto } from '@lib/types';
@@ -137,6 +139,9 @@ function ResumeMachine({
     clearedRef.current = true;
     writerRef.current?.cancel();
     persistCurrent(null);
+    // The Improve with AI session belongs to this draft. A kept one (Close at the daily cap) would
+    // otherwise reopen on the next new resume built from the same profile.
+    writeAiImproveSession(storage, aiImproveStorageKey(key), null);
   };
 
   const ensureDraftId = () => {
