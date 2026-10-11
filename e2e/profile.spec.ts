@@ -332,7 +332,7 @@ test('PROF-04 a failed save keeps the form and does not duplicate the profile', 
   });
 
   await saveForm(page);
-  await expect(page.getByText(/Failed to save your profile/)).toBeVisible();
+  await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'forced save failure' })).toBeVisible();
   await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
   await expect(page.getByRole('button', { name: 'Save profile', exact: true })).toBeEnabled();
