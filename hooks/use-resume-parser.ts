@@ -4,7 +4,8 @@ import { parseResume } from '@lib/clients/llm.client';
 import { ParsedAccount } from '@lib/types';
 
 type Events = {
-  onResumeParsed: (parsedResume: ParsedAccount) => void;
+  /** `sourceText` is the extracted PDF text or the pasted text that was parsed. */
+  onResumeParsed: (parsedResume: ParsedAccount, sourceText: string) => void;
   onError: (error: Error) => void;
 };
 
@@ -12,17 +13,16 @@ export const useResumeParser = (events: Events) => {
   const [loading, setLoading] = useState(false);
   const { parsePdf, parsing } = usePdfText();
 
-  const parseResumeText = useCallback(
-    async (file: File) => {
+  const parse = useCallback(
+    async (readText: () => Promise<string>) => {
       setLoading(true);
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const text = await parsePdf(Buffer.from(arrayBuffer));
+        const text = await readText();
 
         const parsedResume = await parseResume(text);
 
         if (parsedResume) {
-          events.onResumeParsed(parsedResume);
+          events.onResumeParsed(parsedResume, text);
         }
       } catch (error) {
         events.onError(error as Error);
@@ -30,12 +30,23 @@ export const useResumeParser = (events: Events) => {
         setLoading(false);
       }
     },
-    [parsePdf, events],
+    [events],
+  );
+
+  const parseResumeText = useCallback(
+    (file: File) => parse(async () => parsePdf(Buffer.from(await file.arrayBuffer()))),
+    [parse, parsePdf],
+  );
+
+  const parsePastedText = useCallback(
+    (text: string) => parse(async () => text),
+    [parse],
   );
 
   return {
     loading,
     extracting: parsing,
     parseResumeText,
+    parsePastedText,
   };
 };

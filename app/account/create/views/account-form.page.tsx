@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { UploadIcon } from 'lucide-react';
+import { ClipboardPasteIcon, UploadIcon } from 'lucide-react';
 
 import { Button } from '@components/ui';
-import { ConfirmModal, UploadModal } from '@components/modals';
+import { ConfirmModal, PasteResumeModal, UploadModal } from '@components/modals';
 import { useResumeParser } from '@hooks/use-resume-parser';
 import { transformFromParsedToAccount } from '@lib/utils/forms';
 
@@ -14,11 +14,12 @@ import { AccountForm } from './account.form';
 
 export default function AccountFormPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const { offerImport, pendingImport, applyImport, cancelImport, submitProfile, formRevision } = useAccountContext();
 
-  const { parseResumeText, loading } = useResumeParser({
-    onResumeParsed: (parsedResume) => {
-      offerImport(transformFromParsedToAccount(parsedResume));
+  const { parseResumeText, parsePastedText, loading } = useResumeParser({
+    onResumeParsed: (parsedResume, sourceText) => {
+      offerImport(transformFromParsedToAccount(parsedResume), sourceText);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -28,6 +29,11 @@ export default function AccountFormPage() {
   const handleFileUpload = (file: File) => {
     setIsUploadModalOpen(false);
     void parseResumeText(file);
+  };
+
+  const handlePaste = (text: string) => {
+    setIsPasteModalOpen(false);
+    void parsePastedText(text);
   };
 
   return (
@@ -44,6 +50,10 @@ export default function AccountFormPage() {
           <UploadIcon className="size-4" />
           {loading ? 'Parsing resume...' : 'Import from resume'}
         </Button>
+        <Button variant="secondary" onClick={() => setIsPasteModalOpen(true)} disabled={loading}>
+          <ClipboardPasteIcon className="size-4" />
+          Paste resume text
+        </Button>
       </div>
       <AccountForm key={formRevision} onSubmit={submitProfile} />
       <UploadModal
@@ -51,6 +61,11 @@ export default function AccountFormPage() {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onFileUpload={handleFileUpload}
+      />
+      <PasteResumeModal
+        isOpen={isPasteModalOpen}
+        onClose={() => setIsPasteModalOpen(false)}
+        onConfirm={handlePaste}
       />
       <ConfirmModal
         isOpen={pendingImport !== null}
