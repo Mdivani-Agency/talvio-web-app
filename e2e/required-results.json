@@ -28,6 +28,7 @@
     "PROF-03 imported resume stays editable through save",
     "PROF-04 provider failures recover without stranding the profile",
     "PROF-04 a failed save keeps the form and does not duplicate the profile",
+    "PROF-05 pasted resume text imports within the 2,000-character limit",
     "RES-01 creates a resume without a profile and keeps it after reload",
     "RES-01 prefills a resume from the profile and saves the edited draft",
     "RES-01 guest download returns to the resume and can keep the draft",

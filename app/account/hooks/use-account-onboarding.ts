@@ -32,6 +32,12 @@ import type { AccountDto, DeepPartial } from '@lib/types';
 
 export type { OnboardingStep };
 
+type PendingImport = {
+  values: DeepPartial<AccountDto>;
+  /** Extracted PDF text or pasted text; stored as `scrapedResume` when the import is applied. */
+  source?: string;
+};
+
 export function useAccountOnboarding(userId: string) {
   const owner = useMemo(() => ({ kind: 'user' as const, userId }), [userId]);
   const storage = useMemo(() => browserStorage(), []);
@@ -53,7 +59,7 @@ export function useAccountOnboarding(userId: string) {
       ? hydrateAccountDraft(initialRead.parsed.content, initialRead.parsed.progress)
       : emptyAccountDraftFields()
   ));
-  const [pendingImport, setPendingImport] = useState<DeepPartial<AccountDto> | null>(null);
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [formRevision, setFormRevision] = useState(0);
   const draftRef = useRef<VersionedDraft | null>(initialRead.parsed ? initialRead.draft : null);
   const lastStepRef = useRef<OnboardingStep>(fields.step);
@@ -71,9 +77,13 @@ export function useAccountOnboarding(userId: string) {
     });
   }, []);
 
-  const applyParsed = useCallback((parsed: DeepPartial<AccountDto>) => {
-    liveValuesRef.current = parsed;
-    updateFields({ partialDto: parsed, accountDto: null });
+  const applyParsed = useCallback(({ values, source }: PendingImport) => {
+    liveValuesRef.current = values;
+    updateFields({
+      partialDto: values,
+      accountDto: null,
+      ...(source === undefined ? {} : { scrapedResume: source }),
+    });
     setPendingImport(null);
     setFormRevision((value) => value + 1);
   }, [updateFields]);
@@ -240,13 +250,13 @@ export function useAccountOnboarding(userId: string) {
     clearAccountDraft();
   }, [clearAccountDraft]);
 
-  const offerImport = useCallback((parsed: DeepPartial<AccountDto>) => {
+  const offerImport = useCallback((values: DeepPartial<AccountDto>, source?: string) => {
     const current = liveValuesRef.current ?? fields.partialDto ?? fields.accountDto;
     if (shouldConfirmImport(current)) {
-      setPendingImport(parsed);
+      setPendingImport({ values, source });
       return;
     }
-    applyParsed(parsed);
+    applyParsed({ values, source });
   }, [applyParsed, fields.accountDto, fields.partialDto]);
 
   const applyImport = useCallback(() => {
@@ -337,7 +347,7 @@ export function useAccountOnboarding(userId: string) {
     reviewedAccount: fields.reviewedAccount,
     profileRevision: fields.profileRevision,
     answerRevision: fields.answerRevision,
-    pendingImport,
+    pendingImport: pendingImport?.values ?? null,
     formRevision,
     setPartialDto,
     submitProfile,
