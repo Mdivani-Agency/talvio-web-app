@@ -281,6 +281,10 @@ test('PROF-03 imported resume stays editable through save', async ({ page, perso
   await expect(page.getByPlaceholder('Last Name')).toHaveValue('Owner');
   await expect(page.getByPlaceholder('Role')).toHaveValue('Engineer');
   await expect(section(page, 'Company').locator('.cursor-pointer').filter({ hasText: '(1)' })).toBeVisible();
+  await expect.poll(() => page.evaluate((key) => {
+    const draft = JSON.parse(window.localStorage.getItem(key) ?? 'null');
+    return typeof draft?.content?.scrapedResume === 'string' && draft.content.scrapedResume.trim().length > 0;
+  }, `talvio-draft-v1:account:user:${empty.userId}:profile`)).toBe(true);
   await page.getByPlaceholder('First Name').fill('Ada Edited');
 
   await continueForm(page);
@@ -402,4 +406,45 @@ test('PROF-04 a failed save keeps the form and does not duplicate the profile', 
   await page.reload();
   await expect(page.getByText('Ada Retried')).toBeVisible();
   expect(await profileCount(empty.userId)).toBe(1);
+});
+
+test('PROF-05 pasted resume text imports within the 2,000-character limit', async ({ page, personas }) => {
+  const empty = persona(personas, 'empty');
+  await openCreate(page, empty);
+  await page.getByPlaceholder('First Name').fill('Keep This');
+
+  const resumeText = 'Ada Owner. Engineer at Imported Labs, building resume tools. '.repeat(40).slice(0, 1800);
+  const paste = page.getByRole('dialog', { name: 'Paste resume text' });
+  const openPaste = async (text: string) => {
+    await page.getByRole('button', { name: 'Paste resume text' }).click();
+    await paste.getByRole('textbox', { name: 'Resume text' }).fill(text);
+  };
+
+  await openPaste('x'.repeat(2001));
+  await expect(paste.getByText('2,001 / 2,000 characters (1 over the limit)')).toBeVisible();
+  await expect(paste.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+  await paste.getByRole('button', { name: 'Cancel' }).click();
+
+  await setScenario('parse_error');
+  await openPaste(resumeText);
+  await expect(paste.getByText('1,800 / 2,000 characters')).toBeVisible();
+  await paste.getByRole('button', { name: 'Confirm' }).click();
+  await expect(page.getByText('Failed to parse resume').last()).toBeVisible();
+  await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
+  await expect(page.getByRole('button', { name: 'Paste resume text' })).toBeEnabled();
+
+  await setScenario('success');
+  await openPaste(resumeText);
+  await paste.getByRole('button', { name: 'Confirm' }).click();
+  await expect(page.getByRole('heading', { name: 'Replace current profile?' })).toBeVisible();
+  await page.getByRole('dialog', { name: 'Replace current profile?' }).getByRole('button', { name: 'Confirm' }).click();
+  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
+  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Owner');
+  await expect(page.getByPlaceholder('Role')).toHaveValue('Engineer');
+
+  const draftKey = `talvio-draft-v1:account:user:${empty.userId}:profile`;
+  await expect.poll(() => page.evaluate((key) => {
+    const draft = JSON.parse(window.localStorage.getItem(key) ?? 'null');
+    return draft?.content?.scrapedResume ?? null;
+  }, draftKey)).toBe(resumeText.trim());
 });

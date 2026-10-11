@@ -91,6 +91,50 @@ describe('useAccountOnboarding', () => {
     unmount();
   });
 
+  it('stores the import source text only when the import is applied', () => {
+    vi.useFakeTimers();
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.setPartialDto(typedWork);
+    });
+    act(() => {
+      result.current.offerImport(importedWork, 'Pasted resume text');
+    });
+    act(() => {
+      result.current.cancelImport();
+    });
+    expect(result.current.scrapedResume).toBeNull();
+
+    act(() => {
+      result.current.offerImport(importedWork, 'Pasted resume text');
+    });
+    act(() => {
+      result.current.applyImport();
+    });
+    expect(result.current.scrapedResume).toBe('Pasted resume text');
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    const stored = JSON.parse(window.localStorage.getItem(ACCOUNT_DRAFT_STORAGE_KEY) ?? 'null');
+    expect(stored?.content.scrapedResume).toBe('Pasted resume text');
+    expect(stored?.content.partialDto).toEqual(importedWork);
+    unmount();
+  });
+
+  it('stores the source text of an import applied without confirmation', () => {
+    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
+
+    act(() => {
+      result.current.offerImport(importedWork, 'Extracted PDF text');
+    });
+
+    expect(result.current.pendingImport).toBeNull();
+    expect(result.current.scrapedResume).toBe('Extracted PDF text');
+    unmount();
+  });
+
   it('does not overwrite edits made while parsing unless the import is applied', () => {
     const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
 
