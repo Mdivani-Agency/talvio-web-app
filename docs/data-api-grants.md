@@ -87,6 +87,22 @@ saves an accepted LLM proposal for `auth.uid()` and its receipt in one
 transaction, and returns the receipt as `JSON`. A second call for the same
 proposal returns the first receipt (`replayed: true`) and writes nothing.
 
+Auth hook (MDI-440). Only Supabase Auth runs it; clients cannot call it
+or read a user's plan:
+
+```sql
+GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
+REVOKE ALL ON FUNCTION public.custom_access_token_hook(jsonb) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.custom_access_token_hook(jsonb) TO supabase_auth_admin;
+REVOKE ALL ON FUNCTION public.account_plan(uuid) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.account_plan(uuid) TO supabase_auth_admin;
+```
+
+The hook is `SECURITY INVOKER` and runs as `supabase_auth_admin`, which
+already reads `auth.users`. It adds `account_status` (`active` |
+`suspended`) and `plan` to the access token; the LLM service's API Gateway
+authorizer reads them instead of this database.
+
 `consume_ai_request()` takes no arguments and counts one AI request for
 `auth.uid()` on the current UTC day, so a caller can only spend their own
 quota. The AI routes call it through pg_graphql with the caller's token
