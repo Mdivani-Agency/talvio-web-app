@@ -38,6 +38,8 @@ Auth providers (app wiring is [MDI-173](https://linear.app/mdivani/issue/MDI-173
 
 LinkedIn (`linkedin_oidc`) is not a sign-in provider. Hosted Auth sets `external_linkedin_oidc_enabled = false` in `talvio-terraform-iac` (`app.tf`, merged in [talvio-terraform-iac #17](https://github.com/Mdivani-Agency/talvio-terraform-iac/pull/17)). The dev apply for that merge succeeded, and a later prod apply on `main` succeeded. The app does not call `signInWithOAuth` for LinkedIn.
 
+Custom access-token hook ([MDI-440](https://linear.app/mdivani/issue/MDI-440)): hosted Auth sets `hook_custom_access_token_enabled = true`, `hook_custom_access_token_uri = "pg-functions://postgres/public/custom_access_token_hook"` and `jwt_expiry = 900` in `talvio-terraform-iac` (`app.tf`). Apply the `20261013000100_access_token_hook.sql` migration first: Auth fails to issue tokens if the hook is enabled before the function exists.
+
 Accounts that previously signed in only with LinkedIn keep the email LinkedIn stored on `auth.users`. Local config required that email (`email_optional = false`). Email sign-in was already on the sign-in screen before that apply. They sign in with an email link to that same address. Google still works when the Google account uses that email. Disabling the provider does not delete `auth.users` or profile rows. To find accounts whose only identity is LinkedIn:
 
 ```sql
@@ -186,10 +188,12 @@ onto the new chain; nothing was migrated in place.
 | `20261008000300_resumes_credits.sql` | `resumes` (with `client_draft_id`, `generation_updated_at`, `source_resume_id`), `user_credits`, server-only `credit_prices` (seed `generate_pdf` = 30); indexes; RLS + grants; `resumes_validate_source` and `resumes_zz_keep_revision_clock` triggers; private `consume_credits` / `require_credits`; public `generate_pdf`, `finalize_pdf`, `release_resume_generation` |
 | `20261008000400_monthly_allowance.sql` | Server-only `monthly_allowance_runs`; private `monthly_credit_allowance()` (90) and `apply_monthly_allowance()`; `handle_new_user` → 90 + `on_auth_user_created` on `auth.users`; cron job `monthly-allowance-reset` (hourly, `0 * * * *`; applies once per month); records the current month at the end |
 | `20261008000500_ai_daily_caps.sql` | Server-only `ai_daily_usage`; private `ai_daily_request_cap()` (20), `consume_ai_request_for()` and `prune_ai_daily_usage()`; public `consume_ai_request()`; cron job `ai-daily-usage-prune` (`10 0 * * *`) |
+| `20261013000100_access_token_hook.sql` | Supabase Auth custom access-token hook `custom_access_token_hook(jsonb)` (adds `account_status` from `auth.users.banned_until` and `plan` to every access token; on error returns the claims unchanged) and private `account_plan(uuid)` (`'free'` until MDI-321); `EXECUTE` for `supabase_auth_admin` only. Enabled in `config.toml` locally and by Terraform per environment after the migration is applied ([MDI-440](https://linear.app/mdivani/issue/MDI-440)) |
 
 Constraint / RLS smokes: `supabase/tests/schema_constraints.sql`,
-`supabase/tests/rls.test.sql`, `supabase/tests/monthly_allowance.test.sql` and
-`supabase/tests/ai_daily_caps.test.sql`
+`supabase/tests/rls.test.sql`, `supabase/tests/monthly_allowance.test.sql`,
+`supabase/tests/ai_daily_caps.test.sql` and
+`supabase/tests/access_token_hook.test.sql`
 (`yarn db:test` after `yarn db:reset`).
 
 ## Related docs
