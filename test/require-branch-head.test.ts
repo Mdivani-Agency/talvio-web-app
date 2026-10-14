@@ -42,6 +42,17 @@ describe('stale deployment guard', () => {
     expect(vercel.git.deploymentEnabled).toBe(false);
     expect(workflow).toContain('npm install --global vercel@60.1.3');
     expect(workflow).not.toContain('vercel@latest');
-    expect(workflow.match(/node scripts\/require-branch-head\.mjs/g)).toHaveLength(2);
+    expect(workflow.match(/node scripts\/require-branch-head\.mjs/g)).toHaveLength(1);
+  });
+
+  it('guards the shared hosted db push that CI and the manual workflow call', () => {
+    const dbPush = readFileSync('.github/workflows/supabase-db-push.yml', 'utf8');
+    const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+    const manual = readFileSync('.github/workflows/db-migrations.yml', 'utf8');
+    expect(dbPush.match(/node scripts\/require-branch-head\.mjs/g)).toHaveLength(1);
+    expect(dbPush).not.toContain('--password');
+    expect(ci).toContain('uses: ./.github/workflows/supabase-db-push.yml');
+    expect(manual).toContain('uses: ./.github/workflows/supabase-db-push.yml');
+    expect(manual).toContain('node scripts/require-ci-release-gate.mjs');
   });
 });

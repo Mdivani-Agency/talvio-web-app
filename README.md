@@ -81,10 +81,13 @@ Supabase `db push` still reads GitHub Environment secrets when the hosted projec
 
 | Name | Store as | Used for |
 | --- | --- | --- |
-| `SUPABASE_ACCESS_TOKEN` | environment secret | Supabase CLI `db push` |
+| `SUPABASE_ACCESS_TOKEN` | environment secret | Supabase CLI `link` and `db push` |
+| `SUPABASE_DB_PASSWORD` | environment secret | Database password for that project; `link` and `db push` connect through the IPv4 pooler with it |
 | `SUPABASE_PROJECT_REF` | environment variable (secret also accepted) | Target project ref for that environment |
 
-`db push` fails until the access token secret and the project ref variable are set. Deploy fails until `VERCEL_TOKEN` is a repository secret and the Vercel org/project IDs are repository secrets or variables.
+The job runs `supabase link` before `db push`, so the CLI uses the connection pooler. GitHub runners have no IPv6, and the direct database host is IPv6-only. To re-run migrations without a push, start the **DB Migrations (Supabase)** workflow manually on `development` or `main`. It runs the same steps as CI (`.github/workflows/supabase-db-push.yml`) and refuses unless CI's release gate passed for the branch tip and no CI push run on that branch is still in progress.
+
+`db push` fails until the access token and database password secrets and the project ref variable are set. Deploy fails until `VERCEL_TOKEN` is a repository secret and the Vercel org/project IDs are repository secrets or variables.
 
 ## Deploy on Vercel
 
