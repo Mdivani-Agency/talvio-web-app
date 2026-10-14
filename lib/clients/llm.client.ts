@@ -69,9 +69,15 @@ export const parseResume = async (resume: string) => {
   }
 };
 
-export const fetchTailoredAccount = async (account: string, questions: string[], answers: string[]) => {
+/** The tailored account plus the writing-voice version the route applied, when it reports one (MDI-420). */
+export const fetchAccountProposal = async (account: string, questions: string[], answers: string[]) => {
   const res = await postAi('/api/resume/account', { account, questions, answers });
   if (!res.ok) throw await aiRequestError(res, 'Failed to tailor account');
   const data = await res.json();
-  return transformToPartial(data.account as ParsedAccount) as AccountDto;
+  const version = data?.writingVoice?.version;
+  return {
+    account: transformToPartial(data.account as ParsedAccount) as AccountDto,
+    writingVoiceVersion: typeof version === 'number' ? version : null,
+  };
 };
+

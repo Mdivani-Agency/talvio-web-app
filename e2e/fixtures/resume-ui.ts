@@ -18,7 +18,11 @@ export async function mediaStats() {
   if (!response.ok) {
     throw new Error('Could not read simulator upload stats');
   }
-  return response.json() as Promise<{ presigns: number; uploads: number }>;
+  return response.json() as Promise<{
+    presigns: number;
+    uploads: number;
+    ai: { parse: number; questions: number; tailor: number };
+  }>;
 }
 
 export async function resetAndGuard(page: Page) {

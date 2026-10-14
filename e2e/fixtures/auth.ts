@@ -62,7 +62,7 @@ export async function signInWithLocalMagicLink(page: Page, persona: Persona) {
   await page.goto('http://localhost:3002/account', { waitUntil: 'domcontentloaded' });
   await page.waitForURL(/localhost:3002\/account/);
   // The account page redirects a missing profile to /account/create. Leave only after that decision.
-  await page.getByText(/My Resumes|Build Your Profile!|Could not load your profile|Enhance Your Resume with AI Feedback|Review your answers|Review your profile|AI suggested updates/).first().waitFor({
+  await page.getByText(/My Resumes|Build Your Profile!|Could not load your profile/).first().waitFor({
     state: 'visible',
     timeout: 30_000,
   });

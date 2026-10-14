@@ -1,5 +1,7 @@
 import type { AllowanceStatus } from '@/lib/allowance';
 import { allowanceExhaustedLine, generateDialogLine, REDOWNLOAD_DIALOG_LINE } from '@/lib/allowance-copy';
+import { SparklesIcon } from 'lucide-react';
+
 import { Button, Input } from '@components/ui';
 import { Modal } from '@components/views';
 
@@ -14,6 +16,7 @@ export const DownloadResumeModal = ({
   isFreeDownload = false,
   label,
   setLabel,
+  onImprove,
 }: {
   isOpen: boolean;
   filename: string;
@@ -26,6 +29,8 @@ export const DownloadResumeModal = ({
   isFreeDownload?: boolean;
   label?: string;
   setLabel?: (label: string) => void;
+  /** Renders Improve with AI first above the generate button (MDI-426). */
+  onImprove?: () => void;
 }) => {
   const blocked = !isFreeDownload && allowance?.exhausted === true;
   const message = isFreeDownload
@@ -53,6 +58,12 @@ export const DownloadResumeModal = ({
             value={label ?? ''}
             onChange={(e) => setLabel(e.target.value)}
           />
+        ) : null}
+        {onImprove ? (
+          <Button type="button" variant="secondary" disabled={isGenerating} onClick={onImprove}>
+            <SparklesIcon className="size-4" />
+            Improve with AI first
+          </Button>
         ) : null}
         <Button loading={isGenerating} disabled={isGenerating || blocked} onClick={generateResume}>
           {isFreeDownload ? 'Download Resume' : 'Generate and Download Resume'}

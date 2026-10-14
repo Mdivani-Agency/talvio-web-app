@@ -1,0 +1,41 @@
+name: DB Migrations (Supabase)
+
+# Manually re-runs the hosted db push for the branch tip, through the same
+# reusable workflow as the db-push job in ci.yml. The preflight refuses unless
+# CI's release gate passed for this commit and no CI push run on the branch is
+# still in flight (a dispatch queued behind one would cancel its pending db push).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Require a passed release gate
+    # Only branches that own a hosted project; a feature branch must not migrate talvio-dev.
+    if: github.ref_name == 'main' || github.ref_name == 'development'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Require CI release gate for this commit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/require-ci-release-gate.mjs
+
+  migrate:
+    name: Migrate
+    needs: preflight
+    uses: ./.github/workflows/supabase-db-push.yml
+    secrets: inherit
