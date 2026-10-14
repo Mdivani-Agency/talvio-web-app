@@ -73,10 +73,15 @@ migrations). Do not run it against a linked hosted project.
 After quality checks pass on `development` or `main`, GitHub Actions runs
 `supabase db push` (forward-only, pending migrations) then a Vercel CLI
 deploy. That path does not run on pull requests. Use GitHub Environments
-`development` and `production`. `SUPABASE_ACCESS_TOKEN` is an environment
-secret. `SUPABASE_PROJECT_REF` is an environment variable (a secret with
-the same name is also accepted), one ref per environment. The db-push job
-fails until those are set.
+`development` and `production`. `SUPABASE_ACCESS_TOKEN` and
+`SUPABASE_DB_PASSWORD` are environment secrets. `SUPABASE_PROJECT_REF` is an
+environment variable (a secret with the same name is also accepted), one ref
+per environment. The db-push job fails until those are set. It runs
+`supabase link` first so the CLI connects through the IPv4 pooler; GitHub
+runners cannot reach the IPv6-only direct host. The steps live in the
+reusable `supabase-db-push.yml`. The manual `db-migrations.yml` workflow calls
+it on `development` or `main` only when CI's release gate passed for the
+branch tip and no CI push run on that branch is still in progress.
 
 PR merge gates for db / e2e / unit / integration tests will land later;
 they are not part of this bootstrap.
