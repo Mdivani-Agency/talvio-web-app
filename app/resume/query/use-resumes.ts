@@ -38,6 +38,25 @@ export async function fetchResumes(
   };
 }
 
+/**
+ * Every saved resume of a type, page by page (the list query pages by RESUME_PAGE_SIZE), for pickers
+ * that must offer all of them. The list rows carry no content; fetch a chosen resume to read it.
+ */
+export async function fetchAllResumes(userId: string, type: 'GENERAL' | 'JOB_SPECIFIC' = 'GENERAL'): Promise<Resume[]> {
+  const all: Resume[] = [];
+  let after: string | undefined;
+  for (let page = 0; page < 50; page += 1) {
+    const { resumes, hasNextPage, endCursor } = await fetchResumes(userId, type, RESUME_PAGE_SIZE, after);
+    all.push(...resumes);
+    if (!hasNextPage || !endCursor) {
+      break;
+    }
+    after = endCursor;
+  }
+  const seen = new Set<string>();
+  return all.filter((resume) => !seen.has(resume.id) && Boolean(seen.add(resume.id)));
+}
+
 export function useResumes(
   userId?: string,
   type: 'GENERAL' | 'JOB_SPECIFIC' = 'GENERAL',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useLlmJob } from '@hooks/use-llm-job';
 import {
@@ -143,10 +143,15 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
   const [kept, setKept] = useState<ReadonlySet<string>>(() => new Set());
   const storedRef = useRef(stored);
 
+  // The key arrives after the first render on a reload (the auth session loads late).
   if (seenKey !== storageKey) {
     setSeenKey(storageKey);
     setStored(read(storageKey));
   }
+
+  useEffect(() => {
+    storedRef.current = stored;
+  });
 
   const persist = useCallback((next: StoredTailor | null) => {
     storedRef.current = next;
@@ -423,11 +428,18 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
     });
   };
 
+  // A journey whose session request was cut off (a reload while it was pending, or before Retry)
+  // has neither questions nor a job to wait for: offer Retry, which repeats the request with the
+  // same clientRequestId, instead of an endless wait.
+  const interrupted = Boolean(stored && !stored.questions && !stored.running && !pending && !failure && !cap);
+  const shownFailure: Failure | null = failure
+    ?? (interrupted ? { stage: 'questions', message: 'Comparing with the job was interrupted.' } : null);
+
   let step: TailorStep = 'intake';
   if (stored) {
     if (cap) {
       step = 'capped';
-    } else if (failure) {
+    } else if (shownFailure) {
       step = 'error';
     } else if (pending === 'proposal' || stored.running === 'proposal') {
       step = 'loadingProposal';
@@ -450,7 +462,7 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
     unsentAnswer: stored?.unsentAnswer ?? '',
     review,
     preview,
-    failure,
+    failure: shownFailure,
     cap,
     confirmed,
     kept,

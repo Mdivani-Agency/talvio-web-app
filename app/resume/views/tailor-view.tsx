@@ -16,7 +16,8 @@ export type TailorSourceOption = {
   /** `profile` or a resume id. */
   value: string;
   label: string;
-  build: () => Omit<TailorStart, 'jobPost' | 'resumeName'>;
+  /** Loads the source's current content (a saved resume is fetched in full). */
+  build: () => Promise<Omit<TailorStart, 'jobPost' | 'resumeName'>>;
 };
 
 type TailorViewProps = {
@@ -48,18 +49,28 @@ function Intake({ sources, onStart }: { sources: TailorSourceOption[]; onStart: 
   const [source, setSource] = useState(sources[0]?.value ?? '');
   const tooLong = text.length > JOB_DESCRIPTION_MAX;
   const chosen = sources.find((option) => option.value === source);
-  const ready = Boolean(text.trim()) && !tooLong && Boolean(chosen);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const ready = Boolean(text.trim()) && !tooLong && Boolean(chosen) && !loading;
 
-  const submit = () => {
+  const submit = async () => {
     if (!ready || !chosen) {
       return;
     }
     const name = [title.trim(), company.trim()].filter(Boolean).join(' at ') || 'Tailored resume';
-    onStart({
-      ...chosen.build(),
-      jobPost: { text: text.trim(), title: title.trim() || null, company: company.trim() || null },
-      resumeName: name,
-    });
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const base = await chosen.build();
+      onStart({
+        ...base,
+        jobPost: { text: text.trim(), title: title.trim() || null, company: company.trim() || null },
+        resumeName: name,
+      });
+    } catch {
+      setLoadError('This resume could not be loaded. Check your connection and try again.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -110,9 +121,10 @@ function Intake({ sources, onStart }: { sources: TailorSourceOption[]; onStart: 
             : `${text.length.toLocaleString()} / ${JOB_DESCRIPTION_MAX.toLocaleString()} characters`}
         </span>
       </Label>
+      {loadError ? <p className="text-sm text-destructive">{loadError}</p> : null}
       <div className="flex justify-end">
-        <Button type="button" onClick={submit} disabled={!ready}>
-          Continue
+        <Button type="button" onClick={() => void submit()} disabled={!ready}>
+          {loading ? 'Loading...' : 'Continue'}
         </Button>
       </div>
     </section>

@@ -1,13 +1,14 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 import { useProfile } from '@app/account/query/use-profile';
 import { createResume } from '@app/resume/query/use-create-resume';
-import { useResumes } from '@app/resume/query/use-resumes';
+import { fetchResume } from '@app/resume/query/use-resume';
+import { fetchAllResumes } from '@app/resume/query/use-resumes';
 import { Button } from '@components/ui';
 import { Loading } from '@components/views';
 import { isGeneratedResume, isOpenDraft } from '@lib/adapters/resume.adapter';
@@ -30,7 +31,12 @@ function TailorPage() {
   const { session, isPending } = useUserSession();
   const userId = session?.user.id;
   const profile = useProfile(userId);
-  const resumes = useResumes(userId, 'GENERAL');
+  const resumes = useQuery({
+    // Under ['resumes', userId], so creating a resume refreshes it too.
+    queryKey: ['resumes', userId, 'GENERAL', 'tailor-sources'],
+    queryFn: () => fetchAllResumes(userId as string, 'GENERAL'),
+    enabled: Boolean(userId),
+  });
   const tailor = useTailor({ storageKey: userId ?? null });
   const queryClient = useQueryClient();
 
@@ -41,32 +47,36 @@ function TailorPage() {
       options.push({
         value: 'profile',
         label: 'My profile',
-        build: () => ({
+        build: async () => ({
           source: { kind: 'profile', id: account.id, revision: account.updatedAt },
           document: profileToResumeDocument(account),
           look: { template: DEFAULT_RESUME_TEMPLATE, color: RESUME_COLORS_MAP.black, fontSize: 'md' },
         }),
       });
     }
-    for (const resume of resumes.data?.resumes ?? []) {
-      if (isOpenDraft(resume)) {
+    for (const listed of resumes.data ?? []) {
+      if (isOpenDraft(listed)) {
         continue;
       }
       options.push({
-        value: resume.id,
-        label: resume.name || 'Untitled resume',
-        build: () => ({
-          source: {
-            kind: 'resume',
-            id: resume.id,
-            revision: resume.updatedAt,
-            resumeType: 'general',
-            state: isGeneratedResume(resume) ? 'generated' : 'draft',
-            sourceResumeId: resume.sourceResumeId ?? null,
-          },
-          document: resume.metadata,
-          look: { template: resume.template, color: resume.color, fontSize: resume.fontSize, fontFamily: resume.fontFamily },
-        }),
+        value: listed.id,
+        label: listed.name || 'Untitled resume',
+        // The list does not carry resume content: load the resume itself when it is chosen.
+        build: async () => {
+          const resume = await fetchResume(listed.id);
+          return {
+            source: {
+              kind: 'resume',
+              id: resume.id,
+              revision: resume.updatedAt,
+              resumeType: 'general',
+              state: isGeneratedResume(resume) ? 'generated' : 'draft',
+              sourceResumeId: resume.sourceResumeId ?? null,
+            },
+            document: resume.metadata,
+            look: { template: resume.template, color: resume.color, fontSize: resume.fontSize, fontFamily: resume.fontFamily },
+          };
+        },
       });
     }
     return options;

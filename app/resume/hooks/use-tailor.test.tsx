@@ -197,4 +197,42 @@ describe('useTailor', () => {
     expect(result.current.step).toBe('intake');
     unmount();
   });
+
+  it('works once the user arrives after the first render, as on a reload', async () => {
+    const first = setup();
+    act(() => first.result.current.start(input));
+    await waitFor(() => expect(first.result.current.step).toBe('questions'), WAIT);
+    first.unmount();
+
+    const view = renderHook(
+      (props: { key: string | null }) => useTailor({ storageKey: props.key, client: first.client as unknown as LlmClient }),
+      { initialProps: { key: null as string | null } },
+    );
+    expect(view.result.current.step).toBe('intake');
+    view.rerender({ key: 'user-1' });
+    expect(view.result.current.step).toBe('questions');
+    act(() => view.result.current.setUnsentAnswer('Yes, two years'));
+    act(() => view.result.current.answerCurrent('answered'));
+    expect(view.result.current.step).toBe('answerReview');
+    expect(view.result.current.answers).toEqual([expect.objectContaining({ questionId: 'r1-q1', value: 'Yes, two years' })]);
+    view.unmount();
+  });
+
+  it('offers Retry for a journey whose session request was cut off, reusing its request id', async () => {
+    const client = fakeClient();
+    client.createSession.mockImplementationOnce(() => new Promise(() => undefined));
+    const first = setup(client);
+    act(() => first.result.current.start(input));
+    expect(first.result.current.step).toBe('loadingQuestions');
+    first.unmount();
+
+    const again = setup(client);
+    expect(again.result.current.step).toBe('error');
+    act(() => again.result.current.retry());
+    await waitFor(() => expect(again.result.current.step).toBe('questions'), WAIT);
+    const ids = client.createSession.mock.calls.map((call) => (call as unknown as [{ clientRequestId: string }])[0].clientRequestId);
+    expect(ids).toHaveLength(2);
+    expect(ids[1]).toBe(ids[0]);
+    again.unmount();
+  });
 });
