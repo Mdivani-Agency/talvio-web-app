@@ -61,6 +61,7 @@ export function serviceClient(): SupabaseClient {
     SUPABASE_SECRET_KEY: requireEnv('SUPABASE_SECRET_KEY'),
     MEDIA_API_BASE_URL: process.env.MEDIA_API_BASE_URL ?? 'http://127.0.0.1:3999',
     OPENAI_BASE_URL: requireEnv('OPENAI_BASE_URL'),
+    LLM_SERVICE_URL: process.env.LLM_SERVICE_URL ?? 'http://127.0.0.1:3999/llm',
     GOOGLE_FONTS_API_BASE: requireEnv('GOOGLE_FONTS_API_BASE'),
     BLOG_API_BASE_URL: requireEnv('BLOG_API_BASE_URL'),
   };
