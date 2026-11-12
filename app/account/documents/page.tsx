@@ -3,6 +3,7 @@ import { Icon } from "@components/icons";
 import { Button, Card, CardContent, CardFooter, Label } from "@components/ui";
 import { ErrorView, Loading } from "@components/views";
 import { getDocuments } from "@lib/clients/media.client";
+import { featureFlags } from "@lib/flags";
 import { useUserSession } from "@lib/providers";
 import { useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
@@ -44,7 +45,14 @@ export default function DocumentsPage() {
 
   return (
     <section className="flex flex-col gap-8 p-4">
-      <h1 className="text-xl font-bold">Your Resumes</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl font-bold">Your Resumes</h1>
+        {featureFlags().llmService ? (
+          <Button asChild variant="secondary">
+            <Link href="/resume/tailor">Tailor to a job</Link>
+          </Button>
+        ) : null}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {
         documents.length === 0 && (

@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { resumeToCareerDocument } from '../lib/llm/career-document';
 import { createLlmClient, jobRequest } from '../lib/llm/client';
 import { reviewServiceProposal, proposalFromEnvelope } from '../lib/llm/improve-proposal';
+import { reviewTailoring, tailorResultFromEnvelope } from '../lib/llm/tailor';
 import { fullResumeContent } from './fixtures/flow/resume-document';
 import { proxyLlmRequest } from '../lib/services/llm-proxy.server';
 import { startSimulator } from '../e2e/services/simulator.mjs';
@@ -279,6 +280,34 @@ describe('local LLM service job API', () => {
     await client.deleteSession(session.sessionId);
     const stats = await (await fetch(`${simulator.url}/__e2e/llm-stats`)).json();
     expect(stats).toMatchObject({ sessions: 1, answers: 1, deletedSessions: 1 });
+  });
+
+  it('runs a tailor session to a tailored resume with gaps and omissions', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    const session = await client.createSession({
+      schemaVersion: '1.0',
+      clientRequestId: 'session-sim-0002',
+      purpose: 'tailor',
+      source: { source: { kind: 'profile', id: '7a2b3c4d-5e6f-4a1b-8c2d-3e4f5a6b7c82', revision: 'unsaved' }, document: resumeToCareerDocument(fullResumeContent).document },
+      jobDescription: { text: 'We need a platform engineer.', title: null, company: null, url: null },
+    });
+    const job = await client.createJob(jobRequest({
+      locale: 'en-US',
+      sessionId: session.sessionId,
+      parentJobId: null,
+      operation: 'tailor_resume',
+      contextRevisionId: session.latestContext.contextRevisionId,
+      input: { resumeName: 'Platform Engineer' },
+    }, 'key-sim-0012'));
+    const done = await poll(client, job.jobId);
+    const result = tailorResultFromEnvelope(done.result!);
+    expect(result).not.toBeNull();
+    const review = reviewTailoring(fullResumeContent, result!);
+    expect(review.resume.profile.tagline).toBe('Engineer who builds reliable data tools.');
+    expect(review.resume.skills).toEqual([]);
+    expect(review.requirements.map((item) => item.status)).toEqual(['supported', 'missing']);
+    await client.deleteSession(session.sessionId);
   });
 
   it('cancels a slow job', async () => {

@@ -17,7 +17,8 @@
  *
  * Sessions (`POST /llm/v1/sessions`, `/answers`, `DELETE`) keep the submitted source, so the canned
  * improve_resume proposal rewrites the source's own tagline (original value as the precondition) and
- * adds one skill that needs confirmation.
+ * adds one skill that needs confirmation. The canned tailor_resume result rewrites the tagline, leaves out
+ * the first skill, and reports one covered and one missing requirement.
  */
 
 const UUID = '[0-9a-f-]{36}';
@@ -129,6 +130,47 @@ function cannedResult(operation, request) {
           document: null,
           summary: 'Two suggestions: a clearer summary and one skill from your answers.',
         },
+      };
+    }
+    case 'tailor_resume': {
+      const session = llm.sessions.get(request.sessionId);
+      const source = session?.source ?? { source: { kind: 'profile', id: crypto.randomUUID(), revision: 'unsaved' }, document: { person: {}, skills: [] } };
+      const skill = source.document.skills?.[0] ?? null;
+      return {
+        proposal: {
+          proposalId: crypto.randomUUID(),
+          source: source.source,
+          sourceHash: '3'.repeat(64),
+          applyTarget: { kind: 'new_job_specific_resume', sourceResumeId: source.source.kind === 'resume' ? source.source.id : null, resumeName: request.input?.resumeName ?? 'Tailored resume' },
+          changes: [
+            {
+              type: 'field',
+              changeKind: 'rewrite',
+              id: 'tailor-tagline',
+              target: { section: 'person', entityId: null, field: 'tagline' },
+              originalValue: source.document.person?.tagline ?? null,
+              proposedValue: 'Engineer who builds reliable data tools.',
+              reason: 'The job asks for data tooling.',
+              factIds: [],
+              evidence: [],
+              confirmation: { required: false, claims: [] },
+            },
+          ],
+          omissions: skill
+            ? [{ id: 'omit-skill', section: 'skills', entityId: skill.id, field: null, originalValue: skill, reason: 'Not relevant to this job.' }]
+            : [],
+          document: source.document,
+          summary: 'One rewrite for this job.',
+        },
+        requirements: [
+          { id: 'req-1', text: 'Builds internal tools', kind: 'required' },
+          { id: 'req-2', text: 'Kubernetes in production', kind: 'preferred' },
+        ],
+        coverage: [
+          { requirementId: 'req-1', status: 'supported', note: null },
+          { requirementId: 'req-2', status: 'missing', note: 'Not in your resume.' },
+        ],
+        unsupportedRequirementIds: ['req-2'],
       };
     }
     case 'parse_document':
