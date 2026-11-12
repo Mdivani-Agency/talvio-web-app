@@ -6,14 +6,14 @@ import { renderHook } from '../test/utils/render';
 
 const JOB_ID = '8e9f0a1b-2c3d-4e4f-9a6b-7c8d9e0f1a28';
 
-const { authedFetch, parseResume } = vi.hoisted(() => ({ authedFetch: vi.fn(), parseResume: vi.fn() }));
+const { authedFetch, parseResume, extractPdfPages } = vi.hoisted(() => ({ authedFetch: vi.fn(), parseResume: vi.fn(), extractPdfPages: vi.fn() }));
 vi.mock('@/lib/supabase/authed-fetch', () => ({ authedFetch }));
 vi.mock('@lib/clients/llm.client', () => ({ parseResume }));
 vi.mock('@lib/providers', () => ({
   useUserSession: () => ({ session: { user: { id: 'user-1' } }, isPending: false }),
 }));
 vi.mock('./use-pdf-text', () => ({
-  usePdfText: () => ({ parsePdf: vi.fn(), extractPdfPages: vi.fn(), parsing: false }),
+  usePdfText: () => ({ parsePdf: vi.fn(), extractPdfPages, parsing: false }),
 }));
 
 import { importJobStorageKey, useResumeParser } from './use-resume-parser';
@@ -49,6 +49,7 @@ function setup() {
 beforeEach(() => {
   authedFetch.mockReset();
   parseResume.mockReset();
+  extractPdfPages.mockReset();
 });
 
 afterEach(() => {
@@ -103,6 +104,32 @@ describe('useResumeParser', () => {
     });
     await waitFor(() => expect(events.onError).toHaveBeenCalled());
     expect(events.onError.mock.calls[0]![0]).toMatchObject({ code: 'quota_exceeded', message: 'You have used today’s AI jobs.' });
+  });
+
+  it('is busy while a PDF is read, and a newer paste wins over it', async () => {
+    vi.stubEnv('NEXT_PUBLIC_FLAG_LLM_SERVICE', 'true');
+    let finishRead: (value: unknown) => void = () => undefined;
+    extractPdfPages.mockReturnValueOnce(new Promise((resolve) => { finishRead = resolve; }));
+    respondWith([202, { jobId: JOB_ID, status: 'queued', pollAfterMs: 500, replayed: false }], [200, succeeded]);
+    const { result, events } = setup();
+    const file = new File(['%PDF'], 'resume.pdf', { type: 'application/pdf' });
+
+    let reading: Promise<unknown> = Promise.resolve();
+    act(() => {
+      reading = result.current.parseResumeText(file) as Promise<unknown>;
+    });
+    await waitFor(() => expect(result.current.loading).toBe(true));
+
+    await act(async () => {
+      await result.current.parsePastedText('Nino Beridze, Senior Backend Engineer');
+    });
+    await act(async () => {
+      finishRead({ pages: [{ pageNumber: 1, text: 'Older PDF text' }], version: '1' });
+      await reading;
+    });
+    await waitFor(() => expect(events.onResumeParsed).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    expect(authedFetch).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(authedFetch.mock.calls[0]![1].body).input.text).toBe('Nino Beridze, Senior Backend Engineer');
   });
 
   it('keeps the legacy route while the flag is off', async () => {
