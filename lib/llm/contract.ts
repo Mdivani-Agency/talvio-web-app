@@ -166,7 +166,7 @@ export type CreateSessionRequest = {
   clientRequestId: string;
   purpose: 'improve' | 'tailor';
   source: { source: SourceRef; document: unknown };
-  jobDescription: { text: string } | null;
+  jobDescription: { text: string; title: string | null; company: string | null; url: string | null } | null;
 };
 
 export type SessionAnswer =

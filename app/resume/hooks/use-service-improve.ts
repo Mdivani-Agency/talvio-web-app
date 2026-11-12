@@ -218,7 +218,8 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
     }
     const stage = session.running ?? 'questions';
     if (settled.phase === 'failed') {
-      persist({ ...session, running: null });
+      // `running` keeps the stage: after a reload the failed job settles again and Retry must
+      // still know it was a proposal job. The failure shows over the wait.
       fail(stage, settled.error);
       return;
     }
@@ -256,7 +257,11 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
     client: llm,
     onSettled,
   });
+  // Bumped when the session ends, so a request that answers afterwards does not bring it back.
+  const runRef = useRef(0);
+
   const runQuestions = useCallback(async (session: StoredSession) => {
+    const run = runRef.current;
     setFailure(null);
     setPending('questions');
     try {
@@ -270,6 +275,10 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
           source: { source: current.source, document },
           jobDescription: null,
         });
+        if (run !== runRef.current) {
+          void llm.deleteSession(created.sessionId).catch(() => undefined);
+          return;
+        }
         current = { ...current, sessionId: created.sessionId, contextRevisionId: created.latestContext.contextRevisionId };
       }
       persist({ ...current, running: 'questions' });
@@ -283,7 +292,9 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
         input: { analysisJobId: null, round: 1, maxQuestions: 5 },
       });
     } catch (error) {
-      fail('questions', error);
+      if (run === runRef.current) {
+        fail('questions', error);
+      }
     }
   }, [fail, job, llm, locale, persist]);
 
@@ -292,6 +303,7 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
     if (!session?.sessionId || !session.contextRevisionId) {
       return;
     }
+    const run = runRef.current;
     setFailure(null);
     setPending('proposal');
     try {
@@ -304,6 +316,9 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
           questionSetId: current.questionSetId,
           answers,
         });
+        if (run !== runRef.current) {
+          return;
+        }
         current = { ...current, contextRevisionId: revision.contextRevisionId, answersSent: signature };
       }
       persist({ ...current, running: 'proposal', proposal: null });
@@ -317,7 +332,9 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
         input: { sections: [], targetRole: null },
       });
     } catch (error) {
-      fail('proposal', error);
+      if (run === runRef.current) {
+        fail('proposal', error);
+      }
     }
   }, [fail, job, llm, locale, persist]);
 
@@ -399,6 +416,7 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
   );
 
   const end = useCallback(() => {
+    runRef.current += 1;
     const session = storedRef.current;
     if (job.busy) {
       job.cancel();

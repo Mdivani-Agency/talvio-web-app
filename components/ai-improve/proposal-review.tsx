@@ -31,6 +31,12 @@ type ProposalReviewProps = {
   /** Change ids the user confirmed (LLM service proposals). */
   confirmed?: ReadonlySet<string>;
   onToggleConfirmed?: (changeId: string) => void;
+  /** Footer buttons; Accept and Reject unless the journey says otherwise. */
+  acceptLabel?: string;
+  rejectLabel?: string;
+  acceptDisabled?: boolean;
+  /** Replaces the line that explains what Accept does. */
+  intro?: string;
 };
 
 function changeHeading(change: AiFieldChange) {
@@ -61,6 +67,10 @@ export function ProposalReview({
   onReject,
   confirmed,
   onToggleConfirmed,
+  acceptLabel = 'Accept',
+  rejectLabel = 'Reject',
+  acceptDisabled = false,
+  intro,
 }: ProposalReviewProps) {
   const needsConfirming = review.changes.some((change) => change.needsConfirmation);
   return (
@@ -73,9 +83,9 @@ export function ProposalReview({
       </div>
       {review.summary ? <p className="text-sm">{review.summary}</p> : null}
       <p className="text-sm text-muted-foreground">
-        {needsConfirming
+        {intro ?? (needsConfirming
           ? 'Your resume is unchanged until you accept. Accept applies the suggestions below. A suggestion that adds something new applies only if you confirm it is true.'
-          : 'Your resume is unchanged until you accept. Accept applies every suggestion below.'}
+          : 'Your resume is unchanged until you accept. Accept applies every suggestion below.')}
       </p>
       {review.skipped ? (
         <p className="text-sm text-muted-foreground">
@@ -130,10 +140,10 @@ export function ProposalReview({
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onReject}>
-            Reject
+            {rejectLabel}
           </Button>
-          <Button type="button" onClick={onAccept}>
-            Accept
+          <Button type="button" onClick={onAccept} disabled={acceptDisabled}>
+            {acceptLabel}
           </Button>
         </CardFooter>
       </Card>

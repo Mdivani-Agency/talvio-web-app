@@ -224,6 +224,56 @@ describe('useServiceImprove', () => {
     unmount();
   });
 
+  it('keeps a failed proposal job a proposal job across a reload, so Retry reaches the review', async () => {
+    const client = fakeClient();
+    const failedOnce = {
+      ...succeeded(IMPROVE_JOB, 'improve_resume', null),
+      status: 'failed',
+      result: null,
+      error: { code: 'dependency_unavailable', message: 'Busy.', retryable: true },
+    };
+    client.getJob.mockImplementation(async (jobId: string) =>
+      jobId === IMPROVE_JOB ? (failedOnce as never) : succeeded(jobId, 'generate_questions', questionSet),
+    );
+    const first = setup(client);
+    act(() => first.result.current.start());
+    await waitFor(() => expect(first.result.current.step).toBe('questions'), WAIT);
+    act(() => first.result.current.answerCurrent('skipped'));
+    act(() => first.result.current.answerCurrent('skipped'));
+    act(() => first.result.current.requestProposal());
+    await waitFor(() => expect(first.result.current.step).toBe('error'), WAIT);
+    first.unmount();
+
+    client.retryJob.mockResolvedValue({ jobId: IMPROVE_JOB, status: 'queued', pollAfterMs: 500 } as never);
+    const again = setup(client);
+    act(() => again.result.current.start());
+    await waitFor(() => expect(again.result.current.step).toBe('error'), WAIT);
+    client.getJob.mockImplementation(async (jobId: string) =>
+      jobId === IMPROVE_JOB ? succeeded(jobId, 'improve_resume', { proposal }) : succeeded(jobId, 'generate_questions', questionSet),
+    );
+    act(() => again.result.current.retry());
+    await waitFor(() => expect(again.result.current.step).toBe('proposalReview'), WAIT);
+    again.unmount();
+  });
+
+  it('drops a session that is created after the user closed Improve', async () => {
+    const client = fakeClient();
+    let answer: (value: unknown) => void = () => undefined;
+    client.createSession.mockImplementationOnce(() => new Promise((resolve) => { answer = resolve as never; }));
+    const { result, unmount } = setup(client);
+    act(() => result.current.start());
+    expect(result.current.step).toBe('loadingQuestions');
+    act(() => result.current.cancel());
+    await act(async () => {
+      answer({ sessionId: SESSION_ID, purpose: 'improve', status: 'open', latestContext: { contextRevisionId: CONTEXT_1, sessionId: SESSION_ID } });
+    });
+    expect(client.createJob).not.toHaveBeenCalled();
+    expect(client.deleteSession).toHaveBeenCalledWith(SESSION_ID);
+    expect(window.localStorage.getItem(`talvio-llm-improve:v1:${KEY}`)).toBeNull();
+    expect(result.current.step).toBe('idle');
+    unmount();
+  });
+
   it('drops a change whose text was edited after the proposal arrived', async () => {
     const { result, rerender, onApply, unmount } = setup();
     act(() => result.current.start());
