@@ -41,5 +41,19 @@ export const usePdfText = () => {
     }
   }, []);
 
-  return { parsePdf, text, parsing };
+  /** Text per page plus the pdf.js version, for the LLM service's page manifest (MDI-221). */
+  const extractPdfPages = useCallback(async (file: Buffer): Promise<{ pages: string[]; version: string }> => {
+    setParsing(true);
+    try {
+      const pdf = await pdfjsLib.getDocument(file).promise;
+      const pages = await Promise.all(
+        Array.from({ length: pdf.numPages }, (_, index) => extractText(pdf, index + 1)),
+      );
+      return { pages, version: String(pdfjsLib.version ?? 'unknown') };
+    } finally {
+      setParsing(false);
+    }
+  }, []);
+
+  return { parsePdf, extractPdfPages, text, parsing };
 };
