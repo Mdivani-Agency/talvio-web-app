@@ -95,6 +95,10 @@ export function createJobRunner(options: JobRunnerOptions) {
   let deadline: number | null = null;
   let waitingForOnline: (() => void) | null = null;
   let cancelWhenAccepted = false;
+  /** createJob calls still waiting for an answer. */
+  let submitsInFlight = 0;
+  /** The key of a submission whose answer was lost: it may have been admitted without us knowing the job. */
+  let uncertainKey: string | null = null;
   /** The last request started or resumed, to start again after a refusal. */
   let lastRequest: JobRequestBody | null = null;
 
@@ -227,10 +231,16 @@ export function createJobRunner(options: JobRunnerOptions) {
     }
     const current = record;
     set({ phase: 'submitting', offline: !isOnline() });
+    submitsInFlight += 1;
     try {
       const accepted = await client.createJob(
         jobRequest(current.request as JobRequestBody, current.clientRequestId),
-      );
+      ).finally(() => {
+        submitsInFlight -= 1;
+      });
+      if (uncertainKey === current.clientRequestId) {
+        uncertainKey = null;
+      }
       if (gen !== generation) {
         if (cancelWhenAccepted) {
           cancelWhenAccepted = false;
@@ -245,6 +255,7 @@ export function createJobRunner(options: JobRunnerOptions) {
         return;
       }
       if (error instanceof LlmNetworkError || (error instanceof LlmError && error.code === 'dependency_unavailable')) {
+        uncertainKey = current.clientRequestId;
         if (attempt < MAX_SUBMIT_ATTEMPTS) {
           // Same key: if the first send was admitted, the service answers with that job.
           later(() => void submit(gen, attempt + 1), SUBMIT_BACKOFF_MS * 2 ** (attempt - 1));
@@ -309,7 +320,7 @@ export function createJobRunner(options: JobRunnerOptions) {
 
     async cancel() {
       const jobId = record?.jobId ?? null;
-      const wasSubmitting = state.phase === 'submitting';
+      const unsent = record && !record.jobId ? record : null;
       generation += 1;
       stopTimer();
       save(null);
@@ -320,8 +331,18 @@ export function createJobRunner(options: JobRunnerOptions) {
         } catch {
           // Best effort: a job that cannot be cancelled ends at its deadline and is not shown.
         }
-      } else if (wasSubmitting) {
+      } else if (submitsInFlight > 0) {
         cancelWhenAccepted = true;
+      } else if (unsent && uncertainKey === unsent.clientRequestId) {
+        // An earlier send may have been admitted with its answer lost. Replaying the same key returns
+        // that job (or admits it now), so it can be cancelled rather than left running.
+        uncertainKey = null;
+        try {
+          const accepted = await client.createJob(jobRequest(unsent.request as JobRequestBody, unsent.clientRequestId));
+          await client.cancelJob(accepted.jobId);
+        } catch {
+          // Best effort, as above.
+        }
       }
     },
 

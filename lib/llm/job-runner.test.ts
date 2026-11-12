@@ -298,6 +298,32 @@ describe('job runner', () => {
     expect(client.getJob).not.toHaveBeenCalled();
   });
 
+  it('recovers and cancels a job whose submission answer was lost when cancelled during backoff', async () => {
+    const { client, runner, storage, last } = setup();
+    client.createJob.mockRejectedValueOnce(new LlmNetworkError()).mockResolvedValue(accepted({ replayed: true }));
+    runner.start(REQUEST);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(client.createJob).toHaveBeenCalledTimes(1);
+
+    await runner.cancel();
+    expect(client.createJob).toHaveBeenCalledTimes(2);
+    expect((client.createJob.mock.calls[1]![0] as { clientRequestId: string }).clientRequestId).toBe('key-00000001');
+    expect(client.cancelJob).toHaveBeenCalledWith(JOB_ID);
+    expect(last()).toEqual({ phase: 'cancelled', jobId: null });
+    expect(readStoredJob(storage, KEY)).toBeNull();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(client.createJob).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends nothing more when a submission that never left is cancelled', async () => {
+    const { client, runner } = setup({ online: () => false });
+    client.createJob.mockReturnValue(new Promise(() => undefined));
+    runner.start(REQUEST);
+    await vi.advanceTimersByTimeAsync(0);
+    await runner.cancel();
+    expect(client.cancelJob).not.toHaveBeenCalled();
+  });
+
   it('treats a job the service no longer has as expired', async () => {
     const { client, runner, storage, last } = setup();
     client.createJob.mockResolvedValue(accepted());
