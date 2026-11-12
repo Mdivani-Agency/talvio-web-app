@@ -8,6 +8,7 @@ const ORIGIN_KEYS = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'MEDIA_API_BASE_URL',
   'OPENAI_BASE_URL',
+  'LLM_SERVICE_URL',
   'GOOGLE_FONTS_API_BASE',
   'BLOG_API_BASE_URL',
 ];
@@ -51,6 +52,7 @@ export function localE2EEnv(status) {
     MEDIA_SERVICE_API_KEY: 'local-e2e-dummy',
     OPENAI_API_KEY: 'local-e2e-dummy',
     OPENAI_BASE_URL: 'http://127.0.0.1:3999/v1',
+    LLM_SERVICE_URL: 'http://127.0.0.1:3999/llm',
     GOOGLE_FONTS_API_KEY: 'local-e2e-dummy',
     GOOGLE_FONTS_API_BASE: 'http://127.0.0.1:3999',
     BLOG_API_BASE_URL: 'http://127.0.0.1:3999',

@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { createLlmClient, jobRequest } from '../lib/llm/client';
+import { proxyLlmRequest } from '../lib/services/llm-proxy.server';
 import { startSimulator } from '../e2e/services/simulator.mjs';
 
 const PDF = Buffer.from('%PDF-1.1\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n');
@@ -125,5 +127,109 @@ describe('local media, AI, and font simulator', () => {
     await reset();
     const cleared = await fetch(`${simulator.url}/__e2e/unexpected`);
     expect(await cleared.json()).toEqual({ count: 0, paths: [] });
+  });
+});
+
+describe('local LLM service job API', () => {
+  const REQUEST = {
+    operation: 'parse_document' as const,
+    locale: 'en-US',
+    input: { kind: 'text' as const, text: 'Ada Owner, Engineer', extraction: null },
+  };
+
+  /** The browser client, through the real /api/llm adapter, against the simulator. */
+  function clientFor(token: string) {
+    return createLlmClient(async (url, init) => {
+      const path = url.replace(/^\/api\/llm\//, '');
+      return proxyLlmRequest(
+        new Request(`http://localhost:3002${url}`, {
+          ...init,
+          headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` },
+        }),
+        path.split('/'),
+        { baseUrl: `${simulator.url}/llm` },
+      );
+    });
+  }
+
+  async function scenario(mode: string) {
+    await fetch(`${simulator.url}/__e2e/llm-scenario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode }),
+    });
+  }
+
+  async function poll(client: ReturnType<typeof createLlmClient>, jobId: string) {
+    for (let i = 0; i < 5; i += 1) {
+      const job = await client.getJob(jobId);
+      if (['succeeded', 'failed', 'cancelled', 'expired'].includes(job.status)) {
+        return job;
+      }
+    }
+    throw new Error('job did not finish');
+  }
+
+  it('runs a job to a result and replays a repeated key', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    const request = jobRequest(REQUEST, 'key-sim-0001');
+    const first = await client.createJob(request);
+    expect(first).toMatchObject({ status: 'queued', replayed: false });
+    const again = await client.createJob(request);
+    expect(again).toMatchObject({ jobId: first.jobId, replayed: true });
+
+    const job = await poll(client, first.jobId);
+    expect(job.status).toBe('succeeded');
+    expect(job.result).toMatchObject({ operation: 'parse_document', resultKind: 'complete' });
+
+    const conflict = await client
+      .createJob(jobRequest({ ...REQUEST, input: { ...REQUEST.input, text: 'Other text' } }, 'key-sim-0001'))
+      .catch((error: unknown) => error);
+    expect(conflict).toMatchObject({ code: 'idempotency_conflict', status: 409 });
+
+    const stranger = await clientFor('user-2').getJob(first.jobId).catch((error: unknown) => error);
+    expect(stranger).toMatchObject({ code: 'not_found', status: 404 });
+
+    const stats = await (await fetch(`${simulator.url}/__e2e/llm-stats`)).json();
+    expect(stats).toMatchObject({ created: 1, replayed: 1 });
+  });
+
+  it('fails retryably, then succeeds on retry', async () => {
+    await reset();
+    await scenario('llm_retryable');
+    const client = clientFor('user-1');
+    const { jobId } = await client.createJob(jobRequest(REQUEST, 'key-sim-0002'));
+    const failed = await poll(client, jobId);
+    expect(failed).toMatchObject({ status: 'failed', error: { code: 'dependency_unavailable', retryable: true } });
+    await client.retryJob(jobId);
+    expect(await poll(client, jobId)).toMatchObject({ status: 'succeeded' });
+  });
+
+  it('refuses at the quota with Retry-After, and a guest before the service', async () => {
+    await reset();
+    await scenario('llm_quota');
+    const capped = await clientFor('user-1').createJob(jobRequest(REQUEST, 'key-sim-0003')).catch((error: unknown) => error);
+    expect(capped).toMatchObject({ code: 'quota_exceeded', status: 429, uiState: 'capped' });
+    expect((capped as { retryAt: Date | null }).retryAt).toBeInstanceOf(Date);
+
+    const guest = createLlmClient(async (url, init) =>
+      proxyLlmRequest(new Request(`http://localhost:3002${url}`, init), url.replace(/^\/api\/llm\//, '').split('/'), {
+        baseUrl: `${simulator.url}/llm`,
+      }),
+    );
+    expect(await guest.getJob('7d0c3c1e-1a2b-4c3d-8e4f-5a6b7c8d9e0f').catch((error: unknown) => error)).toMatchObject({
+      code: 'unauthorized',
+      message: 'Please sign in',
+    });
+  });
+
+  it('cancels a slow job', async () => {
+    await reset();
+    await scenario('llm_slow');
+    const client = clientFor('user-1');
+    const { jobId } = await client.createJob(jobRequest(REQUEST, 'key-sim-0004'));
+    expect((await client.getJob(jobId)).status).toBe('running');
+    expect((await client.cancelJob(jobId)).status).toBe('cancelled');
   });
 });

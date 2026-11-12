@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { handleBlogApi } from './blog-api.mjs';
+import { handleLlmApi, resetLlmApi } from './llm-api.mjs';
 
 const API_KEY = process.env.MEDIA_SERVICE_API_KEY || 'local-e2e-dummy';
 const APP_ORIGIN = 'http://localhost:3002';
@@ -51,6 +52,7 @@ export function resetSimulator() {
   state.presigns = 0;
   state.uploads = 0;
   state.ai = { parse: 0, questions: 0, tailor: 0 };
+  resetLlmApi();
 }
 
 function slugify(input) {
@@ -412,6 +414,10 @@ export function createSimulator() {
           return;
         }
         send(response, 200, recordsFor(decodeURIComponent(records[1])));
+        return;
+      }
+
+      if (handleLlmApi(request, url, body, (status, payload, headers) => send(response, status, payload, headers))) {
         return;
       }
 
