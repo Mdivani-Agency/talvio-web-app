@@ -58,6 +58,7 @@ export type IntFilter = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  apply_llm_proposal?: Maybe<Scalars['JSON']['output']>;
   consume_ai_request?: Maybe<Scalars['Int']['output']>;
   deleteFromresumesCollection?: Maybe<ResumesDeleteResponse>;
   finalize_pdf?: Maybe<Scalars['String']['output']>;
@@ -66,6 +67,10 @@ export type Mutation = {
   release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
   updateresumesCollection?: Maybe<ResumesUpdateResponse>;
+};
+
+export type MutationApply_Llm_ProposalArgs = {
+  p_request?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 export type MutationDeleteFromresumesCollectionArgs = {
@@ -838,6 +843,12 @@ export type ResumesBySourceQueryVariables = Exact<{
 
 export type ResumesBySourceQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
 
+export type Apply_Llm_ProposalMutationVariables = Exact<{
+  p_request?: string | null | undefined;
+}>;
+
+export type Apply_Llm_ProposalMutation = { apply_llm_proposal: string | null };
+
 export type ConsumeAiRequestMutationVariables = Exact<{ [key: string]: never; }>;
 
 export type ConsumeAiRequestMutation = { consume_ai_request: number | null };
@@ -1154,6 +1165,11 @@ export const ResumesBySourceDocument = gql`
   }
 }
     ${ListResumeFragmentDoc}`;
+export const Apply_Llm_ProposalDocument = gql`
+    mutation Apply_Llm_Proposal($p_request: JSON) {
+  apply_llm_proposal(p_request: $p_request)
+}
+    `;
 export const ConsumeAiRequestDocument = gql`
     mutation ConsumeAiRequest {
   consume_ai_request
@@ -1224,6 +1240,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     ResumesBySource(variables: ResumesBySourceQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesBySourceQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ResumesBySourceQuery>({ document: ResumesBySourceDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesBySource', 'query', variables);
+    },
+    Apply_Llm_Proposal(variables?: Apply_Llm_ProposalMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Apply_Llm_ProposalMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Apply_Llm_ProposalMutation>({ document: Apply_Llm_ProposalDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Apply_Llm_Proposal', 'mutation', variables);
     },
     ConsumeAiRequest(variables?: ConsumeAiRequestMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ConsumeAiRequestMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<ConsumeAiRequestMutation>({ document: ConsumeAiRequestDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ConsumeAiRequest', 'mutation', variables);

@@ -19,7 +19,7 @@ import { cn } from '@lib/utils';
 
 import { ResumePreview } from '../components/resume-preview';
 import { useAiImprove } from '../hooks/use-ai-improve';
-import { useServiceImprove, type ImproveSource } from '../hooks/use-service-improve';
+import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../hooks/use-service-improve';
 import { EditResumeView } from './edit-resume-view';
 import TemplatesView from './templates-view';
 
@@ -40,6 +40,11 @@ export type ResumeImproveControls = {
   startToken?: number;
   /** The resume row the session is about (LLM service, MDI-221); unsaved resumes leave it null. */
   source?: ImproveSource | null;
+  /**
+   * Saves an accepted LLM service proposal to the resume (MDI-222) and puts it in the editor
+   * without autosave. Without it, Accept only changes the editor (an unsaved resume).
+   */
+  onSave?: (accepted: ImproveAccepted) => Promise<void>;
 };
 
 type ResumeEditorShellProps = {
@@ -98,6 +103,12 @@ export function ResumeEditorShell({
     storageKey: improveEnabled && service ? improve?.storageKey ?? null : null,
     source: improve?.source ?? null,
     onApply: applyImproved,
+    onSave: improve?.onSave
+      ? async (accepted) => {
+        await improve.onSave?.(accepted);
+        setAiRevision((value) => value + 1);
+      }
+      : undefined,
   });
   const ai = service ? serviceAi : legacyAi;
   const startToken = improve?.startToken;

@@ -11,6 +11,7 @@ import {
   type OnboardingQuestion,
   type QuestionAnswer,
 } from '@lib/ai-improve/questions';
+import { applyRequestBase, applySelection } from '@lib/llm/apply';
 import { resumeToCareerDocument } from '@lib/llm/career-document';
 import { createLlmClient, type LlmClient } from '@lib/llm/client';
 import { LLM_SCHEMA_VERSION, type SessionAnswer, type SourceRef } from '@lib/llm/contract';
@@ -32,7 +33,17 @@ import type { AiImproveStep } from './use-ai-improve';
  * The session and the running job survive a reload. The proposal is checked against the current
  * document on every render: a change whose original text was edited since is dropped, so a later
  * edit is never overwritten. Ending the session deletes it on the service.
+ *
+ * With `onSave` (a saved resume, MDI-222), Accept saves the accepted resume and its receipt
+ * through `apply_llm_proposal` before the review closes; a failed save keeps the review open with
+ * the reason. Without it (an unsaved resume), Accept writes into the editor only.
  */
+
+/** An accepted proposal: the resume to save and the receipt fields for `apply_llm_proposal`. */
+export type ImproveAccepted = {
+  resume: ResumeForm;
+  request: ReturnType<typeof applyRequestBase>;
+};
 
 /** The resume a session is about; an unsaved resume uses a client id. */
 export type ImproveSource = {
@@ -57,6 +68,8 @@ type StoredSession = {
   /** The answers already sent, so a retry does not send them again. */
   answersSent: string | null;
   proposal: ServiceProposal | null;
+  /** The improve_resume job that wrote `proposal`, for the receipt. */
+  proposalJobId?: string | null;
   /** The stage of the job that is running, so a reload shows the right wait. */
   running: 'questions' | 'proposal' | null;
 };
@@ -70,6 +83,8 @@ type Options = {
   source: ImproveSource | null;
   locale?: string;
   onApply: (resume: ResumeForm) => void;
+  /** Saves an accepted proposal; the review stays open until it resolves. */
+  onSave?: (accepted: ImproveAccepted) => Promise<void>;
   client?: LlmClient;
 };
 
@@ -162,7 +177,7 @@ function questionsFrom(result: unknown): { questionSetId: string; questions: Onb
   return { questionSetId: set.questionSetId, questions };
 }
 
-export function useServiceImprove({ resume, storageKey, source, locale = 'en-US', onApply, client }: Options) {
+export function useServiceImprove({ resume, storageKey, source, locale = 'en-US', onApply, onSave, client }: Options) {
   const llm = useMemo(() => client ?? createLlmClient(), [client]);
   const [stored, setStored] = useState<StoredSession | null>(() => readStored(storageKey));
   const [seenKey, setSeenKey] = useState(storageKey);
@@ -172,6 +187,8 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
   const [failure, setFailure] = useState<Failure | null>(null);
   const [cap, setCap] = useState<{ message: string; resetAt: Date } | null>(null);
   const [confirmed, setConfirmed] = useState<ReadonlySet<string>>(() => new Set());
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const storedRef = useRef(stored);
   const resumeRef = useRef(resume);
 
@@ -241,7 +258,12 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
       }
     } else {
       const proposal = proposalFromEnvelope(settled.result);
-      persist({ ...session, running: null, proposal: proposal ?? session.proposal });
+      persist({
+        ...session,
+        running: null,
+        proposal: proposal ?? session.proposal,
+        proposalJobId: proposal ? settled.result.jobId ?? null : session.proposalJobId ?? null,
+      });
       if (proposal) {
         setConfirmed(new Set());
       } else {
@@ -432,15 +454,47 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
     setFailure(null);
     setCap(null);
     setConfirmed(new Set());
+    setSaveError(null);
     setVisible(false);
   }, [job, llm, persist]);
 
-  const accept = useCallback(() => {
-    if (review && review.resume !== resumeRef.current) {
-      onApply(review.resume);
+  const accept = useCallback(async () => {
+    const session = storedRef.current;
+    if (!review || !session?.proposal || saving) {
+      return;
     }
-    end();
-  }, [end, onApply, review]);
+    if (!onSave) {
+      if (review.resume !== resumeRef.current) {
+        onApply(review.resume);
+      }
+      end();
+      return;
+    }
+    const run = runRef.current;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onSave({
+        resume: review.resume,
+        request: applyRequestBase({
+          proposalId: session.proposal.proposalId,
+          jobId: session.proposalJobId ?? null,
+          sessionId: session.sessionId,
+          source: session.source,
+          selection: applySelection({ reviewed: review.changes, changes: session.proposal.changes, confirmed }),
+        }),
+      });
+      if (run === runRef.current) {
+        end();
+      }
+    } catch (error) {
+      if (run === runRef.current) {
+        setSaveError(error instanceof Error ? error.message : 'The changes could not be saved. Try again.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [confirmed, end, onApply, onSave, review, saving]);
 
   const close = useCallback(() => {
     setFailure(null);
@@ -508,6 +562,8 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
     failure,
     cap,
     notice: null,
+    saving,
+    saveError,
 
     confirmed,
     toggleConfirmed,
@@ -516,7 +572,7 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
     answerCurrent,
     goToPreviousQuestion,
     requestProposal: () => void runProposal(),
-    accept,
+    accept: () => void accept(),
     reject: end,
     cancel: end,
     close,

@@ -104,6 +104,18 @@ describe('AiImproveOverlay', () => {
     expect(value.toggleConfirmed).toHaveBeenCalledWith('change-2');
   });
 
+  it('holds the buttons while saving and shows why a save failed', () => {
+    const review = { resume: fullResumeContent, keptSections: [], changes: [] };
+    render(<AiImproveOverlay session={session({ step: 'proposalReview', review, saving: true })} />);
+    expect((screen.getByRole('button', { name: 'Saving...' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Reject' }) as HTMLButtonElement).disabled).toBe(true);
+    cleanup();
+
+    render(<AiImproveOverlay session={session({ step: 'proposalReview', review, saveError: 'This resume changed.' })} />);
+    expect(screen.getByRole('alert').textContent).toBe('This resume changed.');
+    expect((screen.getByRole('button', { name: 'Accept' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('offers Retry and Cancel after a failure, and Close at the cap', () => {
     const failed = session({ step: 'error', failure: { stage: 'proposal', message: 'Failed to tailor account' } });
     render(<AiImproveOverlay session={failed} />);

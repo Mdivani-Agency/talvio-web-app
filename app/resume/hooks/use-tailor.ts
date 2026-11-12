@@ -10,6 +10,8 @@ import {
   type OnboardingQuestion,
   type QuestionAnswer,
 } from '@lib/ai-improve/questions';
+import { previewToResumeContent } from '@lib/adapters/resume.adapter';
+import { applyRequestBase, applySelection, type ApplyRequest } from '@lib/llm/apply';
 import { resumeToCareerDocument } from '@lib/llm/career-document';
 import { createLlmClient, type LlmClient } from '@lib/llm/client';
 import { LLM_SCHEMA_VERSION, type SessionAnswer, type SourceRef } from '@lib/llm/contract';
@@ -24,7 +26,9 @@ import type { PreviewDto, ResumeForm } from '@lib/types';
  * 2. A generate_questions job asks about gaps between the two; answers go to /answers once.
  * 3. A tailor_resume job composes the resume as changes and omissions, with requirement coverage.
  * 4. The user confirms new facts, keeps any omitted content they want, and creates a new
- *    JOB_SPECIFIC resume. The source itself is never changed.
+ *    JOB_SPECIFIC resume through `apply_llm_proposal` (MDI-222), once per journey: the journey's
+ *    `clientDraftId` and the proposal's receipt make a repeated Create return the same resume.
+ *    The source itself is never changed.
  *
  * The journey and its running job survive a reload (stored per user).
  */
@@ -63,6 +67,10 @@ type StoredTailor = TailorStart & {
   unsentAnswer: string;
   answersSent: string | null;
   result: TailorResult | null;
+  /** The tailor_resume job that wrote `result`, for the receipt. */
+  resultJobId?: string | null;
+  /** The new resume's client id, fixed for the journey so a repeated Create makes one resume. */
+  clientDraftId?: string;
   running: 'questions' | 'proposal' | null;
 };
 
@@ -204,7 +212,7 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
       }
     } else {
       const result = tailorResultFromEnvelope(settled.result);
-      persist({ ...session, running: null, result });
+      persist({ ...session, running: null, result, resultJobId: settled.result.jobId ?? null });
       setConfirmed(new Set());
       setKept(new Set());
       if (!result) {
@@ -307,6 +315,7 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
       ...input,
       v: 1,
       clientRequestId: crypto.randomUUID(),
+      clientDraftId: crypto.randomUUID(),
       sessionId: null,
       contextRevisionId: null,
       questionSetId: null,
@@ -399,6 +408,47 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
     return { ...stored.look, name: stored.resumeName, resume: review.resume };
   }, [review, stored]);
 
+  /** The request that saves the reviewed resume as a new JOB_SPECIFIC resume, or null before review. */
+  const applyRequest = useCallback((): Extract<ApplyRequest, { operation: 'tailor_resume' }> | null => {
+    let session = storedRef.current;
+    const tailored = session?.result;
+    if (!session || !tailored || !review || !preview) {
+      return null;
+    }
+    if (!session.clientDraftId) {
+      session = { ...session, clientDraftId: crypto.randomUUID() };
+      persist(session);
+    }
+    const selection = applySelection({
+      reviewed: review.changes,
+      changes: tailored.proposal.changes,
+      confirmed,
+      omissions: review.omissions,
+      kept,
+    });
+    return {
+      ...applyRequestBase({
+        proposalId: tailored.proposal.proposalId,
+        jobId: session.resultJobId ?? null,
+        sessionId: session.sessionId,
+        source: session.source,
+        selection,
+      }),
+      operation: 'tailor_resume',
+      target: { kind: 'new_resume', resumeType: 'job_specific', derivedFrom: session.source },
+      resume: {
+        clientDraftId: session.clientDraftId as string,
+        name: preview.name,
+        label: preview.label ?? null,
+        template: preview.template,
+        color: preview.color,
+        fontSize: preview.fontSize ?? null,
+        fontFamily: preview.fontFamily ?? null,
+        content: previewToResumeContent(preview),
+      },
+    };
+  }, [confirmed, kept, persist, preview, review]);
+
   const retry = useCallback(() => {
     const stage = failure?.stage;
     const session = storedRef.current;
@@ -473,6 +523,7 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
     requestTailoring: () => void runTailoring(),
     toggleConfirmed: toggle(setConfirmed),
     toggleKept: toggle(setKept),
+    applyRequest,
     retry,
     reset,
   };

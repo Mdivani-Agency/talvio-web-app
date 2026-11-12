@@ -163,6 +163,12 @@ export function useResumeAutosave(options: AutosaveOptions) {
     savedRef.current = resume;
   }, []);
 
+  /** A revision saved outside autosave (an accepted AI proposal) becomes the next save's base. */
+  const adopt = useCallback((resume: Resume) => {
+    savedRef.current = resume;
+    return runtime.current?.runner.adopt({ serverId: resume.id, baseUpdatedAt: resume.updatedAt }) ?? false;
+  }, []);
+
   return useMemo(() => ({
     status: snapshot.status as SaveStatus,
     message: snapshot.error,
@@ -172,7 +178,9 @@ export function useResumeAutosave(options: AutosaveOptions) {
     beginGenerating,
     finishGenerating,
     remember,
+    adopt,
   }), [
+    adopt,
     beginGenerating,
     finishGenerating,
     flush,

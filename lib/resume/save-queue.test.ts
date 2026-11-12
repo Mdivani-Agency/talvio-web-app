@@ -195,4 +195,30 @@ describe('createSaveRunner', () => {
     expect(runner.getState().error).toBe('Failed to upload resume PDF');
     expect(runner.getState().pending).toEqual({ name: 'Ann' });
   });
+
+  it('saves the next edit on a revision written outside the queue', async () => {
+    const save = vi.fn().mockResolvedValue({ serverId: 'resume-1', baseUpdatedAt: '2026-11-12T10:10:00.000Z' });
+    const runner = createSaveRunner({ merge: mergeResumePatch, save, isConflict: () => false });
+    runner.seed({ serverId: 'resume-1', baseUpdatedAt: '2026-11-12T10:00:00.000Z' });
+
+    expect(runner.adopt({ serverId: 'resume-1', baseUpdatedAt: '2026-11-12T10:05:00.000Z' })).toBe(true);
+    runner.enqueue({ name: 'Ann' });
+    await runner.whenIdle();
+
+    expect(save).toHaveBeenCalledWith(
+      { name: 'Ann' },
+      { serverId: 'resume-1', baseUpdatedAt: '2026-11-12T10:05:00.000Z' },
+    );
+  });
+
+  it('does not take an outside revision while a save is running', async () => {
+    const first = deferred<{ serverId: string; baseUpdatedAt: string }>();
+    const runner = createSaveRunner({ merge: mergeResumePatch, save: () => first.promise, isConflict: () => false });
+    runner.enqueue({ name: 'Ann' });
+
+    expect(runner.adopt({ serverId: 'resume-1', baseUpdatedAt: '2026-11-12T10:05:00.000Z' })).toBe(false);
+    first.resolve({ serverId: 'resume-1', baseUpdatedAt: '2026-11-12T10:01:00.000Z' });
+    await runner.whenIdle();
+    expect(runner.getState().baseUpdatedAt).toBe('2026-11-12T10:01:00.000Z');
+  });
 });

@@ -7,7 +7,7 @@ import type { ResumeForm } from '@lib/types';
 
 import { fullResumeContent } from '../../../test/fixtures/flow';
 import { renderHook } from '../../../test/utils/render';
-import { useServiceImprove } from './use-service-improve';
+import { useServiceImprove, type ImproveAccepted } from './use-service-improve';
 
 const KEY = 'talvio-draft-v1:resume:user:user-1:new:ai-improve';
 const SESSION_ID = '5b6c7d8e-9f0a-4b1c-8d3e-4f5a6b7c8d95';
@@ -90,7 +90,11 @@ function fakeClient() {
   } satisfies Record<keyof LlmClient, unknown>;
 }
 
-function setup(client = fakeClient(), resume: ResumeForm = fullResumeContent) {
+function setup(
+  client = fakeClient(),
+  resume: ResumeForm = fullResumeContent,
+  onSave?: (accepted: ImproveAccepted) => Promise<void>,
+) {
   const onApply = vi.fn();
   const view = renderHook(
     (props: { resume: ResumeForm }) =>
@@ -99,6 +103,7 @@ function setup(client = fakeClient(), resume: ResumeForm = fullResumeContent) {
         storageKey: KEY,
         source: { id: RESUME_ID, revision: '2026-11-12T10:00:00.000Z' },
         onApply,
+        onSave,
         client: client as unknown as LlmClient,
       }),
     { initialProps: { resume } },
@@ -165,6 +170,59 @@ describe('useServiceImprove', () => {
     expect(onApply.mock.calls[0]![0].skills.at(-1)).toEqual({ name: 'Mentoring' });
     expect(client.deleteSession).toHaveBeenCalledWith(SESSION_ID);
     expect(result.current.step).toBe('idle');
+    unmount();
+  });
+
+  it('saves an accepted proposal with its receipt ids before closing', async () => {
+    const onSave = vi.fn<(accepted: ImproveAccepted) => Promise<void>>(async () => undefined);
+    const { result, onApply, client, unmount } = setup(fakeClient(), fullResumeContent, onSave);
+    act(() => result.current.start());
+    await waitFor(() => expect(result.current.step).toBe('questions'), WAIT);
+    act(() => result.current.answerCurrent('skipped'));
+    act(() => result.current.answerCurrent('skipped'));
+    act(() => result.current.requestProposal());
+    await waitFor(() => expect(result.current.step).toBe('proposalReview'), WAIT);
+
+    act(() => result.current.toggleConfirmed('change-2'));
+    await act(async () => result.current.accept());
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const accepted = onSave.mock.calls[0]![0];
+    expect(accepted.resume.skills?.at(-1)).toEqual({ name: 'Mentoring' });
+    expect(accepted.request).toMatchObject({
+      proposalId: proposal.proposalId,
+      jobId: IMPROVE_JOB,
+      sessionId: SESSION_ID,
+      idempotencyKey: `apply:${proposal.proposalId}`,
+      source: expect.objectContaining({ kind: 'resume', id: RESUME_ID }),
+      selectedChangeIds: ['change-1', 'change-2'],
+      acceptedOmissionIds: [],
+      confirmedClaimIds: ['claim-1'],
+    });
+    // The page puts the saved resume in the editor; Accept does not write it a second time.
+    expect(onApply).not.toHaveBeenCalled();
+    expect(client.deleteSession).toHaveBeenCalledWith(SESSION_ID);
+    expect(result.current.step).toBe('idle');
+    unmount();
+  });
+
+  it('keeps the review open with the reason when saving fails', async () => {
+    const onSave = vi.fn(async () => {
+      throw new Error('This resume changed after the suggestions were made.');
+    });
+    const { result, client, unmount } = setup(fakeClient(), fullResumeContent, onSave);
+    act(() => result.current.start());
+    await waitFor(() => expect(result.current.step).toBe('questions'), WAIT);
+    act(() => result.current.answerCurrent('skipped'));
+    act(() => result.current.answerCurrent('skipped'));
+    act(() => result.current.requestProposal());
+    await waitFor(() => expect(result.current.step).toBe('proposalReview'), WAIT);
+
+    await act(async () => result.current.accept());
+    expect(onSave.mock.calls[0]).toBeDefined();
+    expect(result.current.step).toBe('proposalReview');
+    expect(result.current.saving).toBe(false);
+    expect(result.current.saveError).toBe('This resume changed after the suggestions were made.');
+    expect(client.deleteSession).not.toHaveBeenCalled();
     unmount();
   });
 

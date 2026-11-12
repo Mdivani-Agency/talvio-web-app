@@ -35,6 +35,9 @@ type ProposalReviewProps = {
   acceptLabel?: string;
   rejectLabel?: string;
   acceptDisabled?: boolean;
+  rejectDisabled?: boolean;
+  /** Why the last Accept failed, shown under the buttons. */
+  error?: string | null;
   /** Replaces the line that explains what Accept does. */
   intro?: string;
 };
@@ -70,6 +73,8 @@ export function ProposalReview({
   acceptLabel = 'Accept',
   rejectLabel = 'Reject',
   acceptDisabled = false,
+  rejectDisabled = false,
+  error,
   intro,
 }: ProposalReviewProps) {
   const needsConfirming = review.changes.some((change) => change.needsConfirmation);
@@ -139,7 +144,7 @@ export function ProposalReview({
           )}
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onReject}>
+          <Button type="button" variant="secondary" onClick={onReject} disabled={rejectDisabled}>
             {rejectLabel}
           </Button>
           <Button type="button" onClick={onAccept} disabled={acceptDisabled}>
@@ -147,6 +152,7 @@ export function ProposalReview({
           </Button>
         </CardFooter>
       </Card>
+      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
     </section>
   );
 }

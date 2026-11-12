@@ -191,10 +191,11 @@ onto the new chain; nothing was migrated in place.
 | `20261008000300_resumes_credits.sql` | `resumes` (with `client_draft_id`, `generation_updated_at`, `source_resume_id`), `user_credits`, server-only `credit_prices` (seed `generate_pdf` = 30); indexes; RLS + grants; `resumes_validate_source` and `resumes_zz_keep_revision_clock` triggers; private `consume_credits` / `require_credits`; public `generate_pdf`, `finalize_pdf`, `release_resume_generation` |
 | `20261008000400_monthly_allowance.sql` | Server-only `monthly_allowance_runs`; private `monthly_credit_allowance()` (90) and `apply_monthly_allowance()`; `handle_new_user` → 90 + `on_auth_user_created` on `auth.users`; cron job `monthly-allowance-reset` (hourly, `0 * * * *`; applies once per month); records the current month at the end |
 | `20261008000500_ai_daily_caps.sql` | Server-only `ai_daily_usage`; private `ai_daily_request_cap()` (20), `consume_ai_request_for()` and `prune_ai_daily_usage()`; public `consume_ai_request()`; cron job `ai-daily-usage-prune` (`10 0 * * *`) |
+| `20261112000100_llm_proposal_applications.sql` | `llm_proposal_applications` (receipts and AI provenance of accepted LLM proposals, MDI-222; owner SELECT only); private `llm_apply_id_list()` / `llm_apply_receipt()`; public `apply_llm_proposal(jsonb)` |
 
 Constraint / RLS smokes: `supabase/tests/schema_constraints.sql`,
-`supabase/tests/rls.test.sql`, `supabase/tests/monthly_allowance.test.sql` and
-`supabase/tests/ai_daily_caps.test.sql`
+`supabase/tests/rls.test.sql`, `supabase/tests/monthly_allowance.test.sql`,
+`supabase/tests/ai_daily_caps.test.sql` and `supabase/tests/llm_apply.test.sql`
 (`yarn db:test` after `yarn db:reset`).
 
 ## Related docs

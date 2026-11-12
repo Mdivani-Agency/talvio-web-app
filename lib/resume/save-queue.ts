@@ -114,6 +114,21 @@ export function createSaveQueue<T>(merge: (current: T | undefined, next: T | und
     rebase(baseUpdatedAt: string) {
       publish({ ...state, baseUpdatedAt });
     },
+    /**
+     * Takes a revision written outside the queue (an accepted AI proposal, MDI-222) as the base
+     * for the next save. Refused while a save is in flight or waiting, which would conflict.
+     */
+    adopt(server: SavedRevision): boolean {
+      if (state.inflight || state.pending || state.status === 'generating') {
+        return false;
+      }
+      publish({
+        status: 'saved',
+        serverId: server.serverId,
+        baseUpdatedAt: server.baseUpdatedAt,
+      });
+      return true;
+    },
     retry(): T | undefined {
       if (state.inflight) {
         return undefined;
@@ -255,6 +270,7 @@ export function createSaveRunner<T>(options: {
     getState: queue.getState,
     subscribe: queue.subscribe,
     seed: queue.seed,
+    adopt: queue.adopt,
     enqueue(patch: T) {
       const decision = queue.begin(patch);
       if (decision === 'started') {
