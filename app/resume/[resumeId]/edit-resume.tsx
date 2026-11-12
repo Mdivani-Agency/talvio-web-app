@@ -371,6 +371,9 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         improve={userId ? {
           storageKey: aiImproveStorageKey(resumeDraftStorageKey({ kind: 'user', userId }, resumeId)),
           startToken: improveToken,
+          source: displayed
+            ? { id: displayed.id, revision: displayed.updatedAt, sourceResumeId: displayed.sourceResumeId ?? null }
+            : null,
           onRequest: () => {
             if (!isGeneratedResume(displayed)) {
               return true;

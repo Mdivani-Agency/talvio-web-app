@@ -19,6 +19,7 @@ import { cn } from '@lib/utils';
 
 import { ResumePreview } from '../components/resume-preview';
 import { useAiImprove } from '../hooks/use-ai-improve';
+import { useServiceImprove, type ImproveSource } from '../hooks/use-service-improve';
 import { EditResumeView } from './edit-resume-view';
 import TemplatesView from './templates-view';
 
@@ -37,6 +38,8 @@ export type ResumeImproveControls = {
   onRequest?: () => boolean;
   /** A new value starts a session, for a page that confirmed a fork first. */
   startToken?: number;
+  /** The resume row the session is about (LLM service, MDI-221); unsaved resumes leave it null. */
+  source?: ImproveSource | null;
 };
 
 type ResumeEditorShellProps = {
@@ -79,14 +82,24 @@ export function ResumeEditorShell({
   const { allowance } = useAllowance();
   const [aiRevision, setAiRevision] = useState(0);
   const improveEnabled = Boolean(improve) && featureFlags().resumeAiImprove && !readOnly;
-  const ai = useAiImprove({
+  const service = featureFlags().llmService;
+  const applyImproved = (resume: PreviewDto['resume']) => {
+    onChange({ resume });
+    setAiRevision((value) => value + 1);
+  };
+  const legacyAi = useAiImprove({
     resume: document.resume,
-    storageKey: improveEnabled ? improve?.storageKey ?? null : null,
-    onApply: (resume) => {
-      onChange({ resume });
-      setAiRevision((value) => value + 1);
-    },
+    storageKey: improveEnabled && !service ? improve?.storageKey ?? null : null,
+    onApply: applyImproved,
   });
+  // With NEXT_PUBLIC_FLAG_LLM_SERVICE, sessions, questions and proposals come from the LLM service.
+  const serviceAi = useServiceImprove({
+    resume: document.resume,
+    storageKey: improveEnabled && service ? improve?.storageKey ?? null : null,
+    source: improve?.source ?? null,
+    onApply: applyImproved,
+  });
+  const ai = service ? serviceAi : legacyAi;
   const startToken = improve?.startToken;
   const lastStartToken = useRef(startToken);
   const startSession = ai.start;

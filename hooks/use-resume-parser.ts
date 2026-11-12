@@ -40,6 +40,9 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
   const { session } = useUserSession();
   const userId = session?.user.id ?? null;
   const [legacyLoading, setLegacyLoading] = useState(false);
+  // Reading a PDF before its job starts counts as busy, and only the latest selection may submit.
+  const [reading, setReading] = useState(false);
+  const readSeq = useRef(0);
   const { parsePdf, extractPdfPages, parsing } = usePdfText();
   const job = useLlmJob({ storageKey: service && userId ? importJobStorageKey(userId, surface) : null });
   const eventsRef = useRef(events);
@@ -105,24 +108,43 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
       if (!service) {
         return parseLegacy(async () => parsePdf(Buffer.from(await file.arrayBuffer())));
       }
+      const seq = ++readSeq.current;
+      setReading(true);
       try {
         const { pages, version } = await extractPdfPages(Buffer.from(await file.arrayBuffer()));
+        if (seq !== readSeq.current) {
+          return;
+        }
         const { text, extraction } = pdfTextRequest(pages, version);
         parseWithService(text, extraction);
       } catch (error) {
-        eventsRef.current.onError(error as Error);
+        if (seq === readSeq.current) {
+          eventsRef.current.onError(error as Error);
+        }
+      } finally {
+        if (seq === readSeq.current) {
+          setReading(false);
+        }
       }
     },
     [extractPdfPages, parseLegacy, parsePdf, parseWithService, service],
   );
 
   const parsePastedText = useCallback(
-    async (text: string) => (service ? parseWithService(text, null) : parseLegacy(async () => text)),
+    async (text: string) => {
+      if (!service) {
+        return parseLegacy(async () => text);
+      }
+      // A newer paste wins over a PDF that is still being read.
+      readSeq.current += 1;
+      setReading(false);
+      parseWithService(text, null);
+    },
     [parseLegacy, parseWithService, service],
   );
 
   return {
-    loading: legacyLoading || job.busy,
+    loading: legacyLoading || reading || job.busy,
     extracting: parsing,
     /** True while the LLM service cannot be reached; the import continues when it can. */
     offline: (state.phase === 'submitting' || state.phase === 'running') && state.offline,

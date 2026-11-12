@@ -32,6 +32,9 @@ export type AiImproveOverlaySession = {
   cancel: () => void;
   close: () => void;
   retry: () => void;
+  /** LLM service proposals (MDI-221): changes the user confirmed. */
+  confirmed?: ReadonlySet<string>;
+  toggleConfirmed?: (changeId: string) => void;
 };
 
 function Pending({ message }: { message: string }) {
@@ -104,6 +107,8 @@ export function AiImproveOverlay({ session }: { session: AiImproveOverlaySession
           writingVoiceVersion={session.writingVoiceVersion}
           onAccept={session.accept}
           onReject={session.reject}
+          confirmed={session.confirmed}
+          onToggleConfirmed={session.toggleConfirmed}
         />
       ) : null}
 

@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { resumeToCareerDocument } from '../lib/llm/career-document';
 import { createLlmClient, jobRequest } from '../lib/llm/client';
+import { reviewServiceProposal, proposalFromEnvelope } from '../lib/llm/improve-proposal';
+import { fullResumeContent } from './fixtures/flow/resume-document';
 import { proxyLlmRequest } from '../lib/services/llm-proxy.server';
 import { startSimulator } from '../e2e/services/simulator.mjs';
 
@@ -222,6 +225,60 @@ describe('local LLM service job API', () => {
       code: 'unauthorized',
       message: 'Please sign in',
     });
+  });
+
+  it('runs an improve session: questions, answers, a proposal the editor can apply, then deletion', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    const source = { kind: 'resume' as const, id: '7a2b3c4d-5e6f-4a1b-8c2d-3e4f5a6b7c81', revision: 'unsaved', resumeType: 'general' as const, state: 'draft' as const, sourceResumeId: null };
+    const session = await client.createSession({
+      schemaVersion: '1.0',
+      clientRequestId: 'session-sim-0001',
+      purpose: 'improve',
+      source: { source, document: resumeToCareerDocument(fullResumeContent).document },
+      jobDescription: null,
+    });
+    const binding = { locale: 'en-US', sessionId: session.sessionId, parentJobId: null };
+
+    const questionsJob = await client.createJob(jobRequest({
+      ...binding,
+      operation: 'generate_questions',
+      contextRevisionId: session.latestContext.contextRevisionId,
+      input: { analysisJobId: null, round: 1, maxQuestions: 5 },
+    }, 'key-sim-0010'));
+    const questions = await poll(client, questionsJob.jobId);
+    const set = questions.result?.result as { questionSetId: string; questions: { id: string }[] };
+
+    const context = await client.submitAnswers(session.sessionId, {
+      baseContextRevisionId: session.latestContext.contextRevisionId,
+      questionSetId: set.questionSetId,
+      answers: [{ questionId: set.questions[0]!.id, status: 'answered', value: 'About two hundred recruiters' }],
+    });
+    const stale = await client.submitAnswers(session.sessionId, {
+      baseContextRevisionId: session.latestContext.contextRevisionId,
+      questionSetId: set.questionSetId,
+      answers: [{ questionId: set.questions[0]!.id, status: 'skipped' }],
+    }).catch((error: unknown) => error);
+    expect(stale).toMatchObject({ code: 'stale_context', status: 409, uiState: 'stale' });
+
+    const improveJob = await client.createJob(jobRequest({
+      ...binding,
+      operation: 'improve_resume',
+      contextRevisionId: context.contextRevisionId,
+      input: { sections: [], targetRole: null },
+    }, 'key-sim-0011'));
+    const improved = await poll(client, improveJob.jobId);
+    const proposal = proposalFromEnvelope(improved.result!);
+    expect(proposal).not.toBeNull();
+    const review = reviewServiceProposal(fullResumeContent, proposal!, new Set(['change-skill']));
+    expect(review.skipped).toBe(0);
+    expect(review.resume.profile.tagline).toBe('Engineer who ships reliable tools.');
+    expect(review.resume.skills?.at(-1)).toEqual({ name: 'Technical writing' });
+
+    expect(await clientFor('user-2').deleteSession(session.sessionId)).toBeUndefined();
+    await client.deleteSession(session.sessionId);
+    const stats = await (await fetch(`${simulator.url}/__e2e/llm-stats`)).json();
+    expect(stats).toMatchObject({ sessions: 1, answers: 1, deletedSessions: 1 });
   });
 
   it('cancels a slow job', async () => {

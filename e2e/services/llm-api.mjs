@@ -14,6 +14,10 @@
  *
  * Results are canned per operation and contain only invented test content. `GET /__e2e/llm-stats` returns how
  * many jobs were created, replayed, polled, cancelled and retried.
+ *
+ * Sessions (`POST /llm/v1/sessions`, `/answers`, `DELETE`) keep the submitted source, so the canned
+ * improve_resume proposal rewrites the source's own tagline (original value as the precondition) and
+ * adds one skill that needs confirmation.
  */
 
 const UUID = '[0-9a-f-]{36}';
@@ -24,14 +28,16 @@ const llm = {
   scenario: 'success',
   jobs: new Map(),
   keys: new Map(),
-  stats: { created: 0, replayed: 0, polled: 0, cancelled: 0, retried: 0 },
+  sessions: new Map(),
+  stats: { created: 0, replayed: 0, polled: 0, cancelled: 0, retried: 0, sessions: 0, answers: 0, deletedSessions: 0 },
 };
 
 export function resetLlmApi() {
   llm.scenario = 'success';
   llm.jobs.clear();
   llm.keys.clear();
-  llm.stats = { created: 0, replayed: 0, polled: 0, cancelled: 0, retried: 0 };
+  llm.sessions.clear();
+  llm.stats = { created: 0, replayed: 0, polled: 0, cancelled: 0, retried: 0, sessions: 0, answers: 0, deletedSessions: 0 };
 }
 
 /** Shaped like the contract's CareerDocument (talvio-llm-service `fixtures/valid/parse-result-partial-profile.json`). */
@@ -64,8 +70,67 @@ const PARSED_CAREER = {
   languages: [],
 };
 
-function cannedResult(operation) {
+const QUESTION_SET_ID = '5f1d2c3b-4a59-4e6f-8a7b-9c0d1e2f3a4b';
+
+function cannedResult(operation, request) {
   switch (operation) {
+    case 'generate_questions':
+      return {
+        questionSetId: QUESTION_SET_ID,
+        round: 1,
+        questions: [
+          {
+            id: 'r1-q1',
+            topicKey: 'impact.scale',
+            prompt: 'How many people used what you built?',
+            guidance: 'A rough number and who the users were.',
+            reason: 'Numbers make an achievement concrete.',
+            targetSection: 'experience',
+            targetEntityId: null,
+            requirementIds: [],
+          },
+        ],
+      };
+    case 'improve_resume': {
+      const session = llm.sessions.get(request.sessionId);
+      const source = session?.source ?? { source: { kind: 'resume', id: crypto.randomUUID(), revision: 'unsaved' }, document: { person: {} } };
+      const original = source.document.person?.tagline ?? null;
+      return {
+        proposal: {
+          proposalId: crypto.randomUUID(),
+          source: source.source,
+          sourceHash: '2'.repeat(64),
+          applyTarget: { kind: 'resume_draft', resumeId: source.source.id, baseRevision: source.source.revision },
+          changes: [
+            {
+              type: 'field',
+              changeKind: 'rewrite',
+              id: 'change-tagline',
+              target: { section: 'person', entityId: null, field: 'tagline' },
+              originalValue: original,
+              proposedValue: 'Engineer who ships reliable tools.',
+              reason: 'A summary that names what you do reads faster.',
+              factIds: [],
+              evidence: [],
+              confirmation: { required: false, claims: [] },
+            },
+            {
+              type: 'add_entity',
+              changeKind: 'factual_addition',
+              id: 'change-skill',
+              addition: { section: 'skills', entity: { id: 'new:skills:0', name: 'Technical writing' } },
+              reason: 'You mentioned writing the team handbook.',
+              factIds: [],
+              evidence: [],
+              confirmation: { required: true, claims: [{ id: 'claim-1', text: 'You write technical documentation.' }] },
+            },
+          ],
+          omissions: [],
+          document: null,
+          summary: 'Two suggestions: a clearer summary and one skill from your answers.',
+        },
+      };
+    }
     case 'parse_document':
       return {
         career: PARSED_CAREER,
@@ -124,7 +189,7 @@ function view(job) {
             versions: { pipelineReleaseId: 'v1', promptVersion: 'sim@1', modelId: 'sim' },
             resultKind: 'complete',
             warnings: [],
-            result: cannedResult(job.operation),
+            result: cannedResult(job.operation, job.request),
           }
         : null,
     error: job.error,
@@ -192,6 +257,11 @@ export function handleLlmApi(request, url, body, send) {
   if (!owner) {
     send(401, errorBody('unauthorized', 'Authentication required.'));
     return true;
+  }
+
+  const sessionMatch = path.match(new RegExp(`^/llm/v1/sessions(?:/(${UUID})(/answers)?)?$`));
+  if (sessionMatch) {
+    return handleSession(request, sessionMatch, owner, body, send);
   }
 
   if (request.method === 'POST' && path === '/llm/v1/jobs') {
@@ -291,3 +361,80 @@ export function handleLlmApi(request, url, body, send) {
   send(404, errorBody('not_found', 'Not found.'));
   return true;
 }
+
+function contextView(session) {
+  return { contextRevisionId: session.contextRevisionId, sessionId: session.sessionId, contextHash: '3'.repeat(64), sourceHash: '4'.repeat(64), jobDescriptionHash: null, answerRevisionId: null, createdAt: session.createdAt };
+}
+
+function sessionView(session) {
+  return {
+    sessionId: session.sessionId,
+    purpose: session.purpose,
+    status: 'open',
+    latestContext: contextView(session),
+    questionRoundsUsed: 0,
+    questionsIssued: 0,
+    createdAt: session.createdAt,
+    expiresAt: new Date(Date.parse(session.createdAt) + 7 * 86_400_000).toISOString(),
+  };
+}
+
+function handleSession(request, match, owner, body, send) {
+  const [, sessionId, answers] = match;
+  if (request.method === 'POST' && !sessionId) {
+    let json;
+    try {
+      json = JSON.parse(body.toString('utf8'));
+    } catch {
+      send(400, errorBody('invalid_request', 'The request is not valid.'));
+      return true;
+    }
+    if (json.schemaVersion !== '1.0' || !json.clientRequestId || !json.source?.document) {
+      send(400, errorBody('invalid_request', 'The request is not valid.'));
+      return true;
+    }
+    const existing = [...llm.sessions.values()].find((item) => item.owner === owner && item.clientRequestId === json.clientRequestId);
+    if (existing) {
+      send(201, sessionView(existing));
+      return true;
+    }
+    const created = {
+      sessionId: crypto.randomUUID(),
+      contextRevisionId: crypto.randomUUID(),
+      clientRequestId: json.clientRequestId,
+      owner,
+      purpose: json.purpose,
+      source: json.source,
+      createdAt: new Date().toISOString(),
+    };
+    llm.sessions.set(created.sessionId, created);
+    llm.stats.sessions += 1;
+    send(201, sessionView(created));
+    return true;
+  }
+  const session = sessionId ? llm.sessions.get(sessionId) : null;
+  if (!session || session.owner !== owner) {
+    send(404, errorBody('not_found', 'Not found.'));
+    return true;
+  }
+  if (request.method === 'POST' && answers) {
+    const json = JSON.parse(body.toString('utf8') || '{}');
+    if (json.baseContextRevisionId !== session.contextRevisionId) {
+      send(409, errorBody('stale_context', 'This changed since you started. Start again.'));
+      return true;
+    }
+    session.contextRevisionId = crypto.randomUUID();
+    llm.stats.answers += 1;
+    send(201, contextView(session));
+    return true;
+  }
+  if (request.method === 'DELETE' && !answers) {
+    llm.sessions.delete(session.sessionId);
+    llm.stats.deletedSessions += 1;
+    send(204, null);
+    return true;
+  }
+  send(404, errorBody('not_found', 'Not found.'));
+  return true;
+}
+

@@ -1,9 +1,15 @@
 import { authedFetch } from '@/lib/supabase/authed-fetch';
 
 import {
+  contextRevisionSchema,
   jobAcceptedSchema,
   jobSchema,
   LLM_SCHEMA_VERSION,
+  sessionSchema,
+  type ContextRevision,
+  type CreateSessionRequest,
+  type LlmSession,
+  type SessionAnswer,
   type CreateJobRequest,
   type Job,
   type JobAccepted,
@@ -82,6 +88,36 @@ export function createLlmClient(fetcher: LlmFetch = authedFetch) {
     async retryJob(jobId: string): Promise<JobAccepted> {
       const response = await send(fetcher, `/jobs/${encodeURIComponent(jobId)}/retry`, { method: 'POST' });
       return read(response, jobAcceptedSchema);
+    },
+
+    /** POST /sessions. A repeat with the same clientRequestId returns the same session. */
+    async createSession(request: CreateSessionRequest): Promise<LlmSession> {
+      const response = await send(fetcher, '/sessions', {
+        method: 'POST',
+        headers: { 'Idempotency-Key': request.clientRequestId },
+        body: JSON.stringify(request),
+      });
+      return read(response, sessionSchema);
+    },
+
+    /** POST /sessions/{id}/answers: the answers to one question set, as a new context revision. */
+    async submitAnswers(
+      sessionId: string,
+      body: { baseContextRevisionId: string; questionSetId: string; answers: SessionAnswer[] },
+    ): Promise<ContextRevision> {
+      const response = await send(fetcher, `/sessions/${encodeURIComponent(sessionId)}/answers`, {
+        method: 'POST',
+        body: JSON.stringify({ schemaVersion: LLM_SCHEMA_VERSION, ...body }),
+      });
+      return read(response, contextRevisionSchema);
+    },
+
+    /** DELETE /sessions/{id}: forgets the session and its stored content early. */
+    async deleteSession(sessionId: string): Promise<void> {
+      const response = await send(fetcher, `/sessions/${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
+      if (!response.ok && response.status !== 404) {
+        throw await errorFromResponse(response);
+      }
     },
   };
 }
