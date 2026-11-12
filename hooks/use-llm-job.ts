@@ -13,6 +13,8 @@ type UseLlmJobOptions = {
   storage?: JobStorage | null;
 };
 
+const IDLE: LlmJobState = { phase: 'idle' };
+
 function localStorageOrNull(): JobStorage | null {
   if (typeof window === 'undefined') {
     return null;
@@ -30,7 +32,13 @@ function localStorageOrNull(): JobStorage | null {
  * the key is resumed on mount, so a reload returns to the same job.
  */
 export function useLlmJob({ storageKey, client, storage }: UseLlmJobOptions) {
-  const [state, setState] = useState<LlmJobState>({ phase: 'idle' });
+  // State is tagged with the key it belongs to, so a new key starts idle instead of showing the
+  // previous key's job; resume() then reports a stored job for the new key.
+  const [tagged, setTagged] = useState<{ key: string | null; state: LlmJobState }>({
+    key: storageKey,
+    state: IDLE,
+  });
+  const state = tagged.key === storageKey ? tagged.state : IDLE;
   const runnerRef = useRef<JobRunner | null>(null);
   const llmClient = useMemo(() => client ?? createLlmClient(), [client]);
 
@@ -39,11 +47,9 @@ export function useLlmJob({ storageKey, client, storage }: UseLlmJobOptions) {
       client: llmClient,
       storage: storageKey ? (storage === undefined ? localStorageOrNull() : storage) : null,
       storageKey: storageKey ?? 'talvio-llm-job:memory',
-      onChange: setState,
+      onChange: (next) => setTagged({ key: storageKey, state: next }),
     });
     runnerRef.current = runner;
-    // Nothing from the previous key's job carries over; resume() reports a stored job for this one.
-    setState({ phase: 'idle' });
     if (storageKey) {
       runner.resume();
     }
