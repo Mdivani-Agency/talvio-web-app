@@ -7,7 +7,7 @@ import { ClipboardPasteIcon, UploadIcon } from 'lucide-react';
 import { Button } from '@components/ui';
 import { ConfirmModal, PasteResumeModal, UploadModal } from '@components/modals';
 import { useResumeParser } from '@hooks/use-resume-parser';
-import { transformFromParsedToAccount } from '@lib/utils/forms';
+import { toastImportReview } from '@components/import/import-review';
 
 import { useSaveProfileFlow } from '../../hooks/use-save-profile-flow';
 import { useAccountContext } from '../../providers/state-provider';
@@ -19,14 +19,15 @@ export default function AccountFormPage() {
   const { offerImport, pendingImport, applyImport, cancelImport, submitProfile, formRevision } = useAccountContext();
   const { save, isSaving } = useSaveProfileFlow();
 
-  const { parseResumeText, parsePastedText, loading } = useResumeParser({
-    onResumeParsed: (parsedResume, sourceText) => {
-      offerImport(transformFromParsedToAccount(parsedResume), sourceText);
+  const { parseResumeText, parsePastedText, loading, offline } = useResumeParser({
+    onResumeParsed: (account, sourceText, review) => {
+      offerImport(account, sourceText);
+      toastImportReview(review);
     },
     onError: (error) => {
       toast.error(error.message);
     },
-  });
+  }, { surface: 'onboarding' });
 
   const handleFileUpload = (file: File) => {
     setIsUploadModalOpen(false);
@@ -49,7 +50,7 @@ export default function AccountFormPage() {
       <div className="flex items-center justify-start gap-3">
         <Button onClick={() => setIsUploadModalOpen(true)} loading={loading}>
           <UploadIcon className="size-4" />
-          {loading ? 'Parsing resume...' : 'Import from resume'}
+          {loading ? (offline ? 'Waiting for a connection...' : 'Parsing resume...') : 'Import from resume'}
         </Button>
         <Button variant="secondary" onClick={() => setIsPasteModalOpen(true)} disabled={loading}>
           <ClipboardPasteIcon className="size-4" />

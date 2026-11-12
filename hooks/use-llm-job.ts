@@ -68,6 +68,8 @@ export function useLlmJob({ storageKey, client, storage }: UseLlmJobOptions) {
   const cancel = useCallback(() => void runnerRef.current?.cancel(), []);
   const retry = useCallback(() => void runnerRef.current?.retry(), []);
   const clear = useCallback(() => runnerRef.current?.clear(), []);
+  /** The request of the current job, also after a reload. */
+  const request = useCallback(() => (runnerRef.current?.getRecord()?.request ?? null) as JobRequestBody | null, []);
 
   return {
     state,
@@ -76,6 +78,7 @@ export function useLlmJob({ storageKey, client, storage }: UseLlmJobOptions) {
     cancel,
     retry,
     clear,
+    request,
   };
 }
 
