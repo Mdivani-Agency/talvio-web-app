@@ -42,6 +42,8 @@ export function useLlmJob({ storageKey, client, storage }: UseLlmJobOptions) {
       onChange: setState,
     });
     runnerRef.current = runner;
+    // Nothing from the previous key's job carries over; resume() reports a stored job for this one.
+    setState({ phase: 'idle' });
     if (storageKey) {
       runner.resume();
     }

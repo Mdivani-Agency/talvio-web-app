@@ -78,4 +78,19 @@ describe('useLlmJob', () => {
     expect(result.current.state).toEqual({ phase: 'idle' });
     expect(llm.getJob).not.toHaveBeenCalled();
   });
+
+  it('drops the previous job state when the key changes', async () => {
+    const llm = client();
+    const { result, rerender } = renderHook(({ storageKey }) => useLlmJob({ storageKey, client: llm }), {
+      initialProps: { storageKey: KEY },
+    });
+    act(() => {
+      result.current.start(REQUEST);
+    });
+    await waitFor(() => expect(result.current.state.phase).toBe('succeeded'), { timeout: 3_000 });
+
+    rerender({ storageKey: 'talvio-llm-job:user-2:import' });
+    expect(result.current.state).toEqual({ phase: 'idle' });
+    expect(result.current.busy).toBe(false);
+  });
 });

@@ -354,8 +354,16 @@ export function createJobRunner(options: JobRunnerOptions) {
             track(gen, accepted.jobId, accepted.pollAfterMs);
           }
           return;
-        } catch {
+        } catch (retryError) {
           if (gen !== generation) {
+            return;
+          }
+          if (retryError instanceof LlmNetworkError || (retryError instanceof LlmError && (retryError.status ?? 0) >= 500)) {
+            // The retry may have been accepted with the answer lost: follow the same job rather than
+            // submitting a second one. If it is still failed, Retry is offered again.
+            polls = 0;
+            set({ phase: 'running', jobId, status: 'queued', stage: 'admission', offline: !isOnline() });
+            void poll(gen, jobId);
             return;
           }
         }

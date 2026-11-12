@@ -238,6 +238,28 @@ describe('job runner', () => {
     expect((client.createJob.mock.calls[1]![0] as { clientRequestId: string }).clientRequestId).toBe('key-00000002');
   });
 
+  it('follows the same job when the retry answer is lost', async () => {
+    const { client, runner, last } = setup();
+    client.createJob.mockResolvedValue(accepted());
+    client.getJob.mockResolvedValueOnce(
+      job('failed', {
+        pollAfterMs: null,
+        error: { code: 'dependency_unavailable', message: 'Failed.', retryable: true, correlationId: 'c' },
+      }),
+    );
+    runner.start(REQUEST);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(last()).toMatchObject({ phase: 'failed' });
+
+    client.retryJob.mockRejectedValueOnce(new LlmNetworkError());
+    client.getJob.mockResolvedValue(job('succeeded'));
+    await runner.retry();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(client.createJob).toHaveBeenCalledTimes(1);
+    expect(client.getJob).toHaveBeenLastCalledWith(JOB_ID);
+    expect(last()).toMatchObject({ phase: 'succeeded' });
+  });
+
   it('forgets a request the service refused and starts it fresh on retry', async () => {
     const { client, runner, storage, last } = setup();
     client.createJob.mockRejectedValueOnce(
