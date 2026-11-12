@@ -61,6 +61,7 @@ Copy [`.env.example`](.env.example) to `.env.local`. Set the same names in the V
 | `MEDIA_SERVICE_API_KEY` | yes (server) | Media-service `X-API-KEY` for `POST /media/presign/{userId}` — never `NEXT_PUBLIC_` |
 | `GOOGLE_FONTS_API_KEY` | yes | Font file lookup at `/api/resume/fonts` |
 | `OPENAI_API_KEY` | no | Resume parse/QA; falls back to `TEST_KEY` if unset |
+| `LLM_SERVICE_URL` | no (server) | Talvio LLM service base including `/llm`, e.g. `https://api.dev.talvio.co/llm`. Used by `/api/llm` only when `NEXT_PUBLIC_FLAG_LLM_SERVICE` is on (MDI-221) |
 
 ## GitHub Actions
 

@@ -10,6 +10,7 @@ const localEnv = {
   SUPABASE_SECRET_KEY: 'secret',
   MEDIA_API_BASE_URL: 'http://127.0.0.1:3999',
   OPENAI_BASE_URL: 'http://127.0.0.1:3999/v1',
+  LLM_SERVICE_URL: 'http://127.0.0.1:3999/llm',
   GOOGLE_FONTS_API_BASE: 'http://127.0.0.1:3999',
   BLOG_API_BASE_URL: 'http://127.0.0.1:3999',
 };
@@ -44,6 +45,7 @@ describe('local E2E origins', () => {
     expect(env.SUPABASE_SECRET_KEY).toBe('service');
     expect(env.NEXT_PUBLIC_BASE_URL).toBe('http://localhost:3002');
     expect(env.OPENAI_BASE_URL).toBe('http://127.0.0.1:3999/v1');
+    expect(env.LLM_SERVICE_URL).toBe('http://127.0.0.1:3999/llm');
     expect(env.GOOGLE_FONTS_API_BASE).toBe('http://127.0.0.1:3999');
     expect(env.BLOG_API_BASE_URL).toBe('http://127.0.0.1:3999');
     expect(env.BLOG_API_TOKEN?.length).toBeGreaterThanOrEqual(32);
@@ -54,6 +56,10 @@ describe('local E2E origins', () => {
       ...localEnv,
       OPENAI_BASE_URL: 'https://api.openai.com/v1',
     })).toThrow(/OPENAI_BASE_URL/);
+    expect(() => assertLocalServiceOrigins({
+      ...localEnv,
+      LLM_SERVICE_URL: 'https://api.dev.talvio.co/llm',
+    })).toThrow(/LLM_SERVICE_URL/);
     expect(() => assertLocalServiceOrigins({
       ...localEnv,
       GOOGLE_FONTS_API_BASE: 'https://www.googleapis.com',
