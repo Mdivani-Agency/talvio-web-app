@@ -134,3 +134,42 @@ export type ErrorBody = z.infer<typeof errorBodySchema>;
 export function isTerminal(status: string): status is TerminalJobStatus {
   return (TERMINAL_JOB_STATUSES as readonly string[]).includes(status);
 }
+
+/** POST /sessions/{id}/contexts and /answers answer with the new context revision. */
+export const contextRevisionSchema = z.looseObject({
+  contextRevisionId: z.string(),
+  sessionId: z.string(),
+});
+export type ContextRevision = z.infer<typeof contextRevisionSchema>;
+
+export const sessionSchema = z.looseObject({
+  sessionId: z.string(),
+  purpose: z.enum(['improve', 'tailor']),
+  status: z.string(),
+  latestContext: contextRevisionSchema,
+});
+export type LlmSession = z.infer<typeof sessionSchema>;
+
+export type SourceRef =
+  | { kind: 'profile'; id: string; revision: string }
+  | {
+      kind: 'resume';
+      id: string;
+      revision: string;
+      resumeType: 'general' | 'job_specific';
+      state: 'draft' | 'generated';
+      sourceResumeId: string | null;
+    };
+
+export type CreateSessionRequest = {
+  schemaVersion: typeof LLM_SCHEMA_VERSION;
+  clientRequestId: string;
+  purpose: 'improve' | 'tailor';
+  source: { source: SourceRef; document: unknown };
+  jobDescription: { text: string } | null;
+};
+
+export type SessionAnswer =
+  | { questionId: string; status: 'answered'; value: string }
+  | { questionId: string; status: 'skipped' };
+
