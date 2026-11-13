@@ -1,6 +1,9 @@
 import { featureFlags, type FeatureFlags } from './flags';
 import {
+  PRIVACY_LAST_MODIFIED,
   PRIVACY_LAST_UPDATED,
+  PRIVACY_LLM_SERVICE_LAST_MODIFIED,
+  PRIVACY_LLM_SERVICE_LAST_UPDATED,
   contactLink,
   operatorLink,
   p,
@@ -216,7 +219,7 @@ const LLM_SERVICE_SECTIONS: Record<string, LegalDocument['sections'][number]['bl
 
 export const PRIVACY_LLM_SERVICE: LegalDocument = {
   ...PRIVACY,
-  lastUpdated: 'November 2026',
+  lastUpdated: PRIVACY_LLM_SERVICE_LAST_UPDATED,
   sections: PRIVACY.sections.map((section) => ({
     ...section,
     blocks: LLM_SERVICE_SECTIONS[section.heading] ?? section.blocks,
@@ -226,4 +229,9 @@ export const PRIVACY_LLM_SERVICE: LegalDocument = {
 /** The policy that matches how the running build processes AI requests. */
 export function privacyPolicy(flags: Pick<FeatureFlags, 'llmService'> = featureFlags()): LegalDocument {
   return flags.llmService ? PRIVACY_LLM_SERVICE : PRIVACY;
+}
+
+/** Sitemap date of the policy `privacyPolicy` shows under the same flags. */
+export function privacyLastModified(flags: Pick<FeatureFlags, 'llmService'> = featureFlags()): string {
+  return flags.llmService ? PRIVACY_LLM_SERVICE_LAST_MODIFIED : PRIVACY_LAST_MODIFIED;
 }
