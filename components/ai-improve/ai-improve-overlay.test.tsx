@@ -109,6 +109,7 @@ describe('AiImproveOverlay', () => {
     render(<AiImproveOverlay session={session({ step: 'proposalReview', review, saving: true })} />);
     expect((screen.getByRole('button', { name: 'Saving...' }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole('button', { name: 'Reject' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Close Improve with AI' }) as HTMLButtonElement).disabled).toBe(true);
     cleanup();
 
     render(<AiImproveOverlay session={session({ step: 'proposalReview', review, saveError: 'This resume changed.' })} />);

@@ -10,7 +10,7 @@ import { useResumeAutosave } from '@app/resume/hooks/use-resume-autosave';
 import { applyLlmProposal } from '@app/resume/query/use-apply-llm-proposal';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
-import { fetchResumeFamily } from '@app/resume/query/use-resume';
+import { fetchResume, fetchResumeFamily } from '@app/resume/query/use-resume';
 import { isLabelOnlyPatch } from '@app/resume/query/use-save-resume-edit';
 import { ConfirmModal } from '@components/modals';
 import { ErrorView, Loading } from '@components/views';
@@ -405,11 +405,22 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
                 content: previewToResumeContent({ ...editorDocument, resume: accepted }),
               },
             });
-            autosave.adopt({ ...saved, metadata: accepted, updatedAt: receipt.resultingRevision });
-            if (draftRef.current) {
-              draftRef.current = { ...draftRef.current, baseUpdatedAt: receipt.resultingRevision };
+            if (receipt.replayed) {
+              // An earlier Accept of this proposal was saved (its answer was lost). The saved
+              // content may differ from this retry's choices, so show what the row holds.
+              const persisted = await fetchResume(saved.id);
+              autosave.adopt(persisted);
+              if (draftRef.current) {
+                draftRef.current = { ...draftRef.current, baseUpdatedAt: persisted.updatedAt };
+              }
+              replaceDocument(resumeToEditorDocument(persisted));
+            } else {
+              autosave.adopt({ ...saved, metadata: accepted, updatedAt: receipt.resultingRevision });
+              if (draftRef.current) {
+                draftRef.current = { ...draftRef.current, baseUpdatedAt: receipt.resultingRevision };
+              }
+              apply({ resume: accepted });
             }
-            apply({ resume: accepted });
             setIssues([]);
             await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
             await queryClient.invalidateQueries({ queryKey: ['resume-family', resumeId] });

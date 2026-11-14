@@ -573,8 +573,17 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
     goToPreviousQuestion,
     requestProposal: () => void runProposal(),
     accept: () => void accept(),
-    reject: end,
-    cancel: end,
+    // Closing while Accept is saving would let the save land under newer edits.
+    reject: () => {
+      if (!saving) {
+        end();
+      }
+    },
+    cancel: () => {
+      if (!saving) {
+        end();
+      }
+    },
     close,
     retry,
   };

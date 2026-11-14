@@ -72,7 +72,7 @@ export function AiImproveOverlay({ session }: { session: AiImproveOverlaySession
     >
       <div className="mb-4 flex items-center justify-between gap-2">
         <p className="text-sm font-medium text-muted-foreground">Improve with AI</p>
-        <Button type="button" variant="ghost" size="icon" aria-label="Close Improve with AI" onClick={dismiss}>
+        <Button type="button" variant="ghost" size="icon" aria-label="Close Improve with AI" onClick={dismiss} disabled={session.saving}>
           <XIcon className="size-4" />
         </Button>
       </div>

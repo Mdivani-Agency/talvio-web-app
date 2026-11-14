@@ -226,6 +226,30 @@ describe('useServiceImprove', () => {
     unmount();
   });
 
+  it('ignores Cancel while Accept is saving', async () => {
+    let finish: () => void = () => undefined;
+    const onSave = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+    const { result, client, unmount } = setup(fakeClient(), fullResumeContent, onSave);
+    act(() => result.current.start());
+    await waitFor(() => expect(result.current.step).toBe('questions'), WAIT);
+    act(() => result.current.answerCurrent('skipped'));
+    act(() => result.current.answerCurrent('skipped'));
+    act(() => result.current.requestProposal());
+    await waitFor(() => expect(result.current.step).toBe('proposalReview'), WAIT);
+
+    act(() => result.current.accept());
+    expect(result.current.saving).toBe(true);
+    act(() => result.current.cancel());
+    act(() => result.current.reject());
+    expect(result.current.step).toBe('proposalReview');
+    expect(client.deleteSession).not.toHaveBeenCalled();
+
+    await act(async () => finish());
+    expect(result.current.step).toBe('idle');
+    expect(client.deleteSession).toHaveBeenCalledWith(SESSION_ID);
+    unmount();
+  });
+
   it('leaves an unconfirmed addition out', async () => {
     const { result, onApply, unmount } = setup();
     act(() => result.current.start());
