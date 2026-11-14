@@ -12,3 +12,7 @@ export function parseGraphqlError(error: unknown): string {
   }
   return 'Something went wrong';
 }
+
+export function graphqlErrorText(error: unknown): string {
+  return error instanceof Error ? error.message : '';
+}

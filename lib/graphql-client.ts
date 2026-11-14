@@ -58,7 +58,8 @@ function graphqlErrors(error: unknown): GraphqlErrorLike[] {
   return [];
 }
 
-function errorText(error: unknown): string {
+/** The first GraphQL error message, or the error's own message. */
+export function graphqlErrorText(error: unknown): string {
   const first = graphqlErrors(error)[0];
   if (first?.message) {
     return first.message;
@@ -79,7 +80,7 @@ function errorCode(error: unknown): string {
 
 export function parseGraphqlError(error: unknown): string {
   const code = errorCode(error);
-  const message = errorText(error);
+  const message = graphqlErrorText(error);
   const haystack = `${code} ${message}`.toLowerCase();
 
   if (haystack.includes('insufficient_credits')) {

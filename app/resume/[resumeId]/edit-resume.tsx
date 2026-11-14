@@ -7,13 +7,14 @@ import { useRouter } from 'next/navigation';
 import { submitWrapper } from '@app/actions/action.utils';
 import { useResumeEditorDocument } from '@app/resume/hooks/use-resume-editor-document';
 import { useResumeAutosave } from '@app/resume/hooks/use-resume-autosave';
+import { applyLlmProposal } from '@app/resume/query/use-apply-llm-proposal';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
 import { fetchResumeFamily } from '@app/resume/query/use-resume';
 import { isLabelOnlyPatch } from '@app/resume/query/use-save-resume-edit';
 import { ConfirmModal } from '@components/modals';
 import { ErrorView, Loading } from '@components/views';
-import { isGeneratedResume } from '@lib/adapters/resume.adapter';
+import { isGeneratedResume, previewToResumeContent } from '@lib/adapters/resume.adapter';
 import {
   aiImproveStorageKey,
   browserStorage,
@@ -383,6 +384,36 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
             setForkForImprove(true);
             setForkOpen(true);
             return false;
+          },
+          // MDI-222: Accept saves the accepted resume and its AI receipt in one transaction, at the
+          // revision autosave last wrote, then puts it in the editor without another autosave.
+          onSave: async ({ resume: accepted, request }) => {
+            const saved = await autosave.flush();
+            if (!saved) {
+              throw new Error('Resume not found');
+            }
+            if (isGeneratedResume(saved)) {
+              throw new Error('This resume already has a PDF. Create a draft to change it.');
+            }
+            const receipt = await applyLlmProposal({
+              ...request,
+              operation: 'improve_resume',
+              target: { kind: 'resume_draft', resumeId: saved.id, baseRevision: saved.updatedAt },
+              resume: {
+                id: saved.id,
+                expectedRevision: saved.updatedAt,
+                content: previewToResumeContent({ ...editorDocument, resume: accepted }),
+              },
+            });
+            autosave.adopt({ ...saved, metadata: accepted, updatedAt: receipt.resultingRevision });
+            if (draftRef.current) {
+              draftRef.current = { ...draftRef.current, baseUpdatedAt: receipt.resultingRevision };
+            }
+            apply({ resume: accepted });
+            setIssues([]);
+            await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
+            await queryClient.invalidateQueries({ queryKey: ['resume-family', resumeId] });
+            await queryClient.invalidateQueries({ queryKey: ['resume', saved.id] });
           },
         } : null}
         onDownload={async (name, label) => {

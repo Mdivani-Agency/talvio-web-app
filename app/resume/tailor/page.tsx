@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 import { useProfile } from '@app/account/query/use-profile';
-import { createResume } from '@app/resume/query/use-create-resume';
+import { applyLlmProposal } from '@app/resume/query/use-apply-llm-proposal';
 import { fetchResume } from '@app/resume/query/use-resume';
 import { fetchAllResumes } from '@app/resume/query/use-resumes';
 import { Button } from '@components/ui';
@@ -82,14 +82,17 @@ function TailorPage() {
     return options;
   }, [profile.data, resumes.data]);
 
+  // The new resume and its AI receipt are written together; Create again returns the same resume.
+  const { applyRequest } = tailor;
   const onCreate = useCallback(async () => {
-    if (!userId || !tailor.preview) {
+    const request = applyRequest();
+    if (!userId || !request) {
       throw new Error('The resume could not be created. Try again.');
     }
-    const created = await createResume({ userId, type: 'JOB_SPECIFIC', body: tailor.preview });
+    const receipt = await applyLlmProposal(request);
     await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
-    return created.id;
-  }, [queryClient, tailor.preview, userId]);
+    return receipt.target.resumeId;
+  }, [applyRequest, queryClient, userId]);
 
   if (isPending || (userId && (profile.isLoading || resumes.isLoading))) {
     return <Loading message="Loading your resumes..." />;
