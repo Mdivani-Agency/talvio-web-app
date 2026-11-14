@@ -5,7 +5,8 @@ import { allowPublicIndexing, siteOrigin } from './site';
 import { ATS_LAST_MODIFIED, ATS_PAGE_DESCRIPTION, ATS_PAGE_TITLE } from './ats-page-copy';
 import { BLOG_LAST_MODIFIED } from './blog-copy';
 import { BENEFITS_TITLE, HERO_TITLE, HOME_LAST_MODIFIED } from './homepage-copy';
-import { PRIVACY_LAST_MODIFIED, TERMS_LAST_MODIFIED } from './legal-copy';
+import { TERMS_LAST_MODIFIED } from './legal-copy';
+import { privacyLastModified } from './privacy-copy';
 import { PRICING_LAST_MODIFIED, PRICING_PAGE_DESCRIPTION, PRICING_PAGE_TITLE } from './pricing-page-copy';
 import { TEMPLATES_LAST_MODIFIED, TEMPLATES_PAGE_DESCRIPTION, TEMPLATES_PAGE_TITLE } from './templates-page-copy';
 
@@ -62,22 +63,33 @@ export function indexablePublicPaths(flags: Pick<FeatureFlags, 'plansPage'> = fe
 /** Canonical indexable pages under the deployed flags. */
 export const INDEXABLE_PUBLIC_PATHS: readonly IndexablePublicPath[] = indexablePublicPaths();
 
-/** Date each page's content last changed, for the sitemap. Each date lives in the page's copy module, next to the copy it dates. */
-export const PUBLIC_PAGE_LAST_MODIFIED: Record<IndexablePublicPath, string> = {
-  '/': HOME_LAST_MODIFIED,
-  '/templates': TEMPLATES_LAST_MODIFIED,
-  '/pricing': PRICING_LAST_MODIFIED,
-  '/ats-friendly-resume': ATS_LAST_MODIFIED,
-  '/blog': BLOG_LAST_MODIFIED,
-  '/privacy-policy': PRIVACY_LAST_MODIFIED,
-  '/terms': TERMS_LAST_MODIFIED,
-};
+type SitemapFlags = Pick<FeatureFlags, 'plansPage'> & Partial<Pick<FeatureFlags, 'llmService'>>;
 
-export function publicSitemap(flags: Pick<FeatureFlags, 'plansPage'> = featureFlags()): MetadataRoute.Sitemap {
+/**
+ * Date each page's content last changed, for the sitemap. Each date lives in the page's copy module,
+ * next to the copy it dates. The privacy policy's date follows the version the flags show.
+ */
+export function publicPageLastModified(flags: Partial<Pick<FeatureFlags, 'llmService'>> = featureFlags()): Record<IndexablePublicPath, string> {
+  return {
+    '/': HOME_LAST_MODIFIED,
+    '/templates': TEMPLATES_LAST_MODIFIED,
+    '/pricing': PRICING_LAST_MODIFIED,
+    '/ats-friendly-resume': ATS_LAST_MODIFIED,
+    '/blog': BLOG_LAST_MODIFIED,
+    '/privacy-policy': privacyLastModified({ llmService: flags.llmService ?? false }),
+    '/terms': TERMS_LAST_MODIFIED,
+  };
+}
+
+/** Dates under the deployed flags. */
+export const PUBLIC_PAGE_LAST_MODIFIED: Record<IndexablePublicPath, string> = publicPageLastModified();
+
+export function publicSitemap(flags: SitemapFlags = featureFlags()): MetadataRoute.Sitemap {
   const origin = siteOrigin();
+  const lastModified = publicPageLastModified(flags);
   return indexablePublicPaths(flags).map((path) => ({
     url: path === '/' ? origin : `${origin}${path}`,
-    lastModified: PUBLIC_PAGE_LAST_MODIFIED[path],
+    lastModified: lastModified[path],
   }));
 }
 

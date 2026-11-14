@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { featureFlags } from '../lib/flags';
 import { INDEXABLE_PUBLIC_PATHS } from '../lib/public-metadata';
 
 import { signInWithLocalMagicLink } from './fixtures/auth';
@@ -63,6 +64,16 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByRole('heading', { name: '6. Who we share data with', exact: true })).toBeVisible();
   await expect(page.getByText(/Vercel Web Analytics/).first()).toBeVisible();
   await expect(page.getByRole('main').getByRole('link', { name: 'contact@talvio.co' }).first()).toHaveAttribute('href', 'mailto:contact@talvio.co');
+  // The AI disclosures follow NEXT_PUBLIC_FLAG_LLM_SERVICE, read from the same env as the build.
+  const privacyText = await page.getByRole('main').innerText();
+  if (featureFlags().llmService) {
+    expect(privacyText).toContain('Amazon Bedrock in the United States');
+    expect(privacyText).toContain('uploaded files within 24 hours');
+    expect(privacyText).not.toContain('OpenAI');
+  } else {
+    expect(privacyText).toContain('OpenAI');
+    expect(privacyText).not.toContain('Amazon Bedrock');
+  }
 
   await page.goto('/this-page-does-not-exist');
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
