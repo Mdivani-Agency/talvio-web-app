@@ -137,6 +137,6 @@ describe('public metadata', () => {
     const privacy = (llmService: boolean) =>
       publicSitemap({ plansPage: false, llmService }).find((entry) => entry.url.endsWith('/privacy-policy'))?.lastModified;
     expect(privacy(false)).toBe('2026-10-09');
-    expect(privacy(true)).toBe('2026-11-12');
+    expect(privacy(true)).toBe('2026-11-16');
   });
 });

@@ -68,6 +68,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   const privacyText = await page.getByRole('main').innerText();
   if (featureFlags().llmService) {
     expect(privacyText).toContain('Amazon Bedrock in the United States');
+    expect(privacyText).toContain('sent to Anthropic');
     expect(privacyText).toContain('uploaded files within 24 hours');
     expect(privacyText).not.toContain('OpenAI');
   } else {
