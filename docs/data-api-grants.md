@@ -78,7 +78,14 @@ GRANT EXECUTE ON FUNCTION public.generate_pdf(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.finalize_pdf(uuid, text, text) TO authenticated;
 REVOKE ALL ON FUNCTION public.consume_ai_request() FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.consume_ai_request() TO authenticated;
+REVOKE ALL ON FUNCTION public.apply_llm_proposal(jsonb) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.apply_llm_proposal(jsonb) TO authenticated;
 ```
+
+`apply_llm_proposal(p_request jsonb)` (MDI-222) is `SECURITY DEFINER`. It
+saves an accepted LLM proposal for `auth.uid()` and its receipt in one
+transaction, and returns the receipt as `JSON`. A second call for the same
+proposal returns the first receipt (`replayed: true`) and writes nothing.
 
 `consume_ai_request()` takes no arguments and counts one AI request for
 `auth.uid()` on the current UTC day, so a caller can only spend their own
@@ -116,6 +123,7 @@ the GraphQL `JSON` scalar (serialized string).
 | `credit_prices` | none | none | none | `20261008000300_resumes_credits.sql` (server-side) |
 | `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
 | `ai_daily_usage` | none | none | none | `20261008000500_ai_daily_caps.sql` (server-side) |
+| `llm_proposal_applications` | none | SELECT | all | `20261112000100_llm_proposal_applications.sql` (rows written only by `apply_llm_proposal`) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

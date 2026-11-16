@@ -23,6 +23,9 @@ export type AiImproveOverlaySession = {
   failure: { stage: 'questions' | 'proposal'; message: string } | null;
   cap: { message: string } | null;
   notice: string | null;
+  /** Accept is saving the changes to the account (MDI-222); a failed save leaves the reason. */
+  saving?: boolean;
+  saveError?: string | null;
   setUnsentAnswer: (value: string) => void;
   answerCurrent: (status: 'answered' | 'skipped') => void;
   goToPreviousQuestion: () => void;
@@ -69,7 +72,7 @@ export function AiImproveOverlay({ session }: { session: AiImproveOverlaySession
     >
       <div className="mb-4 flex items-center justify-between gap-2">
         <p className="text-sm font-medium text-muted-foreground">Improve with AI</p>
-        <Button type="button" variant="ghost" size="icon" aria-label="Close Improve with AI" onClick={dismiss}>
+        <Button type="button" variant="ghost" size="icon" aria-label="Close Improve with AI" onClick={dismiss} disabled={session.saving}>
           <XIcon className="size-4" />
         </Button>
       </div>
@@ -109,6 +112,10 @@ export function AiImproveOverlay({ session }: { session: AiImproveOverlaySession
           onReject={session.reject}
           confirmed={session.confirmed}
           onToggleConfirmed={session.toggleConfirmed}
+          acceptLabel={session.saving ? 'Saving...' : undefined}
+          acceptDisabled={session.saving}
+          rejectDisabled={session.saving}
+          error={session.saveError}
         />
       ) : null}
 

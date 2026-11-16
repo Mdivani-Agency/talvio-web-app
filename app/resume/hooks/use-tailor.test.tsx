@@ -139,6 +139,25 @@ describe('useTailor', () => {
     act(() => result.current.toggleKept('o1'));
     expect(result.current.preview?.resume.skills).toEqual(fullResumeContent.skills);
 
+    // Create saves through apply_llm_proposal once per journey: the draft id is fixed.
+    const request = result.current.applyRequest();
+    expect(request).toMatchObject({
+      operation: 'tailor_resume',
+      proposalId: tailored.proposal.proposalId,
+      jobId: TAILOR_JOB,
+      sessionId: SESSION_ID,
+      source: input.source,
+      target: { kind: 'new_resume', resumeType: 'job_specific', derivedFrom: input.source },
+      selectedChangeIds: ['c1'],
+      acceptedOmissionIds: [],
+      confirmedClaimIds: [],
+      resume: expect.objectContaining({ name: 'Platform Engineer at Acme', template: 'senior-level-modern', color: '#000000' }),
+    });
+    expect(request?.resume.clientDraftId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(result.current.applyRequest()?.resume.clientDraftId).toBe(request?.resume.clientDraftId);
+    act(() => result.current.toggleKept('o1'));
+    expect(result.current.applyRequest()?.acceptedOmissionIds).toEqual(['o1']);
+
     act(() => result.current.reset());
     expect(client.deleteSession).toHaveBeenCalledWith(SESSION_ID);
     expect(result.current.step).toBe('intake');

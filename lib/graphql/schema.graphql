@@ -1,69 +1,508 @@
-# Snapshot of the Talvio pg_graphql surface (inflect_names off).
-# Refresh from a running local project:
-#   yarn db:start && yarn db:reset && yarn codegen:from-supabase
-# That overwrites this file and lib/graphql/generated.ts.
-# Agents do not run those commands.
+schema {
+  query: Query
+  mutation: Mutation
+}
 
-scalar UUID
-scalar Date
-scalar Datetime
-scalar JSON
-scalar BigInt
+"""A high precision floating point value represented as a string"""
 scalar BigFloat
+
+"""
+Boolean expression comparing fields on type "BigFloat"
+"""
+input BigFloatFilter {
+  eq: BigFloat
+  gt: BigFloat
+  gte: BigFloat
+  in: [BigFloat!]
+  is: FilterIs
+  lt: BigFloat
+  lte: BigFloat
+  neq: BigFloat
+}
+
+"""
+Boolean expression comparing fields on type "BigFloatList"
+"""
+input BigFloatListFilter {
+  containedBy: [BigFloat!]
+  contains: [BigFloat!]
+  eq: [BigFloat!]
+  is: FilterIs
+  overlaps: [BigFloat!]
+}
+
+"""An arbitrary size integer represented as a string"""
+scalar BigInt
+
+"""
+Boolean expression comparing fields on type "BigInt"
+"""
+input BigIntFilter {
+  eq: BigInt
+  gt: BigInt
+  gte: BigInt
+  in: [BigInt!]
+  is: FilterIs
+  lt: BigInt
+  lte: BigInt
+  neq: BigInt
+}
+
+"""
+Boolean expression comparing fields on type "BigIntList"
+"""
+input BigIntListFilter {
+  containedBy: [BigInt!]
+  contains: [BigInt!]
+  eq: [BigInt!]
+  is: FilterIs
+  overlaps: [BigInt!]
+}
+
+"""
+Boolean expression comparing fields on type "Boolean"
+"""
+input BooleanFilter {
+  eq: Boolean
+  is: FilterIs
+}
+
+"""
+Boolean expression comparing fields on type "BooleanList"
+"""
+input BooleanListFilter {
+  containedBy: [Boolean!]
+  contains: [Boolean!]
+  eq: [Boolean!]
+  is: FilterIs
+  overlaps: [Boolean!]
+}
+
+"""
+An opaque string using for tracking a position in results during pagination
+"""
 scalar Cursor
+
+"""A date without time information"""
+scalar Date
+
+"""
+Boolean expression comparing fields on type "Date"
+"""
+input DateFilter {
+  eq: Date
+  gt: Date
+  gte: Date
+  in: [Date!]
+  is: FilterIs
+  lt: Date
+  lte: Date
+  neq: Date
+}
+
+"""
+Boolean expression comparing fields on type "DateList"
+"""
+input DateListFilter {
+  containedBy: [Date!]
+  contains: [Date!]
+  eq: [Date!]
+  is: FilterIs
+  overlaps: [Date!]
+}
+
+"""A date and time"""
+scalar Datetime
+
+"""
+Boolean expression comparing fields on type "Datetime"
+"""
+input DatetimeFilter {
+  eq: Datetime
+  gt: Datetime
+  gte: Datetime
+  in: [Datetime!]
+  is: FilterIs
+  lt: Datetime
+  lte: Datetime
+  neq: Datetime
+}
+
+"""
+Boolean expression comparing fields on type "DatetimeList"
+"""
+input DatetimeListFilter {
+  containedBy: [Datetime!]
+  contains: [Datetime!]
+  eq: [Datetime!]
+  is: FilterIs
+  overlaps: [Datetime!]
+}
+
+enum FilterIs {
+  NOT_NULL
+  NULL
+}
+
+"""
+Boolean expression comparing fields on type "Float"
+"""
+input FloatFilter {
+  eq: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  is: FilterIs
+  lt: Float
+  lte: Float
+  neq: Float
+}
+
+"""
+Boolean expression comparing fields on type "FloatList"
+"""
+input FloatListFilter {
+  containedBy: [Float!]
+  contains: [Float!]
+  eq: [Float!]
+  is: FilterIs
+  overlaps: [Float!]
+}
+
+"""
+Boolean expression comparing fields on type "ID"
+"""
+input IDFilter {
+  eq: ID
+}
+
+"""
+Boolean expression comparing fields on type "Int"
+"""
+input IntFilter {
+  eq: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  is: FilterIs
+  lt: Int
+  lte: Int
+  neq: Int
+}
+
+"""
+Boolean expression comparing fields on type "IntList"
+"""
+input IntListFilter {
+  containedBy: [Int!]
+  contains: [Int!]
+  eq: [Int!]
+  is: FilterIs
+  overlaps: [Int!]
+}
+
+"""A Javascript Object Notation value serialized as a string"""
+scalar JSON
+
+"""The root type for creating and mutating data"""
+type Mutation {
+  apply_llm_proposal(p_request: JSON!): JSON
+  consume_ai_request: Int
+  """Deletes zero or more records from the `contacts` collection"""
+  deleteFromcontactsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: contactsFilter
+  ): contactsDeleteResponse!
+  """Deletes zero or more records from the `educations` collection"""
+  deleteFromeducationsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: educationsFilter
+  ): educationsDeleteResponse!
+  """Deletes zero or more records from the `experiences` collection"""
+  deleteFromexperiencesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: experiencesFilter
+  ): experiencesDeleteResponse!
+  """Deletes zero or more records from the `languages` collection"""
+  deleteFromlanguagesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: languagesFilter
+  ): languagesDeleteResponse!
+  """Deletes zero or more records from the `links` collection"""
+  deleteFromlinksCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: linksFilter
+  ): linksDeleteResponse!
+  """Deletes zero or more records from the `profiles` collection"""
+  deleteFromprofilesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: profilesFilter
+  ): profilesDeleteResponse!
+  """Deletes zero or more records from the `projects` collection"""
+  deleteFromprojectsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: projectsFilter
+  ): projectsDeleteResponse!
+  """Deletes zero or more records from the `recommendations` collection"""
+  deleteFromrecommendationsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: recommendationsFilter
+  ): recommendationsDeleteResponse!
+  """Deletes zero or more records from the `resumes` collection"""
+  deleteFromresumesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: resumesFilter
+  ): resumesDeleteResponse!
+  """Deletes zero or more records from the `skills` collection"""
+  deleteFromskillsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: skillsFilter
+  ): skillsDeleteResponse!
+  """Deletes zero or more records from the `tools` collection"""
+  deleteFromtoolsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: toolsFilter
+  ): toolsDeleteResponse!
+  finalize_pdf(p_pdf_media_key: String!, p_pdf_url: String!, p_resume_id: UUID!): String
+  generate_pdf(p_resume_id: UUID!): String
+  """Adds one or more `contacts` records to the collection"""
+  insertIntocontactsCollection(objects: [contactsInsertInput!]!): contactsInsertResponse
+  """Adds one or more `educations` records to the collection"""
+  insertIntoeducationsCollection(objects: [educationsInsertInput!]!): educationsInsertResponse
+  """Adds one or more `experiences` records to the collection"""
+  insertIntoexperiencesCollection(objects: [experiencesInsertInput!]!): experiencesInsertResponse
+  """Adds one or more `languages` records to the collection"""
+  insertIntolanguagesCollection(objects: [languagesInsertInput!]!): languagesInsertResponse
+  """Adds one or more `links` records to the collection"""
+  insertIntolinksCollection(objects: [linksInsertInput!]!): linksInsertResponse
+  """Adds one or more `profiles` records to the collection"""
+  insertIntoprofilesCollection(objects: [profilesInsertInput!]!): profilesInsertResponse
+  """Adds one or more `projects` records to the collection"""
+  insertIntoprojectsCollection(objects: [projectsInsertInput!]!): projectsInsertResponse
+  """Adds one or more `recommendations` records to the collection"""
+  insertIntorecommendationsCollection(objects: [recommendationsInsertInput!]!): recommendationsInsertResponse
+  """Adds one or more `resumes` records to the collection"""
+  insertIntoresumesCollection(objects: [resumesInsertInput!]!): resumesInsertResponse
+  """Adds one or more `skills` records to the collection"""
+  insertIntoskillsCollection(objects: [skillsInsertInput!]!): skillsInsertResponse
+  """Adds one or more `tools` records to the collection"""
+  insertIntotoolsCollection(objects: [toolsInsertInput!]!): toolsInsertResponse
+  release_resume_generation(p_resume_id: UUID!): Opaque
+  save_profile(p_payload: JSON!): String
+  """Updates zero or more records in the `contacts` collection"""
+  updatecontactsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: contactsFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: contactsUpdateInput!
+  ): contactsUpdateResponse!
+  """Updates zero or more records in the `educations` collection"""
+  updateeducationsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: educationsFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: educationsUpdateInput!
+  ): educationsUpdateResponse!
+  """Updates zero or more records in the `experiences` collection"""
+  updateexperiencesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: experiencesFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: experiencesUpdateInput!
+  ): experiencesUpdateResponse!
+  """Updates zero or more records in the `languages` collection"""
+  updatelanguagesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: languagesFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: languagesUpdateInput!
+  ): languagesUpdateResponse!
+  """Updates zero or more records in the `links` collection"""
+  updatelinksCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: linksFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: linksUpdateInput!
+  ): linksUpdateResponse!
+  """Updates zero or more records in the `profiles` collection"""
+  updateprofilesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: profilesFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: profilesUpdateInput!
+  ): profilesUpdateResponse!
+  """Updates zero or more records in the `projects` collection"""
+  updateprojectsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: projectsFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: projectsUpdateInput!
+  ): projectsUpdateResponse!
+  """Updates zero or more records in the `recommendations` collection"""
+  updaterecommendationsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: recommendationsFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: recommendationsUpdateInput!
+  ): recommendationsUpdateResponse!
+  """Updates zero or more records in the `resumes` collection"""
+  updateresumesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: resumesFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: resumesUpdateInput!
+  ): resumesUpdateResponse!
+  """Updates zero or more records in the `skills` collection"""
+  updateskillsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: skillsFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: skillsUpdateInput!
+  ): skillsUpdateResponse!
+  """Updates zero or more records in the `tools` collection"""
+  updatetoolsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: toolsFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: toolsUpdateInput!
+  ): toolsUpdateResponse!
+}
+
+interface Node {
+  """Retrieves a record by `ID`"""
+  nodeId: ID!
+}
+
+"""Any type not handled by the type system"""
 scalar Opaque
 
-enum employment_type {
-  full_time
-  part_time
-  contract
-  self_employed
-  volunteer
-  internship
-  apprenticeship
-  seasonal
+"""
+Boolean expression comparing fields on type "Opaque"
+"""
+input OpaqueFilter {
+  eq: Opaque
+  is: FilterIs
 }
 
-enum location_type {
-  remote
-  hybrid
-  office
-}
-
-enum language_proficiency {
-  beginner
-  intermediate
-  fluent
-  native
-}
-
-enum contact_kind {
-  email
-  phone
-  url
-}
-
-enum resume_type {
-  general
-  job_specific
-}
-
-enum resume_font_size {
-  sm
-  md
-  lg
-}
-
-enum seniority_level {
-  entry
-  mid
-  senior
-}
-
+"""Defines a per-field sorting order"""
 enum OrderByDirection {
+  """Ascending order, nulls first"""
   AscNullsFirst
+  """Ascending order, nulls last"""
   AscNullsLast
+  """Descending order, nulls first"""
   DescNullsFirst
+  """Descending order, nulls last"""
   DescNullsLast
 }
 
@@ -74,103 +513,439 @@ type PageInfo {
   startCursor: String
 }
 
-enum FilterIs {
-  NULL
-  NOT_NULL
+"""The root type for querying data"""
+type Query {
+  """Retrieve a record of type `contacts` by its primary key"""
+  contactsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): contacts
+  """A pagable collection of type `contacts`"""
+  contactsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: contactsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [contactsOrderBy!]
+  ): contactsConnection!
+  """Retrieve a record of type `educations` by its primary key"""
+  educationsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): educations
+  """A pagable collection of type `educations`"""
+  educationsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: educationsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [educationsOrderBy!]
+  ): educationsConnection!
+  """Retrieve a record of type `experiences` by its primary key"""
+  experiencesByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): experiences
+  """A pagable collection of type `experiences`"""
+  experiencesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: experiencesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [experiencesOrderBy!]
+  ): experiencesConnection!
+  """Retrieve a record of type `languages` by its primary key"""
+  languagesByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): languages
+  """A pagable collection of type `languages`"""
+  languagesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: languagesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [languagesOrderBy!]
+  ): languagesConnection!
+  """Retrieve a record of type `links` by its primary key"""
+  linksByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): links
+  """A pagable collection of type `links`"""
+  linksCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: linksFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [linksOrderBy!]
+  ): linksConnection!
+  """
+  Retrieve a record of type `llm_proposal_applications` by its primary key
+  """
+  llm_proposal_applicationsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): llm_proposal_applications
+  """A pagable collection of type `llm_proposal_applications`"""
+  llm_proposal_applicationsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: llm_proposal_applicationsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [llm_proposal_applicationsOrderBy!]
+  ): llm_proposal_applicationsConnection!
+  """Retrieve a record by its `ID`"""
+  node(
+    """The record's `ID`"""
+    nodeId: ID!
+  ): Node
+  """Retrieve a record of type `profiles` by its primary key"""
+  profilesByPk(
+    """The record's `user_id` value"""
+    user_id: UUID!
+  ): profiles
+  """A pagable collection of type `profiles`"""
+  profilesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: profilesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [profilesOrderBy!]
+  ): profilesConnection!
+  """Retrieve a record of type `projects` by its primary key"""
+  projectsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): projects
+  """A pagable collection of type `projects`"""
+  projectsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: projectsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [projectsOrderBy!]
+  ): projectsConnection!
+  """Retrieve a record of type `recommendations` by its primary key"""
+  recommendationsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): recommendations
+  """A pagable collection of type `recommendations`"""
+  recommendationsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: recommendationsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [recommendationsOrderBy!]
+  ): recommendationsConnection!
+  """Retrieve a record of type `resumes` by its primary key"""
+  resumesByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): resumes
+  """A pagable collection of type `resumes`"""
+  resumesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: resumesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [resumesOrderBy!]
+  ): resumesConnection!
+  """Retrieve a record of type `skills` by its primary key"""
+  skillsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): skills
+  """A pagable collection of type `skills`"""
+  skillsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: skillsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [skillsOrderBy!]
+  ): skillsConnection!
+  """Retrieve a record of type `tools` by its primary key"""
+  toolsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): tools
+  """A pagable collection of type `tools`"""
+  toolsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: toolsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [toolsOrderBy!]
+  ): toolsConnection!
+  """Retrieve a record of type `user_credits` by its primary key"""
+  user_creditsByPk(
+    """The record's `user_id` value"""
+    user_id: UUID!
+  ): user_credits
+  """A pagable collection of type `user_credits`"""
+  user_creditsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: user_creditsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [user_creditsOrderBy!]
+  ): user_creditsConnection!
 }
 
+"""
+Boolean expression comparing fields on type "String"
+"""
 input StringFilter {
   eq: String
+  gt: String
+  gte: String
+  ilike: String
   in: [String!]
+  iregex: String
   is: FilterIs
+  like: String
+  lt: String
+  lte: String
+  neq: String
+  regex: String
+  startsWith: String
 }
 
+"""
+Boolean expression comparing fields on type "StringList"
+"""
+input StringListFilter {
+  containedBy: [String!]
+  contains: [String!]
+  eq: [String!]
+  is: FilterIs
+  overlaps: [String!]
+}
+
+"""A time without date information"""
+scalar Time
+
+"""
+Boolean expression comparing fields on type "Time"
+"""
+input TimeFilter {
+  eq: Time
+  gt: Time
+  gte: Time
+  in: [Time!]
+  is: FilterIs
+  lt: Time
+  lte: Time
+  neq: Time
+}
+
+"""
+Boolean expression comparing fields on type "TimeList"
+"""
+input TimeListFilter {
+  containedBy: [Time!]
+  contains: [Time!]
+  eq: [Time!]
+  is: FilterIs
+  overlaps: [Time!]
+}
+
+"""A universally unique identifier"""
+scalar UUID
+
+"""
+Boolean expression comparing fields on type "UUID"
+"""
 input UUIDFilter {
   eq: UUID
   in: [UUID!]
+  is: FilterIs
+  neq: UUID
 }
 
-input IntFilter {
-  eq: Int
-  gt: Int
-  gte: Int
-  lt: Int
-  lte: Int
+"""
+Boolean expression comparing fields on type "UUIDList"
+"""
+input UUIDListFilter {
+  containedBy: [UUID!]
+  contains: [UUID!]
+  eq: [UUID!]
+  is: FilterIs
+  overlaps: [UUID!]
 }
 
-input BooleanFilter {
-  eq: Boolean
+enum contact_kind {
+  email
+  phone
+  url
 }
 
-input DateFilter {
-  eq: Date
-  gt: Date
-  gte: Date
-  lt: Date
-  lte: Date
+"""
+Boolean expression comparing fields on type "contact_kind"
+"""
+input contact_kindFilter {
+  eq: contact_kind
+  in: [contact_kind!]
+  is: FilterIs
+  neq: contact_kind
 }
 
-input resume_typeFilter {
-  eq: resume_type
-  in: [resume_type!]
-}
-
-input DatetimeFilter {
-  eq: Datetime
-  gt: Datetime
-  gte: Datetime
-  lt: Datetime
-  lte: Datetime
-}
-
-type profiles {
-  user_id: UUID!
-  first_name: String!
-  last_name: String!
-  role: String!
-  tagline: String
-  seniority: seniority_level!
-  city: String
-  country: String
+type contacts implements Node {
   created_at: Datetime!
-  updated_at: Datetime!
-}
-
-type profilesEdge {
-  cursor: String!
-  node: profiles
-}
-
-type profilesConnection {
-  edges: [profilesEdge!]!
-  pageInfo: PageInfo!
-}
-
-input profilesFilter {
-  user_id: UUIDFilter
-  first_name: StringFilter
-}
-
-input profilesOrderBy {
-  user_id: OrderByDirection
-  created_at: OrderByDirection
-  updated_at: OrderByDirection
-}
-
-type contacts {
   id: UUID!
-  user_id: UUID!
-  kind: contact_kind!
-  value: String!
-  label: String
   is_primary: Boolean!
+  kind: contact_kind!
+  label: String
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
   sort_order: Int!
-  created_at: Datetime!
-}
-
-type contactsEdge {
-  cursor: String!
-  node: contacts
+  user_id: UUID!
+  value: String!
 }
 
 type contactsConnection {
@@ -178,75 +953,103 @@ type contactsConnection {
   pageInfo: PageInfo!
 }
 
+type contactsDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [contacts!]!
+}
+
+type contactsEdge {
+  cursor: String!
+  node: contacts!
+}
+
 input contactsFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [contactsFilter!]
+  created_at: DatetimeFilter
   id: UUIDFilter
+  is_primary: BooleanFilter
+  kind: contact_kindFilter
+  label: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: contactsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [contactsFilter!]
+  sort_order: IntFilter
   user_id: UUIDFilter
-  kind: StringFilter
+  value: StringFilter
+}
+
+input contactsInsertInput {
+  created_at: Datetime
+  id: UUID
+  is_primary: Boolean
+  kind: contact_kind
+  label: String
+  sort_order: Int
+  user_id: UUID
+  value: String
+}
+
+type contactsInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [contacts!]!
 }
 
 input contactsOrderBy {
-  sort_order: OrderByDirection
   created_at: OrderByDirection
-}
-
-type experiences {
-  id: UUID!
-  user_id: UUID!
-  company: String!
-  job_title: String!
-  employment_type: employment_type
-  location_type: location_type
-  start_date: Date!
-  end_date: Date
-  is_present: Boolean!
-  achievements: [String!]!
-  responsibilities: [String!]!
-  key_contributions: [String!]!
-  additional_details: String
-  description: JSON
-  sort_order: Int!
-  created_at: Datetime!
-  updated_at: Datetime!
-}
-
-type experiencesEdge {
-  cursor: String!
-  node: experiences
-}
-
-type experiencesConnection {
-  edges: [experiencesEdge!]!
-  pageInfo: PageInfo!
-}
-
-input experiencesFilter {
-  id: UUIDFilter
-  user_id: UUIDFilter
-}
-
-input experiencesOrderBy {
+  id: OrderByDirection
+  is_primary: OrderByDirection
+  kind: OrderByDirection
+  label: OrderByDirection
   sort_order: OrderByDirection
-  start_date: OrderByDirection
+  user_id: OrderByDirection
+  value: OrderByDirection
 }
 
-type educations {
-  id: UUID!
-  user_id: UUID!
-  name: String!
-  degree_type: String!
-  start_date: Date!
-  end_date: Date
-  is_present: Boolean!
+input contactsUpdateInput {
+  created_at: Datetime
+  id: UUID
+  is_primary: Boolean
+  kind: contact_kind
+  label: String
+  sort_order: Int
+  user_id: UUID
+  value: String
+}
+
+type contactsUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [contacts!]!
+}
+
+type educations implements Node {
   additional_details: String
-  description: JSON
-  sort_order: Int!
   created_at: Datetime!
+  degree_type: String!
+  description: JSON
+  end_date: Date
+  id: UUID!
+  is_present: Boolean!
+  name: String!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
+  sort_order: Int!
+  start_date: Date!
   updated_at: Datetime!
-}
-
-type educationsEdge {
-  cursor: String!
-  node: educations
+  user_id: UUID!
 }
 
 type educationsConnection {
@@ -254,171 +1057,289 @@ type educationsConnection {
   pageInfo: PageInfo!
 }
 
+type educationsDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [educations!]!
+}
+
+type educationsEdge {
+  cursor: String!
+  node: educations!
+}
+
 input educationsFilter {
+  additional_details: StringFilter
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [educationsFilter!]
+  created_at: DatetimeFilter
+  degree_type: StringFilter
+  end_date: DateFilter
   id: UUIDFilter
+  is_present: BooleanFilter
+  name: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: educationsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [educationsFilter!]
+  sort_order: IntFilter
+  start_date: DateFilter
+  updated_at: DatetimeFilter
   user_id: UUIDFilter
+}
+
+input educationsInsertInput {
+  additional_details: String
+  created_at: Datetime
+  degree_type: String
+  description: JSON
+  end_date: Date
+  id: UUID
+  is_present: Boolean
+  name: String
+  sort_order: Int
+  start_date: Date
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type educationsInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [educations!]!
 }
 
 input educationsOrderBy {
+  additional_details: OrderByDirection
+  created_at: OrderByDirection
+  degree_type: OrderByDirection
+  end_date: OrderByDirection
+  id: OrderByDirection
+  is_present: OrderByDirection
+  name: OrderByDirection
   sort_order: OrderByDirection
+  start_date: OrderByDirection
+  updated_at: OrderByDirection
+  user_id: OrderByDirection
 }
 
-type projects {
-  id: UUID!
-  user_id: UUID!
-  name: String!
-  url: String
-  additional_details: String!
+input educationsUpdateInput {
+  additional_details: String
+  created_at: Datetime
+  degree_type: String
   description: JSON
-  sort_order: Int!
+  end_date: Date
+  id: UUID
+  is_present: Boolean
+  name: String
+  sort_order: Int
+  start_date: Date
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type educationsUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [educations!]!
+}
+
+enum employment_type {
+  apprenticeship
+  contract
+  full_time
+  internship
+  part_time
+  seasonal
+  self_employed
+  volunteer
+}
+
+"""
+Boolean expression comparing fields on type "employment_type"
+"""
+input employment_typeFilter {
+  eq: employment_type
+  in: [employment_type!]
+  is: FilterIs
+  neq: employment_type
+}
+
+type experiences implements Node {
+  achievements: [String]!
+  additional_details: String
+  company: String!
   created_at: Datetime!
-  updated_at: Datetime!
-}
-
-type projectsEdge {
-  cursor: String!
-  node: projects
-}
-
-type projectsConnection {
-  edges: [projectsEdge!]!
-  pageInfo: PageInfo!
-}
-
-input projectsFilter {
-  id: UUIDFilter
-  user_id: UUIDFilter
-}
-
-input projectsOrderBy {
-  sort_order: OrderByDirection
-}
-
-type recommendations {
-  id: UUID!
-  user_id: UUID!
-  name: String!
-  url: String!
-  additional_details: String!
   description: JSON
+  employment_type: employment_type
+  end_date: Date
+  id: UUID!
+  is_present: Boolean!
+  job_title: String!
+  key_contributions: [String]!
+  location_type: location_type
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
+  responsibilities: [String]!
   sort_order: Int!
-  created_at: Datetime!
+  start_date: Date!
   updated_at: Datetime!
+  user_id: UUID!
 }
 
-type recommendationsEdge {
-  cursor: String!
-  node: recommendations
-}
-
-type recommendationsConnection {
-  edges: [recommendationsEdge!]!
+type experiencesConnection {
+  edges: [experiencesEdge!]!
   pageInfo: PageInfo!
 }
 
-input recommendationsFilter {
+type experiencesDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [experiences!]!
+}
+
+type experiencesEdge {
+  cursor: String!
+  node: experiences!
+}
+
+input experiencesFilter {
+  achievements: StringListFilter
+  additional_details: StringFilter
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [experiencesFilter!]
+  company: StringFilter
+  created_at: DatetimeFilter
+  employment_type: employment_typeFilter
+  end_date: DateFilter
   id: UUIDFilter
+  is_present: BooleanFilter
+  job_title: StringFilter
+  key_contributions: StringListFilter
+  location_type: location_typeFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: experiencesFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [experiencesFilter!]
+  responsibilities: StringListFilter
+  sort_order: IntFilter
+  start_date: DateFilter
+  updated_at: DatetimeFilter
   user_id: UUIDFilter
 }
 
-input recommendationsOrderBy {
-  sort_order: OrderByDirection
+input experiencesInsertInput {
+  achievements: [String]
+  additional_details: String
+  company: String
+  created_at: Datetime
+  description: JSON
+  employment_type: employment_type
+  end_date: Date
+  id: UUID
+  is_present: Boolean
+  job_title: String
+  key_contributions: [String]
+  location_type: location_type
+  responsibilities: [String]
+  sort_order: Int
+  start_date: Date
+  updated_at: Datetime
+  user_id: UUID
 }
 
-type skills {
-  id: UUID!
-  user_id: UUID!
-  name: String!
-  sort_order: Int!
+type experiencesInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [experiences!]!
+}
+
+input experiencesOrderBy {
+  additional_details: OrderByDirection
+  company: OrderByDirection
+  created_at: OrderByDirection
+  employment_type: OrderByDirection
+  end_date: OrderByDirection
+  id: OrderByDirection
+  is_present: OrderByDirection
+  job_title: OrderByDirection
+  location_type: OrderByDirection
+  sort_order: OrderByDirection
+  start_date: OrderByDirection
+  updated_at: OrderByDirection
+  user_id: OrderByDirection
+}
+
+input experiencesUpdateInput {
+  achievements: [String]
+  additional_details: String
+  company: String
+  created_at: Datetime
+  description: JSON
+  employment_type: employment_type
+  end_date: Date
+  id: UUID
+  is_present: Boolean
+  job_title: String
+  key_contributions: [String]
+  location_type: location_type
+  responsibilities: [String]
+  sort_order: Int
+  start_date: Date
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type experiencesUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [experiences!]!
+}
+
+enum language_proficiency {
+  beginner
+  fluent
+  intermediate
+  native
+}
+
+"""
+Boolean expression comparing fields on type "language_proficiency"
+"""
+input language_proficiencyFilter {
+  eq: language_proficiency
+  in: [language_proficiency!]
+  is: FilterIs
+  neq: language_proficiency
+}
+
+type languages implements Node {
   created_at: Datetime!
-}
-
-type skillsEdge {
-  cursor: String!
-  node: skills
-}
-
-type skillsConnection {
-  edges: [skillsEdge!]!
-  pageInfo: PageInfo!
-}
-
-input skillsFilter {
-  id: UUIDFilter
-  user_id: UUIDFilter
-}
-
-input skillsOrderBy {
-  sort_order: OrderByDirection
-}
-
-type tools {
   id: UUID!
-  user_id: UUID!
-  name: String!
-  sort_order: Int!
-  created_at: Datetime!
-}
-
-type toolsEdge {
-  cursor: String!
-  node: tools
-}
-
-type toolsConnection {
-  edges: [toolsEdge!]!
-  pageInfo: PageInfo!
-}
-
-input toolsFilter {
-  id: UUIDFilter
-  user_id: UUIDFilter
-}
-
-input toolsOrderBy {
-  sort_order: OrderByDirection
-}
-
-type links {
-  id: UUID!
-  user_id: UUID!
-  type: String!
-  value: String!
-  sort_order: Int!
-  created_at: Datetime!
-}
-
-type linksEdge {
-  cursor: String!
-  node: links
-}
-
-type linksConnection {
-  edges: [linksEdge!]!
-  pageInfo: PageInfo!
-}
-
-input linksFilter {
-  id: UUIDFilter
-  user_id: UUIDFilter
-}
-
-input linksOrderBy {
-  sort_order: OrderByDirection
-}
-
-type languages {
-  id: UUID!
-  user_id: UUID!
   language: String!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
   proficiency: language_proficiency!
+  profiles: profiles
   sort_order: Int!
-  created_at: Datetime!
-}
-
-type languagesEdge {
-  cursor: String!
-  node: languages
+  user_id: UUID!
 }
 
 type languagesConnection {
@@ -426,38 +1347,790 @@ type languagesConnection {
   pageInfo: PageInfo!
 }
 
+type languagesDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [languages!]!
+}
+
+type languagesEdge {
+  cursor: String!
+  node: languages!
+}
+
 input languagesFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [languagesFilter!]
+  created_at: DatetimeFilter
   id: UUIDFilter
+  language: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: languagesFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [languagesFilter!]
+  proficiency: language_proficiencyFilter
+  sort_order: IntFilter
   user_id: UUIDFilter
 }
 
+input languagesInsertInput {
+  created_at: Datetime
+  id: UUID
+  language: String
+  proficiency: language_proficiency
+  sort_order: Int
+  user_id: UUID
+}
+
+type languagesInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [languages!]!
+}
+
 input languagesOrderBy {
+  created_at: OrderByDirection
+  id: OrderByDirection
+  language: OrderByDirection
+  proficiency: OrderByDirection
   sort_order: OrderByDirection
+  user_id: OrderByDirection
 }
 
-type resumes {
-  id: UUID!
-  user_id: UUID!
-  name: String!
-  label: String
-  type: resume_type!
-  template_key: String!
-  color: String!
-  font_size: resume_font_size!
-  font_family: String
-  content: JSON!
-  pdf_url: String
-  pdf_media_key: String
-  source_resume_id: UUID
-  client_draft_id: UUID
-  generation_updated_at: Datetime
+input languagesUpdateInput {
+  created_at: Datetime
+  id: UUID
+  language: String
+  proficiency: language_proficiency
+  sort_order: Int
+  user_id: UUID
+}
+
+type languagesUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [languages!]!
+}
+
+type links implements Node {
   created_at: Datetime!
-  updated_at: Datetime!
+  id: UUID!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
+  sort_order: Int!
+  type: String!
+  user_id: UUID!
+  value: String!
 }
 
-type resumesEdge {
+type linksConnection {
+  edges: [linksEdge!]!
+  pageInfo: PageInfo!
+}
+
+type linksDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [links!]!
+}
+
+type linksEdge {
   cursor: String!
-  node: resumes
+  node: links!
+}
+
+input linksFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [linksFilter!]
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: linksFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [linksFilter!]
+  sort_order: IntFilter
+  type: StringFilter
+  user_id: UUIDFilter
+  value: StringFilter
+}
+
+input linksInsertInput {
+  created_at: Datetime
+  id: UUID
+  sort_order: Int
+  type: String
+  user_id: UUID
+  value: String
+}
+
+type linksInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [links!]!
+}
+
+input linksOrderBy {
+  created_at: OrderByDirection
+  id: OrderByDirection
+  sort_order: OrderByDirection
+  type: OrderByDirection
+  user_id: OrderByDirection
+  value: OrderByDirection
+}
+
+input linksUpdateInput {
+  created_at: Datetime
+  id: UUID
+  sort_order: Int
+  type: String
+  user_id: UUID
+  value: String
+}
+
+type linksUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [links!]!
+}
+
+type llm_proposal_applications implements Node {
+  accepted_omission_ids: [String]!
+  applied_change_ids: [String]!
+  base_revision: Datetime
+  confirmed_claim_ids: [String]!
+  created_at: Datetime!
+  id: UUID!
+  idempotency_key: String!
+  job_id: UUID
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  operation: String!
+  proposal_id: UUID!
+  resulting_revision: Datetime!
+  resume_id: UUID
+  resumes: resumes
+  session_id: UUID
+  source: JSON!
+  target: JSON!
+  user_id: UUID!
+}
+
+type llm_proposal_applicationsConnection {
+  edges: [llm_proposal_applicationsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type llm_proposal_applicationsEdge {
+  cursor: String!
+  node: llm_proposal_applications!
+}
+
+input llm_proposal_applicationsFilter {
+  accepted_omission_ids: StringListFilter
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [llm_proposal_applicationsFilter!]
+  applied_change_ids: StringListFilter
+  base_revision: DatetimeFilter
+  confirmed_claim_ids: StringListFilter
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  idempotency_key: StringFilter
+  job_id: UUIDFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: llm_proposal_applicationsFilter
+  operation: StringFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [llm_proposal_applicationsFilter!]
+  proposal_id: UUIDFilter
+  resulting_revision: DatetimeFilter
+  resume_id: UUIDFilter
+  session_id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input llm_proposal_applicationsOrderBy {
+  base_revision: OrderByDirection
+  created_at: OrderByDirection
+  id: OrderByDirection
+  idempotency_key: OrderByDirection
+  job_id: OrderByDirection
+  operation: OrderByDirection
+  proposal_id: OrderByDirection
+  resulting_revision: OrderByDirection
+  resume_id: OrderByDirection
+  session_id: OrderByDirection
+  user_id: OrderByDirection
+}
+
+enum location_type {
+  hybrid
+  office
+  remote
+}
+
+"""
+Boolean expression comparing fields on type "location_type"
+"""
+input location_typeFilter {
+  eq: location_type
+  in: [location_type!]
+  is: FilterIs
+  neq: location_type
+}
+
+type profiles implements Node {
+  city: String
+  contactsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: contactsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [contactsOrderBy!]
+  ): contactsConnection
+  country: String
+  created_at: Datetime!
+  educationsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: educationsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [educationsOrderBy!]
+  ): educationsConnection
+  experiencesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: experiencesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [experiencesOrderBy!]
+  ): experiencesConnection
+  first_name: String!
+  languagesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: languagesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [languagesOrderBy!]
+  ): languagesConnection
+  last_name: String!
+  linksCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: linksFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [linksOrderBy!]
+  ): linksConnection
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  projectsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: projectsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [projectsOrderBy!]
+  ): projectsConnection
+  recommendationsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: recommendationsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [recommendationsOrderBy!]
+  ): recommendationsConnection
+  role: String!
+  seniority: seniority_level!
+  skills: skills
+  tagline: String
+  tools: tools
+  updated_at: Datetime!
+  user_id: UUID!
+}
+
+type profilesConnection {
+  edges: [profilesEdge!]!
+  pageInfo: PageInfo!
+}
+
+type profilesDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [profiles!]!
+}
+
+type profilesEdge {
+  cursor: String!
+  node: profiles!
+}
+
+input profilesFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [profilesFilter!]
+  city: StringFilter
+  country: StringFilter
+  created_at: DatetimeFilter
+  first_name: StringFilter
+  last_name: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: profilesFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [profilesFilter!]
+  role: StringFilter
+  seniority: seniority_levelFilter
+  tagline: StringFilter
+  updated_at: DatetimeFilter
+  user_id: UUIDFilter
+}
+
+input profilesInsertInput {
+  city: String
+  country: String
+  created_at: Datetime
+  first_name: String
+  last_name: String
+  role: String
+  seniority: seniority_level
+  tagline: String
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type profilesInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [profiles!]!
+}
+
+input profilesOrderBy {
+  city: OrderByDirection
+  country: OrderByDirection
+  created_at: OrderByDirection
+  first_name: OrderByDirection
+  last_name: OrderByDirection
+  role: OrderByDirection
+  seniority: OrderByDirection
+  tagline: OrderByDirection
+  updated_at: OrderByDirection
+  user_id: OrderByDirection
+}
+
+input profilesUpdateInput {
+  city: String
+  country: String
+  created_at: Datetime
+  first_name: String
+  last_name: String
+  role: String
+  seniority: seniority_level
+  tagline: String
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type profilesUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [profiles!]!
+}
+
+type projects implements Node {
+  additional_details: String!
+  created_at: Datetime!
+  description: JSON
+  id: UUID!
+  name: String!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
+  sort_order: Int!
+  updated_at: Datetime!
+  url: String
+  user_id: UUID!
+}
+
+type projectsConnection {
+  edges: [projectsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type projectsDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [projects!]!
+}
+
+type projectsEdge {
+  cursor: String!
+  node: projects!
+}
+
+input projectsFilter {
+  additional_details: StringFilter
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [projectsFilter!]
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  name: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: projectsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [projectsFilter!]
+  sort_order: IntFilter
+  updated_at: DatetimeFilter
+  url: StringFilter
+  user_id: UUIDFilter
+}
+
+input projectsInsertInput {
+  additional_details: String
+  created_at: Datetime
+  description: JSON
+  id: UUID
+  name: String
+  sort_order: Int
+  updated_at: Datetime
+  url: String
+  user_id: UUID
+}
+
+type projectsInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [projects!]!
+}
+
+input projectsOrderBy {
+  additional_details: OrderByDirection
+  created_at: OrderByDirection
+  id: OrderByDirection
+  name: OrderByDirection
+  sort_order: OrderByDirection
+  updated_at: OrderByDirection
+  url: OrderByDirection
+  user_id: OrderByDirection
+}
+
+input projectsUpdateInput {
+  additional_details: String
+  created_at: Datetime
+  description: JSON
+  id: UUID
+  name: String
+  sort_order: Int
+  updated_at: Datetime
+  url: String
+  user_id: UUID
+}
+
+type projectsUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [projects!]!
+}
+
+type recommendations implements Node {
+  additional_details: String!
+  created_at: Datetime!
+  description: JSON
+  id: UUID!
+  name: String!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
+  sort_order: Int!
+  updated_at: Datetime!
+  url: String!
+  user_id: UUID!
+}
+
+type recommendationsConnection {
+  edges: [recommendationsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type recommendationsDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [recommendations!]!
+}
+
+type recommendationsEdge {
+  cursor: String!
+  node: recommendations!
+}
+
+input recommendationsFilter {
+  additional_details: StringFilter
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [recommendationsFilter!]
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  name: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: recommendationsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [recommendationsFilter!]
+  sort_order: IntFilter
+  updated_at: DatetimeFilter
+  url: StringFilter
+  user_id: UUIDFilter
+}
+
+input recommendationsInsertInput {
+  additional_details: String
+  created_at: Datetime
+  description: JSON
+  id: UUID
+  name: String
+  sort_order: Int
+  updated_at: Datetime
+  url: String
+  user_id: UUID
+}
+
+type recommendationsInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [recommendations!]!
+}
+
+input recommendationsOrderBy {
+  additional_details: OrderByDirection
+  created_at: OrderByDirection
+  id: OrderByDirection
+  name: OrderByDirection
+  sort_order: OrderByDirection
+  updated_at: OrderByDirection
+  url: OrderByDirection
+  user_id: OrderByDirection
+}
+
+input recommendationsUpdateInput {
+  additional_details: String
+  created_at: Datetime
+  description: JSON
+  id: UUID
+  name: String
+  sort_order: Int
+  updated_at: Datetime
+  url: String
+  user_id: UUID
+}
+
+type recommendationsUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [recommendations!]!
+}
+
+enum resume_font_size {
+  lg
+  md
+  sm
+}
+
+"""
+Boolean expression comparing fields on type "resume_font_size"
+"""
+input resume_font_sizeFilter {
+  eq: resume_font_size
+  in: [resume_font_size!]
+  is: FilterIs
+  neq: resume_font_size
+}
+
+enum resume_type {
+  general
+  job_specific
+}
+
+"""
+Boolean expression comparing fields on type "resume_type"
+"""
+input resume_typeFilter {
+  eq: resume_type
+  in: [resume_type!]
+  is: FilterIs
+  neq: resume_type
+}
+
+type resumes implements Node {
+  client_draft_id: UUID
+  color: String!
+  content: JSON!
+  created_at: Datetime!
+  font_family: String
+  font_size: resume_font_size!
+  generation_updated_at: Datetime
+  id: UUID!
+  label: String
+  llm_proposal_applicationsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: llm_proposal_applicationsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [llm_proposal_applicationsOrderBy!]
+  ): llm_proposal_applicationsConnection
+  name: String!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  pdf_media_key: String
+  pdf_url: String
+  resumes: resumes
+  resumesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: resumesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [resumesOrderBy!]
+  ): resumesConnection
+  source_resume_id: UUID
+  template_key: String!
+  type: resume_type!
+  updated_at: Datetime!
+  user_id: UUID!
 }
 
 type resumesConnection {
@@ -465,30 +2138,299 @@ type resumesConnection {
   pageInfo: PageInfo!
 }
 
+type resumesDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [resumes!]!
+}
+
+type resumesEdge {
+  cursor: String!
+  node: resumes!
+}
+
 input resumesFilter {
-  id: UUIDFilter
-  user_id: UUIDFilter
-  type: resume_typeFilter
-  source_resume_id: UUIDFilter
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [resumesFilter!]
   client_draft_id: UUIDFilter
+  color: StringFilter
+  created_at: DatetimeFilter
+  font_family: StringFilter
+  font_size: resume_font_sizeFilter
+  generation_updated_at: DatetimeFilter
+  id: UUIDFilter
+  label: StringFilter
+  name: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: resumesFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [resumesFilter!]
+  pdf_media_key: StringFilter
   pdf_url: StringFilter
+  source_resume_id: UUIDFilter
+  template_key: StringFilter
+  type: resume_typeFilter
   updated_at: DatetimeFilter
+  user_id: UUIDFilter
+}
+
+input resumesInsertInput {
+  client_draft_id: UUID
+  color: String
+  content: JSON
+  font_family: String
+  font_size: resume_font_size
+  id: UUID
+  label: String
+  name: String
+  source_resume_id: UUID
+  template_key: String
+  type: resume_type
+  user_id: UUID
+}
+
+type resumesInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [resumes!]!
 }
 
 input resumesOrderBy {
-  updated_at: OrderByDirection
+  client_draft_id: OrderByDirection
+  color: OrderByDirection
   created_at: OrderByDirection
+  font_family: OrderByDirection
+  font_size: OrderByDirection
+  generation_updated_at: OrderByDirection
+  id: OrderByDirection
+  label: OrderByDirection
+  name: OrderByDirection
+  pdf_media_key: OrderByDirection
+  pdf_url: OrderByDirection
+  source_resume_id: OrderByDirection
+  template_key: OrderByDirection
+  type: OrderByDirection
+  updated_at: OrderByDirection
+  user_id: OrderByDirection
 }
 
-type user_credits {
+input resumesUpdateInput {
+  color: String
+  content: JSON
+  font_family: String
+  font_size: resume_font_size
+  label: String
+  name: String
+  template_key: String
+  type: resume_type
+}
+
+type resumesUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [resumes!]!
+}
+
+enum seniority_level {
+  entry
+  mid
+  senior
+}
+
+"""
+Boolean expression comparing fields on type "seniority_level"
+"""
+input seniority_levelFilter {
+  eq: seniority_level
+  in: [seniority_level!]
+  is: FilterIs
+  neq: seniority_level
+}
+
+type skills implements Node {
+  created_at: Datetime!
+  id: UUID!
+  name: String!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
+  sort_order: Int!
   user_id: UUID!
-  balance: Int!
-  updated_at: Datetime!
 }
 
-type user_creditsEdge {
+type skillsConnection {
+  edges: [skillsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type skillsDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [skills!]!
+}
+
+type skillsEdge {
   cursor: String!
-  node: user_credits
+  node: skills!
+}
+
+input skillsFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [skillsFilter!]
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  name: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: skillsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [skillsFilter!]
+  sort_order: IntFilter
+  user_id: UUIDFilter
+}
+
+input skillsInsertInput {
+  created_at: Datetime
+  id: UUID
+  name: String
+  sort_order: Int
+  user_id: UUID
+}
+
+type skillsInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [skills!]!
+}
+
+input skillsOrderBy {
+  created_at: OrderByDirection
+  id: OrderByDirection
+  name: OrderByDirection
+  sort_order: OrderByDirection
+  user_id: OrderByDirection
+}
+
+input skillsUpdateInput {
+  created_at: Datetime
+  id: UUID
+  name: String
+  sort_order: Int
+  user_id: UUID
+}
+
+type skillsUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [skills!]!
+}
+
+type tools implements Node {
+  created_at: Datetime!
+  id: UUID!
+  name: String!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
+  sort_order: Int!
+  user_id: UUID!
+}
+
+type toolsConnection {
+  edges: [toolsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type toolsDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [tools!]!
+}
+
+type toolsEdge {
+  cursor: String!
+  node: tools!
+}
+
+input toolsFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [toolsFilter!]
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  name: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: toolsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [toolsFilter!]
+  sort_order: IntFilter
+  user_id: UUIDFilter
+}
+
+input toolsInsertInput {
+  created_at: Datetime
+  id: UUID
+  name: String
+  sort_order: Int
+  user_id: UUID
+}
+
+type toolsInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [tools!]!
+}
+
+input toolsOrderBy {
+  created_at: OrderByDirection
+  id: OrderByDirection
+  name: OrderByDirection
+  sort_order: OrderByDirection
+  user_id: OrderByDirection
+}
+
+input toolsUpdateInput {
+  created_at: Datetime
+  id: UUID
+  name: String
+  sort_order: Int
+  user_id: UUID
+}
+
+type toolsUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [tools!]!
+}
+
+type user_credits implements Node {
+  balance: Int!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  updated_at: Datetime!
+  user_id: UUID!
 }
 
 type user_creditsConnection {
@@ -496,184 +2438,30 @@ type user_creditsConnection {
   pageInfo: PageInfo!
 }
 
+type user_creditsEdge {
+  cursor: String!
+  node: user_credits!
+}
+
 input user_creditsFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [user_creditsFilter!]
+  balance: IntFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: user_creditsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [user_creditsFilter!]
+  updated_at: DatetimeFilter
   user_id: UUIDFilter
 }
 
 input user_creditsOrderBy {
+  balance: OrderByDirection
   updated_at: OrderByDirection
-}
-
-type Query {
-  profilesCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: profilesFilter
-    orderBy: [profilesOrderBy!]
-  ): profilesConnection
-  contactsCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: contactsFilter
-    orderBy: [contactsOrderBy!]
-  ): contactsConnection
-  experiencesCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: experiencesFilter
-    orderBy: [experiencesOrderBy!]
-  ): experiencesConnection
-  educationsCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: educationsFilter
-    orderBy: [educationsOrderBy!]
-  ): educationsConnection
-  projectsCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: projectsFilter
-    orderBy: [projectsOrderBy!]
-  ): projectsConnection
-  recommendationsCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: recommendationsFilter
-    orderBy: [recommendationsOrderBy!]
-  ): recommendationsConnection
-  skillsCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: skillsFilter
-    orderBy: [skillsOrderBy!]
-  ): skillsConnection
-  toolsCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: toolsFilter
-    orderBy: [toolsOrderBy!]
-  ): toolsConnection
-  linksCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: linksFilter
-    orderBy: [linksOrderBy!]
-  ): linksConnection
-  languagesCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: languagesFilter
-    orderBy: [languagesOrderBy!]
-  ): languagesConnection
-  resumesCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: resumesFilter
-    orderBy: [resumesOrderBy!]
-  ): resumesConnection
-  user_creditsCollection(
-    first: Int
-    last: Int
-    before: Cursor
-    after: Cursor
-    offset: Int
-    filter: user_creditsFilter
-    orderBy: [user_creditsOrderBy!]
-  ): user_creditsConnection
-}
-
-input resumesInsertInput {
-  id: UUID
-  user_id: UUID
-  name: String
-  label: String
-  type: resume_type
-  template_key: String
-  color: String
-  font_size: resume_font_size
-  font_family: String
-  content: JSON
-  pdf_url: String
-  pdf_media_key: String
-  source_resume_id: UUID
-  client_draft_id: UUID
-}
-
-input resumesUpdateInput {
-  name: String
-  label: String
-  type: resume_type
-  template_key: String
-  color: String
-  font_size: resume_font_size
-  font_family: String
-  content: JSON
-  pdf_url: String
-  pdf_media_key: String
-}
-
-type resumesInsertResponse {
-  records: [resumes!]!
-  affectedCount: Int!
-}
-
-type resumesUpdateResponse {
-  records: [resumes!]!
-  affectedCount: Int!
-}
-
-type resumesDeleteResponse {
-  records: [resumes!]!
-  affectedCount: Int!
-}
-
-type Mutation {
-  save_profile(p_payload: JSON): String
-  generate_pdf(p_resume_id: UUID): String
-  finalize_pdf(p_resume_id: UUID, p_pdf_url: String, p_pdf_media_key: String): String
-  release_resume_generation(p_resume_id: UUID): Opaque
-  consume_ai_request: Int
-  insertIntoresumesCollection(objects: [resumesInsertInput!]!): resumesInsertResponse
-  updateresumesCollection(
-    set: resumesUpdateInput!
-    filter: resumesFilter
-    atMost: Int
-  ): resumesUpdateResponse
-  deleteFromresumesCollection(
-    filter: resumesFilter
-    atMost: Int
-  ): resumesDeleteResponse
+  user_id: OrderByDirection
 }

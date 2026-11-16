@@ -302,3 +302,43 @@ Separate from `user_credits`.
 | `updated_at` | `timestamptz not null default now()` | trigger `ai_daily_usage_set_updated_at` |
 
 Index: `ai_daily_usage_usage_date_idx (usage_date)` for pruning.
+
+## `llm_proposal_applications`
+
+Receipts and AI provenance of accepted LLM proposals
+(`20261112000100_llm_proposal_applications.sql`,
+[MDI-222](https://linear.app/mdivani/issue/MDI-222)). One row per user and
+proposal. Owner `SELECT` only; rows are written only by
+`apply_llm_proposal()`. Provenance lives here, not in
+`resumes.source_resume_id` (that stays the generated-original / open-draft
+link). The row outlives the LLM service's own retention.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK, `gen_random_uuid()`; the receipt id |
+| `user_id` | `uuid not null` | FK → `auth.users(id)` on delete cascade |
+| `proposal_id` | `uuid not null` | LLM service proposal; unique with `user_id` |
+| `job_id` | `uuid` | The improve or tailor job |
+| `session_id` | `uuid` | The LLM session |
+| `idempotency_key` | `text not null` | 8–128 characters |
+| `operation` | `text not null` | `improve_resume` or `tailor_resume` |
+| `source` | `jsonb not null` | Contract `SourceRef` the proposal was made from |
+| `target` | `jsonb not null` | Contract apply target (`resume_draft` or `new_resume`) |
+| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; the resume written |
+| `base_revision` | `timestamptz` | `resumes.updated_at` checked before an improve; null for a new resume |
+| `resulting_revision` | `timestamptz not null` | `resumes.updated_at` after the write |
+| `applied_change_ids` | `text[] not null default '{}'` | Accepted change ids |
+| `accepted_omission_ids` | `text[] not null default '{}'` | Tailoring omissions the user did not keep |
+| `confirmed_claim_ids` | `text[] not null default '{}'` | Claims the user confirmed |
+| `created_at` | `timestamptz not null default now()` | |
+
+Indexes: unique `(user_id, proposal_id)`; `resume_id` where not null.
+
+`apply_llm_proposal(p_request jsonb)`: serializes on user and proposal and
+returns the earlier receipt when there is one. `improve_resume` writes
+`content` to the caller's resume only if it has no PDF, is not being
+generated, and its `updated_at` still equals `resume.expectedRevision`
+(errors `resume_not_found`, `resume_generated`,
+`resume_generation_in_progress`, `resume_changed`). `tailor_resume` inserts a
+`job_specific` resume with `resume.clientDraftId`. Anything malformed raises
+`invalid_apply_request`. Credits are not touched.

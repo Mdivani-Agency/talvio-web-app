@@ -19,8 +19,8 @@ import type { ResultEnvelope } from './contract';
  * only, each naming one entity and field with its original value as a precondition. A change whose
  * original no longer matches the document is dropped, never applied over newer text. A change that
  * needs confirmation (a new fact from the answers, or an added skill, tool, language or link) is
- * applied only after the user confirms its claims. Saving to the database is MDI-222; Accept writes
- * into the editor like the legacy flow.
+ * applied only after the user confirms its claims. Accept saves through `apply_llm_proposal` on a
+ * saved resume (MDI-222, `lib/llm/apply.ts`) and writes into the editor only on an unsaved one.
  */
 
 const claim = z.looseObject({ id: z.string(), text: z.string() });
