@@ -73,13 +73,17 @@ describe('privacy policy copy with the LLM service', () => {
     expect(PRIVACY_LLM_SERVICE.sections.map((s) => s.heading)).toEqual(PRIVACY.sections.map((s) => s.heading));
   });
 
-  it('no longer names OpenAI, and names AWS and Amazon Bedrock for AI', () => {
+  it('no longer names OpenAI, and names AWS, the Bedrock safety filter and Anthropic for AI', () => {
     expect(service).not.toMatch(/openai/i);
-    for (const processor of ['Supabase', 'Vercel', 'Amazon Web Services', 'Sentry', 'Google']) {
+    for (const processor of ['Supabase', 'Vercel', 'Amazon Web Services', 'Anthropic', 'Sentry', 'Google']) {
       expect(section('6. Who we share data with')).toContain(processor);
     }
-    expect(section('5. AI features')).toContain('Amazon Bedrock in the United States');
-    expect(section('7. Where your data is processed')).toContain('AI features are processed in the United States');
+    expect(section('5. AI features')).toContain('safety filter on Amazon Bedrock in the United States');
+    expect(section('5. AI features')).toContain('sent to Anthropic');
+    expect(section('5. AI features')).toContain('Anthropic does not use this content to train its models');
+    expect(section('7. Where your data is processed')).toContain(
+      'AI features are processed by Amazon Web Services and Anthropic, including in the United States',
+    );
   });
 
   it('describes retention-only deletion of AI content', () => {
