@@ -14,102 +14,498 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** A high precision floating point value represented as a string */
   BigFloat: { input: string; output: string; }
+  /** An arbitrary size integer represented as a string */
   BigInt: { input: string; output: string; }
+  /** An opaque string using for tracking a position in results during pagination */
   Cursor: { input: string; output: string; }
+  /** A date without time information */
   Date: { input: string; output: string; }
+  /** A date and time */
   Datetime: { input: string; output: string; }
+  /** A Javascript Object Notation value serialized as a string */
   JSON: { input: string; output: string; }
+  /** Any type not handled by the type system */
   Opaque: { input: unknown; output: unknown; }
+  /** A time without date information */
+  Time: { input: unknown; output: unknown; }
+  /** A universally unique identifier */
   UUID: { input: string; output: string; }
 };
 
-export type BooleanFilter = {
-  eq?: InputMaybe<Scalars['Boolean']['input']>;
+/** Boolean expression comparing fields on type "BigFloat" */
+export type BigFloatFilter = {
+  eq?: InputMaybe<Scalars['BigFloat']['input']>;
+  gt?: InputMaybe<Scalars['BigFloat']['input']>;
+  gte?: InputMaybe<Scalars['BigFloat']['input']>;
+  in?: InputMaybe<Array<Scalars['BigFloat']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  lt?: InputMaybe<Scalars['BigFloat']['input']>;
+  lte?: InputMaybe<Scalars['BigFloat']['input']>;
+  neq?: InputMaybe<Scalars['BigFloat']['input']>;
 };
 
+/** Boolean expression comparing fields on type "BigFloatList" */
+export type BigFloatListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['BigFloat']['input']>>;
+  contains?: InputMaybe<Array<Scalars['BigFloat']['input']>>;
+  eq?: InputMaybe<Array<Scalars['BigFloat']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['BigFloat']['input']>>;
+};
+
+/** Boolean expression comparing fields on type "BigInt" */
+export type BigIntFilter = {
+  eq?: InputMaybe<Scalars['BigInt']['input']>;
+  gt?: InputMaybe<Scalars['BigInt']['input']>;
+  gte?: InputMaybe<Scalars['BigInt']['input']>;
+  in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  lt?: InputMaybe<Scalars['BigInt']['input']>;
+  lte?: InputMaybe<Scalars['BigInt']['input']>;
+  neq?: InputMaybe<Scalars['BigInt']['input']>;
+};
+
+/** Boolean expression comparing fields on type "BigIntList" */
+export type BigIntListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  contains?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  eq?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+};
+
+/** Boolean expression comparing fields on type "Boolean" */
+export type BooleanFilter = {
+  eq?: InputMaybe<Scalars['Boolean']['input']>;
+  is?: InputMaybe<FilterIs>;
+};
+
+/** Boolean expression comparing fields on type "BooleanList" */
+export type BooleanListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['Boolean']['input']>>;
+  contains?: InputMaybe<Array<Scalars['Boolean']['input']>>;
+  eq?: InputMaybe<Array<Scalars['Boolean']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['Boolean']['input']>>;
+};
+
+/** Boolean expression comparing fields on type "Date" */
 export type DateFilter = {
   eq?: InputMaybe<Scalars['Date']['input']>;
   gt?: InputMaybe<Scalars['Date']['input']>;
   gte?: InputMaybe<Scalars['Date']['input']>;
+  in?: InputMaybe<Array<Scalars['Date']['input']>>;
+  is?: InputMaybe<FilterIs>;
   lt?: InputMaybe<Scalars['Date']['input']>;
   lte?: InputMaybe<Scalars['Date']['input']>;
+  neq?: InputMaybe<Scalars['Date']['input']>;
 };
 
+/** Boolean expression comparing fields on type "DateList" */
+export type DateListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['Date']['input']>>;
+  contains?: InputMaybe<Array<Scalars['Date']['input']>>;
+  eq?: InputMaybe<Array<Scalars['Date']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['Date']['input']>>;
+};
+
+/** Boolean expression comparing fields on type "Datetime" */
 export type DatetimeFilter = {
   eq?: InputMaybe<Scalars['Datetime']['input']>;
   gt?: InputMaybe<Scalars['Datetime']['input']>;
   gte?: InputMaybe<Scalars['Datetime']['input']>;
+  in?: InputMaybe<Array<Scalars['Datetime']['input']>>;
+  is?: InputMaybe<FilterIs>;
   lt?: InputMaybe<Scalars['Datetime']['input']>;
   lte?: InputMaybe<Scalars['Datetime']['input']>;
+  neq?: InputMaybe<Scalars['Datetime']['input']>;
+};
+
+/** Boolean expression comparing fields on type "DatetimeList" */
+export type DatetimeListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['Datetime']['input']>>;
+  contains?: InputMaybe<Array<Scalars['Datetime']['input']>>;
+  eq?: InputMaybe<Array<Scalars['Datetime']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['Datetime']['input']>>;
 };
 
 export type FilterIs =
   | 'NOT_NULL'
   | 'NULL';
 
+/** Boolean expression comparing fields on type "Float" */
+export type FloatFilter = {
+  eq?: InputMaybe<Scalars['Float']['input']>;
+  gt?: InputMaybe<Scalars['Float']['input']>;
+  gte?: InputMaybe<Scalars['Float']['input']>;
+  in?: InputMaybe<Array<Scalars['Float']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  lt?: InputMaybe<Scalars['Float']['input']>;
+  lte?: InputMaybe<Scalars['Float']['input']>;
+  neq?: InputMaybe<Scalars['Float']['input']>;
+};
+
+/** Boolean expression comparing fields on type "FloatList" */
+export type FloatListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['Float']['input']>>;
+  contains?: InputMaybe<Array<Scalars['Float']['input']>>;
+  eq?: InputMaybe<Array<Scalars['Float']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['Float']['input']>>;
+};
+
+/** Boolean expression comparing fields on type "ID" */
+export type IdFilter = {
+  eq?: InputMaybe<Scalars['ID']['input']>;
+};
+
+/** Boolean expression comparing fields on type "Int" */
 export type IntFilter = {
   eq?: InputMaybe<Scalars['Int']['input']>;
   gt?: InputMaybe<Scalars['Int']['input']>;
   gte?: InputMaybe<Scalars['Int']['input']>;
+  in?: InputMaybe<Array<Scalars['Int']['input']>>;
+  is?: InputMaybe<FilterIs>;
   lt?: InputMaybe<Scalars['Int']['input']>;
   lte?: InputMaybe<Scalars['Int']['input']>;
+  neq?: InputMaybe<Scalars['Int']['input']>;
 };
 
+/** Boolean expression comparing fields on type "IntList" */
+export type IntListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['Int']['input']>>;
+  contains?: InputMaybe<Array<Scalars['Int']['input']>>;
+  eq?: InputMaybe<Array<Scalars['Int']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['Int']['input']>>;
+};
+
+/** The root type for creating and mutating data */
 export type Mutation = {
   __typename?: 'Mutation';
   apply_llm_proposal?: Maybe<Scalars['JSON']['output']>;
   consume_ai_request?: Maybe<Scalars['Int']['output']>;
-  deleteFromresumesCollection?: Maybe<ResumesDeleteResponse>;
+  /** Deletes zero or more records from the `contacts` collection */
+  deleteFromcontactsCollection: ContactsDeleteResponse;
+  /** Deletes zero or more records from the `educations` collection */
+  deleteFromeducationsCollection: EducationsDeleteResponse;
+  /** Deletes zero or more records from the `experiences` collection */
+  deleteFromexperiencesCollection: ExperiencesDeleteResponse;
+  /** Deletes zero or more records from the `languages` collection */
+  deleteFromlanguagesCollection: LanguagesDeleteResponse;
+  /** Deletes zero or more records from the `links` collection */
+  deleteFromlinksCollection: LinksDeleteResponse;
+  /** Deletes zero or more records from the `profiles` collection */
+  deleteFromprofilesCollection: ProfilesDeleteResponse;
+  /** Deletes zero or more records from the `projects` collection */
+  deleteFromprojectsCollection: ProjectsDeleteResponse;
+  /** Deletes zero or more records from the `recommendations` collection */
+  deleteFromrecommendationsCollection: RecommendationsDeleteResponse;
+  /** Deletes zero or more records from the `resumes` collection */
+  deleteFromresumesCollection: ResumesDeleteResponse;
+  /** Deletes zero or more records from the `skills` collection */
+  deleteFromskillsCollection: SkillsDeleteResponse;
+  /** Deletes zero or more records from the `tools` collection */
+  deleteFromtoolsCollection: ToolsDeleteResponse;
   finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
+  /** Adds one or more `contacts` records to the collection */
+  insertIntocontactsCollection?: Maybe<ContactsInsertResponse>;
+  /** Adds one or more `educations` records to the collection */
+  insertIntoeducationsCollection?: Maybe<EducationsInsertResponse>;
+  /** Adds one or more `experiences` records to the collection */
+  insertIntoexperiencesCollection?: Maybe<ExperiencesInsertResponse>;
+  /** Adds one or more `languages` records to the collection */
+  insertIntolanguagesCollection?: Maybe<LanguagesInsertResponse>;
+  /** Adds one or more `links` records to the collection */
+  insertIntolinksCollection?: Maybe<LinksInsertResponse>;
+  /** Adds one or more `profiles` records to the collection */
+  insertIntoprofilesCollection?: Maybe<ProfilesInsertResponse>;
+  /** Adds one or more `projects` records to the collection */
+  insertIntoprojectsCollection?: Maybe<ProjectsInsertResponse>;
+  /** Adds one or more `recommendations` records to the collection */
+  insertIntorecommendationsCollection?: Maybe<RecommendationsInsertResponse>;
+  /** Adds one or more `resumes` records to the collection */
   insertIntoresumesCollection?: Maybe<ResumesInsertResponse>;
+  /** Adds one or more `skills` records to the collection */
+  insertIntoskillsCollection?: Maybe<SkillsInsertResponse>;
+  /** Adds one or more `tools` records to the collection */
+  insertIntotoolsCollection?: Maybe<ToolsInsertResponse>;
   release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
-  updateresumesCollection?: Maybe<ResumesUpdateResponse>;
+  /** Updates zero or more records in the `contacts` collection */
+  updatecontactsCollection: ContactsUpdateResponse;
+  /** Updates zero or more records in the `educations` collection */
+  updateeducationsCollection: EducationsUpdateResponse;
+  /** Updates zero or more records in the `experiences` collection */
+  updateexperiencesCollection: ExperiencesUpdateResponse;
+  /** Updates zero or more records in the `languages` collection */
+  updatelanguagesCollection: LanguagesUpdateResponse;
+  /** Updates zero or more records in the `links` collection */
+  updatelinksCollection: LinksUpdateResponse;
+  /** Updates zero or more records in the `profiles` collection */
+  updateprofilesCollection: ProfilesUpdateResponse;
+  /** Updates zero or more records in the `projects` collection */
+  updateprojectsCollection: ProjectsUpdateResponse;
+  /** Updates zero or more records in the `recommendations` collection */
+  updaterecommendationsCollection: RecommendationsUpdateResponse;
+  /** Updates zero or more records in the `resumes` collection */
+  updateresumesCollection: ResumesUpdateResponse;
+  /** Updates zero or more records in the `skills` collection */
+  updateskillsCollection: SkillsUpdateResponse;
+  /** Updates zero or more records in the `tools` collection */
+  updatetoolsCollection: ToolsUpdateResponse;
 };
 
+/** The root type for creating and mutating data */
 export type MutationApply_Llm_ProposalArgs = {
-  p_request?: InputMaybe<Scalars['JSON']['input']>;
+  p_request: Scalars['JSON']['input'];
 };
 
+/** The root type for creating and mutating data */
+export type MutationDeleteFromcontactsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ContactsFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromeducationsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<EducationsFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromexperiencesCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ExperiencesFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromlanguagesCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<LanguagesFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromlinksCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<LinksFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromprofilesCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ProfilesFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromprojectsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ProjectsFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromrecommendationsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<RecommendationsFilter>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationDeleteFromresumesCollectionArgs = {
-  atMost?: InputMaybe<Scalars['Int']['input']>;
+  atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ResumesFilter>;
 };
 
+/** The root type for creating and mutating data */
+export type MutationDeleteFromskillsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<SkillsFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromtoolsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ToolsFilter>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationFinalize_PdfArgs = {
-  p_pdf_media_key?: InputMaybe<Scalars['String']['input']>;
-  p_pdf_url?: InputMaybe<Scalars['String']['input']>;
-  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
+  p_pdf_media_key: Scalars['String']['input'];
+  p_pdf_url: Scalars['String']['input'];
+  p_resume_id: Scalars['UUID']['input'];
 };
 
+/** The root type for creating and mutating data */
 export type MutationGenerate_PdfArgs = {
-  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
+  p_resume_id: Scalars['UUID']['input'];
 };
 
+/** The root type for creating and mutating data */
+export type MutationInsertIntocontactsCollectionArgs = {
+  objects: Array<ContactsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntoeducationsCollectionArgs = {
+  objects: Array<EducationsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntoexperiencesCollectionArgs = {
+  objects: Array<ExperiencesInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntolanguagesCollectionArgs = {
+  objects: Array<LanguagesInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntolinksCollectionArgs = {
+  objects: Array<LinksInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntoprofilesCollectionArgs = {
+  objects: Array<ProfilesInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntoprojectsCollectionArgs = {
+  objects: Array<ProjectsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntorecommendationsCollectionArgs = {
+  objects: Array<RecommendationsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationInsertIntoresumesCollectionArgs = {
   objects: Array<ResumesInsertInput>;
 };
 
+/** The root type for creating and mutating data */
+export type MutationInsertIntoskillsCollectionArgs = {
+  objects: Array<SkillsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntotoolsCollectionArgs = {
+  objects: Array<ToolsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationRelease_Resume_GenerationArgs = {
-  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
+  p_resume_id: Scalars['UUID']['input'];
 };
 
+/** The root type for creating and mutating data */
 export type MutationSave_ProfileArgs = {
-  p_payload?: InputMaybe<Scalars['JSON']['input']>;
+  p_payload: Scalars['JSON']['input'];
 };
 
+/** The root type for creating and mutating data */
+export type MutationUpdatecontactsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ContactsFilter>;
+  set: ContactsUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdateeducationsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<EducationsFilter>;
+  set: EducationsUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdateexperiencesCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ExperiencesFilter>;
+  set: ExperiencesUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdatelanguagesCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<LanguagesFilter>;
+  set: LanguagesUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdatelinksCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<LinksFilter>;
+  set: LinksUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdateprofilesCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ProfilesFilter>;
+  set: ProfilesUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdateprojectsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ProjectsFilter>;
+  set: ProjectsUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdaterecommendationsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<RecommendationsFilter>;
+  set: RecommendationsUpdateInput;
+};
+
+/** The root type for creating and mutating data */
 export type MutationUpdateresumesCollectionArgs = {
-  atMost?: InputMaybe<Scalars['Int']['input']>;
+  atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ResumesFilter>;
   set: ResumesUpdateInput;
 };
 
+/** The root type for creating and mutating data */
+export type MutationUpdateskillsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<SkillsFilter>;
+  set: SkillsUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdatetoolsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<ToolsFilter>;
+  set: ToolsUpdateInput;
+};
+
+export type Node = {
+  /** Retrieves a record by `ID` */
+  nodeId: Scalars['ID']['output'];
+};
+
+/** Boolean expression comparing fields on type "Opaque" */
+export type OpaqueFilter = {
+  eq?: InputMaybe<Scalars['Opaque']['input']>;
+  is?: InputMaybe<FilterIs>;
+};
+
+/** Defines a per-field sorting order */
 export type OrderByDirection =
+  /** Ascending order, nulls first */
   | 'AscNullsFirst'
+  /** Ascending order, nulls last */
   | 'AscNullsLast'
+  /** Descending order, nulls first */
   | 'DescNullsFirst'
+  /** Descending order, nulls last */
   | 'DescNullsLast';
 
 export type PageInfo = {
@@ -120,22 +516,71 @@ export type PageInfo = {
   startCursor?: Maybe<Scalars['String']['output']>;
 };
 
+/** The root type for querying data */
 export type Query = {
   __typename?: 'Query';
-  contactsCollection?: Maybe<ContactsConnection>;
-  educationsCollection?: Maybe<EducationsConnection>;
-  experiencesCollection?: Maybe<ExperiencesConnection>;
-  languagesCollection?: Maybe<LanguagesConnection>;
-  linksCollection?: Maybe<LinksConnection>;
-  profilesCollection?: Maybe<ProfilesConnection>;
-  projectsCollection?: Maybe<ProjectsConnection>;
-  recommendationsCollection?: Maybe<RecommendationsConnection>;
-  resumesCollection?: Maybe<ResumesConnection>;
-  skillsCollection?: Maybe<SkillsConnection>;
-  toolsCollection?: Maybe<ToolsConnection>;
-  user_creditsCollection?: Maybe<User_CreditsConnection>;
+  /** Retrieve a record of type `contacts` by its primary key */
+  contactsByPk?: Maybe<Contacts>;
+  /** A pagable collection of type `contacts` */
+  contactsCollection: ContactsConnection;
+  /** Retrieve a record of type `educations` by its primary key */
+  educationsByPk?: Maybe<Educations>;
+  /** A pagable collection of type `educations` */
+  educationsCollection: EducationsConnection;
+  /** Retrieve a record of type `experiences` by its primary key */
+  experiencesByPk?: Maybe<Experiences>;
+  /** A pagable collection of type `experiences` */
+  experiencesCollection: ExperiencesConnection;
+  /** Retrieve a record of type `languages` by its primary key */
+  languagesByPk?: Maybe<Languages>;
+  /** A pagable collection of type `languages` */
+  languagesCollection: LanguagesConnection;
+  /** Retrieve a record of type `links` by its primary key */
+  linksByPk?: Maybe<Links>;
+  /** A pagable collection of type `links` */
+  linksCollection: LinksConnection;
+  /** Retrieve a record of type `llm_proposal_applications` by its primary key */
+  llm_proposal_applicationsByPk?: Maybe<Llm_Proposal_Applications>;
+  /** A pagable collection of type `llm_proposal_applications` */
+  llm_proposal_applicationsCollection: Llm_Proposal_ApplicationsConnection;
+  /** Retrieve a record by its `ID` */
+  node?: Maybe<Node>;
+  /** Retrieve a record of type `profiles` by its primary key */
+  profilesByPk?: Maybe<Profiles>;
+  /** A pagable collection of type `profiles` */
+  profilesCollection: ProfilesConnection;
+  /** Retrieve a record of type `projects` by its primary key */
+  projectsByPk?: Maybe<Projects>;
+  /** A pagable collection of type `projects` */
+  projectsCollection: ProjectsConnection;
+  /** Retrieve a record of type `recommendations` by its primary key */
+  recommendationsByPk?: Maybe<Recommendations>;
+  /** A pagable collection of type `recommendations` */
+  recommendationsCollection: RecommendationsConnection;
+  /** Retrieve a record of type `resumes` by its primary key */
+  resumesByPk?: Maybe<Resumes>;
+  /** A pagable collection of type `resumes` */
+  resumesCollection: ResumesConnection;
+  /** Retrieve a record of type `skills` by its primary key */
+  skillsByPk?: Maybe<Skills>;
+  /** A pagable collection of type `skills` */
+  skillsCollection: SkillsConnection;
+  /** Retrieve a record of type `tools` by its primary key */
+  toolsByPk?: Maybe<Tools>;
+  /** A pagable collection of type `tools` */
+  toolsCollection: ToolsConnection;
+  /** Retrieve a record of type `user_credits` by its primary key */
+  user_creditsByPk?: Maybe<User_Credits>;
+  /** A pagable collection of type `user_credits` */
+  user_creditsCollection: User_CreditsConnection;
 };
 
+/** The root type for querying data */
+export type QueryContactsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryContactsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -146,6 +591,12 @@ export type QueryContactsCollectionArgs = {
   orderBy?: InputMaybe<Array<ContactsOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryEducationsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryEducationsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -156,6 +607,12 @@ export type QueryEducationsCollectionArgs = {
   orderBy?: InputMaybe<Array<EducationsOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryExperiencesByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryExperiencesCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -166,6 +623,12 @@ export type QueryExperiencesCollectionArgs = {
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryLanguagesByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryLanguagesCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -176,6 +639,12 @@ export type QueryLanguagesCollectionArgs = {
   orderBy?: InputMaybe<Array<LanguagesOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryLinksByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryLinksCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -186,6 +655,33 @@ export type QueryLinksCollectionArgs = {
   orderBy?: InputMaybe<Array<LinksOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryLlm_Proposal_ApplicationsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryLlm_Proposal_ApplicationsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Llm_Proposal_ApplicationsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Llm_Proposal_ApplicationsOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryNodeArgs = {
+  nodeId: Scalars['ID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryProfilesByPkArgs = {
+  user_id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryProfilesCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -196,6 +692,12 @@ export type QueryProfilesCollectionArgs = {
   orderBy?: InputMaybe<Array<ProfilesOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryProjectsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryProjectsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -206,6 +708,12 @@ export type QueryProjectsCollectionArgs = {
   orderBy?: InputMaybe<Array<ProjectsOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryRecommendationsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryRecommendationsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -216,6 +724,12 @@ export type QueryRecommendationsCollectionArgs = {
   orderBy?: InputMaybe<Array<RecommendationsOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryResumesByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryResumesCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -226,6 +740,12 @@ export type QueryResumesCollectionArgs = {
   orderBy?: InputMaybe<Array<ResumesOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QuerySkillsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QuerySkillsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -236,6 +756,12 @@ export type QuerySkillsCollectionArgs = {
   orderBy?: InputMaybe<Array<SkillsOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryToolsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryToolsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -246,6 +772,12 @@ export type QueryToolsCollectionArgs = {
   orderBy?: InputMaybe<Array<ToolsOrderBy>>;
 };
 
+/** The root type for querying data */
+export type QueryUser_CreditsByPkArgs = {
+  user_id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
 export type QueryUser_CreditsCollectionArgs = {
   after?: InputMaybe<Scalars['Cursor']['input']>;
   before?: InputMaybe<Scalars['Cursor']['input']>;
@@ -256,15 +788,68 @@ export type QueryUser_CreditsCollectionArgs = {
   orderBy?: InputMaybe<Array<User_CreditsOrderBy>>;
 };
 
+/** Boolean expression comparing fields on type "String" */
 export type StringFilter = {
   eq?: InputMaybe<Scalars['String']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  ilike?: InputMaybe<Scalars['String']['input']>;
   in?: InputMaybe<Array<Scalars['String']['input']>>;
+  iregex?: InputMaybe<Scalars['String']['input']>;
   is?: InputMaybe<FilterIs>;
+  like?: InputMaybe<Scalars['String']['input']>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  neq?: InputMaybe<Scalars['String']['input']>;
+  regex?: InputMaybe<Scalars['String']['input']>;
+  startsWith?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Boolean expression comparing fields on type "StringList" */
+export type StringListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['String']['input']>>;
+  contains?: InputMaybe<Array<Scalars['String']['input']>>;
+  eq?: InputMaybe<Array<Scalars['String']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+/** Boolean expression comparing fields on type "Time" */
+export type TimeFilter = {
+  eq?: InputMaybe<Scalars['Time']['input']>;
+  gt?: InputMaybe<Scalars['Time']['input']>;
+  gte?: InputMaybe<Scalars['Time']['input']>;
+  in?: InputMaybe<Array<Scalars['Time']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  lt?: InputMaybe<Scalars['Time']['input']>;
+  lte?: InputMaybe<Scalars['Time']['input']>;
+  neq?: InputMaybe<Scalars['Time']['input']>;
+};
+
+/** Boolean expression comparing fields on type "TimeList" */
+export type TimeListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['Time']['input']>>;
+  contains?: InputMaybe<Array<Scalars['Time']['input']>>;
+  eq?: InputMaybe<Array<Scalars['Time']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['Time']['input']>>;
+};
+
+/** Boolean expression comparing fields on type "UUID" */
 export type UuidFilter = {
   eq?: InputMaybe<Scalars['UUID']['input']>;
   in?: InputMaybe<Array<Scalars['UUID']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  neq?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+/** Boolean expression comparing fields on type "UUIDList" */
+export type UuidListFilter = {
+  containedBy?: InputMaybe<Array<Scalars['UUID']['input']>>;
+  contains?: InputMaybe<Array<Scalars['UUID']['input']>>;
+  eq?: InputMaybe<Array<Scalars['UUID']['input']>>;
+  is?: InputMaybe<FilterIs>;
+  overlaps?: InputMaybe<Array<Scalars['UUID']['input']>>;
 };
 
 export type Contact_Kind =
@@ -272,13 +857,24 @@ export type Contact_Kind =
   | 'phone'
   | 'url';
 
-export type Contacts = {
+/** Boolean expression comparing fields on type "contact_kind" */
+export type Contact_KindFilter = {
+  eq?: InputMaybe<Contact_Kind>;
+  in?: InputMaybe<Array<Contact_Kind>>;
+  is?: InputMaybe<FilterIs>;
+  neq?: InputMaybe<Contact_Kind>;
+};
+
+export type Contacts = Node & {
   __typename?: 'contacts';
   created_at: Scalars['Datetime']['output'];
   id: Scalars['UUID']['output'];
   is_primary: Scalars['Boolean']['output'];
   kind: Contact_Kind;
   label?: Maybe<Scalars['String']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
   sort_order: Scalars['Int']['output'];
   user_id: Scalars['UUID']['output'];
   value: Scalars['String']['output'];
@@ -290,24 +886,88 @@ export type ContactsConnection = {
   pageInfo: PageInfo;
 };
 
+export type ContactsDeleteResponse = {
+  __typename?: 'contactsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Contacts>;
+};
+
 export type ContactsEdge = {
   __typename?: 'contactsEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Contacts>;
+  node: Contacts;
 };
 
 export type ContactsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<ContactsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
   id?: InputMaybe<UuidFilter>;
-  kind?: InputMaybe<StringFilter>;
+  is_primary?: InputMaybe<BooleanFilter>;
+  kind?: InputMaybe<Contact_KindFilter>;
+  label?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<ContactsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<ContactsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
   user_id?: InputMaybe<UuidFilter>;
+  value?: InputMaybe<StringFilter>;
+};
+
+export type ContactsInsertInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  is_primary?: InputMaybe<Scalars['Boolean']['input']>;
+  kind?: InputMaybe<Contact_Kind>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ContactsInsertResponse = {
+  __typename?: 'contactsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Contacts>;
 };
 
 export type ContactsOrderBy = {
   created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  is_primary?: InputMaybe<OrderByDirection>;
+  kind?: InputMaybe<OrderByDirection>;
+  label?: InputMaybe<OrderByDirection>;
   sort_order?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+  value?: InputMaybe<OrderByDirection>;
 };
 
-export type Educations = {
+export type ContactsUpdateInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  is_primary?: InputMaybe<Scalars['Boolean']['input']>;
+  kind?: InputMaybe<Contact_Kind>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ContactsUpdateResponse = {
+  __typename?: 'contactsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Contacts>;
+};
+
+export type Educations = Node & {
   __typename?: 'educations';
   additional_details?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['Datetime']['output'];
@@ -317,6 +977,9 @@ export type Educations = {
   id: Scalars['UUID']['output'];
   is_present: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
   sort_order: Scalars['Int']['output'];
   start_date: Scalars['Date']['output'];
   updated_at: Scalars['Datetime']['output'];
@@ -329,19 +992,99 @@ export type EducationsConnection = {
   pageInfo: PageInfo;
 };
 
+export type EducationsDeleteResponse = {
+  __typename?: 'educationsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Educations>;
+};
+
 export type EducationsEdge = {
   __typename?: 'educationsEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Educations>;
+  node: Educations;
 };
 
 export type EducationsFilter = {
+  additional_details?: InputMaybe<StringFilter>;
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<EducationsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  degree_type?: InputMaybe<StringFilter>;
+  end_date?: InputMaybe<DateFilter>;
   id?: InputMaybe<UuidFilter>;
+  is_present?: InputMaybe<BooleanFilter>;
+  name?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<EducationsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<EducationsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
+  start_date?: InputMaybe<DateFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
+export type EducationsInsertInput = {
+  additional_details?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  degree_type?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['JSON']['input']>;
+  end_date?: InputMaybe<Scalars['Date']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  is_present?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  start_date?: InputMaybe<Scalars['Date']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type EducationsInsertResponse = {
+  __typename?: 'educationsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Educations>;
+};
+
 export type EducationsOrderBy = {
+  additional_details?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  degree_type?: InputMaybe<OrderByDirection>;
+  end_date?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  is_present?: InputMaybe<OrderByDirection>;
+  name?: InputMaybe<OrderByDirection>;
   sort_order?: InputMaybe<OrderByDirection>;
+  start_date?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type EducationsUpdateInput = {
+  additional_details?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  degree_type?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['JSON']['input']>;
+  end_date?: InputMaybe<Scalars['Date']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  is_present?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  start_date?: InputMaybe<Scalars['Date']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type EducationsUpdateResponse = {
+  __typename?: 'educationsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Educations>;
 };
 
 export type Employment_Type =
@@ -354,9 +1097,17 @@ export type Employment_Type =
   | 'self_employed'
   | 'volunteer';
 
-export type Experiences = {
+/** Boolean expression comparing fields on type "employment_type" */
+export type Employment_TypeFilter = {
+  eq?: InputMaybe<Employment_Type>;
+  in?: InputMaybe<Array<Employment_Type>>;
+  is?: InputMaybe<FilterIs>;
+  neq?: InputMaybe<Employment_Type>;
+};
+
+export type Experiences = Node & {
   __typename?: 'experiences';
-  achievements: Array<Scalars['String']['output']>;
+  achievements: Array<Maybe<Scalars['String']['output']>>;
   additional_details?: Maybe<Scalars['String']['output']>;
   company: Scalars['String']['output'];
   created_at: Scalars['Datetime']['output'];
@@ -366,9 +1117,12 @@ export type Experiences = {
   id: Scalars['UUID']['output'];
   is_present: Scalars['Boolean']['output'];
   job_title: Scalars['String']['output'];
-  key_contributions: Array<Scalars['String']['output']>;
+  key_contributions: Array<Maybe<Scalars['String']['output']>>;
   location_type?: Maybe<Location_Type>;
-  responsibilities: Array<Scalars['String']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
+  responsibilities: Array<Maybe<Scalars['String']['output']>>;
   sort_order: Scalars['Int']['output'];
   start_date: Scalars['Date']['output'];
   updated_at: Scalars['Datetime']['output'];
@@ -381,20 +1135,116 @@ export type ExperiencesConnection = {
   pageInfo: PageInfo;
 };
 
+export type ExperiencesDeleteResponse = {
+  __typename?: 'experiencesDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Experiences>;
+};
+
 export type ExperiencesEdge = {
   __typename?: 'experiencesEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Experiences>;
+  node: Experiences;
 };
 
 export type ExperiencesFilter = {
+  achievements?: InputMaybe<StringListFilter>;
+  additional_details?: InputMaybe<StringFilter>;
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<ExperiencesFilter>>;
+  company?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  employment_type?: InputMaybe<Employment_TypeFilter>;
+  end_date?: InputMaybe<DateFilter>;
   id?: InputMaybe<UuidFilter>;
+  is_present?: InputMaybe<BooleanFilter>;
+  job_title?: InputMaybe<StringFilter>;
+  key_contributions?: InputMaybe<StringListFilter>;
+  location_type?: InputMaybe<Location_TypeFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<ExperiencesFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<ExperiencesFilter>>;
+  responsibilities?: InputMaybe<StringListFilter>;
+  sort_order?: InputMaybe<IntFilter>;
+  start_date?: InputMaybe<DateFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
+export type ExperiencesInsertInput = {
+  achievements?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  additional_details?: InputMaybe<Scalars['String']['input']>;
+  company?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  description?: InputMaybe<Scalars['JSON']['input']>;
+  employment_type?: InputMaybe<Employment_Type>;
+  end_date?: InputMaybe<Scalars['Date']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  is_present?: InputMaybe<Scalars['Boolean']['input']>;
+  job_title?: InputMaybe<Scalars['String']['input']>;
+  key_contributions?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  location_type?: InputMaybe<Location_Type>;
+  responsibilities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  start_date?: InputMaybe<Scalars['Date']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type ExperiencesInsertResponse = {
+  __typename?: 'experiencesInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Experiences>;
+};
+
 export type ExperiencesOrderBy = {
+  additional_details?: InputMaybe<OrderByDirection>;
+  company?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  employment_type?: InputMaybe<OrderByDirection>;
+  end_date?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  is_present?: InputMaybe<OrderByDirection>;
+  job_title?: InputMaybe<OrderByDirection>;
+  location_type?: InputMaybe<OrderByDirection>;
   sort_order?: InputMaybe<OrderByDirection>;
   start_date?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type ExperiencesUpdateInput = {
+  achievements?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  additional_details?: InputMaybe<Scalars['String']['input']>;
+  company?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  description?: InputMaybe<Scalars['JSON']['input']>;
+  employment_type?: InputMaybe<Employment_Type>;
+  end_date?: InputMaybe<Scalars['Date']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  is_present?: InputMaybe<Scalars['Boolean']['input']>;
+  job_title?: InputMaybe<Scalars['String']['input']>;
+  key_contributions?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  location_type?: InputMaybe<Location_Type>;
+  responsibilities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  start_date?: InputMaybe<Scalars['Date']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type ExperiencesUpdateResponse = {
+  __typename?: 'experiencesUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Experiences>;
 };
 
 export type Language_Proficiency =
@@ -403,12 +1253,23 @@ export type Language_Proficiency =
   | 'intermediate'
   | 'native';
 
-export type Languages = {
+/** Boolean expression comparing fields on type "language_proficiency" */
+export type Language_ProficiencyFilter = {
+  eq?: InputMaybe<Language_Proficiency>;
+  in?: InputMaybe<Array<Language_Proficiency>>;
+  is?: InputMaybe<FilterIs>;
+  neq?: InputMaybe<Language_Proficiency>;
+};
+
+export type Languages = Node & {
   __typename?: 'languages';
   created_at: Scalars['Datetime']['output'];
   id: Scalars['UUID']['output'];
   language: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
   proficiency: Language_Proficiency;
+  profiles?: Maybe<Profiles>;
   sort_order: Scalars['Int']['output'];
   user_id: Scalars['UUID']['output'];
 };
@@ -419,25 +1280,86 @@ export type LanguagesConnection = {
   pageInfo: PageInfo;
 };
 
+export type LanguagesDeleteResponse = {
+  __typename?: 'languagesDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Languages>;
+};
+
 export type LanguagesEdge = {
   __typename?: 'languagesEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Languages>;
+  node: Languages;
 };
 
 export type LanguagesFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<LanguagesFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
   id?: InputMaybe<UuidFilter>;
+  language?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<LanguagesFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<LanguagesFilter>>;
+  proficiency?: InputMaybe<Language_ProficiencyFilter>;
+  sort_order?: InputMaybe<IntFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
-export type LanguagesOrderBy = {
-  sort_order?: InputMaybe<OrderByDirection>;
+export type LanguagesInsertInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  language?: InputMaybe<Scalars['String']['input']>;
+  proficiency?: InputMaybe<Language_Proficiency>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
-export type Links = {
+export type LanguagesInsertResponse = {
+  __typename?: 'languagesInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Languages>;
+};
+
+export type LanguagesOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  language?: InputMaybe<OrderByDirection>;
+  proficiency?: InputMaybe<OrderByDirection>;
+  sort_order?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type LanguagesUpdateInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  language?: InputMaybe<Scalars['String']['input']>;
+  proficiency?: InputMaybe<Language_Proficiency>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type LanguagesUpdateResponse = {
+  __typename?: 'languagesUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Languages>;
+};
+
+export type Links = Node & {
   __typename?: 'links';
   created_at: Scalars['Datetime']['output'];
   id: Scalars['UUID']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
   sort_order: Scalars['Int']['output'];
   type: Scalars['String']['output'];
   user_id: Scalars['UUID']['output'];
@@ -450,19 +1372,150 @@ export type LinksConnection = {
   pageInfo: PageInfo;
 };
 
+export type LinksDeleteResponse = {
+  __typename?: 'linksDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Links>;
+};
+
 export type LinksEdge = {
   __typename?: 'linksEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Links>;
+  node: Links;
 };
 
 export type LinksFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<LinksFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
   id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<LinksFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<LinksFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
+  type?: InputMaybe<StringFilter>;
   user_id?: InputMaybe<UuidFilter>;
+  value?: InputMaybe<StringFilter>;
+};
+
+export type LinksInsertInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type LinksInsertResponse = {
+  __typename?: 'linksInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Links>;
 };
 
 export type LinksOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
   sort_order?: InputMaybe<OrderByDirection>;
+  type?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+  value?: InputMaybe<OrderByDirection>;
+};
+
+export type LinksUpdateInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type LinksUpdateResponse = {
+  __typename?: 'linksUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Links>;
+};
+
+export type Llm_Proposal_Applications = Node & {
+  __typename?: 'llm_proposal_applications';
+  accepted_omission_ids: Array<Maybe<Scalars['String']['output']>>;
+  applied_change_ids: Array<Maybe<Scalars['String']['output']>>;
+  base_revision?: Maybe<Scalars['Datetime']['output']>;
+  confirmed_claim_ids: Array<Maybe<Scalars['String']['output']>>;
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  idempotency_key: Scalars['String']['output'];
+  job_id?: Maybe<Scalars['UUID']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  operation: Scalars['String']['output'];
+  proposal_id: Scalars['UUID']['output'];
+  resulting_revision: Scalars['Datetime']['output'];
+  resume_id?: Maybe<Scalars['UUID']['output']>;
+  resumes?: Maybe<Resumes>;
+  session_id?: Maybe<Scalars['UUID']['output']>;
+  source: Scalars['JSON']['output'];
+  target: Scalars['JSON']['output'];
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Llm_Proposal_ApplicationsConnection = {
+  __typename?: 'llm_proposal_applicationsConnection';
+  edges: Array<Llm_Proposal_ApplicationsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Llm_Proposal_ApplicationsEdge = {
+  __typename?: 'llm_proposal_applicationsEdge';
+  cursor: Scalars['String']['output'];
+  node: Llm_Proposal_Applications;
+};
+
+export type Llm_Proposal_ApplicationsFilter = {
+  accepted_omission_ids?: InputMaybe<StringListFilter>;
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Llm_Proposal_ApplicationsFilter>>;
+  applied_change_ids?: InputMaybe<StringListFilter>;
+  base_revision?: InputMaybe<DatetimeFilter>;
+  confirmed_claim_ids?: InputMaybe<StringListFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  idempotency_key?: InputMaybe<StringFilter>;
+  job_id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Llm_Proposal_ApplicationsFilter>;
+  operation?: InputMaybe<StringFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Llm_Proposal_ApplicationsFilter>>;
+  proposal_id?: InputMaybe<UuidFilter>;
+  resulting_revision?: InputMaybe<DatetimeFilter>;
+  resume_id?: InputMaybe<UuidFilter>;
+  session_id?: InputMaybe<UuidFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Llm_Proposal_ApplicationsOrderBy = {
+  base_revision?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  idempotency_key?: InputMaybe<OrderByDirection>;
+  job_id?: InputMaybe<OrderByDirection>;
+  operation?: InputMaybe<OrderByDirection>;
+  proposal_id?: InputMaybe<OrderByDirection>;
+  resulting_revision?: InputMaybe<OrderByDirection>;
+  resume_id?: InputMaybe<OrderByDirection>;
+  session_id?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
 };
 
 export type Location_Type =
@@ -470,18 +1523,107 @@ export type Location_Type =
   | 'office'
   | 'remote';
 
-export type Profiles = {
+/** Boolean expression comparing fields on type "location_type" */
+export type Location_TypeFilter = {
+  eq?: InputMaybe<Location_Type>;
+  in?: InputMaybe<Array<Location_Type>>;
+  is?: InputMaybe<FilterIs>;
+  neq?: InputMaybe<Location_Type>;
+};
+
+export type Profiles = Node & {
   __typename?: 'profiles';
   city?: Maybe<Scalars['String']['output']>;
+  contactsCollection?: Maybe<ContactsConnection>;
   country?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['Datetime']['output'];
+  educationsCollection?: Maybe<EducationsConnection>;
+  experiencesCollection?: Maybe<ExperiencesConnection>;
   first_name: Scalars['String']['output'];
+  languagesCollection?: Maybe<LanguagesConnection>;
   last_name: Scalars['String']['output'];
+  linksCollection?: Maybe<LinksConnection>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  projectsCollection?: Maybe<ProjectsConnection>;
+  recommendationsCollection?: Maybe<RecommendationsConnection>;
   role: Scalars['String']['output'];
   seniority: Seniority_Level;
+  skills?: Maybe<Skills>;
   tagline?: Maybe<Scalars['String']['output']>;
+  tools?: Maybe<Tools>;
   updated_at: Scalars['Datetime']['output'];
   user_id: Scalars['UUID']['output'];
+};
+
+export type ProfilesContactsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<ContactsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<ContactsOrderBy>>;
+};
+
+export type ProfilesEducationsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<EducationsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<EducationsOrderBy>>;
+};
+
+export type ProfilesExperiencesCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<ExperiencesFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
+};
+
+export type ProfilesLanguagesCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<LanguagesFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<LanguagesOrderBy>>;
+};
+
+export type ProfilesLinksCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<LinksFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<LinksOrderBy>>;
+};
+
+export type ProfilesProjectsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<ProjectsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<ProjectsOrderBy>>;
+};
+
+export type ProfilesRecommendationsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<RecommendationsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<RecommendationsOrderBy>>;
 };
 
 export type ProfilesConnection = {
@@ -490,30 +1632,105 @@ export type ProfilesConnection = {
   pageInfo: PageInfo;
 };
 
+export type ProfilesDeleteResponse = {
+  __typename?: 'profilesDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Profiles>;
+};
+
 export type ProfilesEdge = {
   __typename?: 'profilesEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Profiles>;
+  node: Profiles;
 };
 
 export type ProfilesFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<ProfilesFilter>>;
+  city?: InputMaybe<StringFilter>;
+  country?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
   first_name?: InputMaybe<StringFilter>;
+  last_name?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<ProfilesFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<ProfilesFilter>>;
+  role?: InputMaybe<StringFilter>;
+  seniority?: InputMaybe<Seniority_LevelFilter>;
+  tagline?: InputMaybe<StringFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
+export type ProfilesInsertInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  country?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  first_name?: InputMaybe<Scalars['String']['input']>;
+  last_name?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Scalars['String']['input']>;
+  seniority?: InputMaybe<Seniority_Level>;
+  tagline?: InputMaybe<Scalars['String']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type ProfilesInsertResponse = {
+  __typename?: 'profilesInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Profiles>;
+};
+
 export type ProfilesOrderBy = {
+  city?: InputMaybe<OrderByDirection>;
+  country?: InputMaybe<OrderByDirection>;
   created_at?: InputMaybe<OrderByDirection>;
+  first_name?: InputMaybe<OrderByDirection>;
+  last_name?: InputMaybe<OrderByDirection>;
+  role?: InputMaybe<OrderByDirection>;
+  seniority?: InputMaybe<OrderByDirection>;
+  tagline?: InputMaybe<OrderByDirection>;
   updated_at?: InputMaybe<OrderByDirection>;
   user_id?: InputMaybe<OrderByDirection>;
 };
 
-export type Projects = {
+export type ProfilesUpdateInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  country?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  first_name?: InputMaybe<Scalars['String']['input']>;
+  last_name?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Scalars['String']['input']>;
+  seniority?: InputMaybe<Seniority_Level>;
+  tagline?: InputMaybe<Scalars['String']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type ProfilesUpdateResponse = {
+  __typename?: 'profilesUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Profiles>;
+};
+
+export type Projects = Node & {
   __typename?: 'projects';
   additional_details: Scalars['String']['output'];
   created_at: Scalars['Datetime']['output'];
   description?: Maybe<Scalars['JSON']['output']>;
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
   sort_order: Scalars['Int']['output'];
   updated_at: Scalars['Datetime']['output'];
   url?: Maybe<Scalars['String']['output']>;
@@ -526,28 +1743,99 @@ export type ProjectsConnection = {
   pageInfo: PageInfo;
 };
 
+export type ProjectsDeleteResponse = {
+  __typename?: 'projectsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Projects>;
+};
+
 export type ProjectsEdge = {
   __typename?: 'projectsEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Projects>;
+  node: Projects;
 };
 
 export type ProjectsFilter = {
+  additional_details?: InputMaybe<StringFilter>;
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<ProjectsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
   id?: InputMaybe<UuidFilter>;
+  name?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<ProjectsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<ProjectsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  url?: InputMaybe<StringFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
-export type ProjectsOrderBy = {
-  sort_order?: InputMaybe<OrderByDirection>;
+export type ProjectsInsertInput = {
+  additional_details?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  description?: InputMaybe<Scalars['JSON']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
-export type Recommendations = {
+export type ProjectsInsertResponse = {
+  __typename?: 'projectsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Projects>;
+};
+
+export type ProjectsOrderBy = {
+  additional_details?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  name?: InputMaybe<OrderByDirection>;
+  sort_order?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  url?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type ProjectsUpdateInput = {
+  additional_details?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  description?: InputMaybe<Scalars['JSON']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type ProjectsUpdateResponse = {
+  __typename?: 'projectsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Projects>;
+};
+
+export type Recommendations = Node & {
   __typename?: 'recommendations';
   additional_details: Scalars['String']['output'];
   created_at: Scalars['Datetime']['output'];
   description?: Maybe<Scalars['JSON']['output']>;
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
   sort_order: Scalars['Int']['output'];
   updated_at: Scalars['Datetime']['output'];
   url: Scalars['String']['output'];
@@ -560,19 +1848,87 @@ export type RecommendationsConnection = {
   pageInfo: PageInfo;
 };
 
+export type RecommendationsDeleteResponse = {
+  __typename?: 'recommendationsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Recommendations>;
+};
+
 export type RecommendationsEdge = {
   __typename?: 'recommendationsEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Recommendations>;
+  node: Recommendations;
 };
 
 export type RecommendationsFilter = {
+  additional_details?: InputMaybe<StringFilter>;
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<RecommendationsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
   id?: InputMaybe<UuidFilter>;
+  name?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<RecommendationsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<RecommendationsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  url?: InputMaybe<StringFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
+export type RecommendationsInsertInput = {
+  additional_details?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  description?: InputMaybe<Scalars['JSON']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type RecommendationsInsertResponse = {
+  __typename?: 'recommendationsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Recommendations>;
+};
+
 export type RecommendationsOrderBy = {
+  additional_details?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  name?: InputMaybe<OrderByDirection>;
   sort_order?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  url?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type RecommendationsUpdateInput = {
+  additional_details?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  description?: InputMaybe<Scalars['JSON']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type RecommendationsUpdateResponse = {
+  __typename?: 'recommendationsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Recommendations>;
 };
 
 export type Resume_Font_Size =
@@ -580,16 +1936,27 @@ export type Resume_Font_Size =
   | 'md'
   | 'sm';
 
+/** Boolean expression comparing fields on type "resume_font_size" */
+export type Resume_Font_SizeFilter = {
+  eq?: InputMaybe<Resume_Font_Size>;
+  in?: InputMaybe<Array<Resume_Font_Size>>;
+  is?: InputMaybe<FilterIs>;
+  neq?: InputMaybe<Resume_Font_Size>;
+};
+
 export type Resume_Type =
   | 'general'
   | 'job_specific';
 
+/** Boolean expression comparing fields on type "resume_type" */
 export type Resume_TypeFilter = {
   eq?: InputMaybe<Resume_Type>;
   in?: InputMaybe<Array<Resume_Type>>;
+  is?: InputMaybe<FilterIs>;
+  neq?: InputMaybe<Resume_Type>;
 };
 
-export type Resumes = {
+export type Resumes = Node & {
   __typename?: 'resumes';
   client_draft_id?: Maybe<Scalars['UUID']['output']>;
   color: Scalars['String']['output'];
@@ -600,14 +1967,39 @@ export type Resumes = {
   generation_updated_at?: Maybe<Scalars['Datetime']['output']>;
   id: Scalars['UUID']['output'];
   label?: Maybe<Scalars['String']['output']>;
+  llm_proposal_applicationsCollection?: Maybe<Llm_Proposal_ApplicationsConnection>;
   name: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
   pdf_media_key?: Maybe<Scalars['String']['output']>;
   pdf_url?: Maybe<Scalars['String']['output']>;
+  resumes?: Maybe<Resumes>;
+  resumesCollection?: Maybe<ResumesConnection>;
   source_resume_id?: Maybe<Scalars['UUID']['output']>;
   template_key: Scalars['String']['output'];
   type: Resume_Type;
   updated_at: Scalars['Datetime']['output'];
   user_id: Scalars['UUID']['output'];
+};
+
+export type ResumesLlm_Proposal_ApplicationsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Llm_Proposal_ApplicationsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Llm_Proposal_ApplicationsOrderBy>>;
+};
+
+export type ResumesResumesCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<ResumesFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<ResumesOrderBy>>;
 };
 
 export type ResumesConnection = {
@@ -618,21 +2010,39 @@ export type ResumesConnection = {
 
 export type ResumesDeleteResponse = {
   __typename?: 'resumesDeleteResponse';
+  /** Count of the records impacted by the mutation */
   affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
   records: Array<Resumes>;
 };
 
 export type ResumesEdge = {
   __typename?: 'resumesEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Resumes>;
+  node: Resumes;
 };
 
 export type ResumesFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<ResumesFilter>>;
   client_draft_id?: InputMaybe<UuidFilter>;
+  color?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  font_family?: InputMaybe<StringFilter>;
+  font_size?: InputMaybe<Resume_Font_SizeFilter>;
+  generation_updated_at?: InputMaybe<DatetimeFilter>;
   id?: InputMaybe<UuidFilter>;
+  label?: InputMaybe<StringFilter>;
+  name?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<ResumesFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<ResumesFilter>>;
+  pdf_media_key?: InputMaybe<StringFilter>;
   pdf_url?: InputMaybe<StringFilter>;
   source_resume_id?: InputMaybe<UuidFilter>;
+  template_key?: InputMaybe<StringFilter>;
   type?: InputMaybe<Resume_TypeFilter>;
   updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
@@ -647,8 +2057,6 @@ export type ResumesInsertInput = {
   id?: InputMaybe<Scalars['UUID']['input']>;
   label?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  pdf_media_key?: InputMaybe<Scalars['String']['input']>;
-  pdf_url?: InputMaybe<Scalars['String']['input']>;
   source_resume_id?: InputMaybe<Scalars['UUID']['input']>;
   template_key?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<Resume_Type>;
@@ -657,13 +2065,29 @@ export type ResumesInsertInput = {
 
 export type ResumesInsertResponse = {
   __typename?: 'resumesInsertResponse';
+  /** Count of the records impacted by the mutation */
   affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
   records: Array<Resumes>;
 };
 
 export type ResumesOrderBy = {
+  client_draft_id?: InputMaybe<OrderByDirection>;
+  color?: InputMaybe<OrderByDirection>;
   created_at?: InputMaybe<OrderByDirection>;
+  font_family?: InputMaybe<OrderByDirection>;
+  font_size?: InputMaybe<OrderByDirection>;
+  generation_updated_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  label?: InputMaybe<OrderByDirection>;
+  name?: InputMaybe<OrderByDirection>;
+  pdf_media_key?: InputMaybe<OrderByDirection>;
+  pdf_url?: InputMaybe<OrderByDirection>;
+  source_resume_id?: InputMaybe<OrderByDirection>;
+  template_key?: InputMaybe<OrderByDirection>;
+  type?: InputMaybe<OrderByDirection>;
   updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
 };
 
 export type ResumesUpdateInput = {
@@ -673,15 +2097,15 @@ export type ResumesUpdateInput = {
   font_size?: InputMaybe<Resume_Font_Size>;
   label?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  pdf_media_key?: InputMaybe<Scalars['String']['input']>;
-  pdf_url?: InputMaybe<Scalars['String']['input']>;
   template_key?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<Resume_Type>;
 };
 
 export type ResumesUpdateResponse = {
   __typename?: 'resumesUpdateResponse';
+  /** Count of the records impacted by the mutation */
   affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
   records: Array<Resumes>;
 };
 
@@ -690,11 +2114,22 @@ export type Seniority_Level =
   | 'mid'
   | 'senior';
 
-export type Skills = {
+/** Boolean expression comparing fields on type "seniority_level" */
+export type Seniority_LevelFilter = {
+  eq?: InputMaybe<Seniority_Level>;
+  in?: InputMaybe<Array<Seniority_Level>>;
+  is?: InputMaybe<FilterIs>;
+  neq?: InputMaybe<Seniority_Level>;
+};
+
+export type Skills = Node & {
   __typename?: 'skills';
   created_at: Scalars['Datetime']['output'];
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
   sort_order: Scalars['Int']['output'];
   user_id: Scalars['UUID']['output'];
 };
@@ -705,26 +2140,83 @@ export type SkillsConnection = {
   pageInfo: PageInfo;
 };
 
+export type SkillsDeleteResponse = {
+  __typename?: 'skillsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Skills>;
+};
+
 export type SkillsEdge = {
   __typename?: 'skillsEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Skills>;
+  node: Skills;
 };
 
 export type SkillsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<SkillsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
   id?: InputMaybe<UuidFilter>;
+  name?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<SkillsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<SkillsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
-export type SkillsOrderBy = {
-  sort_order?: InputMaybe<OrderByDirection>;
+export type SkillsInsertInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
-export type Tools = {
+export type SkillsInsertResponse = {
+  __typename?: 'skillsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Skills>;
+};
+
+export type SkillsOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  name?: InputMaybe<OrderByDirection>;
+  sort_order?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type SkillsUpdateInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type SkillsUpdateResponse = {
+  __typename?: 'skillsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Skills>;
+};
+
+export type Tools = Node & {
   __typename?: 'tools';
   created_at: Scalars['Datetime']['output'];
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
   sort_order: Scalars['Int']['output'];
   user_id: Scalars['UUID']['output'];
 };
@@ -735,24 +2227,80 @@ export type ToolsConnection = {
   pageInfo: PageInfo;
 };
 
+export type ToolsDeleteResponse = {
+  __typename?: 'toolsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Tools>;
+};
+
 export type ToolsEdge = {
   __typename?: 'toolsEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<Tools>;
+  node: Tools;
 };
 
 export type ToolsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<ToolsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
   id?: InputMaybe<UuidFilter>;
+  name?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<ToolsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<ToolsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
-export type ToolsOrderBy = {
-  sort_order?: InputMaybe<OrderByDirection>;
+export type ToolsInsertInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
-export type User_Credits = {
+export type ToolsInsertResponse = {
+  __typename?: 'toolsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Tools>;
+};
+
+export type ToolsOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  name?: InputMaybe<OrderByDirection>;
+  sort_order?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type ToolsUpdateInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type ToolsUpdateResponse = {
+  __typename?: 'toolsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Tools>;
+};
+
+export type User_Credits = Node & {
   __typename?: 'user_credits';
   balance: Scalars['Int']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
   updated_at: Scalars['Datetime']['output'];
   user_id: Scalars['UUID']['output'];
 };
@@ -766,22 +2314,34 @@ export type User_CreditsConnection = {
 export type User_CreditsEdge = {
   __typename?: 'user_creditsEdge';
   cursor: Scalars['String']['output'];
-  node?: Maybe<User_Credits>;
+  node: User_Credits;
 };
 
 export type User_CreditsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<User_CreditsFilter>>;
+  balance?: InputMaybe<IntFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<User_CreditsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<User_CreditsFilter>>;
+  updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
 };
 
 export type User_CreditsOrderBy = {
+  balance?: InputMaybe<OrderByDirection>;
   updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
 };
 
+/** Boolean expression comparing fields on type "Datetime" */
 export type CreditsQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
 
-export type CreditsQuery = { user_creditsCollection: { edges: Array<{ node: { balance: number } | null }> } | null };
+export type CreditsQuery = { user_creditsCollection: { edges: Array<{ node: { balance: number } }> } };
 
 export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string };
 
@@ -789,7 +2349,7 @@ export type ProfileByUserQueryVariables = Exact<{
   userId: string;
 }>;
 
-export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string } | null }> } | null, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } | null }> } | null, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string>, responsibilities: Array<string>, key_contributions: Array<string>, additional_details: string | null, sort_order: number } | null }> } | null, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } | null }> } | null, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } | null }> } | null, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } | null }> } | null, skillsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } | null }> } | null, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } | null }> } | null, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } | null }> } | null, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } | null }> } | null };
+export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string } }> }, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } }> }, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string | null>, responsibilities: Array<string | null>, key_contributions: Array<string | null>, additional_details: string | null, sort_order: number } }> }, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } }> }, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } }> }, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } }> }, skillsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } }> }, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } }> } };
 
 export type ListResumeFragment = { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string };
 
@@ -800,13 +2360,13 @@ export type ResumesByUserQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
-export type ResumesByUserQuery = { resumesCollection: { edges: Array<{ node: { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+export type ResumesByUserQuery = { resumesCollection: { edges: Array<{ node: { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } };
 
 export type ResumeByIdQueryVariables = Exact<{
   id: string;
 }>;
 
-export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
+export type ResumeByIdQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } }> } };
 
 export type InsertResumeMutationVariables = Exact<{
   objects: Array<ResumesInsertInput> | ResumesInsertInput;
@@ -820,31 +2380,31 @@ export type UpdateResumeMutationVariables = Exact<{
   atMost?: number | null | undefined;
 }>;
 
-export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } | null };
+export type UpdateResumeMutation = { updateresumesCollection: { affectedCount: number, records: Array<{ content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string }> } };
 
 export type DeleteResumeMutationVariables = Exact<{
   id: string;
   atMost?: number | null | undefined;
 }>;
 
-export type DeleteResumeMutation = { deleteFromresumesCollection: { affectedCount: number, records: Array<{ id: string }> } | null };
+export type DeleteResumeMutation = { deleteFromresumesCollection: { affectedCount: number, records: Array<{ id: string }> } };
 
 export type ResumeByClientDraftQueryVariables = Exact<{
   userId: string;
   clientDraftId: string;
 }>;
 
-export type ResumeByClientDraftQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
+export type ResumeByClientDraftQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } }> } };
 
 export type ResumesBySourceQueryVariables = Exact<{
   sourceId: string;
   first?: number | null | undefined;
 }>;
 
-export type ResumesBySourceQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } | null }> } | null };
+export type ResumesBySourceQuery = { resumesCollection: { edges: Array<{ node: { content: string, id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string } }> } };
 
 export type Apply_Llm_ProposalMutationVariables = Exact<{
-  p_request?: string | null | undefined;
+  p_request: string;
 }>;
 
 export type Apply_Llm_ProposalMutation = { apply_llm_proposal: string | null };
@@ -861,16 +2421,16 @@ export type ProfilesCollectionQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
 
-export type ProfilesCollectionQuery = { profilesCollection: { edges: Array<{ node: { user_id: string } | null }> } | null };
+export type ProfilesCollectionQuery = { profilesCollection: { edges: Array<{ node: { user_id: string } }> } };
 
 export type ResumesCollectionQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
 
-export type ResumesCollectionQuery = { resumesCollection: { edges: Array<{ node: { id: string } | null }> } | null };
+export type ResumesCollectionQuery = { resumesCollection: { edges: Array<{ node: { id: string } }> } };
 
 export type Save_ProfileMutationVariables = Exact<{
-  p_payload?: string | null | undefined;
+  p_payload: string;
 }>;
 
 export type Save_ProfileMutation = { save_profile: string | null };
@@ -1166,7 +2726,7 @@ export const ResumesBySourceDocument = gql`
 }
     ${ListResumeFragmentDoc}`;
 export const Apply_Llm_ProposalDocument = gql`
-    mutation Apply_Llm_Proposal($p_request: JSON) {
+    mutation Apply_Llm_Proposal($p_request: JSON!) {
   apply_llm_proposal(p_request: $p_request)
 }
     `;
@@ -1203,7 +2763,7 @@ export const ResumesCollectionDocument = gql`
 }
     `;
 export const Save_ProfileDocument = gql`
-    mutation Save_Profile($p_payload: JSON) {
+    mutation Save_Profile($p_payload: JSON!) {
   save_profile(p_payload: $p_payload)
 }
     `;
@@ -1241,7 +2801,7 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     ResumesBySource(variables: ResumesBySourceQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesBySourceQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ResumesBySourceQuery>({ document: ResumesBySourceDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesBySource', 'query', variables);
     },
-    Apply_Llm_Proposal(variables?: Apply_Llm_ProposalMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Apply_Llm_ProposalMutation> {
+    Apply_Llm_Proposal(variables: Apply_Llm_ProposalMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Apply_Llm_ProposalMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Apply_Llm_ProposalMutation>({ document: Apply_Llm_ProposalDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Apply_Llm_Proposal', 'mutation', variables);
     },
     ConsumeAiRequest(variables?: ConsumeAiRequestMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ConsumeAiRequestMutation> {
@@ -1256,7 +2816,7 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     ResumesCollection(variables?: ResumesCollectionQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesCollectionQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ResumesCollectionQuery>({ document: ResumesCollectionDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesCollection', 'query', variables);
     },
-    Save_Profile(variables?: Save_ProfileMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Save_ProfileMutation> {
+    Save_Profile(variables: Save_ProfileMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Save_ProfileMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Save_ProfileMutation>({ document: Save_ProfileDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Save_Profile', 'mutation', variables);
     }
   };

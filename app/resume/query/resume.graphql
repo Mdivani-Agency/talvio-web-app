@@ -103,6 +103,6 @@ query ResumesBySource($sourceId: UUID!, $first: Int) {
   }
 }
 
-mutation Apply_Llm_Proposal($p_request: JSON) {
+mutation Apply_Llm_Proposal($p_request: JSON!) {
   apply_llm_proposal(p_request: $p_request)
 }
