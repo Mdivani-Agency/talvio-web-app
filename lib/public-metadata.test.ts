@@ -133,10 +133,8 @@ describe('public metadata', () => {
     expect(allowPublicIndexing()).toBe(true);
   });
 
-  it('dates the privacy policy by the version the flags show', () => {
-    const privacy = (llmService: boolean) =>
-      publicSitemap({ plansPage: false, llmService }).find((entry) => entry.url.endsWith('/privacy-policy'))?.lastModified;
-    expect(privacy(false)).toBe('2026-10-09');
-    expect(privacy(true)).toBe('2026-11-16');
+  it('dates the privacy policy by its last change', () => {
+    const privacy = publicSitemap({ plansPage: false }).find((entry) => entry.url.endsWith('/privacy-policy'))?.lastModified;
+    expect(privacy).toBe('2026-11-16');
   });
 });

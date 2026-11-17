@@ -188,7 +188,6 @@ export type IntListFilter = {
 export type Mutation = {
   __typename?: 'Mutation';
   apply_llm_proposal?: Maybe<Scalars['JSON']['output']>;
-  consume_ai_request?: Maybe<Scalars['Int']['output']>;
   /** Deletes zero or more records from the `contacts` collection */
   deleteFromcontactsCollection: ContactsDeleteResponse;
   /** Deletes zero or more records from the `educations` collection */
@@ -2409,10 +2408,6 @@ export type Apply_Llm_ProposalMutationVariables = Exact<{
 
 export type Apply_Llm_ProposalMutation = { apply_llm_proposal: string | null };
 
-export type ConsumeAiRequestMutationVariables = Exact<{ [key: string]: never; }>;
-
-export type ConsumeAiRequestMutation = { consume_ai_request: number | null };
-
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type HealthQuery = { __typename: 'Query' };
@@ -2730,11 +2725,6 @@ export const Apply_Llm_ProposalDocument = gql`
   apply_llm_proposal(p_request: $p_request)
 }
     `;
-export const ConsumeAiRequestDocument = gql`
-    mutation ConsumeAiRequest {
-  consume_ai_request
-}
-    `;
 export const HealthDocument = gql`
     query Health {
   __typename
@@ -2803,9 +2793,6 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Apply_Llm_Proposal(variables: Apply_Llm_ProposalMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Apply_Llm_ProposalMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Apply_Llm_ProposalMutation>({ document: Apply_Llm_ProposalDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Apply_Llm_Proposal', 'mutation', variables);
-    },
-    ConsumeAiRequest(variables?: ConsumeAiRequestMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ConsumeAiRequestMutation> {
-      return withWrapper((wrappedRequestHeaders) => client.request<ConsumeAiRequestMutation>({ document: ConsumeAiRequestDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ConsumeAiRequest', 'mutation', variables);
     },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);

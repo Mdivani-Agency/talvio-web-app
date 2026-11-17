@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { resumeToCareerDocument } from '../lib/llm/career-document';
 import { createLlmClient, jobRequest } from '../lib/llm/client';
 import { reviewServiceProposal, proposalFromEnvelope } from '../lib/llm/improve-proposal';
+import { importedAccount } from '../lib/llm/parse-document';
 import { reviewTailoring, tailorResultFromEnvelope } from '../lib/llm/tailor';
 import { fullResumeContent } from './fixtures/flow/resume-document';
 import { proxyLlmRequest } from '../lib/services/llm-proxy.server';
@@ -28,7 +29,7 @@ async function reset() {
   expect(response.status).toBe(200);
 }
 
-describe('local media, AI, and font simulator', () => {
+describe('local media and font simulator', () => {
   it('stores an uploaded PDF and lists it for the owner', async () => {
     await reset();
     const presign = await fetch(`${simulator.url}/presign/user-1`, {
@@ -75,50 +76,17 @@ describe('local media, AI, and font simulator', () => {
     expect(records.status).toBe(401);
   });
 
-  it('returns success, malformed, timeout, and error AI responses', async () => {
-    await reset();
-    const success = await fetch(`${simulator.url}/v1/responses`, {
-      method: 'POST',
-      headers: { 'x-e2e-scenario': 'success' },
-    });
-    const successBody = await success.json() as { output: { content: { text: string }[] }[] };
-    expect(successBody.output[0].content[0].text).toContain('"email":"ada@talvio.test"');
-
-    const malformed = await fetch(`${simulator.url}/v1/responses`, {
-      method: 'POST',
-      headers: { 'x-e2e-scenario': 'malformed' },
-    });
-    const malformedBody = await malformed.json() as { output: { content: { text: string }[] }[] };
-    expect(malformedBody.output[0].content[0].text).toBe('MALFORMED {{{');
-
-    const started = Date.now();
-    const timeout = await fetch(`${simulator.url}/v1/responses`, {
-      method: 'POST',
-      headers: { 'x-e2e-scenario': 'timeout' },
-    });
-    expect(timeout.status).toBe(504);
-    expect(Date.now() - started).toBeGreaterThanOrEqual(1000);
-    expect(Date.now() - started).toBeLessThan(5000);
-
-    const failure = await fetch(`${simulator.url}/v1/responses`, {
-      method: 'POST',
-      headers: { 'x-e2e-scenario': 'error' },
-    });
-    expect(failure.status).toBe(500);
-  });
-
   it('serves the checked-in font bytes and clears scenario state', async () => {
     await fetch(`${simulator.url}/__e2e/scenario`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'error' }),
+      body: JSON.stringify({ mode: 'records_error' }),
     });
-    const leaked = await fetch(`${simulator.url}/v1/responses`, { method: 'POST' });
-    expect(leaked.status).toBe(500);
+    const auth = { headers: { Authorization: 'Bearer local-session' } };
+    expect((await fetch(`${simulator.url}/media/user-1/records`, auth)).status).toBe(500);
 
     await reset();
-    const restored = await fetch(`${simulator.url}/v1/responses`, { method: 'POST' });
-    expect(restored.status).toBe(200);
+    expect((await fetch(`${simulator.url}/media/user-1/records`, auth)).status).toBe(200);
 
     const fonts = await fetch(`${simulator.url}/webfonts/v1/webfonts?family=Inter`);
     const catalog = await fonts.json() as { items: { files: { regular: string } }[] };
@@ -226,6 +194,50 @@ describe('local LLM service job API', () => {
       code: 'unauthorized',
       message: 'Please sign in',
     });
+  });
+
+  async function sharedScenario(mode: string) {
+    await fetch(`${simulator.url}/__e2e/scenario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode }),
+    });
+  }
+
+  it('fails only the operations a shared scenario names, and counts jobs per operation', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    await sharedScenario('parse_error');
+    const parse = await client.createJob(jobRequest(REQUEST, 'key-sim-0020'));
+    expect(await poll(client, parse.jobId)).toMatchObject({ status: 'failed', error: { code: 'model_refusal', retryable: false } });
+
+    await sharedScenario('qa_error');
+    const parsed = await client.createJob(jobRequest(REQUEST, 'key-sim-0021'));
+    expect(await poll(client, parsed.jobId)).toMatchObject({ status: 'succeeded' });
+
+    await sharedScenario('malformed');
+    const malformed = await client.createJob(jobRequest(REQUEST, 'key-sim-0022'));
+    const unreadable = await poll(client, malformed.jobId);
+    expect(unreadable.status).toBe('succeeded');
+    expect(unreadable.result?.result).toEqual({ career: 'MALFORMED {{{' });
+
+    const stats = await (await fetch(`${simulator.url}/__e2e/stats`)).json();
+    expect(stats.ai).toEqual({ parse: 3, questions: 0, tailor: 0 });
+    await reset();
+    expect((await (await fetch(`${simulator.url}/__e2e/stats`)).json()).ai).toEqual({ parse: 0, questions: 0, tailor: 0 });
+  });
+
+  it('reads the imported resume into account values', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    const { jobId } = await client.createJob(jobRequest(REQUEST, 'key-sim-0023'));
+    const job = await poll(client, jobId);
+    const { account, review } = importedAccount(job.result!);
+    expect(account.profile).toMatchObject({ firstName: 'Ada', lastName: 'Owner', role: 'Engineer', email: 'ada@talvio.test', seniority: 'senior' });
+    expect(account.experience?.map((item) => item.company)).toEqual(['Imported Labs']);
+    expect(account.education?.map((item) => item.name)).toEqual(['Talvio Institute']);
+    expect(account.projects?.map((item) => item.name)).toEqual(['Imported Project']);
+    expect(review.items).toEqual([]);
   });
 
   it('runs an improve session: questions, answers, a proposal the editor can apply, then deletion', async () => {

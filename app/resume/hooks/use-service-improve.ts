@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useLlmJob } from '@hooks/use-llm-job';
+import { AI_IMPROVE_SESSION_PREFIX, aiImproveJobStorageKey } from '@lib/drafts';
 
 import {
   nextQuestionId,
@@ -20,11 +21,21 @@ import type { LlmJobState } from '@lib/llm/job-runner';
 import { proposalFromEnvelope, reviewServiceProposal, type ServiceProposal } from '@lib/llm/improve-proposal';
 import type { ResumeForm } from '@lib/types';
 
-import type { AiImproveStep } from './use-ai-improve';
+/** The steps of an Improve with AI session, rendered by the shared overlay. */
+export type AiImproveStep =
+  | 'idle'
+  | 'loadingQuestions'
+  | 'questions'
+  | 'answerReview'
+  | 'loadingProposal'
+  | 'proposalReview'
+  | 'error'
+  | 'capped';
+
 
 /*
- * Improve with AI on the LLM service (MDI-221), behind NEXT_PUBLIC_FLAG_LLM_SERVICE. It returns
- * the same shape as `useAiImprove`, so the overlay is shared:
+ * Improve with AI on the LLM service (MDI-221). It returns
+ * the shape the shared overlay renders:
  * 1. POST /sessions with the resume as a CareerDocument (one session per Improve with AI).
  * 2. A generate_questions job (round 1, up to five questions).
  * 3. Answers and skips go to POST /sessions/{id}/answers, which makes a new context revision.
@@ -89,7 +100,6 @@ type Options = {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const STORE_PREFIX = 'talvio-llm-improve:v1:';
 
 function newKey(): string {
   return crypto.randomUUID();
@@ -100,7 +110,7 @@ function readStored(key: string | null): StoredSession | null {
     return null;
   }
   try {
-    const raw = window.localStorage.getItem(`${STORE_PREFIX}${key}`);
+    const raw = window.localStorage.getItem(`${AI_IMPROVE_SESSION_PREFIX}${key}`);
     const parsed = raw ? (JSON.parse(raw) as StoredSession) : null;
     return parsed?.v === 1 ? parsed : null;
   } catch {
@@ -114,9 +124,9 @@ function writeStored(key: string | null, value: StoredSession | null) {
   }
   try {
     if (value) {
-      window.localStorage.setItem(`${STORE_PREFIX}${key}`, JSON.stringify(value));
+      window.localStorage.setItem(`${AI_IMPROVE_SESSION_PREFIX}${key}`, JSON.stringify(value));
     } else {
-      window.localStorage.removeItem(`${STORE_PREFIX}${key}`);
+      window.localStorage.removeItem(`${AI_IMPROVE_SESSION_PREFIX}${key}`);
     }
   } catch {
     // Quota or private mode: the session lives in memory only.
@@ -275,7 +285,7 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
   }, [fail, persist]);
 
   const job = useLlmJob({
-    storageKey: storageKey ? `talvio-llm-job:v1:improve:${storageKey}` : null,
+    storageKey: storageKey ? aiImproveJobStorageKey(storageKey) : null,
     client: llm,
     onSettled,
   });

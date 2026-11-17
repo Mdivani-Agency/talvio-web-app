@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { parseResume } from '@lib/clients/llm.client';
-import { featureFlags } from '@lib/flags';
 import type { LlmError } from '@lib/llm/errors';
 import { importedAccount, importTextProblem, pdfTextRequest, type ImportReview } from '@lib/llm/parse-document';
 import { useUserSession } from '@lib/providers';
 import type { AccountDto } from '@lib/types';
-import { transformFromParsedToAccount } from '@lib/utils/forms';
 
 import { useLlmJob } from './use-llm-job';
 import { usePdfText } from './use-pdf-text';
@@ -14,9 +11,9 @@ import { usePdfText } from './use-pdf-text';
 type Events = {
   /**
    * The imported account. `sourceText` is the extracted PDF text or the pasted text that was parsed.
-   * `review` lists what the user should check; it is null on the legacy route, which reports nothing.
+   * `review` lists what the user should check.
    */
-  onResumeParsed: (account: AccountDto, sourceText: string, review: ImportReview | null) => void;
+  onResumeParsed: (account: AccountDto, sourceText: string, review: ImportReview) => void;
   onError: (error: Error) => void;
 };
 
@@ -31,20 +28,17 @@ export function importJobStorageKey(userId: string, surface: Options['surface'])
 }
 
 /**
- * Reads a resume from a PDF or pasted text into account values (MDI-221). With
- * NEXT_PUBLIC_FLAG_LLM_SERVICE on, it runs a parse_document job on the LLM service, which survives
- * a reload; otherwise it calls the legacy `/api/resume/parse` route.
+ * Reads a resume from a PDF or pasted text into account values (MDI-221) with a parse_document job
+ * on the LLM service, which survives a reload.
  */
 export const useResumeParser = (events: Events, { surface }: Options) => {
-  const service = featureFlags().llmService;
   const { session } = useUserSession();
   const userId = session?.user.id ?? null;
-  const [legacyLoading, setLegacyLoading] = useState(false);
   // Reading a PDF before its job starts counts as busy, and only the latest selection may submit.
   const [reading, setReading] = useState(false);
   const readSeq = useRef(0);
-  const { parsePdf, extractPdfPages, parsing } = usePdfText();
-  const job = useLlmJob({ storageKey: service && userId ? importJobStorageKey(userId, surface) : null });
+  const { extractPdfPages, parsing } = usePdfText();
+  const job = useLlmJob({ storageKey: userId ? importJobStorageKey(userId, surface) : null });
   const eventsRef = useRef(events);
 
   useEffect(() => {
@@ -76,21 +70,6 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
     }
   }, [clear, request, state]);
 
-  const parseLegacy = useCallback(async (readText: () => Promise<string>) => {
-    setLegacyLoading(true);
-    try {
-      const text = await readText();
-      const parsedResume = await parseResume(text);
-      if (parsedResume) {
-        eventsRef.current.onResumeParsed(transformFromParsedToAccount(parsedResume), text, null);
-      }
-    } catch (error) {
-      eventsRef.current.onError(error as Error);
-    } finally {
-      setLegacyLoading(false);
-    }
-  }, []);
-
   const parseWithService = useCallback(
     (text: string, extraction: ReturnType<typeof pdfTextRequest>['extraction'] | null) => {
       const problem = importTextProblem(text, extraction?.pageCount ?? null);
@@ -105,9 +84,6 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
 
   const parseResumeText = useCallback(
     async (file: File) => {
-      if (!service) {
-        return parseLegacy(async () => parsePdf(Buffer.from(await file.arrayBuffer())));
-      }
       const seq = ++readSeq.current;
       setReading(true);
       try {
@@ -127,24 +103,21 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
         }
       }
     },
-    [extractPdfPages, parseLegacy, parsePdf, parseWithService, service],
+    [extractPdfPages, parseWithService],
   );
 
   const parsePastedText = useCallback(
     async (text: string) => {
-      if (!service) {
-        return parseLegacy(async () => text);
-      }
       // A newer paste wins over a PDF that is still being read.
       readSeq.current += 1;
       setReading(false);
       parseWithService(text, null);
     },
-    [parseLegacy, parseWithService, service],
+    [parseWithService],
   );
 
   return {
-    loading: legacyLoading || reading || job.busy,
+    loading: reading || job.busy,
     extracting: parsing,
     /** True while the LLM service cannot be reached; the import continues when it can. */
     offline: (state.phase === 'submitting' || state.phase === 'running') && state.offline,

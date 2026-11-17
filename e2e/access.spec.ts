@@ -144,52 +144,54 @@ test('SEC-02 pdf and presign routes reject bad auth and ignore forged ownership'
 });
 
 test('SEC-03 provider routes return defined errors without leaking secrets', async ({ page, personas, request }) => {
-  const secret = process.env.OPENAI_API_KEY ?? '';
-  expect(secret.length).toBeGreaterThan(0);
+  // The media key is the one server secret a provider route holds; the AI adapter holds none.
+  const secret = process.env.MEDIA_SERVICE_API_KEY ?? 'local-e2e-dummy';
+  const job = (key: string) => ({
+    schemaVersion: '1.0',
+    clientRequestId: key,
+    operation: 'parse_document',
+    locale: 'en-US',
+    sessionId: null,
+    contextRevisionId: null,
+    parentJobId: null,
+    input: { kind: 'text', text: 'Ada Owner', extraction: null },
+  });
 
-  const cases = [
-    ['/api/resume/parse', {}],
-    ['/api/resume/qa', {}],
-    ['/api/resume/account', {}],
-    ['/api/resume/complete', { resume: 'text' }],
-  ] as const;
+  // The AI adapter refuses signed-out callers before the LLM service, in the service's error shape.
+  const signedOut = await request.post('/api/llm/v1/jobs', {
+    headers: { 'Idempotency-Key': 'sec03-key-0001' },
+    data: job('sec03-key-0001'),
+  });
+  expect(signedOut.status()).toBe(401);
+  expect(await signedOut.json()).toMatchObject({ error: { code: 'unauthorized', retryable: false } });
 
-  // AI routes refuse signed-out callers before the provider (MDI-401).
-  for (const [path] of cases) {
-    const response = await request.post(path, {
-      headers: { 'x-e2e-scenario': 'success' },
-      data: { resume: 'Ada Owner', account: '{}', questions: [], answers: [] },
-    });
-    expect(response.status(), path).toBe(401);
-    expect(await response.json()).toEqual({ error: 'Please sign in' });
+  // Routes the service does not have, and the removed OpenAI routes, are not found.
+  expect((await request.get('/api/llm/v1/admin')).status()).toBe(404);
+  for (const path of ['/api/resume/parse', '/api/resume/qa', '/api/resume/account', '/api/resume/complete']) {
+    expect((await request.post(path, { data: {} })).status(), path).toBe(404);
   }
 
   const owner = persona(personas, 'complete');
   await signInWithLocalMagicLink(page, owner);
 
-  for (const [path, data] of cases) {
-    const response = await page.request.post(path, { data });
-    expect(response.status(), path).toBe(400);
-    expect(await response.text()).not.toContain(secret);
-  }
+  // A bearer token reaches the local service; a bad request and a missing key get its error shape.
+  const auth = { Authorization: 'Bearer local-session' };
+  const accepted = await page.request.post('/api/llm/v1/jobs', {
+    headers: { ...auth, 'Idempotency-Key': 'sec03-key-0002' },
+    data: job('sec03-key-0002'),
+  });
+  expect(accepted.status()).toBe(202);
+  const invalid = await page.request.post('/api/llm/v1/jobs', {
+    headers: { ...auth, 'Idempotency-Key': 'sec03-key-0003' },
+    data: { ...job('sec03-key-0003'), schemaVersion: '0.1' },
+  });
+  expect(invalid.status()).toBe(400);
+  const invalidBody = await invalid.text();
+  expect(invalidBody).toContain('invalid_request');
+  expect(invalidBody).not.toContain(secret);
 
   const missingFont = await request.get('/api/resume/fonts');
   expect(missingFont.status()).toBe(400);
-
-  const signedInParse = await page.request.post('/api/resume/parse', {
-    headers: { 'x-e2e-scenario': 'success' },
-    data: { resume: 'Ada Owner' },
-  });
-  expect(signedInParse.status()).toBe(200);
-
-  const failed = await page.request.post('/api/resume/parse', {
-    headers: { 'x-e2e-scenario': 'error' },
-    data: { resume: 'Ada Owner' },
-  });
-  expect(failed.status()).toBe(500);
-  const failedBody = await failed.text();
-  expect(failedBody).not.toContain(secret);
-  expect(failedBody).not.toContain('local-e2e-dummy');
 
   const fonts = await request.get('/api/resume/fonts?family=Inter');
   expect(fonts.ok()).toBe(true);

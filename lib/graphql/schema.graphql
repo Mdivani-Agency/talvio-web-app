@@ -207,7 +207,6 @@ scalar JSON
 """The root type for creating and mutating data"""
 type Mutation {
   apply_llm_proposal(p_request: JSON!): JSON
-  consume_ai_request: Int
   """Deletes zero or more records from the `contacts` collection"""
   deleteFromcontactsCollection(
     """

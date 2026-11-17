@@ -2,7 +2,6 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 import { useProfile } from '@app/account/query/use-profile';
@@ -14,7 +13,6 @@ import { Loading } from '@components/views';
 import { isGeneratedResume, isOpenDraft } from '@lib/adapters/resume.adapter';
 import { signInHref } from '@lib/auth/sign-in-href';
 import { DEFAULT_RESUME_TEMPLATE } from '@lib/drafts';
-import { featureFlags } from '@lib/flags';
 import { profileToResumeDocument } from '@lib/models/resume-document';
 import { useUserSession } from '@lib/providers';
 import { RESUME_COLORS_MAP } from '@lib/utils';
@@ -23,7 +21,7 @@ import { useTailor } from '../hooks/use-tailor';
 import { TailorView, type TailorSourceOption } from '../views/tailor-view';
 
 /*
- * Tailor a resume to a job post (MDI-221), behind NEXT_PUBLIC_FLAG_LLM_SERVICE. The source is the
+ * Tailor a resume to a job post (MDI-221). The source is the
  * profile or a saved general resume; the result is a new JOB_SPECIFIC resume. The service needs a
  * signed-in user, so guests are sent to sign in and come back here.
  */
@@ -134,8 +132,5 @@ function TailorPage() {
 }
 
 export default function Page() {
-  if (!featureFlags().llmService) {
-    notFound();
-  }
   return <TailorPage />;
 }
