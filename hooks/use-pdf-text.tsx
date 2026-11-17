@@ -5,14 +5,16 @@ import { PDFDocumentProxy } from 'pdfjs-dist';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import { useCallback, useState } from 'react';
 
+import { pageText, type PdfTextItem } from '@lib/pdf/page-text';
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
 const extractText = async (pdf: PDFDocumentProxy, pageNum: number) => {
   const page = await pdf.getPage(pageNum);
   const textContent = await page.getTextContent({ disableNormalization: true });
 
-  // @ts-expect-error TODO: add type declaration later
-  return textContent.items.map((item) => item.str).join(',');
+  // Lines are kept as lines: the LLM service finds every imported value in this text.
+  return pageText(textContent.items.filter((item): item is PdfTextItem & typeof item => 'str' in item));
 };
 
 export const usePdfText = () => {
