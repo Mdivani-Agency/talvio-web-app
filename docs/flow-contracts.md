@@ -73,7 +73,7 @@ MDI-197's questions, answer review, proposal review and profile review were remo
 - `useSaveProfileFlow` (`app/account/hooks/use-save-profile-flow.ts`) runs `useSaveProfile` (which seeds `['account', userId]`) inside `submitWrapper`, then clears the draft through `completeSave` and routes to `/account`. `AccountForm` is the only validator: it passes `accountSchema` to `useAppForm` and calls `onSubmit` only for a valid form, and `accountDtoToSavePayload` drops client list keys that are not row UUIDs. The writing-voice step (MDI-418) will end in the same save.
 - A failed save toasts the `parseGraphqlError` message through `submitWrapper`, keeps the form and its values, and leaves **Save profile** enabled. A retry sends the same values; `save_profile` upserts the profile by `auth.uid()`, so it is not duplicated (`PROF-04`).
 - The question UI (`ResumeQuestions`) and the helpers in `lib/ai-improve/questions.ts` have no onboarding caller. Improve with AI in the resume editor (MDI-426) and Tailor to a job reuse them.
-- AI daily quota: the LLM service enforces it and answers `quota_exceeded` (429, `Retry-After`). Import shows the message as a toast; the Improve with AI overlay and Tailor show `AI_CAP_TITLE` and the message with Close. Editing, saving and PDF generation do not use it, and AI never touches `user_credits`. The web app's own cap (MDI-401, `ai_daily_usage` and `consume_ai_request()`) was removed in MDI-224.
+- AI daily quota: the LLM service enforces it and answers `quota_exceeded` (429, `Retry-After`). Import shows the message as a toast; the Improve with AI overlay and Tailor show `AI_CAP_TITLE` and the message with Close. Editing, saving and PDF generation do not use it, and AI never touches `user_credits`. The web app's own cap (MDI-401, `ai_daily_usage` and `consume_ai_request()`) is no longer called since MDI-224; its database objects are dropped in a later release, after every environment runs this app, so an app still on the old routes never loses them mid-deploy.
 
 ## Improve with AI (editor, MDI-426)
 
@@ -86,7 +86,7 @@ Shown only when `NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE` is on (`featureFlags().resu
 
 ## LLM service jobs (MDI-221)
 
-Every AI feature runs on the Talvio LLM service (talvio-llm-service, contract in its `docs/contracts.md`). The OpenAI routes under `/api/resume`, `NEXT_PUBLIC_FLAG_LLM_SERVICE` and the web app's own AI daily cap were removed in MDI-224.
+Every AI feature runs on the Talvio LLM service (talvio-llm-service, contract in its `docs/contracts.md`). The OpenAI routes under `/api/resume`, `NEXT_PUBLIC_FLAG_LLM_SERVICE` and the calls to the web app's own AI daily cap were removed in MDI-224.
 
 - Adapter: `app/api/llm/[...path]/route.ts` → `proxyLlmRequest` (`lib/services/llm-proxy.server.ts`). It forwards only the service's routes (documents, sessions, jobs) to `${LLM_SERVICE_URL}/v1/...` with the caller's bearer token and `Idempotency-Key`, and returns the answer unchanged (only `Content-Type` and `Retry-After` headers). No provider SDK, prompts or long-running work: one request, 25 s timeout, 1 MB body cap. The service verifies the token, account status and plan itself. Errors the adapter makes use the service's error body.
 - Client: `createLlmClient` (`lib/llm/client.ts`) calls `/api/llm/v1` through `authedFetch`, with a 20 s timeout. Responses are checked loosely (`lib/llm/contract.ts`): unknown fields and enum members are tolerated, as the contract asks for minor versions. A guest gets `unauthorized` without a request.

@@ -55,6 +55,11 @@ policies, no grants. `apply_monthly_allowance()` and
 `monthly_credit_allowance()` have no `EXECUTE` for `public`, `anon` or
 `authenticated`.
 
+`ai_daily_usage` (MDI-401) is server-only too: RLS on, no policies, no grants.
+`ai_daily_request_cap()`, `consume_ai_request_for(uuid, timestamptz)` and
+`prune_ai_daily_usage(timestamptz)` have no `EXECUTE` for clients. The one
+public entry point is `consume_ai_request()` (below).
+
 ```sql
 REVOKE ALL ON TABLE public.credit_prices FROM public, anon, authenticated;
 -- no GRANT — DEFINER helpers read it as the table owner
@@ -71,6 +76,8 @@ REVOKE ALL ON FUNCTION public.finalize_pdf(uuid, text, text) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.save_profile(jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.generate_pdf(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.finalize_pdf(uuid, text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.consume_ai_request() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.consume_ai_request() TO authenticated;
 REVOKE ALL ON FUNCTION public.apply_llm_proposal(jsonb) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.apply_llm_proposal(jsonb) TO authenticated;
 ```
@@ -79,6 +86,13 @@ GRANT EXECUTE ON FUNCTION public.apply_llm_proposal(jsonb) TO authenticated;
 saves an accepted LLM proposal for `auth.uid()` and its receipt in one
 transaction, and returns the receipt as `JSON`. A second call for the same
 proposal returns the first receipt (`replayed: true`) and writes nothing.
+
+`consume_ai_request()` takes no arguments and counts one AI request for
+`auth.uid()` on the current UTC day, so a caller can only spend their own
+quota. It never touches `user_credits`. Since MDI-224 the app no longer
+calls it: every AI feature runs on the LLM service, which enforces its own
+daily quota. The cap's objects are dropped in a later release, once no
+deployed app still calls them.
 
 `consume_credits` and `require_credits` are private: they receive
 `user_id` + `action` and look up `credit_prices`. `generate_pdf` checks
@@ -108,6 +122,7 @@ the GraphQL `JSON` scalar (serialized string).
 | `user_credits` | none | SELECT | all | `20261008000300_resumes_credits.sql` |
 | `credit_prices` | none | none | none | `20261008000300_resumes_credits.sql` (server-side) |
 | `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
+| `ai_daily_usage` | none | none | none | `20261008000500_ai_daily_caps.sql` (server-side) |
 | `llm_proposal_applications` | none | SELECT | all | `20261112000100_llm_proposal_applications.sql` (rows written only by `apply_llm_proposal`) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`

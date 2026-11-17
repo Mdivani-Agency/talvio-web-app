@@ -16,10 +16,9 @@ from the app or the Data API.
   the release gate, then `supabase db push`, then the Vercel CLI deploy
   (`.github/workflows/ci.yml`). `20261008000100_extensions_enums.sql`
   enables `pg_cron`; `20261008000400_monthly_allowance.sql` creates the
-  `monthly-allowance-reset` job and records the current month. Nothing is set
-  up by hand. (`20261008000500_ai_daily_caps.sql` created an AI cap and an
-  `ai-daily-usage-prune` job; `20261117000100_drop_ai_daily_caps.sql` removes
-  both, MDI-224: the LLM service enforces the daily AI quota.)
+  `monthly-allowance-reset` job and records the current month;
+  `20261008000500_ai_daily_caps.sql` creates the AI cap and the
+  `ai-daily-usage-prune` job. Nothing is set up by hand.
 - Flags: `NEXT_PUBLIC_FLAG_PLANS_PAGE` and
   `NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI` are Vercel environment variables
   (`lib/flags.ts`). `NEXT_PUBLIC_FLAG_BETA_MODE` is declared but no code reads
@@ -53,23 +52,25 @@ order by period_start desc;
 ### Inspect the jobs
 
 ```sql
--- The job exists once, created by the migrations.
+-- Both jobs exist, once each, created by the migrations.
 select jobid, jobname, schedule, command, active
 from cron.job
-where jobname = 'monthly-allowance-reset';
+where jobname in ('monthly-allowance-reset', 'ai-daily-usage-prune');
 
 -- Recent runs, newest first. status is 'succeeded' or 'failed'.
 select j.jobname, d.status, d.return_message, d.start_time, d.end_time
 from cron.job_run_details d
 join cron.job j using (jobid)
-where j.jobname = 'monthly-allowance-reset'
+where j.jobname in ('monthly-allowance-reset', 'ai-daily-usage-prune')
 order by d.start_time desc
 limit 20;
 ```
 
 Expected: `monthly-allowance-reset` with schedule `0 * * * *` (hourly; only the
 first run of a month changes anything) and command
-`select public.apply_monthly_allowance()`, `active`. `pg_cron` runs in GMT.
+`select public.apply_monthly_allowance()`; `ai-daily-usage-prune` with
+schedule `10 0 * * *` and command `select public.prune_ai_daily_usage()`.
+Both `active`. `pg_cron` runs in GMT.
 
 ### Spot-check balances
 
@@ -124,6 +125,24 @@ select cron.alter_job(
   active => true
 );
 ```
+
+## AI daily cap
+
+20 AI requests per user per UTC day, counted in `ai_daily_usage`. A user who
+reports being capped early:
+
+```sql
+select usage_date, request_count
+from public.ai_daily_usage
+where user_id = '<user id>'
+order by usage_date desc
+limit 7;
+```
+
+The count resets at 00:00 UTC by date; no job is needed for that.
+`ai-daily-usage-prune` only deletes rows older than 7 days. Do not edit
+`request_count` by hand to lift a cap; change the cap with a migration that
+replaces `ai_daily_request_cap()`.
 
 ## Rollback
 
@@ -189,9 +208,10 @@ After the release reaches dev (push to `development`):
 
 1. The CI run for that push is green: release gate, "Push migrations" and
    "Deploy to Vercel".
-2. The job exists with the expected schedule and command ("Inspect the jobs").
+2. Both jobs exist with the expected schedule and command ("Inspect the jobs").
    No one created them by hand: they come from the migrations, and
-   `supabase/tests/monthly_allowance.test.sql` checks the same on a fresh database.
+   `supabase/tests/monthly_allowance.test.sql` and
+   `supabase/tests/ai_daily_caps.test.sql` check the same on a fresh database.
 3. The operational check returns `true`, and `monthly_allowance_runs` has the
    cutover month.
 4. The balance spot-check shows only values between 0 and 90.

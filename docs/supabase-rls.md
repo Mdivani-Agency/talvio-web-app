@@ -34,6 +34,7 @@ Every table below except `user_credits` has four policies:
 | `user_credits` | `user_credits_select_own` only |
 | `credit_prices` | none (no grants, no policies) |
 | `monthly_allowance_runs` | none (no grants, no policies) |
+| `ai_daily_usage` | none (no grants, no policies); written by `consume_ai_request` |
 | `llm_proposal_applications` | `llm_proposal_applications_select_own` only; written by `apply_llm_proposal` |
 
 `user_credits` has no insert / update / delete policies. Authenticated clients
