@@ -18,7 +18,6 @@ import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
 
 import { ResumePreview } from '../components/resume-preview';
-import { useAiImprove } from '../hooks/use-ai-improve';
 import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../hooks/use-service-improve';
 import { EditResumeView } from './edit-resume-view';
 import TemplatesView from './templates-view';
@@ -87,20 +86,14 @@ export function ResumeEditorShell({
   const { allowance } = useAllowance();
   const [aiRevision, setAiRevision] = useState(0);
   const improveEnabled = Boolean(improve) && featureFlags().resumeAiImprove && !readOnly;
-  const service = featureFlags().llmService;
   const applyImproved = (resume: PreviewDto['resume']) => {
     onChange({ resume });
     setAiRevision((value) => value + 1);
   };
-  const legacyAi = useAiImprove({
+  // Sessions, questions and proposals come from the LLM service.
+  const ai = useServiceImprove({
     resume: document.resume,
-    storageKey: improveEnabled && !service ? improve?.storageKey ?? null : null,
-    onApply: applyImproved,
-  });
-  // With NEXT_PUBLIC_FLAG_LLM_SERVICE, sessions, questions and proposals come from the LLM service.
-  const serviceAi = useServiceImprove({
-    resume: document.resume,
-    storageKey: improveEnabled && service ? improve?.storageKey ?? null : null,
+    storageKey: improveEnabled ? improve?.storageKey ?? null : null,
     source: improve?.source ?? null,
     onApply: applyImproved,
     onSave: improve?.onSave
@@ -110,7 +103,6 @@ export function ResumeEditorShell({
       }
       : undefined,
   });
-  const ai = service ? serviceAi : legacyAi;
   const startToken = improve?.startToken;
   const lastStartToken = useRef(startToken);
   const startSession = ai.start;

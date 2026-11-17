@@ -105,10 +105,10 @@ authorizer reads them instead of this database.
 
 `consume_ai_request()` takes no arguments and counts one AI request for
 `auth.uid()` on the current UTC day, so a caller can only spend their own
-quota. The AI routes call it through pg_graphql with the caller's token
-(`ConsumeAiRequest` in `lib/graphql/ai-cap.graphql`, via
-`getServerGraphqlSdk`) before the provider; the app has no service-role
-client. It never touches `user_credits`.
+quota. It never touches `user_credits`. Since MDI-224 the app no longer
+calls it: every AI feature runs on the LLM service, which enforces its own
+daily quota. The cap's objects are dropped in a later release, once no
+deployed app still calls them.
 
 `consume_credits` and `require_credits` are private: they receive
 `user_id` + `action` and look up `credit_prices`. `generate_pdf` checks

@@ -12,8 +12,6 @@ import {
   recommendationSchema
 } from "./schema/account.schema";
 import { LanguageProficiency, TemplateKeyEnum } from "./schema/enums";
-import { parsedAccountSchema } from "./schema/parsed.schema";
-import { questionSchema } from "./clients/openai.client";
 import { resumeDraftSchema, resumeSchema } from "./schema/resume.schema";
 import { Template } from "@pdf-tlv/resume";
 
@@ -101,9 +99,7 @@ export type PreviewDto = Omit<ResumeDto, 'metadata'> & {
 }
 
 // Parsed types
-export type ParsedAccount = z.infer<typeof parsedAccountSchema>;
 
 // Enums
 export type LanguageProficiency = z.infer<typeof LanguageProficiency>;
 
-export type FeedbackQuestions = z.infer<typeof questionSchema>;

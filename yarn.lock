@@ -10721,33 +10721,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openai@npm:7.17.0":
-  version: 7.17.0
-  resolution: "openai@npm:7.17.0"
-  peerDependencies:
-    "@aws-sdk/credential-provider-node": ">=3.972.0 <4"
-    "@smithy/hash-node": ">=4.3.0 <5"
-    "@smithy/signature-v4": ">=5.4.0 <6"
-    undici: ">=5 <9"
-    ws: ^8.21.0
-    zod: ^3.25 || ^4.0
-  peerDependenciesMeta:
-    "@aws-sdk/credential-provider-node":
-      optional: true
-    "@smithy/hash-node":
-      optional: true
-    "@smithy/signature-v4":
-      optional: true
-    undici:
-      optional: true
-    ws:
-      optional: true
-    zod:
-      optional: true
-  checksum: 10c0/97582ed1fd24d1c7a56ead6dd0f34133b0e1f7795e9c60d77bdc506f3e97fd1e6e771bac528bc525dddeb11a5b851b242b5c0f73fbd0717a8a57bc8d86ecfb7f
-  languageName: node
-  linkType: hard
-
 "optionator@npm:^0.9.3":
   version: 0.9.4
   resolution: "optionator@npm:0.9.4"
@@ -12629,7 +12602,6 @@ __metadata:
     markdown-it: "npm:14.1.0"
     next: "npm:16.3.5"
     next-themes: "npm:0.4.6"
-    openai: "npm:7.17.0"
     pdfjs-dist: "npm:4.10.38"
     react: "npm:19.3.0"
     react-colorful: "npm:5.8.1"
