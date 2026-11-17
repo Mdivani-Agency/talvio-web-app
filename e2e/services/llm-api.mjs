@@ -11,9 +11,12 @@
  * - `llm_retryable`: jobs fail with retryable `dependency_unavailable`; a retry then succeeds.
  * - `llm_refusal`: jobs fail with `model_refusal`.
  * - `llm_slow`: jobs stay running until cancelled or the scenario changes.
+ * The shared `POST /__e2e/scenario` sets the same scenario, and adds per-operation failures:
+ * `parse_error`, `qa_error`, `tailor_error` and `error` fail the matching jobs with `model_refusal`;
+ * `malformed` returns a parse_document result the web cannot read.
  *
  * Results are canned per operation and contain only invented test content. `GET /__e2e/llm-stats` returns how
- * many jobs were created, replayed, polled, cancelled and retried.
+ * many jobs were created, replayed, polled, cancelled and retried; `/__e2e/stats` counts jobs per operation.
  *
  * Sessions (`POST /llm/v1/sessions`, `/answers`, `DELETE`) keep the submitted source, so the canned
  * improve_resume proposal rewrites the source's own tagline (original value as the precondition) and
@@ -31,7 +34,27 @@ const llm = {
   keys: new Map(),
   sessions: new Map(),
   stats: { created: 0, replayed: 0, polled: 0, cancelled: 0, retried: 0, sessions: 0, answers: 0, deletedSessions: 0 },
+  operations: {},
 };
+
+/** Operations each scenario fails, with a non-retryable job error (`malformed` returns an unreadable result instead). */
+const FAILING_OPERATIONS = {
+  error: ['parse_document', 'generate_questions', 'improve_resume', 'tailor_resume'],
+  parse_error: ['parse_document'],
+  qa_error: ['generate_questions'],
+  tailor_error: ['improve_resume', 'tailor_resume'],
+};
+
+/** Sets the scenario from the shared `POST /__e2e/scenario`. */
+export function setLlmScenario(mode) {
+  llm.scenario = mode || 'success';
+}
+
+/** Jobs created per kind, for the e2e stats: parse, questions, and proposals (improve and tailor). */
+export function llmAiStats() {
+  const count = (...operations) => operations.reduce((total, operation) => total + (llm.operations[operation] ?? 0), 0);
+  return { parse: count('parse_document'), questions: count('generate_questions'), tailor: count('improve_resume', 'tailor_resume') };
+}
 
 export function resetLlmApi() {
   llm.scenario = 'success';
@@ -39,41 +62,65 @@ export function resetLlmApi() {
   llm.keys.clear();
   llm.sessions.clear();
   llm.stats = { created: 0, replayed: 0, polled: 0, cancelled: 0, retried: 0, sessions: 0, answers: 0, deletedSessions: 0 };
+  llm.operations = {};
 }
 
-/** Shaped like the contract's CareerDocument (talvio-llm-service `fixtures/valid/parse-result-partial-profile.json`). */
+const paragraph = (text) => ({ blocks: [{ type: 'paragraph', content: [{ text }] }] });
+
+/**
+ * Shaped like the contract's CareerDocument (talvio-llm-service `fixtures/valid/parse-result-partial-profile.json`),
+ * with every section the profile form shows filled, so an import can be checked end to end.
+ */
 const PARSED_CAREER = {
-  person: { firstName: 'Ada', lastName: 'Owner', role: 'Engineer', tagline: null, seniority: null },
-  contacts: { email: 'ada@talvio.test', phone: null, url: null },
-  location: { city: null, country: null },
+  person: { firstName: 'Ada', lastName: 'Owner', role: 'Engineer', tagline: 'Imported from the local resume.', seniority: 'senior' },
+  contacts: { email: 'ada@talvio.test', phone: '+15555550100', url: 'https://ada.talvio.test' },
+  location: { city: 'Tbilisi', country: 'Georgia' },
   experience: [
     {
       id: 'parsed:experience:0',
-      company: 'Analytical Engines Ltd',
+      company: 'Imported Labs',
       jobTitle: 'Engineer',
-      employmentType: null,
-      locationType: null,
-      startDate: '2021-03',
-      endDate: null,
-      current: null,
-      description: null,
-      achievements: ['Shipped the difference engine'],
-      responsibilities: [],
+      employmentType: 'full-time',
+      locationType: 'remote',
+      startDate: '2020-01',
+      endDate: '2022-06',
+      current: false,
+      description: paragraph('Shipped the import path.'),
+      achievements: ['Launched parsing'],
+      responsibilities: ['Reviewed extracted fields'],
       keyContributions: [],
     },
   ],
-  education: [],
-  projects: [],
+  education: [
+    {
+      id: 'parsed:education:0',
+      name: 'Talvio Institute',
+      degreeType: "Bachelor's Degree",
+      startDate: '2016-09',
+      endDate: '2020-06',
+      current: false,
+      description: paragraph('Focused on software.'),
+    },
+  ],
+  projects: [
+    {
+      id: 'parsed:projects:0',
+      name: 'Imported Project',
+      url: 'https://ada.talvio.test/project',
+      description: paragraph('Imported project details that are long enough to satisfy the profile form and stay editable after the PDF parse completes.'),
+    },
+  ],
   recommendations: [],
-  skills: [{ id: 'parsed:skills:0', name: 'Mathematics' }],
-  tools: [],
-  links: [],
-  languages: [],
+  skills: [{ id: 'parsed:skills:0', name: 'Parsing' }],
+  tools: [{ id: 'parsed:tools:0', name: 'pdf.js' }],
+  links: [{ id: 'parsed:links:0', type: 'talvio', value: 'https://ada.talvio.test' }],
+  languages: [{ id: 'parsed:languages:0', language: 'English', proficiency: 'fluent' }],
 };
 
 const QUESTION_SET_ID = '5f1d2c3b-4a59-4e6f-8a7b-9c0d1e2f3a4b';
 
-function cannedResult(operation, request) {
+function cannedResult(job) {
+  const { operation, request } = job;
   switch (operation) {
     case 'generate_questions':
       return {
@@ -174,6 +221,9 @@ function cannedResult(operation, request) {
       };
     }
     case 'parse_document':
+      if (job.scenario === 'malformed') {
+        return { career: 'MALFORMED {{{' };
+      }
       return {
         career: PARSED_CAREER,
         facts: [],
@@ -231,7 +281,7 @@ function view(job) {
             versions: { pipelineReleaseId: 'v1', promptVersion: 'sim@1', modelId: 'sim' },
             resultKind: 'complete',
             warnings: [],
-            result: cannedResult(job.operation, job.request),
+            result: cannedResult(job),
           }
         : null,
     error: job.error,
@@ -265,6 +315,11 @@ function advance(job) {
   if (job.scenario === 'llm_retryable' && !job.retried) {
     job.status = 'failed';
     job.error = { code: 'dependency_unavailable', message: 'AI is not available right now. Try again in a moment.', retryable: true, correlationId: 'sim-retryable' };
+    return;
+  }
+  if (FAILING_OPERATIONS[job.scenario]?.includes(job.operation)) {
+    job.status = 'failed';
+    job.error = { code: 'model_refusal', message: 'This could not be processed. Edit it and try again.', retryable: false, correlationId: 'sim-failure' };
     return;
   }
   if (job.scenario === 'llm_refusal') {
@@ -358,6 +413,7 @@ export function handleLlmApi(request, url, body, send) {
     llm.jobs.set(created.jobId, created);
     llm.keys.set(`${owner}:${key}`, { jobId: created.jobId, hash: canonical(job) });
     llm.stats.created += 1;
+    llm.operations[job.operation] = (llm.operations[job.operation] ?? 0) + 1;
     send(202, accepted(created, false));
     return true;
   }

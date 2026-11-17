@@ -33,7 +33,7 @@ yarn db:diff     # generate a migration from the shadow DB
 yarn db:push     # apply pending migrations to a linked remote
 ```
 
-`yarn test:e2e:local` starts that stack, runs `supabase test db`, starts a loopback media/AI/font simulator on `127.0.0.1:3999`, builds the production app, serves it on port 3002, and runs Playwright on Chromium. The mobile menu and mobile editor journey also run in a Pixel 5 Chromium project. The run fails when a required case is missing, skipped, or not passed in a required project. It refuses hosted Supabase, media, OpenAI, or Google Fonts origins. `OPENAI_BASE_URL` and `GOOGLE_FONTS_API_BASE` stay unset in production, so those clients keep `api.openai.com` and `googleapis.com`. `yarn test:e2e` expects that stack and build to already be running.
+`yarn test:e2e:local` starts that stack, runs `supabase test db`, starts a loopback media/AI/font simulator on `127.0.0.1:3999`, builds the production app, serves it on port 3002, and runs Playwright on Chromium. The mobile menu and mobile editor journey also run in a Pixel 5 Chromium project. The run fails when a required case is missing, skipped, or not passed in a required project. It refuses hosted Supabase, media, LLM service, or Google Fonts origins. `GOOGLE_FONTS_API_BASE` stays unset in production, so the font client keeps `googleapis.com`. `yarn test:e2e` expects that stack and build to already be running.
 
 Copy URL and keys from `supabase status` into `.env.local`. GraphQL smoke test:
 
@@ -60,8 +60,7 @@ Copy [`.env.example`](.env.example) to `.env.local`. Set the same names in the V
 | `SUPABASE_SECRET_KEY` | yes (server) | Supabase secret / service-role key — never `NEXT_PUBLIC_` |
 | `MEDIA_SERVICE_API_KEY` | yes (server) | Media-service `X-API-KEY` for `POST /media/presign/{userId}` — never `NEXT_PUBLIC_` |
 | `GOOGLE_FONTS_API_KEY` | yes | Font file lookup at `/api/resume/fonts` |
-| `OPENAI_API_KEY` | no | Resume parse/QA; falls back to `TEST_KEY` if unset |
-| `LLM_SERVICE_URL` | no (server) | Talvio LLM service base including `/llm`, e.g. `https://api.dev.talvio.co/llm`. Used by `/api/llm` only when `NEXT_PUBLIC_FLAG_LLM_SERVICE` is on (MDI-221) |
+| `LLM_SERVICE_URL` | no (server) | Talvio LLM service base including `/llm`, e.g. `https://api.dev.talvio.co/llm`. Every AI feature (import, Improve with AI, tailoring) goes through `/api/llm` to it (MDI-221, MDI-224). Unset: `/api/llm` answers 503 |
 
 ## GitHub Actions
 

@@ -1,24 +1,8 @@
-import { AccountDto, Education, Experience, Language, Link, ParsedAccount, Project, Recommendation, Skill, Tool } from "@lib/types";
-import { AutoParseableTextFormat } from "openai/lib/parser.mjs";
 import { z } from "zod";
 import { ZodError } from "zod";
 import { hasFieldError } from '@lib/forms/errors';
 
 export { hasFieldError as hasError };
-
-export function jsonSchema(
-  name: string,
-  schema: z.ZodType,
-) {
-  return {
-    name,
-    schema: z.toJSONSchema(schema, { target: "draft-7", }),
-    type: "json_schema",
-    strict: true,
-    $brand: "auto-parseable-response-format",
-    $parseRaw: (x: string) => x.match(/```json([\s\S]*?)```/)?.[1]?.trim(),
-  } as unknown as AutoParseableTextFormat<z.infer<typeof schema>>;
-}
 
 export function parseValidationErrors(errors: Record<string, string[]>) {
   return Object.keys(errors).reduce(
@@ -78,111 +62,4 @@ export const transformToPartial = <T>(data: T): Partial<T> => {
   }
 
   return result;
-};
-
-export const transformFromParsedToAccount = (parsed: ParsedAccount): AccountDto => {
-  return {
-    profile: {
-      email: parsed.profile?.email || '',
-      firstName: parsed.profile?.firstName || '',
-      lastName: parsed.profile?.lastName || '',
-      role: parsed.profile?.role || '',
-      tagline: parsed.profile?.tagline || '',
-      phone: parsed.profile?.phone || '',
-      website: parsed.profile?.website || '',
-    },
-    experience: parsed.experience?.reduce<Experience[]>((accumulator, experience) => {
-      if (experience.company && experience.jobTitle && experience.startDate) {
-        return [...accumulator, {
-          company: experience.company,
-          jobTitle: experience.jobTitle,
-          startDate: new Date(experience.startDate).toISOString(),
-          endDate: experience.endDate ? new Date(experience.endDate).toISOString() : undefined,
-          isPresent: Boolean(experience.isPresent),
-          employmentType: experience.employmentType || undefined,
-          locationType: experience.locationType || undefined,
-          additionalDetails: experience.additionalDetails || undefined,
-          achievements: experience.achievements || [],
-          responsibilities: experience.responsibilities || [],
-          keyContributions: experience.keyContributions || [],
-        }];
-      } else {
-        return accumulator;
-      }
-    }, []),
-    education: parsed.education?.reduce<Education[]>((accumulator, education) => {
-      if (education.degreeType && education.name && education.startDate) {
-        return [...accumulator, {
-          name: education.name,
-          degreeType: education.degreeType,
-          startDate: new Date(education.startDate).toISOString(),
-          endDate: education.endDate ? new Date(education.endDate).toISOString() : undefined,
-          isPresent: Boolean(education.isPresent),
-          additionalDetails: education.additionalDetails || undefined,
-        }];
-      } else {
-        return accumulator;
-      }
-    }, []),
-    languages: parsed.languages?.reduce<Language[]>((accumulator, language) => {
-      if (language.language && language.proficiency) {
-        return [...accumulator, {
-          language: language.language,
-          proficiency: language.proficiency,
-        }];
-      } else {
-        return accumulator;
-      }
-    }, []),
-    links: parsed.links?.reduce<Link[]>((accumulator, link) => {
-      if (link.value && link.type) {
-        return [...accumulator, {
-          value: link.value,
-          type: link.type,
-        }];
-      } else {
-        return accumulator;
-      }
-    }, []),
-    tools: parsed.tools?.reduce<Tool[]>((accumulator, tool) => {
-      if (tool.name) {
-        return [...accumulator, {
-          name: tool.name,
-        }];
-      } else {
-        return accumulator;
-      }
-    }, []),
-    skills: parsed.skills?.reduce<Skill[]>((accumulator, skill) => {
-      if (skill.name) {
-        return [...accumulator, {
-          name: skill.name,
-        }];
-      } else {
-        return accumulator;
-      }
-    }, []),
-    projects: parsed.projects?.reduce<Project[]>((accumulator, project) => {
-      if (project.name && project.url) {
-        return [...accumulator, {
-          name: project.name,
-          url: project.url,
-          additionalDetails: project.additionalDetails || '',
-        }];
-      } else {
-        return accumulator;
-      }
-    }, []),
-    recommendations: parsed.recommendations?.reduce<Recommendation[]>((accumulator, recommendation) => {
-      if (recommendation.name && recommendation.url) {
-        return [...accumulator, {
-          name: recommendation.name,
-          url: recommendation.url,
-          additionalDetails: recommendation.additionalDetails || '',
-        }];
-      } else {
-        return accumulator;
-      }
-    }, []),
-  };
 };

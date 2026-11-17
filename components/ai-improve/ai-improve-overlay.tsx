@@ -11,7 +11,7 @@ import { AnswerReview } from './answer-review';
 import { ProposalReview } from './proposal-review';
 import { ResumeQuestions } from './resume-questions';
 
-/** The session state the overlay renders; `useAiImprove` in `app/resume/hooks` provides it. */
+/** The session state the overlay renders; `useServiceImprove` in `app/resume/hooks` provides it. */
 export type AiImproveOverlaySession = {
   step: 'idle' | 'loadingQuestions' | 'questions' | 'answerReview' | 'loadingProposal' | 'proposalReview' | 'error' | 'capped';
   questions: OnboardingQuestion[];

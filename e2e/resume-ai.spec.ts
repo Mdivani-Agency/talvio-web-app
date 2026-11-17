@@ -15,9 +15,12 @@ import {
 } from './fixtures/resume-ui';
 import { listResumes, seedResume, SEEDED_RESUME_CONTENT } from './fixtures/resumes';
 
-// Local E2E builds set NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE=true (scripts/e2e-env.mjs).
-const POLISHED = 'AI polished summary for the local profile.';
-const FIRST_QUESTION = 'What impact did you deliver in your latest role?';
+// Local E2E builds set NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE=true (scripts/e2e-env.mjs). Improve with AI
+// runs on the local LLM service stand-in (e2e/services/llm-api.mjs): one question, then a proposal that
+// rewrites the summary and adds a skill that applies only once confirmed.
+const POLISHED = 'Engineer who ships reliable tools.';
+const FIRST_QUESTION = 'How many people used what you built?';
+const SESSION_PREFIX = 'talvio-llm-improve:v1:';
 
 test.describe.configure({ timeout: 180_000 });
 
@@ -40,7 +43,6 @@ async function answerQuestions(page: Page) {
   await expect(panel.getByText(FIRST_QUESTION)).toBeVisible({ timeout: 30_000 });
   await panel.getByPlaceholder('Your answer...').fill('Cut deploy time in half');
   await panel.getByRole('button', { name: 'Next' }).click();
-  await panel.getByRole('button', { name: 'Skip' }).click();
   await expect(panel.getByRole('heading', { name: 'Review your answers' })).toBeVisible();
   await expect(panel.getByText('Cut deploy time in half')).toBeVisible();
 }
@@ -110,11 +112,12 @@ test('RES-10 improves from the download dialog, and Reject leaves the resume as 
 
   // A session kept for later (Close at the daily cap) goes with the draft once the PDF is generated,
   // so the next new resume does not reopen it.
-  await page.evaluate((sessionKey) => window.localStorage.setItem(sessionKey, '{"kept":true}'), `${key}:ai-improve`);
+  const sessionKey = `${SESSION_PREFIX}${key}:ai-improve`;
+  await page.evaluate((stored) => window.localStorage.setItem(stored, '{"v":1}'), sessionKey);
   await openResumeSection(page, 'Contact Information', 'Email');
   await page.getByPlaceholder('Email').fill('dialog.owner@talvio.test');
   await generateFromModal(page, 'Dialog Owner');
-  expect(await page.evaluate((sessionKey) => window.localStorage.getItem(sessionKey), `${key}:ai-improve`)).toBeNull();
+  expect(await page.evaluate((stored) => window.localStorage.getItem(stored), sessionKey)).toBeNull();
 });
 
 test('RES-11 provider failures and the daily cap leave the resume unchanged and recover in the overlay', async ({ page, personas }) => {
@@ -137,14 +140,8 @@ test('RES-11 provider failures and the daily cap leave the resume unchanged and 
   await expect(overlay(page)).toHaveCount(0);
   expect(await seededTagline(owner.userId, resumeId)).toBeNull();
 
-  // Spend the rest of today's AI requests, then the overlay shows the cap instead of a failure.
-  await setScenario('success');
-  for (let attempt = 0; attempt < 25; attempt += 1) {
-    const response = await page.request.post('/api/resume/parse', { data: { resume: 'Ada Owner, Engineer' } });
-    if (response.status() === 429) {
-      break;
-    }
-  }
+  // At the service's daily quota the overlay shows the cap instead of a failure.
+  await setScenario('llm_quota');
   await page.getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await expect(overlay(page).getByRole('heading', { name: 'Daily AI limit reached' })).toBeVisible({ timeout: 30_000 });
   await overlay(page).getByRole('button', { name: 'Close', exact: true }).click();
@@ -203,7 +200,7 @@ test('RES-13 a generated resume forks a draft first, and the draft takes the edi
   await expect(page.getByRole('button', { name: 'Improve with AI', exact: true })).toHaveCount(0);
 });
 
-test('RES-14 reload keeps the session, and an edited resume drops it', async ({ page, personas }) => {
+test('RES-14 reload keeps the session, and an edit made since drops the suggestion it would overwrite', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openSignedIn(page, empty, '/resume');
   await startNewResume(page, 'Stale');
@@ -213,22 +210,26 @@ test('RES-14 reload keeps the session, and an edited resume drops it', async ({ 
   await page.reload();
   await expect(overlay(page).getByRole('heading', { name: 'Review your answers' })).toBeVisible();
   await expect(overlay(page).getByText('Cut deploy time in half')).toBeVisible();
+  await overlay(page).getByRole('button', { name: 'Improve with AI', exact: true }).click();
+  await expect(overlay(page).getByText(POLISHED)).toBeVisible({ timeout: 30_000 });
 
-  // Another tab changes the stored resume; the session was made for the old one. Leave the editor
-  // first: it flushes its own draft on pagehide, which would overwrite an edit made while it is open.
+  // Another tab writes a summary after the suggestion was made. Leave the editor first: it flushes
+  // its own draft on pagehide, which would overwrite an edit made while it is open.
   const key = `talvio-draft-v1:resume:user:${empty.userId}:new`;
   await page.goto('/templates');
   await page.evaluate((draftKey) => {
     const draft = JSON.parse(window.localStorage.getItem(draftKey) ?? 'null');
-    draft.content.resume.profile.role = 'Edited Elsewhere';
+    draft.content.resume.profile.tagline = 'Edited Elsewhere';
     window.localStorage.setItem(draftKey, JSON.stringify(draft));
   }, key);
   await page.goto('/resume');
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Edited Elsewhere');
+  await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('Edited Elsewhere');
+  await expect(overlay(page).getByRole('heading', { name: 'Suggested edits' })).toBeVisible({ timeout: 30_000 });
+  await expect(overlay(page).getByText(/One suggestion was left out/)).toBeVisible();
+  await expect(overlay(page).getByText(POLISHED)).toHaveCount(0);
+  await overlay(page).getByRole('button', { name: 'Accept' }).click();
   await expect(overlay(page)).toHaveCount(0);
-  expect(await page.evaluate((sessionKey) => window.localStorage.getItem(sessionKey), `${key}:ai-improve`)).toBeNull();
-
-  await improveFromActionBar(page);
-  await expect(overlay(page).getByText(FIRST_QUESTION)).toBeVisible({ timeout: 30_000 });
-  expect((await mediaStats()).ai.questions).toBe(2);
+  await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('Edited Elsewhere');
+  expect(await page.evaluate((stored) => window.localStorage.getItem(stored), `${SESSION_PREFIX}${key}:ai-improve`)).toBeNull();
+  expect((await mediaStats()).ai).toMatchObject({ questions: 1, tailor: 1 });
 });

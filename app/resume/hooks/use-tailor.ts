@@ -21,7 +21,7 @@ import { reviewTailoring, tailorResultFromEnvelope, type TailorResult } from '@l
 import type { PreviewDto, ResumeForm } from '@lib/types';
 
 /*
- * Tailor a resume to a job post on the LLM service (MDI-221), behind NEXT_PUBLIC_FLAG_LLM_SERVICE:
+ * Tailor a resume to a job post on the LLM service (MDI-221):
  * 1. A `tailor` session with the source (the profile or a saved resume) and the job post.
  * 2. A generate_questions job asks about gaps between the two; answers go to /answers once.
  * 3. A tailor_resume job composes the resume as changes and omissions, with requirement coverage.
