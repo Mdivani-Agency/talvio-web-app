@@ -18,6 +18,14 @@ export const HERO_TITLE = 'Free PDF resume generator';
 export const HERO_BODY =
   'Write your experience once, pick a template, and download a clean resume PDF. Free forever, no card needed.';
 
+/** The hero's template panel: two tilted templates behind, one upright in front. Alt text names the level and the template. */
+export const HERO_ART_LABEL = 'Three Talvio resume templates';
+export const HERO_TEMPLATES = {
+  left: { src: '/templates/entry-level-mint.png', alt: 'Entry-level resume in the Mint template' },
+  right: { src: '/templates/senior-level-ember.png', alt: 'Senior resume in the Ember template' },
+  front: { src: '/templates/mid-level-talvio.png', alt: 'Mid-level resume in the Talvio template' },
+} as const;
+
 export const WORKFLOW_TITLE = 'From your profile to a resume PDF';
 
 export const WORKFLOW_STEPS = [
@@ -110,6 +118,8 @@ export function homepageCopyText(): string {
   return [
     HERO_TITLE,
     HERO_BODY,
+    HERO_ART_LABEL,
+    ...Object.values(HERO_TEMPLATES).map((template) => template.alt),
     PRIMARY_CTA_LABEL,
     SECONDARY_CTA_LABEL,
     WORKFLOW_TITLE,

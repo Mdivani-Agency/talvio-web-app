@@ -121,6 +121,37 @@ test('PUB-04 the homepage says what is free and mentions no credits or prices', 
   expect(await page.locator('body').innerText()).not.toMatch(/credit|\$\d|subscription/i);
 });
 
+test('PUB-05c the homepage hero shows three templates, links without nested buttons, and paints the front template last', async ({ page }) => {
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/home');
+    const hero = page.getByRole('main').locator('section').first();
+    for (const name of ['Entry-level resume in the Mint template', 'Senior resume in the Ember template', 'Mid-level resume in the Talvio template']) {
+      await expect(hero.getByRole('img', { name }), `${viewport.width}px ${name}`).toBeVisible();
+    }
+    await expect(hero.locator('a button, button a')).toHaveCount(0);
+    await expect(hero.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(hero.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
+  }
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/home');
+  await page.waitForLoadState('networkidle');
+  const lcp = await page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        new PerformanceObserver((list) => {
+          const entries = list.getEntries() as (PerformanceEntry & { element?: Element | null })[];
+          resolve(entries.at(-1)?.element?.getAttribute('alt') ?? '');
+        }).observe({ type: 'largest-contentful-paint', buffered: true });
+      }),
+  );
+  expect(lcp).toBe('Mid-level resume in the Talvio template');
+});
+
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/templates');
