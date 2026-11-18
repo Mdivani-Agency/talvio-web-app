@@ -106,7 +106,8 @@ test('PUB-02 desktop navigation reaches sections, templates, and sign-in', async
 
 test('PUB-04 the homepage says what is free and mentions no credits or prices', async ({ page }) => {
   await page.goto('/home');
-  await expect(page.getByText('Talvio Beta', { exact: true })).toBeVisible();
+  await expect(page.locator('header').first().getByText('Beta', { exact: true })).toBeVisible();
+  await expect(page.getByRole('main').getByText(/Talvio Beta/)).toHaveCount(0);
   await page.locator('header').first().getByRole('link', { name: "What's free" }).click();
   await expect(page).toHaveURL(/#whats-free$/);
   await expect(page.getByRole('heading', { name: '3 new resume PDFs every month' })).toBeVisible();
@@ -219,6 +220,8 @@ for (const viewport of [
           const ownText = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
           const rect = element.getBoundingClientRect();
           if (!ownText || rect.width <= 1 || rect.height <= 1 || !element.checkVisibility()) continue;
+          // Tags such as the header Beta tag are 12px by design.
+          if (element.closest('[data-allow-small-text]')) continue;
           if (parseFloat(getComputedStyle(element).fontSize) < 16) smallText.push(element.textContent?.trim().slice(0, 40) ?? '');
         }
         // A band is a block at least one screen tall with no image and little text.
@@ -255,6 +258,7 @@ test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) =
   await menu.click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('link', { name: 'Sign in' })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Start free', exact: true })).toBeVisible();
   await expect(dialog.getByRole('link', { name: 'Benefits' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
@@ -275,6 +279,8 @@ test('PUB-03 every public page links to the other public pages from the header a
     await expect(header.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
     await expect(header.getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('href', '/blog');
     await expect(header.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(header.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(header.getByText('Beta', { exact: true })).toBeVisible();
     await expect(page.locator('h1')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
@@ -302,19 +308,25 @@ test('PUB-03 the mobile menu lists the same links as the desktop header, all as 
   await expect(dialog.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
   await expect(dialog.getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('href', '/blog');
   await expect(dialog.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(dialog.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
   await expect(dialog.getByText('Account', { exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test('PUB-03 the homepage header does not wrap its links at tablet widths', async ({ page }) => {
-  await page.setViewportSize({ width: 768, height: 900 });
-  await page.goto('/home');
+test('PUB-03 the homepage header does not wrap its links or overflow at tablet and desktop widths', async ({ page }) => {
   const header = page.locator('header').first();
-  await expect(header.getByRole('button', { name: 'Open menu' })).toBeVisible();
+  for (const width of [768, 1024, 1279]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/home');
+    await expect(header.getByRole('button', { name: 'Open menu' }), `${width}px`).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${width}px`).toBe(true);
+  }
 
-  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/home');
   await expect(header.getByRole('button', { name: 'Open menu' })).toBeHidden();
+  await expect(header.getByRole('link', { name: 'Start free', exact: true })).toBeInViewport({ ratio: 1 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const name of ['Workflow', 'Benefits', "What's free", 'FAQ', 'Templates', 'ATS-friendly resume', 'Blog']) {
     const box = await header.getByRole('link', { name, exact: true }).boundingBox();
     expect(box?.height ?? 0, `${name} wraps`).toBeLessThan(30);

@@ -6,7 +6,7 @@ import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, SUPPORT_ANSWER } from './p
  */
 
 /** Sitemap date (ISO). Change it with the homepage copy. */
-export const HOME_LAST_MODIFIED = '2026-10-11';
+export const HOME_LAST_MODIFIED = '2026-11-18';
 
 /** New visitors sign in here. There is no separate sign-up route. */
 export const PRIMARY_CTA_HREF = '/auth/sign-in';
@@ -14,8 +14,6 @@ export const PRIMARY_CTA_LABEL = 'Start free';
 export const SECONDARY_CTA_HREF = '/templates';
 export const SECONDARY_CTA_LABEL = 'See templates';
 
-// As written.
-export const HERO_BADGE = 'Talvio Beta';
 export const HERO_TITLE = 'Free PDF resume generator';
 export const HERO_BODY =
   'Write your experience once, pick a template, and download a clean resume PDF. Free forever, no card needed.';
@@ -110,7 +108,6 @@ export const CTA_BODY = 'Free forever, no card needed. Talvio is in beta, and mo
 /** Every visible line on the homepage, for the copy tests. */
 export function homepageCopyText(): string {
   return [
-    HERO_BADGE,
     HERO_TITLE,
     HERO_BODY,
     PRIMARY_CTA_LABEL,

@@ -63,7 +63,7 @@ function SignInPageContent() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button
-            className="bg-[#FEFEFF] text-[#0d0d0d] flex items-center gap-2"
+            className="bg-[#FEFEFF] text-[#0d0d0d] dark:bg-[#FEFEFF] dark:hover:bg-[#F6F6FE] dark:hover:text-[#0d0d0d] flex items-center gap-2"
             onClick={() => void handleGoogleSignIn()}
             variant={'outline'}
           >
