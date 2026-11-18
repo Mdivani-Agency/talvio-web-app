@@ -20,7 +20,7 @@ import {
   TERMS_DESCRIPTION,
   TERMS_TITLE,
 } from './public-metadata';
-import { FOOTER_PAGE_LINKS, FOOTER_POWERED_BY_LEAD, HOME_NAV_LINKS, SIGN_IN_LABEL, footerCopyright } from './public-nav';
+import { BETA_TAG, FOOTER_PAGE_LINKS, FOOTER_POWERED_BY_LEAD, HOME_NAV_LINKS, SIGN_IN_LABEL, footerCopyright } from './public-nav';
 import { SIGN_IN_DIVIDER, SIGN_IN_GOOGLE_LABEL, SIGN_IN_HEADING, SIGN_IN_INTRO } from './sign-in-copy';
 import { TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO } from './templates-page-copy';
 import { TERMS } from './terms-copy';
@@ -31,7 +31,7 @@ const marketing: Record<string, string> = {
   templates: [TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO].join('\n'),
   'ATS guide': atsPageText(),
   'sign-in': [SIGN_IN_HEADING, SIGN_IN_INTRO, SIGN_IN_GOOGLE_LABEL, SIGN_IN_DIVIDER].join('\n'),
-  navigation: [...HOME_NAV_LINKS, ...FOOTER_PAGE_LINKS].map((link) => link.name).concat(SIGN_IN_LABEL, FOOTER_POWERED_BY_LEAD, footerCopyright(2026)).join('\n'),
+  navigation: [...HOME_NAV_LINKS, ...FOOTER_PAGE_LINKS].map((link) => link.name).concat(BETA_TAG, SIGN_IN_LABEL, FOOTER_POWERED_BY_LEAD, footerCopyright(2026)).join('\n'),
   claims: [DATA_SAFETY_ANSWER, ACCOUNT_DELETION_ANSWER, SUPPORT_ANSWER].join('\n'),
   metadata: [
     HOME_TITLE,
@@ -81,7 +81,8 @@ describe('public copy release rules', () => {
   });
 
   it('says beta and free forever, and states the monthly limit only where it applies', () => {
-    expect(marketing.homepage).toMatch(/Talvio Beta/);
+    expect(marketing.navigation).toMatch(/^Beta$/m);
+    expect(marketing.homepage).toMatch(/\bin beta\b/);
     expect(marketing.homepage).toMatch(/free forever/i);
     expect(HOME_DESCRIPTION).toMatch(/3 new resume PDFs every month/);
     for (const name of ['templates', 'ATS guide', 'sign-in', 'navigation']) {

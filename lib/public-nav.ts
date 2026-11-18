@@ -3,6 +3,9 @@ export type NavLink = { name: string; href: string };
 export const SIGN_IN_HREF = '/auth/sign-in';
 export const SIGN_IN_LABEL = 'Sign in';
 
+/** Tag beside the logo in the header while beta mode is on (`featureFlags().betaMode`). */
+export const BETA_TAG = 'Beta';
+
 /** Links to other public pages. Shown in the header on every public page. */
 export const PUBLIC_PAGE_LINKS: NavLink[] = [
   { name: 'Templates', href: '/templates' },

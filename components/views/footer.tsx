@@ -24,7 +24,7 @@ export const Footer = ({ children, className, size = 'small' }: PropsWithChildre
       <Logo size={size} />
       <div
         className={cn(
-          'mb-4 flex flex-col gap-4 border-b border-b-neutral-800 py-4 md:flex-row md:items-center md:justify-between',
+          'mb-4 flex flex-col gap-4 border-b border-b-input py-4 md:flex-row md:items-center md:justify-between',
           size === 'large' && 'mb-8 gap-8 py-11',
         )}
       >

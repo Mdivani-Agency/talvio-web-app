@@ -106,7 +106,8 @@ test('PUB-02 desktop navigation reaches sections, templates, and sign-in', async
 
 test('PUB-04 the homepage says what is free and mentions no credits or prices', async ({ page }) => {
   await page.goto('/home');
-  await expect(page.getByText('Talvio Beta', { exact: true })).toBeVisible();
+  await expect(page.locator('header').first().getByText('Beta', { exact: true })).toBeVisible();
+  await expect(page.getByRole('main').getByText(/Talvio Beta/)).toHaveCount(0);
   await page.locator('header').first().getByRole('link', { name: "What's free" }).click();
   await expect(page).toHaveURL(/#whats-free$/);
   await expect(page.getByRole('heading', { name: '3 new resume PDFs every month' })).toBeVisible();
@@ -118,6 +119,111 @@ test('PUB-04 the homepage says what is free and mentions no credits or prices', 
   await page.goto('/auth/sign-in');
   await expect(page.getByText('New here? Signing in creates your account. No card needed.')).toBeVisible();
   expect(await page.locator('body').innerText()).not.toMatch(/credit|\$\d|subscription/i);
+});
+
+test('PUB-05c the homepage hero shows three templates, links without nested buttons, and paints the front template last', async ({ page }) => {
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/home');
+    const hero = page.getByRole('main').locator('section').first();
+    for (const name of ['Entry-level resume in the Mint template', 'Senior resume in the Ember template', 'Mid-level resume in the Talvio template']) {
+      await expect(hero.getByRole('img', { name }), `${viewport.width}px ${name}`).toBeVisible();
+    }
+    await expect(hero.locator('a button, button a')).toHaveCount(0);
+    await expect(hero.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(hero.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
+  }
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/home');
+  await page.waitForLoadState('networkidle');
+  const lcp = await page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        new PerformanceObserver((list) => {
+          const entries = list.getEntries() as (PerformanceEntry & { element?: Element | null })[];
+          resolve(entries.at(-1)?.element?.getAttribute('alt') ?? '');
+        }).observe({ type: 'largest-contentful-paint', buffered: true });
+      }),
+  );
+  expect(lcp).toBe('Mid-level resume in the Talvio template');
+});
+
+test('PUB-05d workflow step numbers and benefit icons stand out from their cards in both themes', async ({ page }) => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/home');
+    const workflow = page.locator('#workflow');
+    await expect(workflow.locator('ol > li')).toHaveCount(3);
+    const tiles = await workflow.locator('ol > li').evaluateAll((items) =>
+      items.map((item) => {
+        const number = item.querySelector('[aria-hidden="true"]') as HTMLElement;
+        return {
+          card: getComputedStyle(item).backgroundColor,
+          tile: getComputedStyle(number).backgroundColor,
+          text: number.textContent?.trim(),
+        };
+      }),
+    );
+    expect(tiles.map((tile) => tile.text), colorScheme).toEqual(['1', '2', '3']);
+    for (const tile of tiles) expect(tile.tile, colorScheme).not.toBe(tile.card);
+
+    const benefits = page.locator('#benefits');
+    await expect(benefits.getByRole('img', { name: 'Phone showing a Talvio resume template' })).toBeVisible();
+    await expect(benefits.getByRole('heading', { level: 3 })).toHaveText(['Write it once', 'A layout that fits', 'You stay in control']);
+    const icons = await benefits.locator('ul > li').evaluateAll((items) =>
+      items.map((item) => [getComputedStyle(item).backgroundColor, getComputedStyle(item.querySelector('[aria-hidden="true"]')!).backgroundColor]),
+    );
+    for (const [card, tile] of icons) expect(tile, colorScheme).not.toBe(card);
+  }
+});
+
+test('PUB-05e the FAQ opens its first answer and toggles by keyboard; the closing panel links and fits a phone', async ({ page }) => {
+  await page.goto('/home');
+  const faq = page.locator('#faq');
+  await expect(faq.getByRole('heading', { name: 'Frequently asked questions', level: 2 })).toBeVisible();
+  const items = faq.locator('details');
+  await expect(items).toHaveCount(9);
+  await expect(items.first()).toHaveAttribute('open', '');
+  await expect(items.first().getByText('Every account can create 3 new resume PDFs each month', { exact: false })).toBeVisible();
+  for (let index = 1; index < 9; index++) {
+    await expect(items.nth(index)).not.toHaveAttribute('open', '');
+  }
+
+  // Every question is a native toggle reachable with the keyboard.
+  const second = items.nth(1);
+  await second.locator('summary').focus();
+  await expect(second.locator('summary')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(second).toHaveAttribute('open', '');
+  await page.keyboard.press('Enter');
+  await expect(second).not.toHaveAttribute('open', '');
+
+  const closing = page.getByRole('heading', { name: 'Start your first resume', level: 2 }).locator('xpath=ancestor::section[1]');
+  await expect(closing.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(closing.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
+  await expect(closing.getByRole('img', { name: 'Hand holding a phone with the Talvio welcome screen' })).toBeVisible();
+  await expect(closing.locator('a button, button a')).toHaveCount(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/home');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect(closing.getByRole('img', { name: 'Hand holding a phone with the Talvio welcome screen' })).toBeHidden();
+  const tiles = await page.locator('#whats-free [data-doc-tile]').evaluateAll((elements) =>
+    elements.map((tile) => {
+      const box = tile.getBoundingClientRect();
+      const number = tile.querySelector('[data-doc-number]')!.getBoundingClientRect();
+      return { inside: number.left >= box.left && number.right <= box.right && number.top >= box.top && number.bottom <= box.bottom, right: box.right };
+    }),
+  );
+  expect(tiles).toHaveLength(3);
+  for (const tile of tiles) {
+    expect(tile.inside).toBe(true);
+    expect(tile.right).toBeLessThanOrEqual(390);
+  }
 });
 
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
@@ -219,6 +325,8 @@ for (const viewport of [
           const ownText = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
           const rect = element.getBoundingClientRect();
           if (!ownText || rect.width <= 1 || rect.height <= 1 || !element.checkVisibility()) continue;
+          // Tags such as the header Beta tag are 12px by design.
+          if (element.closest('[data-allow-small-text]')) continue;
           if (parseFloat(getComputedStyle(element).fontSize) < 16) smallText.push(element.textContent?.trim().slice(0, 40) ?? '');
         }
         // A band is a block at least one screen tall with no image and little text.
@@ -255,6 +363,7 @@ test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) =
   await menu.click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('link', { name: 'Sign in' })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Start free', exact: true })).toBeVisible();
   await expect(dialog.getByRole('link', { name: 'Benefits' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
@@ -275,6 +384,8 @@ test('PUB-03 every public page links to the other public pages from the header a
     await expect(header.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
     await expect(header.getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('href', '/blog');
     await expect(header.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(header.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(header.getByText('Beta', { exact: true })).toBeVisible();
     await expect(page.locator('h1')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
@@ -302,19 +413,25 @@ test('PUB-03 the mobile menu lists the same links as the desktop header, all as 
   await expect(dialog.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
   await expect(dialog.getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('href', '/blog');
   await expect(dialog.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(dialog.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
   await expect(dialog.getByText('Account', { exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test('PUB-03 the homepage header does not wrap its links at tablet widths', async ({ page }) => {
-  await page.setViewportSize({ width: 768, height: 900 });
-  await page.goto('/home');
+test('PUB-03 the homepage header does not wrap its links or overflow at tablet and desktop widths', async ({ page }) => {
   const header = page.locator('header').first();
-  await expect(header.getByRole('button', { name: 'Open menu' })).toBeVisible();
+  for (const width of [768, 1024, 1279]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/home');
+    await expect(header.getByRole('button', { name: 'Open menu' }), `${width}px`).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${width}px`).toBe(true);
+  }
 
-  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/home');
   await expect(header.getByRole('button', { name: 'Open menu' })).toBeHidden();
+  await expect(header.getByRole('link', { name: 'Start free', exact: true })).toBeInViewport({ ratio: 1 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const name of ['Workflow', 'Benefits', "What's free", 'FAQ', 'Templates', 'ATS-friendly resume', 'Blog']) {
     const box = await header.getByRole('link', { name, exact: true }).boundingBox();
     expect(box?.height ?? 0, `${name} wraps`).toBeLessThan(30);

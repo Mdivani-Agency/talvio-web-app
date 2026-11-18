@@ -1,14 +1,20 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { BRIEF_BANNED_TERMS, wordCount } from '@/test/utils/public-copy';
 
 import {
   BENEFITS,
+  BENEFITS_ART_ALT,
   BENEFITS_TITLE,
+  CTA_ART_ALT,
   CTA_BODY,
   CTA_TITLE,
-  HERO_BADGE,
+  HERO_ART_LABEL,
   HERO_BODY,
+  HERO_TEMPLATES,
   HERO_TITLE,
   HOME_FAQ,
   homepageCopyText,
@@ -17,6 +23,7 @@ import {
   SECONDARY_CTA_HREF,
   SECONDARY_CTA_LABEL,
   WHATS_FREE_BODY,
+  WHATS_FREE_DOC_LABEL,
   WHATS_FREE_ID,
   WHATS_FREE_NAME,
   WHATS_FREE_TITLE,
@@ -32,7 +39,6 @@ const unsupported = /application track|job application|per-application|GDPR|care
 
 describe('homepage copy', () => {
   it('uses the messaging brief lines as written', () => {
-    expect(HERO_BADGE).toBe('Talvio Beta');
     expect(HERO_TITLE).toBe('Free PDF resume generator');
     expect(HERO_BODY).toBe(
       'Write your experience once, pick a template, and download a clean resume PDF. Free forever, no card needed.',
@@ -50,6 +56,21 @@ describe('homepage copy', () => {
     expect(PRIMARY_CTA_HREF).toBe('/auth/sign-in');
     expect(SECONDARY_CTA_LABEL).toBe('See templates');
     expect(SECONDARY_CTA_HREF).toBe('/templates');
+  });
+
+  it('shows three real templates in the hero, each named by level and template in its alt text', () => {
+    expect(HERO_ART_LABEL).toBe('Three Talvio resume templates');
+    const templates = Object.values(HERO_TEMPLATES);
+    expect(new Set(templates.map((template) => template.src)).size).toBe(3);
+    for (const { src, alt } of templates) {
+      const [, level, name] = /^\/templates\/(entry|mid|senior)-level-(\w+)\.png$/.exec(src) ?? [];
+      expect(level, src).toBeDefined();
+      expect(existsSync(join(process.cwd(), 'public', src)), src).toBe(true);
+      expect(alt.toLowerCase(), src).toContain(`${name} template`);
+      expect(alt.toLowerCase(), src).toContain(level === 'senior' ? 'senior' : `${level}-level`);
+    }
+    expect(HERO_TEMPLATES.front.alt).toBe('Mid-level resume in the Talvio template');
+    expect(homepageCopyText()).not.toMatch(/laptop/i);
   });
 
   it('keeps every block inside its word budget', () => {
@@ -93,6 +114,19 @@ describe('homepage copy', () => {
     for (const benefit of BENEFITS) {
       expect(benefit.body).not.toMatch(/free/i);
     }
+  });
+
+  it('labels the decorative documents and describes the closing image', () => {
+    expect(WHATS_FREE_DOC_LABEL).toBe('PDF');
+    expect(CTA_ART_ALT).toBe('Hand holding a phone with the Talvio welcome screen');
+    expect(homepageCopyText()).toContain(CTA_ART_ALT);
+  });
+
+  it('keeps the workflow at three steps and describes the phone beside the benefits', () => {
+    expect(WORKFLOW_STEPS.map((step) => step.title)).toEqual(['Sign in', 'Add your experience', 'Download your resume']);
+    expect(BENEFITS).toHaveLength(3);
+    expect(BENEFITS_ART_ALT).toBe('Phone showing a Talvio resume template');
+    expect(homepageCopyText()).toContain(BENEFITS_ART_ALT);
   });
 
   it('answers the brief FAQ and drops the credit and subscription questions', () => {

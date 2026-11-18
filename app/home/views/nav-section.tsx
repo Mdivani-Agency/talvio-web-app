@@ -1,4 +1,5 @@
 import { PropsWithChildren } from 'react';
+import { HomeSectionHeading } from './home-section-heading';
 
 type NavSectionProps = {
   id: string;
@@ -6,13 +7,18 @@ type NavSectionProps = {
   name: string;
 };
 
+/** Container width and padding shared by every homepage section below the hero. */
+export const HOME_SECTION_CLASS = 'mx-auto w-full max-w-[120rem] py-[5.6rem] lg:px-4 lg:py-[9.6rem]';
+
+/** A homepage section with an eyebrow and a centred heading. Used by Workflow and Benefits. */
 export const NavSection = ({ id, title, name, children }: PropsWithChildren<NavSectionProps>) => {
   return (
-    <section id={id} className={'w-full py-16 max-w-container-3xl mx-auto'}>
-      <div className={'mb-6 text-center lg:mb-22'}>
-        <p className={'mb-4 text-lg font-medium text-secondary lg:mb-6'}>{name}</p>
-        <h2 className={'font-semibold text-2xl text-primary'}>{title}</h2>
-      </div>
+    <section id={id} className={HOME_SECTION_CLASS}>
+      <HomeSectionHeading
+        name={name}
+        title={title}
+        className={'mx-auto mb-8 max-w-[80rem] text-center lg:mb-[5.6rem]'}
+      />
       {children}
     </section>
   );
