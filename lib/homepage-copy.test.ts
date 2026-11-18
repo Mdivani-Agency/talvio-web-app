@@ -7,6 +7,7 @@ import { BRIEF_BANNED_TERMS, wordCount } from '@/test/utils/public-copy';
 
 import {
   BENEFITS,
+  BENEFITS_ART_ALT,
   BENEFITS_TITLE,
   CTA_BODY,
   CTA_TITLE,
@@ -111,6 +112,13 @@ describe('homepage copy', () => {
     for (const benefit of BENEFITS) {
       expect(benefit.body).not.toMatch(/free/i);
     }
+  });
+
+  it('keeps the workflow at three steps and describes the phone beside the benefits', () => {
+    expect(WORKFLOW_STEPS.map((step) => step.title)).toEqual(['Sign in', 'Add your experience', 'Download your resume']);
+    expect(BENEFITS).toHaveLength(3);
+    expect(BENEFITS_ART_ALT).toBe('Phone showing a Talvio resume template');
+    expect(homepageCopyText()).toContain(BENEFITS_ART_ALT);
   });
 
   it('answers the brief FAQ and drops the credit and subscription questions', () => {
