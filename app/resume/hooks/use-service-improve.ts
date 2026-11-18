@@ -238,7 +238,7 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
   }, [persist]);
 
   // A finished job moves the session on; a failed one shows why. Called by the job runner.
-  const onSettled = useCallback((settled: Extract<LlmJobState, { phase: 'succeeded' | 'failed' }>, clear: () => void) => {
+  const onSettled = useCallback((settled: Extract<LlmJobState, { phase: 'succeeded' | 'failed' }>, clear: () => void, { resumable }: { resumable: boolean }) => {
     const session = storedRef.current;
     if (!session) {
       return;
@@ -247,6 +247,11 @@ export function useServiceImprove({ resume, storageKey, source, locale = 'en-US'
     if (settled.phase === 'failed') {
       // `running` keeps the stage: after a reload the failed job settles again and Retry must
       // still know it was a proposal job. The failure shows over the wait.
+      if (!resumable) {
+        // A refused submission (such as the daily limit) left no job to wait for: drop the marker,
+        // keeping the answers, so opening this again can start over instead of waiting forever.
+        persist({ ...session, running: null });
+      }
       fail(stage, settled.error);
       return;
     }

@@ -100,6 +100,21 @@ describe('useResumeParser', () => {
     expect(events.onError.mock.calls[0]![0]).toMatchObject({ code: 'quota_exceeded', message: 'You have used today’s AI jobs.' });
   });
 
+  it('keeps the submission key when the proxy times out, so importing again rejoins the job', async () => {
+    const timeout: [number, unknown] = [504, { error: { code: 'dependency_unavailable', message: 'Timed out.', retryable: true, correlationId: 'c' } }];
+    respondWith(timeout, timeout, timeout);
+    const { result, events } = setup();
+    await act(async () => {
+      await result.current.parsePastedText('Some resume');
+    });
+    await waitFor(() => expect(events.onError).toHaveBeenCalled(), { timeout: 10_000 });
+    expect(events.onError.mock.calls[0]![0]).toMatchObject({ code: 'dependency_unavailable' });
+    const stored = JSON.parse(window.localStorage.getItem(importJobStorageKey('user-1', 'onboarding'))!);
+    expect(stored).toMatchObject({ jobId: null, request: { operation: 'parse_document' } });
+    const keys = authedFetch.mock.calls.map(([, init]) => JSON.parse(init.body).clientRequestId);
+    expect(new Set(keys)).toEqual(new Set([stored.clientRequestId]));
+  }, 15_000);
+
   it('is busy while a PDF is read, and a newer paste wins over it', async () => {
     let finishRead: (value: unknown) => void = () => undefined;
     extractPdfPages.mockReturnValueOnce(new Promise((resolve) => { finishRead = resolve; }));
