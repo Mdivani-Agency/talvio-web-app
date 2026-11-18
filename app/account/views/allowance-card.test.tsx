@@ -40,6 +40,29 @@ describe('AllowanceCard', () => {
     expect(screen.queryByTestId('allowance-exhausted')).toBeNull();
   });
 
+  it.each([
+    [90, 0],
+    [60, 1],
+    [0, 3],
+  ])('fills the meter for a balance of %i with %i used segments, labelled like the line', (balance, used) => {
+    setCredits(balance);
+    render(<AllowanceCard />);
+
+    const meter = screen.getByTestId('allowance-meter');
+    expect(meter.getAttribute('role')).toBe('img');
+    expect(meter.getAttribute('aria-label')).toBe(screen.getByTestId('allowance-remaining').textContent);
+    const segments = Array.from(meter.children);
+    expect(segments).toHaveLength(3);
+    expect(segments.filter((segment) => segment.getAttribute('data-used') === 'true')).toHaveLength(used);
+  });
+
+  it('labels the card with a Resume PDFs heading', () => {
+    setCredits(60);
+    render(<AllowanceCard />);
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Resume PDFs' })).toBeTruthy();
+  });
+
   it('shows zero with the date more PDFs arrive', () => {
     setCredits(0);
     render(<AllowanceCard />);

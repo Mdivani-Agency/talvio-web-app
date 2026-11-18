@@ -1,4 +1,5 @@
 export * from "./header";
+export * from "./beta-tag";
 export * from "./sticky-header";
 export * from "./user-avatar";
 export * from "./footer";

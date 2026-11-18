@@ -1,61 +1,52 @@
 import { Profile } from '@lib/types';
-import { Button, Card, CardContent, DisplayUrl, Label } from '@components/ui';
 import { formatLocation } from '@lib/utils';
-import { Icon } from '@components/icons';
+import { Globe, Mail, MapPin, Phone } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { PROFILE_SECTION_TITLES } from '@/lib/account-copy';
+import { ProfileBlock } from './profile-block';
 
 type ProfileProps = {
   profile: Profile;
 };
 
+const iconClassName = 'size-[1.4rem] shrink-0 text-muted-foreground';
+
 export const ProfileSection = ({ profile }: ProfileProps) => {
+  const location = profile.city || profile.country ? formatLocation({ city: profile.city, country: profile.country }) : '';
+  const contacts: { key: string; icon: ReactNode; content: ReactNode }[] = [
+    profile.email && { key: 'email', icon: <Mail aria-hidden="true" className={iconClassName} />, content: profile.email },
+    profile.phone && { key: 'phone', icon: <Phone aria-hidden="true" className={iconClassName} />, content: profile.phone },
+    profile.website && {
+      key: 'website',
+      icon: <Globe aria-hidden="true" className={iconClassName} />,
+      content: (
+        <a href={profile.website} target="_blank" rel="noopener noreferrer" className="break-all hover:underline">
+          {profile.website.replace(/^https?:\/\//, '')}
+        </a>
+      ),
+    },
+    location && { key: 'location', icon: <MapPin aria-hidden="true" className={iconClassName} />, content: location },
+  ].filter(Boolean) as { key: string; icon: ReactNode; content: ReactNode }[];
+
   return (
-    <section className={'w-full pr-8'}>
-      <Label
-        variant={'default'}
-        size='lg'
-        className='mb-2'
-      >
-        Profile
-        <Button variant={'ghost'} size={'icon'} className={'ml-auto'}>
-          <Icon type={'Edit'} />
-        </Button>
-      </Label>
-      <Card>
-        <CardContent>
-        <div className={'flex flex-col mb-1'}>
-          <span className={'text-lg font-semibold'}>
-            {profile.firstName} {profile.lastName}
-          </span>
-          <span className={'text-sm text-muted-foreground font-regular'}>{profile.role}</span>
-        </div>
-        <div className={'flex items-center gap-4'}>
-          <div className={'flex items-center gap-1'}>
-            <Icon className={'size-3 text-primary'} type={'Email'} />
-            <span className={'text-sm'}>{profile.email}</span>
-          </div>
-          {profile.website && <DisplayUrl url={profile.website} />}
-          {profile.phone && (
-            <div className={'flex items-center gap-1'}>
-              <Icon className={'size-3 text-primary'} type={'Phone'} />
-              <span className={'text-sm'}>{profile.phone}</span>
-            </div>
-          )}
-          {(profile.city || profile.country) && (
-            <div className={'flex items-center gap-1'}>
-              <Icon className={'size-3 text-primary'} type={'Pin'} />
-              <span className={'text-sm'}>
-                {formatLocation({ city: profile.city, country: profile.country })}
-              </span>
-            </div>
-          )}
-        </div>
-        {profile.tagline && (
-          <div className={'py-2'}>
-            <p className={'text-sm'}>{profile.tagline}</p>
-          </div>
-        )}
-        </CardContent>
-      </Card>
-    </section>
+    <ProfileBlock title={PROFILE_SECTION_TITLES.profile} bodyClassName="flex flex-col gap-3">
+      <div>
+        <p className="text-lg font-semibold text-primary">
+          {profile.firstName} {profile.lastName}
+        </p>
+        {profile.role ? <p className="text-sm text-muted-foreground">{profile.role}</p> : null}
+      </div>
+      {contacts.length ? (
+        <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          {contacts.map((contact) => (
+            <li key={contact.key} className="flex min-w-0 items-center gap-1.5">
+              {contact.icon}
+              <span className="min-w-0 break-words">{contact.content}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {profile.tagline ? <p className="text-sm leading-[1.5]">{profile.tagline}</p> : null}
+    </ProfileBlock>
   );
 };

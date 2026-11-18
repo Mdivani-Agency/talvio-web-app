@@ -18,7 +18,7 @@ test('isolated users sign in against the local production build', async ({ page,
   const complete = persona(personas, 'complete');
   await page.context().clearCookies();
   await signInWithLocalMagicLink(page, complete);
-  await expect(page.getByText('Ada Owner')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Owner' })).toBeVisible();
 
   const emptyRows = await readOwnedRows(empty);
   expect(emptyRows.profileCount).toBe(0);

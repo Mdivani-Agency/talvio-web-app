@@ -150,7 +150,7 @@ test('UX-03 failed profile, resume, and document reads recover, and a pending ge
   await expect(page.getByText('This is not treated as a new account.')).toBeVisible();
   profileFailure.stop();
   await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(page.getByText('Ada Owner')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Owner' })).toBeVisible();
 
   const resumeFailure = await failGraphql(page, 'ResumeById');
   await page.goto(`/resume/${resumeId}`);
