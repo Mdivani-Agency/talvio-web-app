@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Drawer, DrawerContent, DrawerDescription, DrawerTitle, DrawerTrigger, Logo } from '@components/ui';
-import { BetaTag } from '@components/views';
+import { BetaTag } from '@components/views/beta-tag';
 import { cn } from '@lib/utils';
 import { useUserSession } from '@lib/providers';
 import { useSignOut } from '@lib/auth/use-sign-out';
@@ -136,7 +136,7 @@ const PhoneBar = () => {
       <LogoWithTag />
       <span className="flex-1" />
       <Button asChild size={'icon'} className="size-[4.4rem]">
-        <Link href={CREATE_RESUME_HREF} aria-label={CREATE_RESUME_LABEL}>
+        <Link href={CREATE_RESUME_HREF} prefetch={false} aria-label={CREATE_RESUME_LABEL}>
           <Plus aria-hidden="true" className="size-[1.8rem]" />
         </Link>
       </Button>
@@ -168,8 +168,9 @@ export const Sidebar = () => {
         <div className="px-2">
           <LogoWithTag />
         </div>
+        {/* No prefetch: prefetching /resume loads the editor, whose PDF renderer fetches its default fonts from Google. */}
         <Button asChild className="h-[4.4rem] w-full text-sm">
-          <Link href={CREATE_RESUME_HREF}>
+          <Link href={CREATE_RESUME_HREF} prefetch={false}>
             <Plus aria-hidden="true" className="size-4" />
             {CREATE_RESUME_LABEL}
           </Link>
