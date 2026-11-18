@@ -1,6 +1,8 @@
 import { Button } from '@components/ui';
 import {
+  HERO_ART_LABEL,
   HERO_BODY,
+  HERO_TEMPLATES,
   HERO_TITLE,
   PRIMARY_CTA_HREF,
   PRIMARY_CTA_LABEL,
@@ -35,12 +37,12 @@ export const Hero = () => {
         </div>
       </div>
       <figure
-        aria-label={'Three Talvio resume templates'}
+        aria-label={HERO_ART_LABEL}
         className={'bg-card relative m-0 h-[34rem] w-full overflow-hidden rounded-xl lg:h-[46rem]'}
       >
         <Image
-          src={'/templates/entry-level-mint.png'}
-          alt={'Entry-level resume in the Mint template'}
+          src={HERO_TEMPLATES.left.src}
+          alt={HERO_TEMPLATES.left.alt}
           width={TEMPLATE_WIDTH}
           height={TEMPLATE_HEIGHT}
           loading="eager"
@@ -48,8 +50,8 @@ export const Hero = () => {
           className={`${templateClassName} top-[4.4rem] ml-[-16rem] w-[15rem] rotate-[-7deg] lg:top-[8.4rem] lg:ml-[-23rem] lg:w-[20rem]`}
         />
         <Image
-          src={'/templates/senior-level-ember.png'}
-          alt={'Senior resume in the Ember template'}
+          src={HERO_TEMPLATES.right.src}
+          alt={HERO_TEMPLATES.right.alt}
           width={TEMPLATE_WIDTH}
           height={TEMPLATE_HEIGHT}
           loading="eager"
@@ -58,8 +60,8 @@ export const Hero = () => {
         />
         {/* The front template is the hero's Largest Contentful Paint. */}
         <Image
-          src={'/templates/mid-level-talvio.png'}
-          alt={'Mid-level resume in the Talvio template'}
+          src={HERO_TEMPLATES.front.src}
+          alt={HERO_TEMPLATES.front.alt}
           width={TEMPLATE_WIDTH}
           height={TEMPLATE_HEIGHT}
           loading="eager"

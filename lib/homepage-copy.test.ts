@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { BRIEF_BANNED_TERMS, wordCount } from '@/test/utils/public-copy';
@@ -7,7 +10,9 @@ import {
   BENEFITS_TITLE,
   CTA_BODY,
   CTA_TITLE,
+  HERO_ART_LABEL,
   HERO_BODY,
+  HERO_TEMPLATES,
   HERO_TITLE,
   HOME_FAQ,
   homepageCopyText,
@@ -48,6 +53,21 @@ describe('homepage copy', () => {
     expect(PRIMARY_CTA_HREF).toBe('/auth/sign-in');
     expect(SECONDARY_CTA_LABEL).toBe('See templates');
     expect(SECONDARY_CTA_HREF).toBe('/templates');
+  });
+
+  it('shows three real templates in the hero, each named by level and template in its alt text', () => {
+    expect(HERO_ART_LABEL).toBe('Three Talvio resume templates');
+    const templates = Object.values(HERO_TEMPLATES);
+    expect(new Set(templates.map((template) => template.src)).size).toBe(3);
+    for (const { src, alt } of templates) {
+      const [, level, name] = /^\/templates\/(entry|mid|senior)-level-(\w+)\.png$/.exec(src) ?? [];
+      expect(level, src).toBeDefined();
+      expect(existsSync(join(process.cwd(), 'public', src)), src).toBe(true);
+      expect(alt.toLowerCase(), src).toContain(`${name} template`);
+      expect(alt.toLowerCase(), src).toContain(level === 'senior' ? 'senior' : `${level}-level`);
+    }
+    expect(HERO_TEMPLATES.front.alt).toBe('Mid-level resume in the Talvio template');
+    expect(homepageCopyText()).not.toMatch(/laptop/i);
   });
 
   it('keeps every block inside its word budget', () => {
