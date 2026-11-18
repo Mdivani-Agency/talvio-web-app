@@ -54,10 +54,27 @@ describe('/blog/[slug]', () => {
     expect(html).toContain('href="/blog"');
     expect(html).toContain('<time dateTime="2026-09-20T09:00:00.000Z">September 20, 2026</time>');
     expect(html).toContain('<time dateTime="2026-09-25T09:00:00.000Z">September 25, 2026</time>');
-    expect(html).toContain('<strong>text</strong>');
+    expect(html).toMatch(/<strong[^>]*>text<\/strong>/);
+    expect(html).toMatch(/Published <time[^>]*>September 20, 2026<\/time> · Updated <time/);
     expect(html).toMatch(/<h2[^>]*>Intro<\/h2>/);
     expect(html).toContain('src="https://blog-api.example.test/uploads/cover.png"');
     expect(html).toContain('href="/auth/sign-in"');
+  });
+
+  it('sets the body line height without units and closes with the bordered panel', async () => {
+    reader.getBlogPost.mockResolvedValue({ status: 'ok', data: post, fetchedAt: 0 });
+    const html = await render('resume-tips');
+
+    // `leading-7` is 1.75rem, which is 17.5px at the 10px root: lines nearly touch on 16px text.
+    expect(html).toContain('leading-[1.75]');
+    expect(html).not.toContain('leading-7');
+    const panel = html.slice(html.lastIndexOf('<section'));
+    expect(panel).toMatch(/<h2[^>]*>Start your first resume<\/h2>/);
+    // The panel itself has a border and no fill; the buttons inside keep their own fills.
+    const panelClass = panel.match(/<div class="([^"]*)"/)?.[1] ?? '';
+    expect(panelClass).toContain('border border-input');
+    expect(panelClass).not.toMatch(/\bbg-/);
+    expect(panel.match(/href="\/auth\/sign-in"/g)).toHaveLength(1);
   });
 
   it('hides an update made on the publication day', async () => {
