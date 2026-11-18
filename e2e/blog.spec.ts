@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { BLOG_GO_HOME_LABEL, BLOG_READ_ARTICLE_LABEL, BLOG_RETRY_LABEL, BLOG_UNAVAILABLE_TITLE } from '../lib/blog-copy';
+import { BLOG_GO_HOME_LABEL, BLOG_RETRY_LABEL, BLOG_UNAVAILABLE_TITLE } from '../lib/blog-copy';
 
 import { BLOG_E2E_TOKEN } from './services/blog-api.mjs';
 
@@ -310,20 +310,4 @@ test('BLOG-10 Talvio calls the blog API only with its token and valid list windo
   for (const entry of requests.filter((item) => item.path !== '/api/talvio/posts')) {
     expect(entry.path).toMatch(/^\/api\/talvio\/posts\/[a-z0-9]+(?:-[a-z0-9]+)*$/);
   }
-});
-
-test('BLOG-11 the index leads with the newest post and lists every other post once in the grid', async ({ page }) => {
-  await page.goto('/blog');
-  const main = page.getByRole('main');
-  const lead = main.locator('article').first();
-  await expect(lead.getByRole('link')).toHaveAccessibleName('E2E talvio guide');
-  // Read article is decoration beside the title link, so the card stays one link named by its title.
-  await expect(lead.getByText(BLOG_READ_ARTICLE_LABEL)).toHaveAttribute('aria-hidden', 'true');
-  await expect(main.getByRole('listitem').getByRole('link', { name: 'E2E talvio guide' })).toHaveCount(0);
-
-  const hrefs = await main.getByRole('link').evaluateAll((links) => links.map((link) => link.getAttribute('href')));
-  const posts = hrefs.filter((href) => href?.startsWith('/blog/'));
-  expect(posts[0]).toBe('/blog/talvio-guide');
-  expect(new Set(posts).size).toBe(posts.length);
-  await expect(main.getByRole('listitem')).toHaveCount(posts.length - 1);
 });

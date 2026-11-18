@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { BLOG_READ_ARTICLE_LABEL } from '../lib/blog-copy';
 import { INDEXABLE_PUBLIC_PATHS } from '../lib/public-metadata';
 
 import { signInWithLocalMagicLink } from './fixtures/auth';
@@ -224,6 +225,28 @@ test('PUB-05e the FAQ opens its first answer and toggles by keyboard; the closin
     expect(tile.inside).toBe(true);
     expect(tile.right).toBeLessThanOrEqual(390);
   }
+});
+
+test('PUB-05f the blog index leads with the newest post and lists every other post once in the grid', async ({ page }) => {
+  // Posts come from the e2e blog API simulator, which always has posts; the empty state is covered in `app/blog/page.test.tsx`.
+  await page.goto('/blog');
+  const main = page.getByRole('main');
+  const lead = main.locator('[data-slot=card]').first();
+  await expect(lead.getByRole('link')).toHaveAccessibleName('E2E talvio guide');
+  // Read article is decoration beside the title link, so the card stays one link named by its title.
+  await expect(lead.getByText(BLOG_READ_ARTICLE_LABEL)).toHaveAttribute('aria-hidden', 'true');
+  await expect(main.getByRole('listitem').getByRole('link', { name: 'E2E talvio guide' })).toHaveCount(0);
+
+  const hrefs = await main.getByRole('link').evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+  const posts = hrefs.filter((href) => href?.startsWith('/blog/'));
+  expect(posts[0]).toBe('/blog/talvio-guide');
+  expect(new Set(posts).size).toBe(posts.length);
+  await expect(main.getByRole('listitem')).toHaveCount(posts.length - 1);
+
+  // Clicking anywhere on a card opens its post.
+  const box = (await lead.boundingBox())!;
+  await page.mouse.click(box.x + 20, box.y + box.height - 12);
+  await expect(page).toHaveURL(/\/blog\/talvio-guide$/);
 });
 
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {

@@ -70,7 +70,6 @@
     "BLOG-08 the API token never reaches the browser: bundles, pages, RSC payloads or requests",
     "BLOG-09 the blog works without JavaScript and long titles fit a phone",
     "BLOG-10 Talvio calls the blog API only with its token and valid list windows",
-    "BLOG-11 the index leads with the newest post and lists every other post once in the grid",
     "TPL-01 level tabs and every template open the matching resume preview",
     "TPL-01 a restored editor draft uses the newly selected template once",
     "TPL-01 a restored import draft uses the newly selected template",
