@@ -1,10 +1,11 @@
 # Monthly allowance and AI cap runbook
 
 Operations for the MDI-320 beta release: the monthly allowance reset
-([MDI-357](https://linear.app/mdivani/issue/MDI-357)), the release flags
-([MDI-398](https://linear.app/mdivani/issue/MDI-398)) and the AI daily cap
-([MDI-401](https://linear.app/mdivani/issue/MDI-401)). Written for
-[MDI-402](https://linear.app/mdivani/issue/MDI-402).
+([MDI-357](https://linear.app/mdivani/issue/MDI-357)) and the release flags
+([MDI-398](https://linear.app/mdivani/issue/MDI-398)). Written for
+[MDI-402](https://linear.app/mdivani/issue/MDI-402). The AI daily cap
+([MDI-401](https://linear.app/mdivani/issue/MDI-401)) was dropped in MDI-224;
+the LLM service enforces the AI quota.
 
 Run every SQL statement here as `postgres`, in the Supabase SQL editor for
 the project or with `psql` against its database. None of them is reachable
@@ -16,9 +17,11 @@ from the app or the Data API.
   the release gate, then `supabase db push`, then the Vercel CLI deploy
   (`.github/workflows/ci.yml`). `20261008000100_extensions_enums.sql`
   enables `pg_cron`; `20261008000400_monthly_allowance.sql` creates the
-  `monthly-allowance-reset` job and records the current month;
-  `20261008000500_ai_daily_caps.sql` creates the AI cap and the
-  `ai-daily-usage-prune` job. Nothing is set up by hand.
+  `monthly-allowance-reset` job and records the current month. Nothing is
+  set up by hand. (The AI cap and its `ai-daily-usage-prune` job from
+  `20261008000500_ai_daily_caps.sql` were dropped by
+  `20261118000100_drop_ai_daily_caps.sql`; the LLM service enforces the AI
+  quota.)
 - Flags: `NEXT_PUBLIC_FLAG_PLANS_PAGE` and
   `NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI` are Vercel environment variables
   (`lib/flags.ts`). `NEXT_PUBLIC_FLAG_BETA_MODE` is declared but no code reads
@@ -52,25 +55,23 @@ order by period_start desc;
 ### Inspect the jobs
 
 ```sql
--- Both jobs exist, once each, created by the migrations.
+-- The job exists, once, created by the migrations.
 select jobid, jobname, schedule, command, active
 from cron.job
-where jobname in ('monthly-allowance-reset', 'ai-daily-usage-prune');
+where jobname = 'monthly-allowance-reset';
 
 -- Recent runs, newest first. status is 'succeeded' or 'failed'.
 select j.jobname, d.status, d.return_message, d.start_time, d.end_time
 from cron.job_run_details d
 join cron.job j using (jobid)
-where j.jobname in ('monthly-allowance-reset', 'ai-daily-usage-prune')
+where j.jobname = 'monthly-allowance-reset'
 order by d.start_time desc
 limit 20;
 ```
 
 Expected: `monthly-allowance-reset` with schedule `0 * * * *` (hourly; only the
 first run of a month changes anything) and command
-`select public.apply_monthly_allowance()`; `ai-daily-usage-prune` with
-schedule `10 0 * * *` and command `select public.prune_ai_daily_usage()`.
-Both `active`. `pg_cron` runs in GMT.
+`select public.apply_monthly_allowance()`, `active`. `pg_cron` runs in GMT.
 
 ### Spot-check balances
 
@@ -125,24 +126,6 @@ select cron.alter_job(
   active => true
 );
 ```
-
-## AI daily cap
-
-20 AI requests per user per UTC day, counted in `ai_daily_usage`. A user who
-reports being capped early:
-
-```sql
-select usage_date, request_count
-from public.ai_daily_usage
-where user_id = '<user id>'
-order by usage_date desc
-limit 7;
-```
-
-The count resets at 00:00 UTC by date; no job is needed for that.
-`ai-daily-usage-prune` only deletes rows older than 7 days. Do not edit
-`request_count` by hand to lift a cap; change the cap with a migration that
-replaces `ai_daily_request_cap()`.
 
 ## Rollback
 
@@ -208,10 +191,9 @@ After the release reaches dev (push to `development`):
 
 1. The CI run for that push is green: release gate, "Push migrations" and
    "Deploy to Vercel".
-2. Both jobs exist with the expected schedule and command ("Inspect the jobs").
-   No one created them by hand: they come from the migrations, and
-   `supabase/tests/monthly_allowance.test.sql` and
-   `supabase/tests/ai_daily_caps.test.sql` check the same on a fresh database.
+2. The job exists with the expected schedule and command ("Inspect the jobs").
+   No one created it by hand: it comes from the migrations, and
+   `supabase/tests/monthly_allowance.test.sql` checks the same on a fresh database.
 3. The operational check returns `true`, and `monthly_allowance_runs` has the
    cutover month.
 4. The balance spot-check shows only values between 0 and 90.

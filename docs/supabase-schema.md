@@ -195,10 +195,11 @@ onto the new chain; nothing was migrated in place.
 | `20261008000500_ai_daily_caps.sql` | Server-only `ai_daily_usage`; private `ai_daily_request_cap()` (20), `consume_ai_request_for()` and `prune_ai_daily_usage()`; public `consume_ai_request()`; cron job `ai-daily-usage-prune` (`10 0 * * *`) |
 | `20261112000100_llm_proposal_applications.sql` | `llm_proposal_applications` (receipts and AI provenance of accepted LLM proposals, MDI-222; owner SELECT only); private `llm_apply_id_list()` / `llm_apply_receipt()`; public `apply_llm_proposal(jsonb)` |
 | `20261117000100_access_token_hook.sql` | Supabase Auth custom access-token hook `custom_access_token_hook(jsonb)` (adds `account_status` from `auth.users.banned_until` and `plan` to every access token; on error returns the claims unchanged) and private `account_plan(uuid)` (`'free'` until MDI-321); `EXECUTE` for `supabase_auth_admin` only. Enabled in `config.toml` locally and by Terraform per environment after the migration is applied ([MDI-440](https://linear.app/mdivani/issue/MDI-440)) |
+| `20261118000100_drop_ai_daily_caps.sql` | Drops the AI daily cap from `20261008000500` (MDI-224): cron job `ai-daily-usage-prune`, `consume_ai_request()`, `consume_ai_request_for()`, `prune_ai_daily_usage()`, `ai_daily_request_cap()` and `ai_daily_usage`. The LLM service enforces the daily AI quota |
 
 Constraint / RLS smokes: `supabase/tests/schema_constraints.sql`,
 `supabase/tests/rls.test.sql`, `supabase/tests/monthly_allowance.test.sql`,
-`supabase/tests/ai_daily_caps.test.sql`, `supabase/tests/llm_apply.test.sql` and
+`supabase/tests/llm_apply.test.sql` and
 `supabase/tests/access_token_hook.test.sql`
 (`yarn db:test` after `yarn db:reset`).
 
