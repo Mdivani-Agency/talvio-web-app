@@ -14,8 +14,12 @@ import Link from 'next/link';
 export const Cta = () => {
   return (
     <section className={'mx-auto w-full max-w-[120rem] pb-[5.6rem] lg:px-4 lg:pb-[9.6rem]'}>
-      <div className={'grid grid-cols-1 items-end lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'}>
-        <div className={'self-center lg:py-[5.6rem]'}>
+      <div
+        className={
+          'grid grid-cols-1 items-end overflow-hidden rounded-xl border border-input lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
+        }
+      >
+        <div className={'self-center px-6 py-8 lg:p-[5.6rem]'}>
           <h2 className={'text-[2.8rem] leading-[1.333] font-semibold text-primary lg:text-2xl'}>{CTA_TITLE}</h2>
           <p className={'mt-4 mb-8 max-w-[56rem] text-md text-muted-foreground lg:text-lg'}>{CTA_BODY}</p>
           <div className={'flex flex-col gap-3 sm:flex-row'}>
