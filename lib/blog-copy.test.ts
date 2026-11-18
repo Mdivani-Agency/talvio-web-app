@@ -8,6 +8,9 @@ import {
   BLOG_PAGE_INTRO,
   BLOG_PAGE_TITLE,
   BLOG_PATH,
+  BLOG_GO_HOME_LABEL,
+  BLOG_READ_ARTICLE_LABEL,
+  BLOG_RETRY_LABEL,
   BLOG_UNAVAILABLE_BODY,
   blogPostPath,
   blogUpdatedDate,
@@ -27,6 +30,12 @@ describe('blog copy', () => {
   it('makes no product claims beyond what the blog shows', () => {
     const text = [BLOG_PAGE_TITLE, BLOG_PAGE_DESCRIPTION, BLOG_PAGE_INTRO, BLOG_EMPTY_BODY, BLOG_UNAVAILABLE_BODY].join(' ');
     expect(text).not.toMatch(/ATS|guarantee|free|credits|AI/);
+  });
+
+  it('labels the lead card and the outage actions in sentence case', () => {
+    for (const label of [BLOG_READ_ARTICLE_LABEL, BLOG_RETRY_LABEL, BLOG_GO_HOME_LABEL]) {
+      expect(label).toMatch(/^[A-Z][a-z]+( [a-z]+)*$/);
+    }
   });
 
   it('dates the copy and formats post dates in UTC', () => {
