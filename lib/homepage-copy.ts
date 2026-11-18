@@ -69,6 +69,9 @@ export const WHATS_FREE_TITLE = '3 new resume PDFs every month';
 export const WHATS_FREE_BODY =
   'Every account can create 3 new resume PDFs each month, free forever. Edits, previews and re-downloads are free. New PDFs of edited resumes count. The count resets on the 1st.';
 
+/** Label on the decorative document tiles beside the allowance (hidden from assistive technology). */
+export const WHATS_FREE_DOC_LABEL = 'PDF';
+
 export const FAQ_TITLE = 'Frequently asked questions';
 
 export type FaqItem = { question: string; answer: string };
@@ -116,6 +119,9 @@ export const BENEFITS_ART_ALT = 'Phone showing a Talvio resume template';
 export const CTA_TITLE = 'Start your first resume';
 export const CTA_BODY = 'Free forever, no card needed. Talvio is in beta, and more features are on the way.';
 
+/** Alt text for the hand holding a phone in the closing panel. */
+export const CTA_ART_ALT = 'Hand holding a phone with the Talvio welcome screen';
+
 /** Every visible line on the homepage, for the copy tests. */
 export function homepageCopyText(): string {
   return [
@@ -137,5 +143,6 @@ export function homepageCopyText(): string {
     ...HOME_FAQ.flatMap((item) => [item.question, item.answer]),
     CTA_TITLE,
     CTA_BODY,
+    CTA_ART_ALT,
   ].join('\n');
 }

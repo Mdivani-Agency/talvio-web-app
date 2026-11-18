@@ -6,20 +6,22 @@ interface DetailsListProps {
     question: string;
     answer: string;
   }[];
+  /** Opens the first answer on load. Each row stays a native `<details>` toggle. */
+  openFirst?: boolean;
 }
 
-export const DetailsList = ({ qa }: DetailsListProps) => {
+export const DetailsList = ({ qa, openFirst = false }: DetailsListProps) => {
   return (
-    <div className="w-full bg-card rounded-lg px-5 py-8 mx-auto">
+    <div className="w-full border-t border-input">
       {qa.map((faq, idx) => (
-        <details key={idx} className="group border-b border-muted px-4 last:border-b-0">
-          <summary className="w-full flex justify-between items-start gap-3 py-4 text-left cursor-pointer list-none select-none text-primary focus:outline-none focus:text-primary hover:text-primary active:text-primary">
-            <span className="min-w-0 text-lg font-medium text-primary">{faq.question}</span>
-            <span className="shrink-0 transition-transform duration-200 group-open:rotate-180 text-muted-foreground">
-              <Icon className="size-6" type={'ChevronDown'} />
+        <details key={faq.question} open={openFirst && idx === 0} className="group border-b border-input">
+          <summary className="flex min-h-16 w-full cursor-pointer list-none items-center justify-between gap-4 rounded-sm py-4 text-left select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            <span className="min-w-0 text-lg leading-[1.556] font-medium text-foreground">{faq.question}</span>
+            <span className="shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180">
+              <Icon className="size-5" type={'ChevronDown'} />
             </span>
           </summary>
-          <p className="px-2 pb-4 text-md text-muted-foreground">{faq.answer}</p>
+          <p className="pr-10 pb-5 text-md text-muted-foreground">{faq.answer}</p>
         </details>
       ))}
     </div>
