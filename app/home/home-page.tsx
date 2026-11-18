@@ -12,7 +12,7 @@ import { Cta } from './views/cta';
 
 export function HomePage() {
   return (
-    <main className="flex flex-col items-center gap-8 overflow-x-hidden px-4 pt-24 sm:items-start md:px-6 md:pt-0">
+    <main className="flex flex-col items-center overflow-x-hidden px-4 pt-24 sm:items-start md:px-6 md:pt-0">
       <Hero />
       <NavSection id="workflow" title={WORKFLOW_TITLE} name="Workflow">
         <Workflow />

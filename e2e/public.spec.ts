@@ -152,6 +152,35 @@ test('PUB-05c the homepage hero shows three templates, links without nested butt
   expect(lcp).toBe('Mid-level resume in the Talvio template');
 });
 
+test('PUB-05d workflow step numbers and benefit icons stand out from their cards in both themes', async ({ page }) => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/home');
+    const workflow = page.locator('#workflow');
+    await expect(workflow.locator('ol > li')).toHaveCount(3);
+    const tiles = await workflow.locator('ol > li').evaluateAll((items) =>
+      items.map((item) => {
+        const number = item.querySelector('[aria-hidden="true"]') as HTMLElement;
+        return {
+          card: getComputedStyle(item).backgroundColor,
+          tile: getComputedStyle(number).backgroundColor,
+          text: number.textContent?.trim(),
+        };
+      }),
+    );
+    expect(tiles.map((tile) => tile.text), colorScheme).toEqual(['1', '2', '3']);
+    for (const tile of tiles) expect(tile.tile, colorScheme).not.toBe(tile.card);
+
+    const benefits = page.locator('#benefits');
+    await expect(benefits.getByRole('img', { name: 'Phone showing a Talvio resume template' })).toBeVisible();
+    await expect(benefits.getByRole('heading', { level: 3 })).toHaveText(['Write it once', 'A layout that fits', 'You stay in control']);
+    const icons = await benefits.locator('ul > li').evaluateAll((items) =>
+      items.map((item) => [getComputedStyle(item).backgroundColor, getComputedStyle(item.querySelector('[aria-hidden="true"]')!).backgroundColor]),
+    );
+    for (const [card, tile] of icons) expect(tile, colorScheme).not.toBe(card);
+  }
+});
+
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/templates');

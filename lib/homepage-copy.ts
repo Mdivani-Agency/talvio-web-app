@@ -109,6 +109,9 @@ export const HOME_FAQ: readonly FaqItem[] = [
   { question: 'How do I get support?', answer: SUPPORT_ANSWER },
 ];
 
+/** Alt text for the phone beside the benefit cards. */
+export const BENEFITS_ART_ALT = 'Phone showing a Talvio resume template';
+
 // As written.
 export const CTA_TITLE = 'Start your first resume';
 export const CTA_BODY = 'Free forever, no card needed. Talvio is in beta, and more features are on the way.';
@@ -126,6 +129,7 @@ export function homepageCopyText(): string {
     ...WORKFLOW_STEPS.flatMap((step) => [step.title, step.body]),
     BENEFITS_TITLE,
     ...BENEFITS.flatMap((benefit) => [benefit.title, benefit.body]),
+    BENEFITS_ART_ALT,
     WHATS_FREE_NAME,
     WHATS_FREE_TITLE,
     WHATS_FREE_BODY,
