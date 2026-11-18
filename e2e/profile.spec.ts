@@ -106,7 +106,7 @@ test('PROF-01 manual profile saves from the form without AI and survives reload'
   await saveForm(page);
 
   await expect(page.getByRole('main').getByRole('link', { name: 'Create resume' })).toBeVisible();
-  await expect(page.getByText('Ada Manual')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Manual' })).toBeVisible();
   await expect(page.getByText('Staff Engineer')).toBeVisible();
   await expect(page.getByText('Typed summary saved without AI.')).toBeVisible();
   await expect(page.getByText('Alpha Corp')).toBeVisible();
@@ -115,7 +115,7 @@ test('PROF-01 manual profile saves from the form without AI and survives reload'
   await expect(page.getByText('TypeScript')).toBeVisible();
   await expect(page.getByText('English - beginner')).toBeVisible();
   await page.reload();
-  await expect(page.getByText('Ada Manual')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Manual' })).toBeVisible();
   await expect(page.getByText('Alpha Corp')).toBeVisible();
   expect(await profileCount(empty.userId)).toBe(1);
   expect(await orderedColumn('experiences', empty.userId, 'company')).toEqual(['Alpha Corp']);
@@ -166,10 +166,10 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
 
   await page.getByPlaceholder('First Name').fill('Ada');
   await saveForm(page);
-  await expect(page.getByText('Ada Invalid')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Invalid' })).toBeVisible();
   await expect(page.getByText('Experience', { exact: true })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByText('Ada Invalid')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Invalid' })).toBeVisible();
   expect(await profileCount(empty.userId)).toBe(1);
   expect(await orderedColumn('experiences', empty.userId, 'company')).toEqual([]);
   expect(await orderedColumn('projects', empty.userId, 'name')).toEqual([]);
@@ -226,7 +226,7 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
 
   await saveForm(page);
-  await expect(page.getByText('Ada Order')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Order' })).toBeVisible();
   const experienceCard = page.locator('section').filter({ hasText: 'Experience' }).last();
   await expect(experienceCard.locator('p').filter({ hasText: 'Beta Edited' })).toBeVisible();
   expect((await experienceCard.locator('h3').allTextContents()).map((item) => item.trim())).toEqual(['Engineer', 'Engineer']);
@@ -261,12 +261,12 @@ test('PROF-03 imported resume stays editable through save', async ({ page, perso
 
   await saveForm(page);
 
-  await expect(page.getByText('Ada Edited')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Edited' })).toBeVisible();
   await expect(page.getByText('Imported Labs')).toBeVisible();
   await expect(page.getByText('Talvio Institute')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Imported Project' })).toBeVisible();
   await page.reload();
-  await expect(page.getByText('Ada Edited')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Edited' })).toBeVisible();
   await expect(page.getByText('Imported Labs')).toBeVisible();
   expect(await profileCount(empty.userId)).toBe(1);
   expect(await orderedColumn('experiences', empty.userId, 'company')).toEqual(['Imported Labs']);
@@ -299,7 +299,7 @@ test('PROF-04 provider failures recover without stranding the profile', async ({
   await page.getByPlaceholder('First Name').fill('Ada Recovered');
 
   await saveForm(page);
-  await expect(page.getByText('Ada Recovered')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Recovered' })).toBeVisible();
   expect(await profileCount(empty.userId)).toBe(1);
   const ai = (await mediaStats()).ai;
   expect(ai.questions).toBe(0);
@@ -340,9 +340,9 @@ test('PROF-04 a failed save keeps the form and does not duplicate the profile', 
 
   await page.getByPlaceholder('First Name').fill('Ada Retried');
   await saveForm(page);
-  await expect(page.getByText('Ada Retried')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Retried' })).toBeVisible();
   await page.reload();
-  await expect(page.getByText('Ada Retried')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Retried' })).toBeVisible();
   expect(await profileCount(empty.userId)).toBe(1);
 });
 

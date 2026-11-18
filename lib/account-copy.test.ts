@@ -9,8 +9,20 @@ import {
   PREMIUM_CTA_LABEL,
   PREMIUM_TITLE,
   SIGN_OUT_LABEL,
+  DELETE_FAMILY_DESCRIPTION,
+  DELETE_RESUME_DESCRIPTION,
+  DRAFT_BADGE,
+  MY_RESUMES_TITLE,
+  NO_RESUMES_BODY,
+  NO_RESUMES_TITLE,
+  PDF_READY_BADGE,
+  UNPUBLISHED_DRAFT_BADGE,
+  accountHeading,
   accountInitials,
   activeAccountHref,
+  deleteResumeLabel,
+  editResumeLabel,
+  updatedLine,
 } from './account-copy';
 
 describe('account copy', () => {
@@ -43,5 +55,26 @@ describe('account copy', () => {
     expect(activeAccountHref('/account')).toBe('/account');
     expect(activeAccountHref('/account/create')).toBe('/account');
     expect(activeAccountHref('/account/documents')).toBe('/account/documents');
+  });
+
+  it('uses the approved dashboard copy', () => {
+    expect(MY_RESUMES_TITLE).toBe('My resumes');
+    expect(NO_RESUMES_TITLE).toBe('No resumes yet');
+    expect(NO_RESUMES_BODY).toBe('Your profile is ready. Pick a template and your first resume starts from it.');
+    expect([PDF_READY_BADGE, DRAFT_BADGE, UNPUBLISHED_DRAFT_BADGE]).toEqual(['PDF ready', 'Draft', 'Unpublished draft']);
+    expect(DELETE_RESUME_DESCRIPTION).toBe('This permanently removes the resume. This cannot be undone.');
+    expect(DELETE_FAMILY_DESCRIPTION).toContain('its unpublished draft');
+  });
+
+  it('formats the updated date and the per-resume action labels', () => {
+    expect(updatedLine(new Date('2026-11-18T10:00:00Z'))).toBe('Updated Nov 18, 2026');
+    expect(editResumeLabel('Backend CV')).toBe('Edit Backend CV');
+    expect(deleteResumeLabel('Backend CV')).toBe('Delete Backend CV');
+  });
+
+  it('heads the page with the profile name, then the session name, then the email', () => {
+    expect(accountHeading('Ada Owner', 'Ada', 'ada@example.com')).toBe('Ada Owner');
+    expect(accountHeading(' ', 'Ada Session', 'ada@example.com')).toBe('Ada Session');
+    expect(accountHeading(null, null, 'ada@example.com')).toBe('ada@example.com');
   });
 });

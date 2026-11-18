@@ -43,3 +43,38 @@ export function accountInitials(name: string | null | undefined, email: string):
 export function activeAccountHref(pathname: string): string {
   return pathname.startsWith('/account/documents') ? '/account/documents' : '/account';
 }
+
+/** The dashboard's resume list (MDI-591). */
+export const MY_RESUMES_TITLE = 'My resumes';
+export const NO_RESUMES_TITLE = 'No resumes yet';
+export const NO_RESUMES_BODY = 'Your profile is ready. Pick a template and your first resume starts from it.';
+export const PDF_READY_BADGE = 'PDF ready';
+export const DRAFT_BADGE = 'Draft';
+export const UNPUBLISHED_DRAFT_BADGE = 'Unpublished draft';
+export const DOWNLOAD_LABEL = 'Download';
+export const LOAD_MORE_LABEL = 'Load more';
+export const DELETE_RESUME_TITLE = 'Delete resume';
+export const DELETE_RESUME_DESCRIPTION = 'This permanently removes the resume. This cannot be undone.';
+export const DELETE_FAMILY_DESCRIPTION =
+  'This permanently removes the generated resume and its unpublished draft. This cannot be undone.';
+export const RESUME_DELETED_MESSAGE = 'Resume deleted';
+
+const updatedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+/** "Updated Nov 18, 2026". */
+export function updatedLine(date: Date): string {
+  return `Updated ${updatedDate.format(date)}`;
+}
+
+export function editResumeLabel(title: string): string {
+  return `Edit ${title}`;
+}
+
+export function deleteResumeLabel(title: string): string {
+  return `Delete ${title}`;
+}
+
+/** The page heading: the profile name, else the session name, else the email. */
+export function accountHeading(profileName: string | null | undefined, sessionName: string | null | undefined, email: string): string {
+  return profileName?.trim() || sessionName?.trim() || email;
+}

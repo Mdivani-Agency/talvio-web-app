@@ -185,5 +185,5 @@ export async function openResumeSection(page: Page, title: string, placeholder: 
 }
 
 export function resumeRow(page: Page, title: string) {
-  return page.getByRole('link', { name: title, exact: true }).locator('xpath=ancestor::div[contains(@class,"items-start")][1]');
+  return page.getByTestId('resume-row').filter({ has: page.getByRole('link', { name: title, exact: true }) });
 }
