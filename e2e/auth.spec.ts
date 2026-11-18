@@ -159,7 +159,7 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
   });
   await signInThroughLocalMail(page, firstEmail, '/account');
   await expect(page.getByText('First Owner')).toBeVisible();
-  await expect(page.getByText(firstEmail)).toBeVisible();
+  await expect(page.getByRole('main').getByText(firstEmail)).toBeVisible();
 
   await page.goto('/home');
   await page.getByTestId('account-menu').first().click();
@@ -179,6 +179,58 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
   await expect(page.getByText('First Owner')).toHaveCount(0);
   await expect(page.getByText(firstEmail)).toHaveCount(0);
   await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
+});
+
+test('AUTH-07 the account sidebar marks the page, switches theme and signs out; the phone menu traps focus', async ({ page }) => {
+  test.setTimeout(90_000);
+  const email = emailFor('sidebar');
+  await createConfirmedUser(email);
+  await signInThroughLocalMail(page, email, '/account/documents');
+
+  const sidebar = page.locator('aside');
+  const nav = sidebar.getByRole('navigation', { name: 'Account' });
+  await expect(nav.getByRole('link', { name: 'Documents' })).toHaveAttribute('aria-current', 'page');
+  await expect(nav.getByRole('link', { name: 'Account' })).not.toHaveAttribute('aria-current', 'page');
+  await expect(sidebar.getByRole('link', { name: 'Create resume' })).toHaveAttribute('href', '/resume');
+  await expect(sidebar.getByText(email)).toBeVisible();
+
+  const themeButton = sidebar.getByRole('button', { name: /theme$/ });
+  const startedDark = await page.locator('html').evaluate((html) => html.classList.contains('dark'));
+  await expect(themeButton).toHaveAccessibleName(startedDark ? 'Light theme' : 'Dark theme');
+  await themeButton.click();
+  if (startedDark) {
+    await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+  } else {
+    await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+  }
+  await expect(themeButton).toHaveAccessibleName(startedDark ? 'Dark theme' : 'Light theme');
+
+  await nav.getByRole('link', { name: 'Account' }).click();
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(nav.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
+
+  // Phone: a top bar with Create resume and a menu that traps focus and closes with Escape.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(sidebar).toBeHidden();
+  const bar = page.locator('header').first();
+  await expect(bar.getByRole('link', { name: 'Create resume' })).toBeVisible();
+  await bar.getByRole('button', { name: 'Open menu' }).click();
+  const menu = page.getByRole('dialog', { name: 'Account menu' });
+  await expect(menu.getByRole('link', { name: 'Documents' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  for (let step = 0; step < 8; step += 1) {
+    await page.keyboard.press('Tab');
+    expect(await menu.evaluate((dialog) => dialog.contains(document.activeElement))).toBe(true);
+  }
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.locator('aside').getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL(/localhost:3002\/$/);
+  await expect(page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
+  await gotoExpectingSignIn(page, '/account');
 });
 
 test('AUTH-05 a live session refreshes and a revoked session returns to sign-in', async ({ page }) => {

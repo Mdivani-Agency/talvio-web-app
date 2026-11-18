@@ -105,7 +105,7 @@ test('PROF-01 manual profile saves from the form without AI and survives reload'
 
   await saveForm(page);
 
-  await expect(page.getByRole('link', { name: 'Create Resume' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'Create resume' })).toBeVisible();
   await expect(page.getByText('Ada Manual')).toBeVisible();
   await expect(page.getByText('Staff Engineer')).toBeVisible();
   await expect(page.getByText('Typed summary saved without AI.')).toBeVisible();

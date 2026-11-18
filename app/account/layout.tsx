@@ -27,10 +27,10 @@ export default async function AccountLayout({ children }: { children: React.Reac
     <div className="font-(family-var(--font-montserrat))">
       <SessionProvider fallbackURL={signInURL} returnToCurrentPath>
         <AccountProvider>
-          <section className="flex min-w-0 flex-col md:flex-row">
+          <div className="flex min-h-screen min-w-0 flex-col md:flex-row">
             <Sidebar />
-            <section className={'h-screen w-full min-w-0 overflow-y-auto'}>{children}</section>
-          </section>
+            <main className={'w-full min-w-0 md:h-screen md:overflow-y-auto'}>{children}</main>
+          </div>
         </AccountProvider>
       </SessionProvider>
     </div>
