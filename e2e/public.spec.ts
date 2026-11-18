@@ -442,7 +442,7 @@ harness('PUB-01 a signed-in visit to the root opens the account', async ({ page,
   await signInWithLocalMagicLink(page, persona(personas, 'complete'));
   await page.goto('/');
   await expect(page).toHaveURL(/\/account$/);
-  await expect(page.getByText('Ada Owner')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ada Owner' })).toBeVisible();
 });
 
 test('PUB-08 retired pricing and purchase pages redirect and no public page links to them', async ({ page, request }) => {

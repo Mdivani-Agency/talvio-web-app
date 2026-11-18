@@ -16,6 +16,7 @@ import {
 import { useResumes } from '@app/resume/query/use-resumes';
 import { ResumeCard } from './views/resume-card';
 import { AllowanceCard } from './views/allowance-card';
+import { accountHeading } from '@/lib/account-copy';
 
 type DashboardProps = {
   account: Account;
@@ -26,10 +27,12 @@ export const Dashboard = ({ account, sessionUser }: DashboardProps) => {
   const [limit, setLimit] = useState(RESUME_PAGE_SIZE);
   const { data } = useResumes(sessionUser.id, 'GENERAL', limit);
 
+  const profileName = [account.profile?.firstName, account.profile?.lastName].filter(Boolean).join(' ');
+
   return (
-    <section className={'flex flex-col gap-8 p-4'}>
-      <AccountUser sessionUser={sessionUser} />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <section className={'flex max-w-[104rem] flex-col gap-8 px-4 py-6 md:px-[4.8rem] md:py-10'}>
+      <AccountUser name={accountHeading(profileName, sessionUser.name, sessionUser.email)} email={sessionUser.email} />
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <ResumeCard
           resumes={data?.resumes ?? []}
           userId={sessionUser.id}
@@ -39,15 +42,16 @@ export const Dashboard = ({ account, sessionUser }: DashboardProps) => {
         <AllowanceCard />
       </div>
       <ProfileSection profile={account.profile} />
-      {/* TODO: Add empty placeholders for sections to add new item */}
-      {account.skills?.length ? <SkillsSection skills={account.skills} /> : undefined}
-      {account.experience?.length ? <ExperienceSection experience={account.experience} /> : undefined}
-      {account.education?.length ? <EducationSection education={account.education} /> : undefined}
-      {account.languages?.length ? <LanguagesSection languages={account.languages} /> : undefined}
-      {account.projects?.length ? <ProjectsSection projects={account.projects} /> : undefined}
-      {account.recommendations?.length ? (
-        <RecommendationsSection recommendations={account.recommendations} />
-      ) : undefined}
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        {account.experience?.length ? <ExperienceSection experience={account.experience} /> : <div className="hidden lg:block" />}
+        <div className="flex min-w-0 flex-col gap-6">
+          {account.skills?.length ? <SkillsSection skills={account.skills} /> : null}
+          {account.education?.length ? <EducationSection education={account.education} /> : null}
+          {account.languages?.length ? <LanguagesSection languages={account.languages} /> : null}
+        </div>
+      </div>
+      {account.projects?.length ? <ProjectsSection projects={account.projects} /> : null}
+      {account.recommendations?.length ? <RecommendationsSection recommendations={account.recommendations} /> : null}
     </section>
   );
 };

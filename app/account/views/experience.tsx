@@ -1,7 +1,7 @@
 import { Experience } from '@lib/types';
-import { Button, Card, CardContent, Label, Textarea } from '@components/ui';
 import { formatDate } from '@lib/utils';
-import { Icon } from '@components/icons';
+import { PRESENT_LABEL, PROFILE_SECTION_TITLES, jobMetaLine } from '@/lib/account-copy';
+import { ProfileBlock, hairlineListClassName } from './profile-block';
 
 type ExperienceSectionProps = {
   experience: Experience[];
@@ -9,62 +9,48 @@ type ExperienceSectionProps = {
 
 export const ExperienceSection = ({ experience }: ExperienceSectionProps) => {
   return (
-    <section className={'w-full pr-8'}>
-      <Label
-        variant={'default'}
-        size='lg'
-        className='mb-2'
-      >
-        Experience
-        <Button variant={'ghost'} size={'icon'} className={'ml-auto'}>
-          <Icon type={'Edit'} />
-        </Button>
-      </Label>
-      <Card>
-        <CardContent className={'flex flex-col gap-4 divide-y divide-input'}>
-          {experience.map(
-            ({
-              jobTitle,
-              company,
-              startDate,
-              endDate,
-              employmentType,
-              locationType,
-              achievements = [],
-              keyContributions = [],
-              responsibilities = [],
-              additionalDetails = '',
-            }) => (
-              <div key={company} className={'flex flex-col gap-2 pb-4 last:pb-0'}>
-                <div className={'flex items-start justify-between'}>
-                  <div className={'flex flex-col'}>
-                    <h3 className={'text-lg font-medium'}>{jobTitle}</h3>
-                    <p className={'text-sm capitalize'}>
-                      {company} {employmentType && `• ${employmentType}`}
-                    </p>
-                  </div>
-                  <div className={'flex flex-col items-end'}>
-                    <p className={'text-xs text-muted-foreground font-regular'}>
-                      {formatDate(startDate)} - {endDate ? formatDate(endDate) : 'Present'}
-                    </p>
-                    {locationType && (
-                      <p className={'text-xs text-muted-foreground font-regular capitalize'}>{locationType}</p>
-                    )}
-                  </div>
+    <ProfileBlock title={PROFILE_SECTION_TITLES.experience} bodyClassName={hairlineListClassName}>
+      {experience.map(
+        (
+          {
+            jobTitle,
+            company,
+            startDate,
+            endDate,
+            employmentType,
+            locationType,
+            achievements = [],
+            keyContributions = [],
+            responsibilities = [],
+            additionalDetails = '',
+          },
+          index,
+        ) => {
+          const points = [...keyContributions, ...achievements, ...responsibilities];
+          return (
+            // Two roles can share a company, so the key is the position in the list.
+            <article key={index} className="flex flex-col gap-2">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+                <div className="min-w-0">
+                  <h3 className="text-md font-semibold text-primary">{jobTitle}</h3>
+                  <p className="text-sm">{jobMetaLine(company, employmentType, locationType)}</p>
                 </div>
-                {additionalDetails && <p className={'text-sm font-regular mt-2'}>{additionalDetails}</p>}
-                <ul>
-                  {[...keyContributions, ...achievements, ...responsibilities].map((item) => (
-                    <li className={'text-sm list-disc list-inside'} key={item}>
-                      {item}
-                    </li>
+                <p className="text-xs leading-[1.333] text-muted-foreground">
+                  {formatDate(startDate)} - {endDate ? formatDate(endDate) : PRESENT_LABEL}
+                </p>
+              </div>
+              {additionalDetails ? <p className="text-sm leading-[1.5]">{additionalDetails}</p> : null}
+              {points.length ? (
+                <ul className="flex list-disc flex-col gap-1 pl-5 text-sm leading-[1.5]">
+                  {points.map((item, pointIndex) => (
+                    <li key={pointIndex}>{item}</li>
                   ))}
                 </ul>
-              </div>
-            ),
-          )}
-        </CardContent>
-      </Card>
-    </section>
+              ) : null}
+            </article>
+          );
+        },
+      )}
+    </ProfileBlock>
   );
 };

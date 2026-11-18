@@ -1,7 +1,6 @@
 'use client';
 
-import { createSupabaseBrowserClient } from '@lib/supabase/client';
-import { clearLegacyBearerToken } from '@lib/supabase/legacy-token';
+import { useSignOut } from '@lib/auth/use-sign-out';
 import { Icon } from '@components/icons';
 import {
   Avatar,
@@ -36,13 +35,11 @@ interface UserAvatarProps {
 export function UserAvatar({ className, user }: UserAvatarProps) {
   const [open, setOpen] = useState(false);
 
+  const { signOut, pending } = useSignOut();
+
   const handleSignOut = async () => {
     setOpen(false);
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    clearLegacyBearerToken();
-    // A full document load finishes sign-out before the next navigation starts.
-    window.location.replace('/');
+    await signOut();
   };
 
   return (
@@ -76,7 +73,7 @@ export function UserAvatar({ className, user }: UserAvatarProps) {
             <DialogDescription>Are you sure you want to sign out?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={handleSignOut}>Sign out</Button>
+            <Button onClick={handleSignOut} disabled={pending}>Sign out</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

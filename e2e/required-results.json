@@ -18,6 +18,7 @@
     "AUTH-04 sign-out blocks protected routes and the next user does not see the previous profile",
     "AUTH-05 a live session refreshes and a revoked session returns to sign-in",
     "AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the provider boundary",
+    "AUTH-07 the account sidebar marks the page, switches theme and signs out; the phone menu traps focus",
     "SEC-01 another user and an anonymous client cannot read or change a resume",
     "SEC-02 pdf and presign routes reject bad auth and ignore forged ownership",
     "SEC-03 provider routes return defined errors without leaking secrets",

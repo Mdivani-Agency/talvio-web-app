@@ -7,4 +7,3 @@ export * from './education';
 export * from './projects';
 export * from './recommendations';
 export * from './languages';
-export * from './responsive-header';

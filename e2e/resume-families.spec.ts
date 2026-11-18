@@ -36,7 +36,8 @@ test('RES-07 groups families and load more keeps every record', async ({ page, p
 
   await openSignedIn(page, owner, '/account');
   await expect(page.getByRole('link', { name: 'Family label', exact: true })).toHaveCount(1);
-  await expect(resumeRow(page, 'Family label')).toContainText('PDF ready · unpublished draft');
+  await expect(resumeRow(page, 'Family label')).toContainText('PDF ready');
+  await expect(resumeRow(page, 'Family label')).toContainText('Unpublished draft');
   await expect(page.getByRole('button', { name: 'Load more' })).toBeVisible();
   const firstPageNames = await page.getByRole('link').allInnerTexts();
 
@@ -94,8 +95,9 @@ test('RES-08 cancel keeps a resume and confirm removes each family', async ({ pa
   await openSignedIn(page, owner, '/account');
   await expect(resumeRow(page, 'Draft resume')).toContainText('Draft');
   await expect(resumeRow(page, 'Solo pdf')).toContainText('PDF ready');
-  await expect(resumeRow(page, 'Solo pdf')).not.toContainText('unpublished draft');
-  await expect(resumeRow(page, 'Family label')).toContainText('PDF ready · unpublished draft');
+  await expect(resumeRow(page, 'Solo pdf')).not.toContainText('Unpublished draft');
+  await expect(resumeRow(page, 'Family label')).toContainText('PDF ready');
+  await expect(resumeRow(page, 'Family label')).toContainText('Unpublished draft');
 
   await deleteResume(page, 'Draft resume', false);
   await expect(page.getByRole('link', { name: 'Draft resume', exact: true })).toBeVisible();
@@ -126,7 +128,7 @@ test('RES-08 cancel keeps a resume and confirm removes each family', async ({ pa
   await deleteResume(page, 'Solo pdf', true);
   await expect(page.getByText('Resume deleted')).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('link', { name: 'Create Resume' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'Create resume' })).toBeVisible();
   expect(await listResumes(owner.userId)).toHaveLength(0);
   await page.goto(`/resume/${generatedId}`);
   await expect(page.getByRole('heading', { name: 'Resume not found' })).toBeVisible();

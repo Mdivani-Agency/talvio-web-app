@@ -422,7 +422,7 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   expect(pdf.text).toContain('Family');
 
   await page.goto('/account');
-  await expect(page.getByText('PDF ready · unpublished draft')).toHaveCount(0);
+  await expect(page.getByText('Unpublished draft', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Family original', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Edited family', exact: true })).toBeVisible();
   await expect(page.getByText('PDF ready', { exact: false })).toHaveCount(2);
