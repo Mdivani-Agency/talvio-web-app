@@ -187,6 +187,21 @@ describe('useTailor', () => {
     unmount();
   });
 
+  it('offers Retry after a reload when the cap refused the job, instead of waiting forever', async () => {
+    const client = fakeClient();
+    client.createJob.mockRejectedValueOnce(new LlmError({ code: 'quota_exceeded', message: 'Limit reached.', status: 429 }));
+    const first = setup(client);
+    act(() => first.result.current.start(input));
+    await waitFor(() => expect(first.result.current.step).toBe('capped'), WAIT);
+    first.unmount();
+
+    const again = setup(client);
+    expect(again.result.current.step).toBe('error');
+    act(() => again.result.current.retry());
+    await waitFor(() => expect(again.result.current.step).toBe('questions'), WAIT);
+    again.unmount();
+  });
+
   it('shows an error with Retry when the session cannot be created', async () => {
     const client = fakeClient();
     client.createSession.mockRejectedValueOnce(new LlmError({ code: 'dependency_unavailable', message: 'Try again soon.', status: 503 }));

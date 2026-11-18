@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { AnswerReview, ProposalReview, ResumeQuestions } from '@components/ai-improve';
 import { Badge, Button, Card, CardContent, Checkbox, Input, Label, Textarea } from '@components/ui';
 import { AI_CAP_TITLE } from '@lib/ai-cap';
-import { JOB_DESCRIPTION_MAX } from '@lib/llm/tailor';
+import { JOB_DESCRIPTION_MAX, tailoredResumeName } from '@lib/llm/tailor';
 import type { RequirementView } from '@lib/llm/tailor';
 
 import type { Tailor, TailorStart } from '../hooks/use-tailor';
@@ -57,7 +57,7 @@ function Intake({ sources, onStart }: { sources: TailorSourceOption[]; onStart: 
     if (!ready || !chosen) {
       return;
     }
-    const name = [title.trim(), company.trim()].filter(Boolean).join(' at ') || 'Tailored resume';
+    const name = tailoredResumeName(title, company);
     setLoading(true);
     setLoadError(null);
     try {

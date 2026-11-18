@@ -13,9 +13,14 @@ type UseLlmJobOptions = {
   storage?: JobStorage | null;
   /**
    * Called when the job succeeds or fails, from the runner rather than from an effect. `clear`
-   * forgets the job; call it after the result is stored.
+   * forgets the job; call it after the result is stored. `resumable` is false when nothing is
+   * stored to rejoin, such as a submission the service refused (quota, validation).
    */
-  onSettled?: (state: Extract<LlmJobState, { phase: 'succeeded' | 'failed' }>, clear: () => void) => void;
+  onSettled?: (
+    state: Extract<LlmJobState, { phase: 'succeeded' | 'failed' }>,
+    clear: () => void,
+    info: { resumable: boolean },
+  ) => void;
 };
 
 const IDLE: LlmJobState = { phase: 'idle' };
@@ -61,7 +66,7 @@ export function useLlmJob({ storageKey, client, storage, onSettled }: UseLlmJobO
         setTagged({ key: storageKey, state: next });
         if (next.phase === 'succeeded' || next.phase === 'failed') {
           // Cleared after this callback returns, never from inside the runner's own update.
-          onSettledRef.current?.(next, () => queueMicrotask(() => runner.clear()));
+          onSettledRef.current?.(next, () => queueMicrotask(() => runner.clear()), { resumable: runner.getRecord() !== null });
         }
       },
     });
@@ -86,6 +91,11 @@ export function useLlmJob({ storageKey, client, storage, onSettled }: UseLlmJobO
   const clear = useCallback(() => runnerRef.current?.clear(), []);
   /** The request of the current job, also after a reload. */
   const request = useCallback(() => (runnerRef.current?.getRecord()?.request ?? null) as JobRequestBody | null, []);
+  /** True while a stored submission has no job id: the service may have admitted it, so its key must be kept. */
+  const unsubmitted = useCallback(() => {
+    const record = runnerRef.current?.getRecord();
+    return Boolean(record && record.jobId === null);
+  }, []);
 
   return {
     state,
@@ -95,6 +105,7 @@ export function useLlmJob({ storageKey, client, storage, onSettled }: UseLlmJobO
     retry,
     clear,
     request,
+    unsubmitted,
   };
 }
 

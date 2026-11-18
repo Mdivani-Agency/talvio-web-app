@@ -46,7 +46,7 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
   }, [events]);
 
   // Deliver a finished job once, then forget it, so a reload does not offer it again.
-  const { state, clear, request } = job;
+  const { state, clear, request, unsubmitted } = job;
   useEffect(() => {
     if (state.phase === 'succeeded') {
       const sent = request();
@@ -63,12 +63,13 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
     if (state.phase === 'failed') {
       const error: LlmError = state.error;
       eventsRef.current.onError(error);
-      // A submit that got no answer keeps its key: importing the same text again rejoins it.
-      if (error.code !== 'network_error') {
+      // A submit that got no answer (offline, or a proxy timeout after the service may have admitted
+      // it) keeps its key: importing the same text again rejoins that job instead of starting another.
+      if (!unsubmitted()) {
         clear();
       }
     }
-  }, [clear, request, state]);
+  }, [clear, request, state, unsubmitted]);
 
   const parseWithService = useCallback(
     (text: string, extraction: ReturnType<typeof pdfTextRequest>['extraction'] | null) => {

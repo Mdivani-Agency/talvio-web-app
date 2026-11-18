@@ -18,6 +18,14 @@ import { reviewServiceProposal, type ServiceProposal, type ServiceReview } from 
  */
 
 export const JOB_DESCRIPTION_MAX = 5_000;
+/** apply_llm_proposal and the service both refuse a resume name longer than this. */
+export const RESUME_NAME_MAX = 300;
+
+/** The tailored resume's name from the job's title and company, within RESUME_NAME_MAX. */
+export function tailoredResumeName(title: string, company: string): string {
+  const name = [title.trim(), company.trim()].filter(Boolean).join(' at ') || 'Tailored resume';
+  return name.slice(0, RESUME_NAME_MAX).trimEnd();
+}
 
 const requirement = z.looseObject({ id: z.string(), text: z.string(), kind: z.string().catch('required') });
 const coverage = z.looseObject({

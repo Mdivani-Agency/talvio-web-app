@@ -287,6 +287,19 @@ describe('useServiceImprove', () => {
     unmount();
   });
 
+  it('starts over when opened again after the cap refused the job', async () => {
+    const client = fakeClient();
+    client.createJob.mockRejectedValueOnce(new LlmError({ code: 'quota_exceeded', message: 'Limit reached.', status: 429 }));
+    const { result, unmount } = setup(client);
+    act(() => result.current.start());
+    await waitFor(() => expect(result.current.step).toBe('capped'), WAIT);
+
+    act(() => result.current.start());
+    await waitFor(() => expect(result.current.step).toBe('questions'), WAIT);
+    expect(client.createJob).toHaveBeenCalledTimes(2);
+    unmount();
+  });
+
   it('starts a new session on Retry when the service no longer has the old one', async () => {
     const client = fakeClient();
     client.submitAnswers.mockRejectedValueOnce(new LlmError({ code: 'not_found', message: 'Not found.', status: 404 }));
