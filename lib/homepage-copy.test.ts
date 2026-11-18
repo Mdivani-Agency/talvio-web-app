@@ -7,7 +7,6 @@ import {
   BENEFITS_TITLE,
   CTA_BODY,
   CTA_TITLE,
-  HERO_BADGE,
   HERO_BODY,
   HERO_TITLE,
   HOME_FAQ,
@@ -32,7 +31,6 @@ const unsupported = /application track|job application|per-application|GDPR|care
 
 describe('homepage copy', () => {
   it('uses the messaging brief lines as written', () => {
-    expect(HERO_BADGE).toBe('Talvio Beta');
     expect(HERO_TITLE).toBe('Free PDF resume generator');
     expect(HERO_BODY).toBe(
       'Write your experience once, pick a template, and download a clean resume PDF. Free forever, no card needed.',

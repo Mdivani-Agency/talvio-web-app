@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  BETA_TAG,
   FOOTER_PAGE_LINKS,
   HOME_NAV_LINKS,
   HOME_SECTION_LINKS,
@@ -29,6 +30,10 @@ describe('public navigation', () => {
     const names = HOME_NAV_LINKS.map((link) => link.name);
     expect(new Set(names).size).toBe(names.length);
     expect(FOOTER_PAGE_LINKS.every((link) => link.href.length > 0)).toBe(true);
+  });
+
+  it('labels the header beta tag in one word', () => {
+    expect(BETA_TAG).toBe('Beta');
   });
 
   it('writes the given year in the copyright line', () => {
