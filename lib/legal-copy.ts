@@ -14,11 +14,11 @@ export type LegalDocument = {
 
 /** Month and year each document was last changed. Update the one whose text you change. */
 export const TERMS_LAST_UPDATED = 'October 2026';
-export const PRIVACY_LAST_UPDATED = 'October 2026';
+export const PRIVACY_LAST_UPDATED = 'November 2026';
 
 /** Sitemap dates (ISO). Change them with the text and the "Last updated" lines above. */
 export const TERMS_LAST_MODIFIED = '2026-10-07';
-export const PRIVACY_LAST_MODIFIED = '2026-10-09';
+export const PRIVACY_LAST_MODIFIED = '2026-11-16';
 
 export const OPERATOR_NAME = 'MDIO';
 export const OPERATOR_HREF = 'https://mdivani.agency';

@@ -20,6 +20,6 @@ query ResumesCollection($first: Int) {
   }
 }
 
-mutation Save_Profile($p_payload: JSON) {
+mutation Save_Profile($p_payload: JSON!) {
   save_profile(p_payload: $p_payload)
 }

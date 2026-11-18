@@ -72,6 +72,51 @@ describe('AiImproveOverlay', () => {
     expect(value.reject).toHaveBeenCalledTimes(1);
   });
 
+  it('asks to confirm a suggestion that adds a fact, and shows what was left out', () => {
+    const value = session({
+      step: 'proposalReview',
+      confirmed: new Set(),
+      toggleConfirmed: vi.fn(),
+      review: {
+        resume: fullResumeContent,
+        keptSections: [],
+        summary: 'One skill from your answers.',
+        skipped: 1,
+        changes: [{
+          id: 'change-2',
+          section: 'skills',
+          field: 'add',
+          before: '',
+          after: 'Mentoring',
+          reason: 'From your answers.',
+          claims: ['You mentor engineers.'],
+          needsConfirmation: true,
+        }],
+      },
+    });
+    render(<AiImproveOverlay session={value} />);
+
+    expect(screen.getByText('Skills · Add')).toBeTruthy();
+    expect(screen.getByText('One skill from your answers.')).toBeTruthy();
+    expect(screen.getByText(/One suggestion was left out/)).toBeTruthy();
+    expect(screen.getByText('You mentor engineers.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm: Skills · Add' }));
+    expect(value.toggleConfirmed).toHaveBeenCalledWith('change-2');
+  });
+
+  it('holds the buttons while saving and shows why a save failed', () => {
+    const review = { resume: fullResumeContent, keptSections: [], changes: [] };
+    render(<AiImproveOverlay session={session({ step: 'proposalReview', review, saving: true })} />);
+    expect((screen.getByRole('button', { name: 'Saving...' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Reject' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Close Improve with AI' }) as HTMLButtonElement).disabled).toBe(true);
+    cleanup();
+
+    render(<AiImproveOverlay session={session({ step: 'proposalReview', review, saveError: 'This resume changed.' })} />);
+    expect(screen.getByRole('alert').textContent).toBe('This resume changed.');
+    expect((screen.getByRole('button', { name: 'Accept' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('offers Retry and Cancel after a failure, and Close at the cap', () => {
     const failed = session({ step: 'error', failure: { stage: 'proposal', message: 'Failed to tailor account' } });
     render(<AiImproveOverlay session={failed} />);

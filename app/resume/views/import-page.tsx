@@ -1,7 +1,7 @@
 import { UploadFile } from "@components/ui";
 import { useResumeParser } from "@hooks/use-resume-parser";
 import { profileToResumeDocument } from "@lib/models/resume-document";
-import { transformFromParsedToAccount } from "@lib/utils";
+import { toastImportReview } from "@components/import/import-review";
 import { useResumeContext } from "../providers/state-provider";
 import { toast } from "sonner";
 import { Loading } from "@components/views";
@@ -15,9 +15,8 @@ export default function ImportResumePage() {
   const { applyImportedResume, resume } = useResumeContext();
   const searchParams = useSearchParams();
 
-  const { parseResumeText, loading } = useResumeParser({
-    onResumeParsed: (parsedResume) => {
-      const transformed = transformFromParsedToAccount(parsedResume);
+  const { parseResumeText, loading, offline } = useResumeParser({
+    onResumeParsed: (transformed, _sourceText, review) => {
       const document = profileToResumeDocument(transformed);
       const name = `${transformed.profile.firstName} ${transformed.profile.lastName}`.trim() || 'my resume';
 
@@ -28,11 +27,12 @@ export default function ImportResumePage() {
         color: resume.color,
         fontSize: resume.fontSize,
       });
+      toastImportReview(review);
     },
     onError: (error) => {
       toast.error(error.message);
     },
-  });
+  }, { surface: 'resume' });
 
   if (isAuthenticating) {
     return <Loading message="Authenticating..." />;
@@ -46,7 +46,7 @@ export default function ImportResumePage() {
   return (
     <section className="grid grid-cols-5 h-screen">
       <div className="relative h-full col-span-3 p-16">
-        {loading ? <Loading className="absolute top-0 left-0 w-full h-full" message="Parsing resume..." /> : (
+        {loading ? <Loading className="absolute top-0 left-0 w-full h-full" message={offline ? "Waiting for a connection..." : "Parsing resume..."} /> : (
         <div className="flex flex-col items-center justify-center gap-8 h-full max-w-screen-lg mx-auto">
           <div className="flex flex-col gap-4 text-center">
             <h1 className="text-xl font-bold">Upload your resume</h1>

@@ -8,7 +8,13 @@ import {
   type LegalDocument,
 } from './legal-copy';
 
-/** Privacy Policy, published as written in the Linear document attached to MDI-322. */
+/**
+ * Privacy Policy, first published as written in the Linear document attached to MDI-322. AI runs on
+ * the Talvio LLM service (MDI-221, MDI-224): documents are processed on our AWS servers, a safety check
+ * runs on Amazon Bedrock in the United States, the AI models run on Anthropic's Claude API (MDI-638),
+ * and AI content is deleted only by retention (7 days for content, 30 days for job records), not when
+ * an account is removed.
+ */
 export const PRIVACY: LegalDocument = {
   title: 'Privacy Policy',
   lastUpdated: PRIVACY_LAST_UPDATED,
@@ -89,7 +95,13 @@ export const PRIVACY: LegalDocument = {
       heading: '5. AI features',
       blocks: [
         p(
-          'When you import a resume or answer the optional setup questions, the relevant text from your resume or profile is sent to our AI provider, OpenAI, to produce profile fields or suggested edits. This happens only when you use those features. You can build a resume without them.',
+          'When you import a resume, answer the optional questions, improve a resume or tailor one to a job post, the text needed for that task is sent to our own AI service, which runs on Amazon Web Services. Your profile or resume content, your answers and any job post you paste are processed there. The text is first checked for misuse by a safety filter on Amazon Bedrock in the United States, and is then sent to Anthropic, the company that makes the Claude AI models, to produce the result.',
+        ),
+        p(
+          'Anthropic does not use this content to train its models. It keeps the content only for a limited time, under its commercial terms, to provide the service and to detect misuse. Amazon Web Services does not use it to train models either.',
+        ),
+        p(
+          'This happens only when you use those features, and AI suggestions apply only after you review them. You can build a resume without them.',
         ),
       ],
     },
@@ -100,9 +112,12 @@ export const PRIVACY: LegalDocument = {
         ul(
           [strong('Supabase:'), ' sign-in, database and storage of your profile and resumes.'],
           [strong('Vercel:'), ' website hosting and anonymous page-view statistics.'],
-          [strong('Amazon Web Services:'), ' storage of generated PDF files and delivery of account emails.'],
+          [
+            strong('Amazon Web Services:'),
+            ' storage of generated PDF files, delivery of account emails, and our AI service, including its safety filter on Amazon Bedrock.',
+          ],
+          [strong('Anthropic:'), ' the Claude AI models behind the AI features, when you use them.'],
           [strong('Sentry:'), ' error monitoring and session replay on our production website.'],
-          [strong('OpenAI:'), ' AI features, when you use them.'],
           [strong('Google:'), ' sign-in, if you choose to sign in with it.'],
         ),
         p(
@@ -112,13 +127,20 @@ export const PRIVACY: LegalDocument = {
     },
     {
       heading: '7. Where your data is processed',
-      blocks: [p('Our providers may process data outside Georgia, including in the United States and the European Union.')],
+      blocks: [
+        p(
+          'Our providers may process data outside Georgia, including in the United States and the European Union. AI features are processed by Amazon Web Services and Anthropic, including in the United States.',
+        ),
+      ],
     },
     {
       heading: '8. How long we keep your data',
       blocks: [
         p(
           'We keep your account, profile, resumes and PDFs for as long as you have an account. When you ask us to delete your account, we delete them. Technical logs are kept for a shorter period by our hosting providers. Copies in backups are removed as those backups expire.',
+        ),
+        p(
+          'What you send to the AI features is kept only as long as the task needs it and is then deleted automatically: uploaded files within 24 hours, and the text of your documents, answers, job posts and AI results within 7 days. Records of AI tasks without that text (for example when a task ran and how much of the daily limit it used) are deleted within 30 days. These copies are not deleted the moment you delete your account; they are removed on this schedule. Anthropic keeps its own copy only for the limited time described in section 5.',
         ),
       ],
     },

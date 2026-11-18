@@ -78,14 +78,37 @@ GRANT EXECUTE ON FUNCTION public.generate_pdf(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.finalize_pdf(uuid, text, text) TO authenticated;
 REVOKE ALL ON FUNCTION public.consume_ai_request() FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.consume_ai_request() TO authenticated;
+REVOKE ALL ON FUNCTION public.apply_llm_proposal(jsonb) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.apply_llm_proposal(jsonb) TO authenticated;
 ```
+
+`apply_llm_proposal(p_request jsonb)` (MDI-222) is `SECURITY DEFINER`. It
+saves an accepted LLM proposal for `auth.uid()` and its receipt in one
+transaction, and returns the receipt as `JSON`. A second call for the same
+proposal returns the first receipt (`replayed: true`) and writes nothing.
+
+Auth hook (MDI-440). Only Supabase Auth runs it; clients cannot call it
+or read a user's plan:
+
+```sql
+GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
+REVOKE ALL ON FUNCTION public.custom_access_token_hook(jsonb) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.custom_access_token_hook(jsonb) TO supabase_auth_admin;
+REVOKE ALL ON FUNCTION public.account_plan(uuid) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.account_plan(uuid) TO supabase_auth_admin;
+```
+
+The hook is `SECURITY INVOKER` and runs as `supabase_auth_admin`, which
+already reads `auth.users`. It adds `account_status` (`active` |
+`suspended`) and `plan` to the access token; the LLM service's API Gateway
+authorizer reads them instead of this database.
 
 `consume_ai_request()` takes no arguments and counts one AI request for
 `auth.uid()` on the current UTC day, so a caller can only spend their own
-quota. The AI routes call it through pg_graphql with the caller's token
-(`ConsumeAiRequest` in `lib/graphql/ai-cap.graphql`, via
-`getServerGraphqlSdk`) before the provider; the app has no service-role
-client. It never touches `user_credits`.
+quota. It never touches `user_credits`. Since MDI-224 the app no longer
+calls it: every AI feature runs on the LLM service, which enforces its own
+daily quota. The cap's objects are dropped in a later release, once no
+deployed app still calls them.
 
 `consume_credits` and `require_credits` are private: they receive
 `user_id` + `action` and look up `credit_prices`. `generate_pdf` checks
@@ -116,6 +139,7 @@ the GraphQL `JSON` scalar (serialized string).
 | `credit_prices` | none | none | none | `20261008000300_resumes_credits.sql` (server-side) |
 | `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
 | `ai_daily_usage` | none | none | none | `20261008000500_ai_daily_caps.sql` (server-side) |
+| `llm_proposal_applications` | none | SELECT | all | `20261112000100_llm_proposal_applications.sql` (rows written only by `apply_llm_proposal`) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

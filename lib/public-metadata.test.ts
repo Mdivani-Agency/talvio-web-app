@@ -132,4 +132,9 @@ describe('public metadata', () => {
     process.env.VERCEL_ENV = 'production';
     expect(allowPublicIndexing()).toBe(true);
   });
+
+  it('dates the privacy policy by its last change', () => {
+    const privacy = publicSitemap({ plansPage: false }).find((entry) => entry.url.endsWith('/privacy-policy'))?.lastModified;
+    expect(privacy).toBe('2026-11-16');
+  });
 });

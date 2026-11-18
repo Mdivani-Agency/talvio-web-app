@@ -18,7 +18,8 @@ const CONTENT_FIELDS: Record<AiItemSection, readonly string[]> = {
 type Item = Record<string, unknown>;
 
 export type AiFieldChange = {
-  section: 'profile' | AiItemSection;
+  /** `skills`, `tools`, `languages` and `links` only hold additions from the LLM service (`field: 'add'`). */
+  section: 'profile' | AiItemSection | 'skills' | 'tools' | 'languages' | 'links';
   /** Entry position in the section; absent for the profile. */
   index?: number;
   /** Company, school or project name, for the review heading. */
@@ -26,6 +27,12 @@ export type AiFieldChange = {
   field: string;
   before: string;
   after: string;
+  /** LLM service changes (MDI-221): the change id, why it was made, and the claims to confirm. */
+  id?: string;
+  reason?: string;
+  claims?: string[];
+  /** Applied only after the user confirms its claims. */
+  needsConfirmation?: boolean;
 };
 
 export type AiProposalResult = {
@@ -33,6 +40,9 @@ export type AiProposalResult = {
   changes: AiFieldChange[];
   /** Sections where the proposal added or removed entries; they are kept as they were (D13). */
   keptSections: AiItemSection[];
+  /** LLM service proposals: the service's summary, and changes left out as stale or unusable. */
+  summary?: string;
+  skipped?: number;
 };
 
 function itemsOf(resume: ResumeForm, section: AiItemSection): Item[] {

@@ -49,9 +49,10 @@ export type ExperienceRow = {
   start_date: string;
   end_date?: string | null;
   is_present: boolean;
-  achievements?: string[] | null;
-  responsibilities?: string[] | null;
-  key_contributions?: string[] | null;
+  // pg_graphql exposes text[] elements as nullable; the columns never hold null elements.
+  achievements?: (string | null)[] | null;
+  responsibilities?: (string | null)[] | null;
+  key_contributions?: (string | null)[] | null;
   additional_details?: string | null;
 };
 
@@ -176,10 +177,14 @@ function experienceFromRow(row: ExperienceRow): Experience {
     employmentType: employmentToApp(row.employment_type),
     locationType: locationToApp(row.location_type),
     additionalDetails: row.additional_details ?? undefined,
-    achievements: row.achievements ?? [],
-    responsibilities: row.responsibilities ?? [],
-    keyContributions: row.key_contributions ?? [],
+    achievements: textList(row.achievements),
+    responsibilities: textList(row.responsibilities),
+    keyContributions: textList(row.key_contributions),
   };
+}
+
+function textList(values?: (string | null)[] | null): string[] {
+  return (values ?? []).filter((value): value is string => typeof value === 'string');
 }
 
 function educationFromRow(row: EducationRow): Education {

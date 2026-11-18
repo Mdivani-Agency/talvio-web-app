@@ -6,6 +6,7 @@ import { PRIVACY_LAST_UPDATED, documentText } from './legal-copy';
 import { PRIVACY } from './privacy-copy';
 
 const text = documentText(PRIVACY);
+const section = (heading: string) => documentText({ ...PRIVACY, sections: PRIVACY.sections.filter((s) => s.heading === heading) });
 
 describe('privacy policy copy', () => {
   it('has the 13 numbered sections in order, with the date set', () => {
@@ -17,14 +18,28 @@ describe('privacy policy copy', () => {
     expect(PRIVACY.sections).toHaveLength(13);
   });
 
-  it('names every data processor found in the code and infrastructure', () => {
-    const sharing = documentText({
-      ...PRIVACY,
-      sections: PRIVACY.sections.filter((s) => s.heading === '6. Who we share data with'),
-    });
-    for (const processor of ['Supabase', 'Vercel', 'Amazon Web Services', 'Sentry', 'OpenAI', 'Google']) {
-      expect(sharing).toContain(processor);
+  it('names every data processor found in the code and infrastructure, and no longer OpenAI', () => {
+    for (const processor of ['Supabase', 'Vercel', 'Amazon Web Services', 'Anthropic', 'Sentry', 'Google']) {
+      expect(section('6. Who we share data with')).toContain(processor);
     }
+    expect(text).not.toMatch(/openai/i);
+  });
+
+  it('names AWS, the Bedrock safety filter and Anthropic for AI', () => {
+    expect(section('5. AI features')).toContain('safety filter on Amazon Bedrock in the United States');
+    expect(section('5. AI features')).toContain('sent to Anthropic');
+    expect(section('5. AI features')).toContain('Anthropic does not use this content to train its models');
+    expect(section('7. Where your data is processed')).toContain(
+      'AI features are processed by Amazon Web Services and Anthropic, including in the United States',
+    );
+  });
+
+  it('describes retention-only deletion of AI content', () => {
+    const retention = section('8. How long we keep your data');
+    expect(retention).toContain('within 24 hours');
+    expect(retention).toContain('within 7 days');
+    expect(retention).toContain('within 30 days');
+    expect(retention).toContain('not deleted the moment you delete your account');
   });
 
   it('discloses Vercel Web Analytics', () => {

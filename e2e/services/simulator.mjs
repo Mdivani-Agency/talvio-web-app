@@ -4,34 +4,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { handleBlogApi } from './blog-api.mjs';
+import { handleLlmApi, llmAiStats, resetLlmApi, setLlmScenario } from './llm-api.mjs';
 
 const API_KEY = process.env.MEDIA_SERVICE_API_KEY || 'local-e2e-dummy';
 const APP_ORIGIN = 'http://localhost:3002';
-const TIMEOUT_MS = 1200;
 const FONT_BYTES = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../assets/local-font.ttf'));
-
-const SUCCESS_ACCOUNT = {
-  profile: {
-    email: 'ada@talvio.test',
-    firstName: 'Ada',
-    lastName: 'Owner',
-    role: 'Engineer',
-    tagline: null,
-    phone: '',
-    website: null,
-    city: null,
-    country: null,
-    seniority: 'senior',
-  },
-  experience: null,
-  education: null,
-  recommendations: null,
-  projects: null,
-  skills: null,
-  tools: null,
-  links: null,
-  languages: null,
-};
 
 const state = {
   scenario: 'success',
@@ -40,7 +17,6 @@ const state = {
   unexpected: [],
   presigns: 0,
   uploads: 0,
-  ai: { parse: 0, questions: 0, tailor: 0 },
 };
 
 export function resetSimulator() {
@@ -50,7 +26,7 @@ export function resetSimulator() {
   state.unexpected = [];
   state.presigns = 0;
   state.uploads = 0;
-  state.ai = { parse: 0, questions: 0, tailor: 0 };
+  resetLlmApi();
 }
 
 function slugify(input) {
@@ -110,153 +86,6 @@ function mediaKey(path, userId, name, type) {
   const ext = String(type).split('/')[1] || 'bin';
   const prefix = path ? `${path}/` : '';
   return `${prefix}${userId}/${slugify(name)}.${ext}`;
-}
-
-function responseEnvelope(text) {
-  return {
-    id: 'resp_local_e2e',
-    object: 'response',
-    status: 'completed',
-    output: [
-      {
-        id: 'msg_local_e2e',
-        type: 'message',
-        role: 'assistant',
-        status: 'completed',
-        content: [{ type: 'output_text', text, annotations: [] }],
-      },
-    ],
-  };
-}
-
-const QUESTIONS = [
-  {
-    question: 'What impact did you deliver in your latest role?',
-    example: 'Reduced downtime by 30%',
-  },
-  {
-    question: 'Which tools mattered most on that work?',
-    example: 'React and Docker',
-  },
-];
-
-const IMPORTED_ACCOUNT = {
-  ...SUCCESS_ACCOUNT,
-  profile: {
-    ...SUCCESS_ACCOUNT.profile,
-    tagline: 'Imported from the local resume.',
-    phone: '+15555550100',
-    website: 'https://ada.talvio.test',
-    city: 'Tbilisi',
-    country: 'Georgia',
-  },
-  experience: [
-    {
-      company: 'Imported Labs',
-      jobTitle: 'Engineer',
-      startDate: '2020-01-01T00:00:00.000Z',
-      endDate: '2022-06-01T00:00:00.000Z',
-      isPresent: null,
-      employmentType: 'full-time',
-      locationType: 'remote',
-      additionalDetails: 'Shipped the import path.',
-      achievements: ['Launched parsing'],
-      responsibilities: ['Reviewed extracted fields'],
-      keyContributions: [],
-    },
-  ],
-  education: [
-    {
-      name: 'Talvio Institute',
-      degreeType: "Bachelor's Degree",
-      startDate: '2016-09-01T00:00:00.000Z',
-      endDate: '2020-06-01T00:00:00.000Z',
-      isPresent: null,
-      additionalDetails: 'Focused on software.',
-    },
-  ],
-  projects: [
-    {
-      name: 'Imported Project',
-      url: 'https://ada.talvio.test/project',
-      additionalDetails: 'Imported project details that are long enough to satisfy the profile form and stay editable after the PDF parse completes.',
-    },
-  ],
-  skills: [{ name: 'Parsing' }],
-  tools: [{ name: 'pdf.js' }],
-  links: [{ value: 'https://ada.talvio.test', type: 'talvio' }],
-  languages: [{ language: 'English', proficiency: 'fluent' }],
-};
-
-function requestKind(body) {
-  const text = body.toString('utf8');
-  if (text.includes('resume reviewer')) {
-    return 'questions';
-  }
-  if (text.includes('resume editor')) {
-    return 'tailor';
-  }
-  return 'parse';
-}
-
-function successText(kind, scenario) {
-  if (kind === 'questions') {
-    const questions = scenario === 'zero_questions' ? [] : QUESTIONS;
-    return JSON.stringify({ questions });
-  }
-  if (kind === 'tailor') {
-    return JSON.stringify({
-      profile: { tagline: 'AI polished summary for the local profile.' },
-    });
-  }
-  return JSON.stringify(IMPORTED_ACCOUNT);
-}
-
-function scenarioFails(scenario, kind) {
-  return scenario === 'error'
-    || (scenario === 'parse_error' && kind === 'parse')
-    || (scenario === 'qa_error' && kind === 'questions')
-    || (scenario === 'tailor_error' && kind === 'tailor');
-}
-
-async function handleAi(request, response, body) {
-  const scenario = request.headers['x-e2e-scenario'] || state.scenario;
-  const kind = requestKind(body);
-  state.ai[kind] += 1;
-  if (scenario === 'timeout') {
-    await new Promise((resolve) => setTimeout(resolve, TIMEOUT_MS));
-    send(response, 504, { error: { message: 'simulated timeout', type: 'timeout' } });
-    return;
-  }
-  if (scenarioFails(scenario, kind)) {
-    send(response, 500, { error: { message: 'simulated upstream error', type: 'server_error' } });
-    return;
-  }
-  if (scenario === 'malformed') {
-    send(response, 200, responseEnvelope('MALFORMED {{{'));
-    return;
-  }
-  if (scenario === 'delayed') {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-  const known = new Set([
-    'success',
-    'delayed',
-    'zero_questions',
-    'parse_error',
-    'qa_error',
-    'tailor_error',
-    'presign_error',
-    'upload_error',
-    'upload_delay',
-    'records_error',
-  ]);
-  if (known.has(scenario)) {
-    send(response, 200, responseEnvelope(successText(kind, scenario)));
-    return;
-  }
-  state.unexpected.push(`${request.method} ${request.url}`);
-  send(response, 404, { error: 'unknown scenario' });
 }
 
 function handlePresign(url, request, response, body, userId) {
@@ -329,6 +158,9 @@ export function createSimulator() {
       if (request.method === 'POST' && path === '/__e2e/scenario') {
         const json = JSON.parse(body.toString('utf8') || '{}');
         state.scenario = json.mode || 'success';
+        // One scenario drives media and AI: `parse_error`, `qa_error`, `tailor_error`, `error` and
+        // `malformed` fail the matching LLM jobs (see llm-api.mjs).
+        setLlmScenario(state.scenario);
         send(response, 200, { mode: state.scenario });
         return;
       }
@@ -337,11 +169,7 @@ export function createSimulator() {
         return;
       }
       if (request.method === 'GET' && path === '/__e2e/stats') {
-        send(response, 200, { presigns: state.presigns, uploads: state.uploads, ai: state.ai });
-        return;
-      }
-      if (request.method === 'POST' && path === '/v1/responses') {
-        await handleAi(request, response, body);
+        send(response, 200, { presigns: state.presigns, uploads: state.uploads, ai: llmAiStats() });
         return;
       }
       if (request.method === 'GET' && path === '/webfonts/v1/webfonts') {
@@ -412,6 +240,10 @@ export function createSimulator() {
           return;
         }
         send(response, 200, recordsFor(decodeURIComponent(records[1])));
+        return;
+      }
+
+      if (handleLlmApi(request, url, body, (status, payload, headers) => send(response, status, payload, headers))) {
         return;
       }
 

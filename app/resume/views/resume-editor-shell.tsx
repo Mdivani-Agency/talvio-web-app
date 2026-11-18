@@ -18,7 +18,7 @@ import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
 
 import { ResumePreview } from '../components/resume-preview';
-import { useAiImprove } from '../hooks/use-ai-improve';
+import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../hooks/use-service-improve';
 import { EditResumeView } from './edit-resume-view';
 import TemplatesView from './templates-view';
 
@@ -37,6 +37,13 @@ export type ResumeImproveControls = {
   onRequest?: () => boolean;
   /** A new value starts a session, for a page that confirmed a fork first. */
   startToken?: number;
+  /** The resume row the session is about (LLM service, MDI-221); unsaved resumes leave it null. */
+  source?: ImproveSource | null;
+  /**
+   * Saves an accepted LLM service proposal to the resume (MDI-222) and puts it in the editor
+   * without autosave. Without it, Accept only changes the editor (an unsaved resume).
+   */
+  onSave?: (accepted: ImproveAccepted) => Promise<void>;
 };
 
 type ResumeEditorShellProps = {
@@ -79,13 +86,22 @@ export function ResumeEditorShell({
   const { allowance } = useAllowance();
   const [aiRevision, setAiRevision] = useState(0);
   const improveEnabled = Boolean(improve) && featureFlags().resumeAiImprove && !readOnly;
-  const ai = useAiImprove({
+  const applyImproved = (resume: PreviewDto['resume']) => {
+    onChange({ resume });
+    setAiRevision((value) => value + 1);
+  };
+  // Sessions, questions and proposals come from the LLM service.
+  const ai = useServiceImprove({
     resume: document.resume,
     storageKey: improveEnabled ? improve?.storageKey ?? null : null,
-    onApply: (resume) => {
-      onChange({ resume });
-      setAiRevision((value) => value + 1);
-    },
+    source: improve?.source ?? null,
+    onApply: applyImproved,
+    onSave: improve?.onSave
+      ? async (accepted) => {
+        await improve.onSave?.(accepted);
+        setAiRevision((value) => value + 1);
+      }
+      : undefined,
   });
   const startToken = improve?.startToken;
   const lastStartToken = useRef(startToken);

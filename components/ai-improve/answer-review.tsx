@@ -8,9 +8,19 @@ type AnswerReviewProps = {
   onBack?: () => void;
   onImprove: () => void;
   onCancel: () => void;
+  /** The submit button; Improve with AI unless the journey says otherwise. */
+  actionLabel?: string;
 };
 
-export function AnswerReview({ questions, answers, notice, onBack, onImprove, onCancel }: AnswerReviewProps) {
+export function AnswerReview({
+  questions,
+  answers,
+  notice,
+  onBack,
+  onImprove,
+  onCancel,
+  actionLabel = 'Improve with AI',
+}: AnswerReviewProps) {
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-xl font-semibold">Review your answers</h2>
@@ -43,7 +53,7 @@ export function AnswerReview({ questions, answers, notice, onBack, onImprove, on
             Cancel
           </Button>
           <Button type="button" onClick={onImprove}>
-            Improve with AI
+            {actionLabel}
           </Button>
         </CardFooter>
       </Card>

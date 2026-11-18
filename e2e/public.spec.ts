@@ -63,6 +63,11 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByRole('heading', { name: '6. Who we share data with', exact: true })).toBeVisible();
   await expect(page.getByText(/Vercel Web Analytics/).first()).toBeVisible();
   await expect(page.getByRole('main').getByRole('link', { name: 'contact@talvio.co' }).first()).toHaveAttribute('href', 'mailto:contact@talvio.co');
+  const privacyText = await page.getByRole('main').innerText();
+  expect(privacyText).toContain('Amazon Bedrock in the United States');
+  expect(privacyText).toContain('sent to Anthropic');
+  expect(privacyText).toContain('uploaded files within 24 hours');
+  expect(privacyText).not.toContain('OpenAI');
 
   await page.goto('/this-page-does-not-exist');
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();

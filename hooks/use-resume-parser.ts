@@ -1,51 +1,127 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import type { LlmError } from '@lib/llm/errors';
+import { importedAccount, importTextProblem, pdfTextRequest, type ImportReview } from '@lib/llm/parse-document';
+import { useUserSession } from '@lib/providers';
+import type { AccountDto } from '@lib/types';
+
+import { useLlmJob } from './use-llm-job';
 import { usePdfText } from './use-pdf-text';
-import { parseResume } from '@lib/clients/llm.client';
-import { ParsedAccount } from '@lib/types';
 
 type Events = {
-  /** `sourceText` is the extracted PDF text or the pasted text that was parsed. */
-  onResumeParsed: (parsedResume: ParsedAccount, sourceText: string) => void;
+  /**
+   * The imported account. `sourceText` is the extracted PDF text or the pasted text that was parsed.
+   * `review` lists what the user should check.
+   */
+  onResumeParsed: (account: AccountDto, sourceText: string, review: ImportReview) => void;
   onError: (error: Error) => void;
 };
 
-export const useResumeParser = (events: Events) => {
-  const [loading, setLoading] = useState(false);
-  const { parsePdf, parsing } = usePdfText();
+type Options = {
+  /** Which import this is; a reload resumes a running import only in the same place. */
+  surface: 'onboarding' | 'resume';
+};
 
-  const parse = useCallback(
-    async (readText: () => Promise<string>) => {
-      setLoading(true);
+/** The stored job for a user's import in one place (see useLlmJob). */
+export function importJobStorageKey(userId: string, surface: Options['surface']) {
+  return `talvio-llm-job:v1:${userId}:import:${surface}`;
+}
+
+/**
+ * Reads a resume from a PDF or pasted text into account values (MDI-221) with a parse_document job
+ * on the LLM service, which survives a reload.
+ */
+export const useResumeParser = (events: Events, { surface }: Options) => {
+  const { session } = useUserSession();
+  const userId = session?.user.id ?? null;
+  // Reading a PDF before its job starts counts as busy, and only the latest selection may submit.
+  const [reading, setReading] = useState(false);
+  const readSeq = useRef(0);
+  const { extractPdfPages, parsing } = usePdfText();
+  const job = useLlmJob({ storageKey: userId ? importJobStorageKey(userId, surface) : null });
+  const eventsRef = useRef(events);
+
+  useEffect(() => {
+    eventsRef.current = events;
+  }, [events]);
+
+  // Deliver a finished job once, then forget it, so a reload does not offer it again.
+  const { state, clear, request } = job;
+  useEffect(() => {
+    if (state.phase === 'succeeded') {
+      const sent = request();
+      const sourceText = sent?.operation === 'parse_document' && sent.input.kind === 'text' ? sent.input.text : '';
       try {
-        const text = await readText();
-
-        const parsedResume = await parseResume(text);
-
-        if (parsedResume) {
-          events.onResumeParsed(parsedResume, text);
-        }
-      } catch (error) {
-        events.onError(error as Error);
-      } finally {
-        setLoading(false);
+        const { account, review } = importedAccount(state.result);
+        eventsRef.current.onResumeParsed(account, sourceText, review);
+      } catch {
+        eventsRef.current.onError(new Error('Failed to parse resume'));
       }
+      clear();
+      return;
+    }
+    if (state.phase === 'failed') {
+      const error: LlmError = state.error;
+      eventsRef.current.onError(error);
+      // A submit that got no answer keeps its key: importing the same text again rejoins it.
+      if (error.code !== 'network_error') {
+        clear();
+      }
+    }
+  }, [clear, request, state]);
+
+  const parseWithService = useCallback(
+    (text: string, extraction: ReturnType<typeof pdfTextRequest>['extraction'] | null) => {
+      const problem = importTextProblem(text, extraction?.pageCount ?? null);
+      if (problem) {
+        eventsRef.current.onError(new Error(problem));
+        return;
+      }
+      job.start({ operation: 'parse_document', locale: 'en-US', input: { kind: 'text', text, extraction } });
     },
-    [events],
+    [job],
   );
 
   const parseResumeText = useCallback(
-    (file: File) => parse(async () => parsePdf(Buffer.from(await file.arrayBuffer()))),
-    [parse, parsePdf],
+    async (file: File) => {
+      const seq = ++readSeq.current;
+      setReading(true);
+      try {
+        const { pages, version } = await extractPdfPages(Buffer.from(await file.arrayBuffer()));
+        if (seq !== readSeq.current) {
+          return;
+        }
+        const { text, extraction } = pdfTextRequest(pages, version);
+        parseWithService(text, extraction);
+      } catch (error) {
+        if (seq === readSeq.current) {
+          eventsRef.current.onError(error as Error);
+        }
+      } finally {
+        if (seq === readSeq.current) {
+          setReading(false);
+        }
+      }
+    },
+    [extractPdfPages, parseWithService],
   );
 
   const parsePastedText = useCallback(
-    (text: string) => parse(async () => text),
-    [parse],
+    async (text: string) => {
+      // A newer paste wins over a PDF that is still being read.
+      readSeq.current += 1;
+      setReading(false);
+      parseWithService(text, null);
+    },
+    [parseWithService],
   );
 
   return {
-    loading,
+    loading: reading || job.busy,
     extracting: parsing,
+    /** True while the LLM service cannot be reached; the import continues when it can. */
+    offline: (state.phase === 'submitting' || state.phase === 'running') && state.offline,
+    cancel: job.cancel,
     parseResumeText,
     parsePastedText,
   };

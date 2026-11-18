@@ -7,8 +7,13 @@ describe('feature flags', () => {
     vi.unstubAllEnvs();
   });
 
-  it('defaults to beta on, plans page off, purchase UI off and Improve with AI off', () => {
-    const defaults = { betaMode: true, plansPage: false, creditPurchaseUi: false, resumeAiImprove: false };
+  it('defaults to beta on, plans page off, purchase UI off, and Improve with AI off', () => {
+    const defaults = {
+      betaMode: true,
+      plansPage: false,
+      creditPurchaseUi: false,
+      resumeAiImprove: false,
+    };
     expect(featureFlags({})).toEqual(defaults);
     expect(DEFAULT_FEATURE_FLAGS).toEqual(defaults);
   });

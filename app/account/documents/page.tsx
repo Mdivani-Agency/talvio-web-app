@@ -44,7 +44,12 @@ export default function DocumentsPage() {
 
   return (
     <section className="flex flex-col gap-8 p-4">
-      <h1 className="text-xl font-bold">Your Resumes</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl font-bold">Your Resumes</h1>
+        <Button asChild variant="secondary">
+          <Link href="/resume/tailor">Tailor to a job</Link>
+        </Button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {
         documents.length === 0 && (

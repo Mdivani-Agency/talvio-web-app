@@ -282,13 +282,13 @@ test('PROF-04 provider failures recover without stranding the profile', async ({
 
   await setScenario('malformed');
   await uploadResume(page, PDF);
-  await expect(page.getByText(/not valid JSON|Failed to parse resume/)).toBeVisible();
+  await expect(page.getByText('Failed to parse resume').last()).toBeVisible();
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
   await expect(page.getByRole('button', { name: 'Import from resume' })).toBeVisible();
 
   await setScenario('parse_error');
   await uploadResume(page, PDF);
-  await expect(page.getByText('Failed to parse resume').last()).toBeVisible();
+  await expect(page.getByText('This could not be processed. Edit it and try again.').last()).toBeVisible();
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
   await expect(page.getByRole('button', { name: 'Import from resume' })).toBeEnabled();
 
@@ -367,7 +367,7 @@ test('PROF-05 pasted resume text imports within the 2,000-character limit', asyn
   await openPaste(resumeText);
   await expect(paste.getByText('1,800 / 2,000 characters')).toBeVisible();
   await paste.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page.getByText('Failed to parse resume').last()).toBeVisible();
+  await expect(page.getByText('This could not be processed. Edit it and try again.').last()).toBeVisible();
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
   await expect(page.getByRole('button', { name: 'Paste resume text' })).toBeEnabled();
 

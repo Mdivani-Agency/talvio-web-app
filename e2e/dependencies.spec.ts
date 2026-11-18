@@ -87,48 +87,49 @@ test('local media, parse, and font dependencies stay on loopback', async ({ page
   expect(listed.items.map((item) => item.key)).toEqual([uploaded.key]);
   expect(listed.nextToken).toBeNull();
 
-  const success = await page.request.post('/api/resume/parse', {
-    headers: { 'x-e2e-scenario': 'success' },
-    data: { resume: 'Ada Owner, Engineer' },
-  });
-  expect(success.status()).toBe(200);
-  const successText = await success.json() as string;
-  expect(successText).toContain('ada@talvio.test');
-  expect(successText).toContain('"seniority":"senior"');
+  // AI goes through the same-origin adapter to the local LLM service stand-in.
+  const llm = async (method: 'GET' | 'POST', path: string, data?: unknown, key?: string) => {
+    const response = await page.request.fetch(`/api/llm/v1/${path}`, {
+      method,
+      headers: { Authorization: 'Bearer local-session', ...(key ? { 'Idempotency-Key': key } : {}) },
+      data,
+    });
+    return { status: response.status(), body: await response.json() as Record<string, unknown> };
+  };
+  const parse = async (key: string) => {
+    const created = await llm('POST', 'jobs', {
+      schemaVersion: '1.0',
+      clientRequestId: key,
+      operation: 'parse_document',
+      locale: 'en-US',
+      sessionId: null,
+      contextRevisionId: null,
+      parentJobId: null,
+      input: { kind: 'text', text: 'Ada Owner, Engineer', extraction: null },
+    }, key);
+    expect(created.status).toBe(202);
+    let job = created.body;
+    for (let poll = 0; poll < 5 && !['succeeded', 'failed'].includes(String(job.status)); poll += 1) {
+      job = (await llm('GET', `jobs/${created.body.jobId}`)).body;
+    }
+    return job;
+  };
 
-  const malformed = await page.request.post('/api/resume/parse', {
-    headers: { 'x-e2e-scenario': 'malformed' },
-    data: { resume: 'broken' },
-  });
-  expect(malformed.status()).toBe(200);
-  expect(await malformed.json()).toBe('MALFORMED {{{');
-
-  const failure = await page.request.post('/api/resume/parse', {
-    headers: { 'x-e2e-scenario': 'error' },
-    data: { resume: 'broken' },
-  });
-  expect(failure.status()).toBe(500);
-
-  const timed = Date.now();
-  const timeout = await page.request.post('/api/resume/parse', {
-    headers: { 'x-e2e-scenario': 'timeout' },
-    data: { resume: 'slow' },
-  });
-  expect(timeout.status()).toBe(500);
-  expect(Date.now() - timed).toBeGreaterThanOrEqual(1000);
-  expect(Date.now() - timed).toBeLessThan(10_000);
+  const success = await parse('deps-key-0001');
+  expect(success.status).toBe('succeeded');
+  expect(JSON.stringify(success.result)).toContain('ada@talvio.test');
+  expect(JSON.stringify(success.result)).toContain('"seniority":"senior"');
 
   await fetch('http://127.0.0.1:3999/__e2e/scenario', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mode: 'error' }),
   });
-  const stuck = await page.request.post('/api/resume/parse', { data: { resume: 'stuck' } });
-  expect(stuck.status()).toBe(500);
+  const failed = await parse('deps-key-0002');
+  expect(failed).toMatchObject({ status: 'failed', error: { code: 'model_refusal', retryable: false } });
   await fetch('http://127.0.0.1:3999/__e2e/reset', { method: 'POST' });
-  const restored = await page.request.post('/api/resume/parse', { data: { resume: 'restored' } });
-  expect(restored.status()).toBe(200);
-  expect(await restored.json()).toContain('ada@talvio.test');
+  const restored = await parse('deps-key-0003');
+  expect(restored.status).toBe('succeeded');
 
   const fonts = await page.request.get('/api/resume/fonts?family=Inter');
   expect(fonts.ok()).toBe(true);

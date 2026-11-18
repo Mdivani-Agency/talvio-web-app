@@ -2,6 +2,13 @@ import { readFileSync } from 'node:fs';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { resumeToCareerDocument } from '../lib/llm/career-document';
+import { createLlmClient, jobRequest } from '../lib/llm/client';
+import { reviewServiceProposal, proposalFromEnvelope } from '../lib/llm/improve-proposal';
+import { importedAccount } from '../lib/llm/parse-document';
+import { reviewTailoring, tailorResultFromEnvelope } from '../lib/llm/tailor';
+import { fullResumeContent } from './fixtures/flow/resume-document';
+import { proxyLlmRequest } from '../lib/services/llm-proxy.server';
 import { startSimulator } from '../e2e/services/simulator.mjs';
 
 const PDF = Buffer.from('%PDF-1.1\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n');
@@ -22,7 +29,7 @@ async function reset() {
   expect(response.status).toBe(200);
 }
 
-describe('local media, AI, and font simulator', () => {
+describe('local media and font simulator', () => {
   it('stores an uploaded PDF and lists it for the owner', async () => {
     await reset();
     const presign = await fetch(`${simulator.url}/presign/user-1`, {
@@ -69,50 +76,17 @@ describe('local media, AI, and font simulator', () => {
     expect(records.status).toBe(401);
   });
 
-  it('returns success, malformed, timeout, and error AI responses', async () => {
-    await reset();
-    const success = await fetch(`${simulator.url}/v1/responses`, {
-      method: 'POST',
-      headers: { 'x-e2e-scenario': 'success' },
-    });
-    const successBody = await success.json() as { output: { content: { text: string }[] }[] };
-    expect(successBody.output[0].content[0].text).toContain('"email":"ada@talvio.test"');
-
-    const malformed = await fetch(`${simulator.url}/v1/responses`, {
-      method: 'POST',
-      headers: { 'x-e2e-scenario': 'malformed' },
-    });
-    const malformedBody = await malformed.json() as { output: { content: { text: string }[] }[] };
-    expect(malformedBody.output[0].content[0].text).toBe('MALFORMED {{{');
-
-    const started = Date.now();
-    const timeout = await fetch(`${simulator.url}/v1/responses`, {
-      method: 'POST',
-      headers: { 'x-e2e-scenario': 'timeout' },
-    });
-    expect(timeout.status).toBe(504);
-    expect(Date.now() - started).toBeGreaterThanOrEqual(1000);
-    expect(Date.now() - started).toBeLessThan(5000);
-
-    const failure = await fetch(`${simulator.url}/v1/responses`, {
-      method: 'POST',
-      headers: { 'x-e2e-scenario': 'error' },
-    });
-    expect(failure.status).toBe(500);
-  });
-
   it('serves the checked-in font bytes and clears scenario state', async () => {
     await fetch(`${simulator.url}/__e2e/scenario`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'error' }),
+      body: JSON.stringify({ mode: 'records_error' }),
     });
-    const leaked = await fetch(`${simulator.url}/v1/responses`, { method: 'POST' });
-    expect(leaked.status).toBe(500);
+    const auth = { headers: { Authorization: 'Bearer local-session' } };
+    expect((await fetch(`${simulator.url}/media/user-1/records`, auth)).status).toBe(500);
 
     await reset();
-    const restored = await fetch(`${simulator.url}/v1/responses`, { method: 'POST' });
-    expect(restored.status).toBe(200);
+    expect((await fetch(`${simulator.url}/media/user-1/records`, auth)).status).toBe(200);
 
     const fonts = await fetch(`${simulator.url}/webfonts/v1/webfonts?family=Inter`);
     const catalog = await fonts.json() as { items: { files: { regular: string } }[] };
@@ -125,5 +99,235 @@ describe('local media, AI, and font simulator', () => {
     await reset();
     const cleared = await fetch(`${simulator.url}/__e2e/unexpected`);
     expect(await cleared.json()).toEqual({ count: 0, paths: [] });
+  });
+});
+
+describe('local LLM service job API', () => {
+  const REQUEST = {
+    operation: 'parse_document' as const,
+    locale: 'en-US',
+    input: { kind: 'text' as const, text: 'Ada Owner, Engineer', extraction: null },
+  };
+
+  /** The browser client, through the real /api/llm adapter, against the simulator. */
+  function clientFor(token: string) {
+    return createLlmClient(async (url, init) => {
+      const path = url.replace(/^\/api\/llm\//, '');
+      return proxyLlmRequest(
+        new Request(`http://localhost:3002${url}`, {
+          ...init,
+          headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` },
+        }),
+        path.split('/'),
+        { baseUrl: `${simulator.url}/llm` },
+      );
+    });
+  }
+
+  async function scenario(mode: string) {
+    await fetch(`${simulator.url}/__e2e/llm-scenario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode }),
+    });
+  }
+
+  async function poll(client: ReturnType<typeof createLlmClient>, jobId: string) {
+    for (let i = 0; i < 5; i += 1) {
+      const job = await client.getJob(jobId);
+      if (['succeeded', 'failed', 'cancelled', 'expired'].includes(job.status)) {
+        return job;
+      }
+    }
+    throw new Error('job did not finish');
+  }
+
+  it('runs a job to a result and replays a repeated key', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    const request = jobRequest(REQUEST, 'key-sim-0001');
+    const first = await client.createJob(request);
+    expect(first).toMatchObject({ status: 'queued', replayed: false });
+    const again = await client.createJob(request);
+    expect(again).toMatchObject({ jobId: first.jobId, replayed: true });
+
+    const job = await poll(client, first.jobId);
+    expect(job.status).toBe('succeeded');
+    expect(job.result).toMatchObject({ operation: 'parse_document', resultKind: 'complete' });
+
+    const conflict = await client
+      .createJob(jobRequest({ ...REQUEST, input: { ...REQUEST.input, text: 'Other text' } }, 'key-sim-0001'))
+      .catch((error: unknown) => error);
+    expect(conflict).toMatchObject({ code: 'idempotency_conflict', status: 409 });
+
+    const stranger = await clientFor('user-2').getJob(first.jobId).catch((error: unknown) => error);
+    expect(stranger).toMatchObject({ code: 'not_found', status: 404 });
+
+    const stats = await (await fetch(`${simulator.url}/__e2e/llm-stats`)).json();
+    expect(stats).toMatchObject({ created: 1, replayed: 1 });
+  });
+
+  it('fails retryably, then succeeds on retry', async () => {
+    await reset();
+    await scenario('llm_retryable');
+    const client = clientFor('user-1');
+    const { jobId } = await client.createJob(jobRequest(REQUEST, 'key-sim-0002'));
+    const failed = await poll(client, jobId);
+    expect(failed).toMatchObject({ status: 'failed', error: { code: 'dependency_unavailable', retryable: true } });
+    await client.retryJob(jobId);
+    expect(await poll(client, jobId)).toMatchObject({ status: 'succeeded' });
+  });
+
+  it('refuses at the quota with Retry-After, and a guest before the service', async () => {
+    await reset();
+    await scenario('llm_quota');
+    const capped = await clientFor('user-1').createJob(jobRequest(REQUEST, 'key-sim-0003')).catch((error: unknown) => error);
+    expect(capped).toMatchObject({ code: 'quota_exceeded', status: 429, uiState: 'capped' });
+    expect((capped as { retryAt: Date | null }).retryAt).toBeInstanceOf(Date);
+
+    const guest = createLlmClient(async (url, init) =>
+      proxyLlmRequest(new Request(`http://localhost:3002${url}`, init), url.replace(/^\/api\/llm\//, '').split('/'), {
+        baseUrl: `${simulator.url}/llm`,
+      }),
+    );
+    expect(await guest.getJob('7d0c3c1e-1a2b-4c3d-8e4f-5a6b7c8d9e0f').catch((error: unknown) => error)).toMatchObject({
+      code: 'unauthorized',
+      message: 'Please sign in',
+    });
+  });
+
+  async function sharedScenario(mode: string) {
+    await fetch(`${simulator.url}/__e2e/scenario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode }),
+    });
+  }
+
+  it('fails only the operations a shared scenario names, and counts jobs per operation', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    await sharedScenario('parse_error');
+    const parse = await client.createJob(jobRequest(REQUEST, 'key-sim-0020'));
+    expect(await poll(client, parse.jobId)).toMatchObject({ status: 'failed', error: { code: 'model_refusal', retryable: false } });
+
+    await sharedScenario('qa_error');
+    const parsed = await client.createJob(jobRequest(REQUEST, 'key-sim-0021'));
+    expect(await poll(client, parsed.jobId)).toMatchObject({ status: 'succeeded' });
+
+    await sharedScenario('malformed');
+    const malformed = await client.createJob(jobRequest(REQUEST, 'key-sim-0022'));
+    const unreadable = await poll(client, malformed.jobId);
+    expect(unreadable.status).toBe('succeeded');
+    expect(unreadable.result?.result).toEqual({ career: 'MALFORMED {{{' });
+
+    const stats = await (await fetch(`${simulator.url}/__e2e/stats`)).json();
+    expect(stats.ai).toEqual({ parse: 3, questions: 0, tailor: 0 });
+    await reset();
+    expect((await (await fetch(`${simulator.url}/__e2e/stats`)).json()).ai).toEqual({ parse: 0, questions: 0, tailor: 0 });
+  });
+
+  it('reads the imported resume into account values', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    const { jobId } = await client.createJob(jobRequest(REQUEST, 'key-sim-0023'));
+    const job = await poll(client, jobId);
+    const { account, review } = importedAccount(job.result!);
+    expect(account.profile).toMatchObject({ firstName: 'Ada', lastName: 'Owner', role: 'Engineer', email: 'ada@talvio.test', seniority: 'senior' });
+    expect(account.experience?.map((item) => item.company)).toEqual(['Imported Labs']);
+    expect(account.education?.map((item) => item.name)).toEqual(['Talvio Institute']);
+    expect(account.projects?.map((item) => item.name)).toEqual(['Imported Project']);
+    expect(review.items).toEqual([]);
+  });
+
+  it('runs an improve session: questions, answers, a proposal the editor can apply, then deletion', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    const source = { kind: 'resume' as const, id: '7a2b3c4d-5e6f-4a1b-8c2d-3e4f5a6b7c81', revision: 'unsaved', resumeType: 'general' as const, state: 'draft' as const, sourceResumeId: null };
+    const session = await client.createSession({
+      schemaVersion: '1.0',
+      clientRequestId: 'session-sim-0001',
+      purpose: 'improve',
+      source: { source, document: resumeToCareerDocument(fullResumeContent).document },
+      jobDescription: null,
+    });
+    const binding = { locale: 'en-US', sessionId: session.sessionId, parentJobId: null };
+
+    const questionsJob = await client.createJob(jobRequest({
+      ...binding,
+      operation: 'generate_questions',
+      contextRevisionId: session.latestContext.contextRevisionId,
+      input: { analysisJobId: null, round: 1, maxQuestions: 5 },
+    }, 'key-sim-0010'));
+    const questions = await poll(client, questionsJob.jobId);
+    const set = questions.result?.result as { questionSetId: string; questions: { id: string }[] };
+
+    const context = await client.submitAnswers(session.sessionId, {
+      baseContextRevisionId: session.latestContext.contextRevisionId,
+      questionSetId: set.questionSetId,
+      answers: [{ questionId: set.questions[0]!.id, status: 'answered', value: 'About two hundred recruiters' }],
+    });
+    const stale = await client.submitAnswers(session.sessionId, {
+      baseContextRevisionId: session.latestContext.contextRevisionId,
+      questionSetId: set.questionSetId,
+      answers: [{ questionId: set.questions[0]!.id, status: 'skipped' }],
+    }).catch((error: unknown) => error);
+    expect(stale).toMatchObject({ code: 'stale_context', status: 409, uiState: 'stale' });
+
+    const improveJob = await client.createJob(jobRequest({
+      ...binding,
+      operation: 'improve_resume',
+      contextRevisionId: context.contextRevisionId,
+      input: { sections: [], targetRole: null },
+    }, 'key-sim-0011'));
+    const improved = await poll(client, improveJob.jobId);
+    const proposal = proposalFromEnvelope(improved.result!);
+    expect(proposal).not.toBeNull();
+    const review = reviewServiceProposal(fullResumeContent, proposal!, new Set(['change-skill']));
+    expect(review.skipped).toBe(0);
+    expect(review.resume.profile.tagline).toBe('Engineer who ships reliable tools.');
+    expect(review.resume.skills?.at(-1)).toEqual({ name: 'Technical writing' });
+
+    expect(await clientFor('user-2').deleteSession(session.sessionId)).toBeUndefined();
+    await client.deleteSession(session.sessionId);
+    const stats = await (await fetch(`${simulator.url}/__e2e/llm-stats`)).json();
+    expect(stats).toMatchObject({ sessions: 1, answers: 1, deletedSessions: 1 });
+  });
+
+  it('runs a tailor session to a tailored resume with gaps and omissions', async () => {
+    await reset();
+    const client = clientFor('user-1');
+    const session = await client.createSession({
+      schemaVersion: '1.0',
+      clientRequestId: 'session-sim-0002',
+      purpose: 'tailor',
+      source: { source: { kind: 'profile', id: '7a2b3c4d-5e6f-4a1b-8c2d-3e4f5a6b7c82', revision: 'unsaved' }, document: resumeToCareerDocument(fullResumeContent).document },
+      jobDescription: { text: 'We need a platform engineer.', title: null, company: null, url: null },
+    });
+    const job = await client.createJob(jobRequest({
+      locale: 'en-US',
+      sessionId: session.sessionId,
+      parentJobId: null,
+      operation: 'tailor_resume',
+      contextRevisionId: session.latestContext.contextRevisionId,
+      input: { resumeName: 'Platform Engineer' },
+    }, 'key-sim-0012'));
+    const done = await poll(client, job.jobId);
+    const result = tailorResultFromEnvelope(done.result!);
+    expect(result).not.toBeNull();
+    const review = reviewTailoring(fullResumeContent, result!);
+    expect(review.resume.profile.tagline).toBe('Engineer who builds reliable data tools.');
+    expect(review.resume.skills).toEqual([]);
+    expect(review.requirements.map((item) => item.status)).toEqual(['supported', 'missing']);
+    await client.deleteSession(session.sessionId);
+  });
+
+  it('cancels a slow job', async () => {
+    await reset();
+    await scenario('llm_slow');
+    const client = clientFor('user-1');
+    const { jobId } = await client.createJob(jobRequest(REQUEST, 'key-sim-0004'));
+    expect((await client.getJob(jobId)).status).toBe('running');
+    expect((await client.cancelJob(jobId)).status).toBe('cancelled');
   });
 });

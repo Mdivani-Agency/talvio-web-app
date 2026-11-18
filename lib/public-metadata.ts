@@ -62,7 +62,10 @@ export function indexablePublicPaths(flags: Pick<FeatureFlags, 'plansPage'> = fe
 /** Canonical indexable pages under the deployed flags. */
 export const INDEXABLE_PUBLIC_PATHS: readonly IndexablePublicPath[] = indexablePublicPaths();
 
-/** Date each page's content last changed, for the sitemap. Each date lives in the page's copy module, next to the copy it dates. */
+/**
+ * Date each page's content last changed, for the sitemap. Each date lives in the page's copy module,
+ * next to the copy it dates.
+ */
 export const PUBLIC_PAGE_LAST_MODIFIED: Record<IndexablePublicPath, string> = {
   '/': HOME_LAST_MODIFIED,
   '/templates': TEMPLATES_LAST_MODIFIED,

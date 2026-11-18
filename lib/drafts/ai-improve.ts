@@ -1,43 +1,25 @@
-import { aiImproveSessionSchema, type AiImproveSession } from './schema';
 import type { DraftStorage } from './storage';
 
-/** The stored session, or null when there is none, it is invalid, or it was made for another document. */
-export function readAiImproveSession(
-  storage: DraftStorage | null,
-  key: string,
-  documentHash: string,
-): AiImproveSession | null {
-  if (!storage) {
-    return null;
-  }
-  try {
-    const raw = storage.getItem(key);
-    if (!raw) {
-      return null;
-    }
-    const parsed = aiImproveSessionSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success || parsed.data.proposalFor !== documentHash) {
-      storage.removeItem(key);
-      return null;
-    }
-    return parsed.data;
-  } catch {
-    return null;
-  }
+/** Where `useServiceImprove` keeps an Improve with AI session for one resume (under `aiImproveStorageKey`). */
+export const AI_IMPROVE_SESSION_PREFIX = 'talvio-llm-improve:v1:';
+
+/** Where that session's running LLM job is kept. */
+export function aiImproveJobStorageKey(key: string) {
+  return `talvio-llm-job:v1:improve:${key}`;
 }
 
-/** Writes the session, or removes it for null. Storage failures are ignored: the session is a convenience. */
-export function writeAiImproveSession(storage: DraftStorage | null, key: string, session: AiImproveSession | null) {
+/**
+ * Forgets the Improve with AI session of one resume draft and its running job. Storage failures are
+ * ignored: the session is a convenience. The service deletes the session itself after seven days.
+ */
+export function clearAiImproveSession(storage: DraftStorage | null, key: string) {
   if (!storage) {
     return;
   }
   try {
-    if (!session) {
-      storage.removeItem(key);
-      return;
-    }
-    storage.setItem(key, JSON.stringify(aiImproveSessionSchema.parse(session)));
+    storage.removeItem(`${AI_IMPROVE_SESSION_PREFIX}${key}`);
+    storage.removeItem(aiImproveJobStorageKey(key));
   } catch {
-    // Quota or private mode: the session only lives in memory.
+    // Private mode: nothing was stored.
   }
 }

@@ -5,14 +5,16 @@ import { PDFDocumentProxy } from 'pdfjs-dist';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import { useCallback, useState } from 'react';
 
+import { pageText, type PdfTextItem } from '@lib/pdf/page-text';
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
 const extractText = async (pdf: PDFDocumentProxy, pageNum: number) => {
   const page = await pdf.getPage(pageNum);
   const textContent = await page.getTextContent({ disableNormalization: true });
 
-  // @ts-expect-error TODO: add type declaration later
-  return textContent.items.map((item) => item.str).join(',');
+  // Lines are kept as lines: the LLM service finds every imported value in this text.
+  return pageText(textContent.items.filter((item): item is PdfTextItem & typeof item => 'str' in item));
 };
 
 export const usePdfText = () => {
@@ -41,5 +43,19 @@ export const usePdfText = () => {
     }
   }, []);
 
-  return { parsePdf, text, parsing };
+  /** Text per page plus the pdf.js version, for the LLM service's page manifest (MDI-221). */
+  const extractPdfPages = useCallback(async (file: Buffer): Promise<{ pages: string[]; version: string }> => {
+    setParsing(true);
+    try {
+      const pdf = await pdfjsLib.getDocument(file).promise;
+      const pages = await Promise.all(
+        Array.from({ length: pdf.numPages }, (_, index) => extractText(pdf, index + 1)),
+      );
+      return { pages, version: String(pdfjsLib.version ?? 'unknown') };
+    } finally {
+      setParsing(false);
+    }
+  }, []);
+
+  return { parsePdf, extractPdfPages, text, parsing };
 };
