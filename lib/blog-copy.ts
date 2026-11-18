@@ -15,8 +15,11 @@ export const BLOG_EMPTY_BODY = 'Check back soon. New articles appear here when t
 
 export const BLOG_PUBLISHED_LABEL = 'Published';
 
+/** Shown on the lead card only, beside its title link; hidden from assistive technology so the card keeps one name. */
+export const BLOG_READ_ARTICLE_LABEL = 'Read article';
+
 /** Date of the last change to this copy. The `/blog` sitemap entry uses the newest post date when that is later. */
-export const BLOG_LAST_MODIFIED = '2026-10-10';
+export const BLOG_LAST_MODIFIED = '2026-11-18';
 
 /** Publication date as shown on cards, fixed to UTC so server and client agree. */
 export function formatBlogDate(iso: string): string {
@@ -44,3 +47,5 @@ export const BLOG_BREADCRUMB_INDEX = 'Blog';
 /** Shown with a non-200 status when the blog API is unavailable. Never presented as an empty blog. */
 export const BLOG_UNAVAILABLE_TITLE = 'The blog is temporarily unavailable';
 export const BLOG_UNAVAILABLE_BODY = 'Articles could not be loaded right now. Please try again in a few minutes.';
+export const BLOG_RETRY_LABEL = 'Try again';
+export const BLOG_GO_HOME_LABEL = 'Go home';
