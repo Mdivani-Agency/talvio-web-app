@@ -126,7 +126,7 @@ test('RES-08 cancel keeps a resume and confirm removes each family', async ({ pa
   await deleteResume(page, 'Solo pdf', true);
   await expect(page.getByText('Resume deleted')).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('link', { name: 'Create Resume' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'Create resume' })).toBeVisible();
   expect(await listResumes(owner.userId)).toHaveLength(0);
   await page.goto(`/resume/${generatedId}`);
   await expect(page.getByRole('heading', { name: 'Resume not found' })).toBeVisible();
