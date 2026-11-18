@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cn } from '@utils/tailwind';
 import { Button, NavigationMenu, NavigationMenuItem, ThemeToggle } from '@components/ui';
 import { Icon } from '@components/icons';
+import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL } from '@/lib/homepage-copy';
 import { SIGN_IN_HREF, SIGN_IN_LABEL, type NavLink } from '@/lib/public-nav';
 import { UserAvatar } from '../user-avatar';
 
@@ -30,12 +31,19 @@ export const SiteNavigationMenu = ({ className, links, user, withActions = false
       {withActions && (
         <div className='flex justify-end items-center gap-2 ml-auto'>
           <ThemeToggle />
-          {user ? <UserAvatar user={user} /> : <Link href={SIGN_IN_HREF} prefetch={false}>
-            <Button variant={'ghost'} size={'sm'}>
-              <Icon type={'User'} className="size-4 text-primary" />
-              {SIGN_IN_LABEL}
+          {user ? <UserAvatar user={user} /> : (
+            <>
+              <Link href={SIGN_IN_HREF} prefetch={false}>
+                <Button variant={'ghost'} size={'sm'}>
+                  <Icon type={'User'} className="size-4 text-primary" />
+                  {SIGN_IN_LABEL}
+                </Button>
+              </Link>
+              <Button asChild size={'sm'}>
+                <Link href={PRIMARY_CTA_HREF} prefetch={false}>{PRIMARY_CTA_LABEL}</Link>
               </Button>
-            </Link>}
+            </>
+          )}
         </div>
       )}
     </div>

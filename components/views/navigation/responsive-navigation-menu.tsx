@@ -4,10 +4,11 @@ import { SiteNavigationMenu } from './navigation-menu';
 import { useUserSession } from '@lib/providers';
 import type { NavLink } from '@/lib/public-nav';
 
-// Full class names so Tailwind can see them. Pages with many links collapse to the burger menu until `lg`.
+// Full class names so Tailwind can see them. The homepage, with seven links plus Sign in and Start free, collapses until `xl`.
 const COLLAPSE_CLASSES = {
   md: { menu: 'hidden md:flex w-full', burger: 'md:hidden' },
   lg: { menu: 'hidden lg:flex w-full', burger: 'lg:hidden' },
+  xl: { menu: 'hidden xl:flex w-full', burger: 'xl:hidden' },
 } as const;
 
 export const ResponsiveNavigationMenu = ({

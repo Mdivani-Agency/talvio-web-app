@@ -1,16 +1,16 @@
-import Image from 'next/image';
 import { DetailsList } from '@components/ui';
-import { HOME_FAQ } from '@/lib/homepage-copy';
+import { FAQ_TITLE, HOME_FAQ } from '@/lib/homepage-copy';
+import { HomeSectionHeading } from './home-section-heading';
+import { HOME_SECTION_CLASS } from './nav-section';
 
 export const Faq = () => {
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-2 gap-16 w-full">
-      <div className="relative hidden w-full aspect-[1.42] lg:mt-12 2xl:mt-16 lg:block">
-        <Image src="/faq.png" placeholder={'blur'} blurDataURL={'/faq.png'} alt="Three Talvio resume templates side by side" fill />
-      </div>
-      <article className="w-full">
-        <DetailsList qa={HOME_FAQ} />
-      </article>
+    <section
+      id="faq"
+      className={`${HOME_SECTION_CLASS} grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:gap-16`}
+    >
+      <HomeSectionHeading name="FAQ" title={FAQ_TITLE} />
+      <DetailsList qa={HOME_FAQ} openFirst />
     </section>
   );
 };

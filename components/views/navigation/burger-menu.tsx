@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Icon } from '@components/icons';
 import { Separator } from '@components/ui';
+import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL } from '@/lib/homepage-copy';
 import { SIGN_IN_HREF, SIGN_IN_LABEL, type NavLink } from '@/lib/public-nav';
 import { UserAvatar } from '../user-avatar';
 
@@ -60,6 +61,13 @@ export const BurgerMenu = ({ className, links, user }: BurgerMenuProps) => {
                 </Link>
                 }
               </NavigationMenuItem>
+              {!user && (
+                <NavigationMenuItem asChild onClick={() => setOpen(false)}>
+                  <Button asChild size={'lg'}>
+                    <Link href={PRIMARY_CTA_HREF}>{PRIMARY_CTA_LABEL}</Link>
+                  </Button>
+                </NavigationMenuItem>
+              )}
               <NavigationMenuItem asChild>
                 <div className='flex items-center gap-2 text-primary text-md font-medium'>
                   <ThemeToggle />

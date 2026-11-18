@@ -6,7 +6,7 @@ import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, SUPPORT_ANSWER } from './p
  */
 
 /** Sitemap date (ISO). Change it with the homepage copy. */
-export const HOME_LAST_MODIFIED = '2026-10-11';
+export const HOME_LAST_MODIFIED = '2026-11-18';
 
 /** New visitors sign in here. There is no separate sign-up route. */
 export const PRIMARY_CTA_HREF = '/auth/sign-in';
@@ -14,11 +14,17 @@ export const PRIMARY_CTA_LABEL = 'Start free';
 export const SECONDARY_CTA_HREF = '/templates';
 export const SECONDARY_CTA_LABEL = 'See templates';
 
-// As written.
-export const HERO_BADGE = 'Talvio Beta';
 export const HERO_TITLE = 'Free PDF resume generator';
 export const HERO_BODY =
   'Write your experience once, pick a template, and download a clean resume PDF. Free forever, no card needed.';
+
+/** The hero's template panel: two tilted templates behind, one upright in front. Alt text names the level and the template. */
+export const HERO_ART_LABEL = 'Three Talvio resume templates';
+export const HERO_TEMPLATES = {
+  left: { src: '/templates/entry-level-mint.png', alt: 'Entry-level resume in the Mint template' },
+  right: { src: '/templates/senior-level-ember.png', alt: 'Senior resume in the Ember template' },
+  front: { src: '/templates/mid-level-talvio.png', alt: 'Mid-level resume in the Talvio template' },
+} as const;
 
 export const WORKFLOW_TITLE = 'From your profile to a resume PDF';
 
@@ -63,6 +69,9 @@ export const WHATS_FREE_TITLE = '3 new resume PDFs every month';
 export const WHATS_FREE_BODY =
   'Every account can create 3 new resume PDFs each month, free forever. Edits, previews and re-downloads are free. New PDFs of edited resumes count. The count resets on the 1st.';
 
+/** Label on the decorative document tiles beside the allowance (hidden from assistive technology). */
+export const WHATS_FREE_DOC_LABEL = 'PDF';
+
 export const FAQ_TITLE = 'Frequently asked questions';
 
 export type FaqItem = { question: string; answer: string };
@@ -103,22 +112,30 @@ export const HOME_FAQ: readonly FaqItem[] = [
   { question: 'How do I get support?', answer: SUPPORT_ANSWER },
 ];
 
+/** Alt text for the phone beside the benefit cards. */
+export const BENEFITS_ART_ALT = 'Phone showing a Talvio resume template';
+
 // As written.
 export const CTA_TITLE = 'Start your first resume';
 export const CTA_BODY = 'Free forever, no card needed. Talvio is in beta, and more features are on the way.';
 
+/** Alt text for the hand holding a phone in the closing panel. */
+export const CTA_ART_ALT = 'Hand holding a phone with the Talvio welcome screen';
+
 /** Every visible line on the homepage, for the copy tests. */
 export function homepageCopyText(): string {
   return [
-    HERO_BADGE,
     HERO_TITLE,
     HERO_BODY,
+    HERO_ART_LABEL,
+    ...Object.values(HERO_TEMPLATES).map((template) => template.alt),
     PRIMARY_CTA_LABEL,
     SECONDARY_CTA_LABEL,
     WORKFLOW_TITLE,
     ...WORKFLOW_STEPS.flatMap((step) => [step.title, step.body]),
     BENEFITS_TITLE,
     ...BENEFITS.flatMap((benefit) => [benefit.title, benefit.body]),
+    BENEFITS_ART_ALT,
     WHATS_FREE_NAME,
     WHATS_FREE_TITLE,
     WHATS_FREE_BODY,
@@ -126,5 +143,6 @@ export function homepageCopyText(): string {
     ...HOME_FAQ.flatMap((item) => [item.question, item.answer]),
     CTA_TITLE,
     CTA_BODY,
+    CTA_ART_ALT,
   ].join('\n');
 }
