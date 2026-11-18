@@ -17,7 +17,7 @@ import { createLlmClient, type LlmClient } from '@lib/llm/client';
 import { LLM_SCHEMA_VERSION, type SessionAnswer, type SourceRef } from '@lib/llm/contract';
 import { LlmError } from '@lib/llm/errors';
 import type { LlmJobState } from '@lib/llm/job-runner';
-import { reviewTailoring, tailorResultFromEnvelope, type TailorResult } from '@lib/llm/tailor';
+import { RESUME_NAME_MAX, reviewTailoring, tailorResultFromEnvelope, type TailorResult } from '@lib/llm/tailor';
 import type { PreviewDto, ResumeForm } from '@lib/types';
 
 /*
@@ -185,7 +185,7 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
     setFailure({ stage, message: error instanceof Error ? error.message : 'Something went wrong' });
   }, [persist]);
 
-  const onSettled = useCallback((settled: Extract<LlmJobState, { phase: 'succeeded' | 'failed' }>, clear: () => void) => {
+  const onSettled = useCallback((settled: Extract<LlmJobState, { phase: 'succeeded' | 'failed' }>, clear: () => void, { resumable }: { resumable: boolean }) => {
     const session = storedRef.current;
     if (!session) {
       return;
@@ -193,6 +193,11 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
     const stage = session.running ?? 'questions';
     if (settled.phase === 'failed') {
       // `running` keeps the stage, so after a reload Retry still knows which job failed.
+      if (!resumable) {
+        // A refused submission (such as the daily limit) left no job to wait for: drop the marker,
+        // keeping the answers, so opening this again can start over instead of waiting forever.
+        persist({ ...session, running: null });
+      }
       fail(stage, settled.error);
       return;
     }
@@ -299,7 +304,7 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
         sessionId: current.sessionId as string,
         contextRevisionId: current.contextRevisionId as string,
         parentJobId: null,
-        input: { resumeName: current.resumeName.slice(0, 300) },
+        input: { resumeName: current.resumeName.slice(0, RESUME_NAME_MAX) },
       });
     } catch (error) {
       if (run === runRef.current) {
@@ -405,7 +410,7 @@ export function useTailor({ storageKey, locale = 'en-US', client }: Options) {
     if (!review || !stored) {
       return null;
     }
-    return { ...stored.look, name: stored.resumeName, resume: review.resume };
+    return { ...stored.look, name: stored.resumeName.slice(0, RESUME_NAME_MAX), resume: review.resume };
   }, [review, stored]);
 
   /** The request that saves the reviewed resume as a new JOB_SPECIFIC resume, or null before review. */

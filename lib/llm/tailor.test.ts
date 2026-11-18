@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { fullResumeContent } from '../../test/fixtures/flow/resume-document';
 import { EDUCATION_ID, EXPERIENCE_ID, SKILL_ID, TOOL_ID } from '../../test/fixtures/flow/ids';
-import { reviewTailoring, tailorResultFromEnvelope, type TailorResult } from './tailor';
+import { RESUME_NAME_MAX, reviewTailoring, tailoredResumeName, tailorResultFromEnvelope, type TailorResult } from './tailor';
 
 const rewrite = {
   type: 'field',
@@ -104,5 +104,14 @@ describe('reviewTailoring', () => {
 
   it('reads only a well-formed tailor result', () => {
     expect(tailorResultFromEnvelope({ result: { proposal: {} } } as never)).toBeNull();
+  });
+});
+
+describe('tailoredResumeName', () => {
+  it('names the resume after the role and company, within the saved limit', () => {
+    expect(tailoredResumeName(' Engineer ', ' Acme ')).toBe('Engineer at Acme');
+    expect(tailoredResumeName('', '')).toBe('Tailored resume');
+    const name = tailoredResumeName('T'.repeat(300), 'C'.repeat(300));
+    expect(name.length).toBe(RESUME_NAME_MAX);
   });
 });
