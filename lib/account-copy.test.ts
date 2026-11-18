@@ -17,7 +17,10 @@ import {
   NO_RESUMES_TITLE,
   PDF_READY_BADGE,
   UNPUBLISHED_DRAFT_BADGE,
+  PROFILE_SECTION_TITLES,
   accountHeading,
+  jobMetaLine,
+  sentenceCase,
   accountInitials,
   activeAccountHref,
   deleteResumeLabel,
@@ -76,5 +79,26 @@ describe('account copy', () => {
     expect(accountHeading('Ada Owner', 'Ada', 'ada@example.com')).toBe('Ada Owner');
     expect(accountHeading(' ', 'Ada Session', 'ada@example.com')).toBe('Ada Session');
     expect(accountHeading(null, null, 'ada@example.com')).toBe('ada@example.com');
+  });
+
+  it('writes employment and location types in sentence case and joins the job line', () => {
+    expect(sentenceCase('full-time')).toBe('Full-time');
+    expect(sentenceCase('REMOTE')).toBe('Remote');
+    expect(sentenceCase('self_employed')).toBe('Self employed');
+    expect(sentenceCase(undefined)).toBe('');
+    expect(jobMetaLine('Alpha Corp', 'full-time', 'remote')).toBe('Alpha Corp · Full-time · Remote');
+    expect(jobMetaLine('Alpha Corp', null, '')).toBe('Alpha Corp');
+  });
+
+  it('names every profile section', () => {
+    expect(Object.values(PROFILE_SECTION_TITLES)).toEqual([
+      'Profile',
+      'Experience',
+      'Skills',
+      'Education',
+      'Languages',
+      'Projects',
+      'Recommendations',
+    ]);
   });
 });
