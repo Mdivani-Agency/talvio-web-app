@@ -42,12 +42,12 @@ test('DOC-01 documents show an empty library, a failed list, and a downloadable 
   await openSignedIn(page, owner, '/account/documents');
   await expect(page.getByRole('heading', { name: 'Could not load your resumes' })).toBeVisible();
   await expect(page.getByText('This is not an empty library.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Create resume' })).toHaveCount(0);
+  await expect(page.getByRole('main').getByRole('link', { name: 'Create resume' })).toHaveCount(0);
 
   await setScenario('success');
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByRole('heading', { name: 'Your Resumes' })).toBeVisible();
-  await page.getByRole('link', { name: 'Create resume' }).click();
+  await page.getByRole('main').getByRole('link', { name: 'Create resume' }).click();
   await expect(page).toHaveURL(/\/resume$/);
   await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
 
