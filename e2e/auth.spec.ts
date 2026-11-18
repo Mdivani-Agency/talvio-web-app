@@ -158,7 +158,7 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
     seniority: 'mid',
   });
   await signInThroughLocalMail(page, firstEmail, '/account');
-  await expect(page.getByText('First Owner')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'First Owner' })).toBeVisible();
   await expect(page.getByRole('main').getByText(firstEmail)).toBeVisible();
 
   await page.goto('/home');
