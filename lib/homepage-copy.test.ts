@@ -9,6 +9,7 @@ import {
   BENEFITS,
   BENEFITS_ART_ALT,
   BENEFITS_TITLE,
+  CTA_ART_ALT,
   CTA_BODY,
   CTA_TITLE,
   HERO_ART_LABEL,
@@ -22,6 +23,7 @@ import {
   SECONDARY_CTA_HREF,
   SECONDARY_CTA_LABEL,
   WHATS_FREE_BODY,
+  WHATS_FREE_DOC_LABEL,
   WHATS_FREE_ID,
   WHATS_FREE_NAME,
   WHATS_FREE_TITLE,
@@ -112,6 +114,12 @@ describe('homepage copy', () => {
     for (const benefit of BENEFITS) {
       expect(benefit.body).not.toMatch(/free/i);
     }
+  });
+
+  it('labels the decorative documents and describes the closing image', () => {
+    expect(WHATS_FREE_DOC_LABEL).toBe('PDF');
+    expect(CTA_ART_ALT).toBe('Hand holding a phone with the Talvio welcome screen');
+    expect(homepageCopyText()).toContain(CTA_ART_ALT);
   });
 
   it('keeps the workflow at three steps and describes the phone beside the benefits', () => {

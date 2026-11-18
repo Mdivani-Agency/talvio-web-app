@@ -1,5 +1,6 @@
-import { Button, Card } from '@components/ui';
+import { Button } from '@components/ui';
 import {
+  CTA_ART_ALT,
   CTA_BODY,
   CTA_TITLE,
   PRIMARY_CTA_HREF,
@@ -12,33 +13,42 @@ import Link from 'next/link';
 
 export const Cta = () => {
   return (
-    <section className={'mb-16 flex w-full items-center'}>
-      <Card className={'w-full lg:grid lg:grid-cols-3 lg:pb-0'}>
-        <article className={'col-span-2 p-6 md:my-auto lg:px-10'}>
-          <h2 className={'text-2xl font-semibold text-primary'}>{CTA_TITLE}</h2>
-          <p className={'my-8 text-lg font-regular text-muted-foreground'}>{CTA_BODY}</p>
-          <div className={'flex flex-col gap-3 sm:flex-row sm:flex-wrap'}>
-            <Link href={PRIMARY_CTA_HREF}>
-              <Button size={'lg'}>{PRIMARY_CTA_LABEL}</Button>
-            </Link>
-            <Link href={SECONDARY_CTA_HREF}>
-              <Button size={'lg'} variant={'outline'}>{SECONDARY_CTA_LABEL}</Button>
-            </Link>
+    <section className={'mx-auto w-full max-w-[120rem] pb-[5.6rem] lg:px-4 lg:pb-[9.6rem]'}>
+      <div
+        className={
+          'grid grid-cols-1 items-end overflow-hidden rounded-xl bg-secondary text-secondary-foreground lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
+        }
+      >
+        <div className={'self-center px-6 py-8 lg:p-[5.6rem]'}>
+          <h2 className={'text-[2.8rem] leading-[1.333] font-semibold lg:text-2xl'}>{CTA_TITLE}</h2>
+          <p className={'mt-4 mb-8 max-w-[56rem] text-md lg:text-lg'}>{CTA_BODY}</p>
+          <div className={'flex flex-col gap-3 sm:flex-row'}>
+            <Button asChild size={'lg'} variant={'secondary'}>
+              <Link href={PRIMARY_CTA_HREF}>{PRIMARY_CTA_LABEL}</Link>
+            </Button>
+            <Button
+              asChild
+              size={'lg'}
+              variant={'outline'}
+              className={
+                'border-secondary-foreground/50 bg-transparent text-secondary-foreground shadow-none hover:bg-secondary-foreground/10 hover:text-secondary-foreground dark:border-secondary-foreground/40 dark:bg-transparent dark:hover:bg-secondary-foreground/10'
+              }
+            >
+              <Link href={SECONDARY_CTA_HREF}>{SECONDARY_CTA_LABEL}</Link>
+            </Button>
           </div>
-        </article>
-        <figure className={'hidden justify-center pt-6 lg:flex'}>
-          <picture className={'relative block h-[60vh] w-full'}>
-            <Image
-              alt={'Hand holding a phone with the Talvio welcome screen'}
-              src={'/hand.png'}
-              placeholder={'blur'}
-              blurDataURL={'/hand-blur.png'}
-              fill
-              priority={false}
-            />
-          </picture>
-        </figure>
-      </Card>
+        </div>
+        <Image
+          alt={CTA_ART_ALT}
+          src={'/hand.png'}
+          placeholder={'blur'}
+          blurDataURL={'/hand-blur.png'}
+          width={2164}
+          height={2136}
+          sizes="400px"
+          className={'mt-12 hidden h-auto w-full max-w-[40rem] justify-self-end lg:block'}
+        />
+      </div>
     </section>
   );
 };

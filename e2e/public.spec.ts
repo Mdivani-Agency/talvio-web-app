@@ -181,6 +181,51 @@ test('PUB-05d workflow step numbers and benefit icons stand out from their cards
   }
 });
 
+test('PUB-05e the FAQ opens its first answer and toggles by keyboard; the closing panel links and fits a phone', async ({ page }) => {
+  await page.goto('/home');
+  const faq = page.locator('#faq');
+  await expect(faq.getByRole('heading', { name: 'Frequently asked questions', level: 2 })).toBeVisible();
+  const items = faq.locator('details');
+  await expect(items).toHaveCount(9);
+  await expect(items.first()).toHaveAttribute('open', '');
+  await expect(items.first().getByText('Every account can create 3 new resume PDFs each month', { exact: false })).toBeVisible();
+  for (let index = 1; index < 9; index++) {
+    await expect(items.nth(index)).not.toHaveAttribute('open', '');
+  }
+
+  // Every question is a native toggle reachable with the keyboard.
+  const second = items.nth(1);
+  await second.locator('summary').focus();
+  await expect(second.locator('summary')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(second).toHaveAttribute('open', '');
+  await page.keyboard.press('Enter');
+  await expect(second).not.toHaveAttribute('open', '');
+
+  const closing = page.getByRole('heading', { name: 'Start your first resume', level: 2 }).locator('xpath=ancestor::section[1]');
+  await expect(closing.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(closing.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
+  await expect(closing.getByRole('img', { name: 'Hand holding a phone with the Talvio welcome screen' })).toBeVisible();
+  await expect(closing.locator('a button, button a')).toHaveCount(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/home');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect(closing.getByRole('img', { name: 'Hand holding a phone with the Talvio welcome screen' })).toBeHidden();
+  const tiles = await page.locator('#whats-free [data-doc-tile]').evaluateAll((elements) =>
+    elements.map((tile) => {
+      const box = tile.getBoundingClientRect();
+      const number = tile.querySelector('[data-doc-number]')!.getBoundingClientRect();
+      return { inside: number.left >= box.left && number.right <= box.right && number.top >= box.top && number.bottom <= box.bottom, right: box.right };
+    }),
+  );
+  expect(tiles).toHaveLength(3);
+  for (const tile of tiles) {
+    expect(tile.inside).toBe(true);
+    expect(tile.right).toBeLessThanOrEqual(390);
+  }
+});
+
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/templates');
