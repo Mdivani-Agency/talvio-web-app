@@ -11,10 +11,28 @@ type Option = {
 type TagListProps = {
   options: Option[];
   onRemove?: (index: number) => void;
+  /** Wrap every tag onto as many lines as needed instead of collapsing the overflow into "+N more". */
+  wrap?: boolean;
 };
 
-export const TagList = ({ options, onRemove }: TagListProps) => {
-  const { hiddenItemIndex, hiddenItemLeftOffset, parentRef, itemRefs } = useResponsiveItemLimit(options.length, 65);
+export const TagList = ({ options, onRemove, wrap = false }: TagListProps) => {
+  const { hiddenItemIndex, hiddenItemLeftOffset, parentRef, itemRefs } = useResponsiveItemLimit(wrap ? 0 : options.length, 65);
+
+  if (wrap) {
+    return (
+      <ul className={'flex w-full flex-wrap gap-1.5'}>
+        {options.map((option, index) => (
+          <li key={index}>
+            <Pill
+              title={option.name}
+              additionalInfo={option.additionalInfo}
+              onRemove={onRemove ? () => onRemove(index) : undefined}
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   const renderTags = () => {
     if (options.length === 0) {

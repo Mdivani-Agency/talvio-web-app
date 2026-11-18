@@ -78,3 +78,27 @@ export function deleteResumeLabel(title: string): string {
 export function accountHeading(profileName: string | null | undefined, sessionName: string | null | undefined, email: string): string {
   return profileName?.trim() || sessionName?.trim() || email;
 }
+
+/** Profile section headings on the dashboard (MDI-592). */
+export const PROFILE_SECTION_TITLES = {
+  profile: 'Profile',
+  experience: 'Experience',
+  skills: 'Skills',
+  education: 'Education',
+  languages: 'Languages',
+  projects: 'Projects',
+  recommendations: 'Recommendations',
+} as const;
+
+export const PRESENT_LABEL = 'Present';
+
+/** "full-time" → "Full-time", for employment and location types. */
+export function sentenceCase(value: string | null | undefined): string {
+  const text = (value ?? '').replace(/_/g, ' ').trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1).toLowerCase() : '';
+}
+
+/** "Company · Full-time · Remote", skipping empty parts. */
+export function jobMetaLine(company: string | null | undefined, employmentType?: string | null, locationType?: string | null): string {
+  return [company?.trim(), sentenceCase(employmentType), sentenceCase(locationType)].filter(Boolean).join(' · ');
+}
