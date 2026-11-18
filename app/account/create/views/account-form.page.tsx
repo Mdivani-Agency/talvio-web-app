@@ -47,7 +47,7 @@ export default function AccountFormPage() {
         and professional your resume will be. Focus on sharing your key achievements, skills, and experience to make
         your profile stand out!
       </p>
-      <div className="flex items-center justify-start gap-3">
+      <div className="flex flex-wrap items-center justify-start gap-3">
         <Button onClick={() => setIsUploadModalOpen(true)} loading={loading}>
           <UploadIcon className="size-4" />
           {loading ? (offline ? 'Waiting for a connection...' : 'Parsing resume...') : 'Import from resume'}
