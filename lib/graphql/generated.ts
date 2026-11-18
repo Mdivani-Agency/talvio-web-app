@@ -188,7 +188,6 @@ export type IntListFilter = {
 export type Mutation = {
   __typename?: 'Mutation';
   apply_llm_proposal?: Maybe<Scalars['JSON']['output']>;
-  consume_ai_request?: Maybe<Scalars['Int']['output']>;
   /** Deletes zero or more records from the `contacts` collection */
   deleteFromcontactsCollection: ContactsDeleteResponse;
   /** Deletes zero or more records from the `educations` collection */
