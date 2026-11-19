@@ -30,7 +30,7 @@ function persona(personas: Persona[], kind: Persona['kind']) {
 
 async function openCreate(page: import('@playwright/test').Page, person: Persona) {
   await signInWithLocalMagicLink(page, person);
-  await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Let's build your profile" })).toBeVisible();
 }
 
 async function saveForm(page: import('@playwright/test').Page) {
@@ -128,8 +128,14 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
   const empty = persona(personas, 'empty');
   await openCreate(page, empty);
   await saveForm(page);
+  // A failed save shows a summary at the top of the form, moves focus to it, and links each error to its field.
+  const summary = page.getByRole('group', { name: /^Fix \d+ fields? to save your profile$/ });
+  await expect(summary).toBeFocused();
+  await expect(page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: /Contact information, has errors/ })).toBeVisible();
+  await summary.getByRole('link', { name: 'Email: Invalid email address' }).click();
+  await expect(page.getByLabel('Email', { exact: true })).toBeFocused();
   await expect(page.getByText('Invalid email address').first()).toBeVisible();
-  await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Let's build your profile" })).toBeVisible();
 
   await fillIdentity(page, {
     firstName: 'Ada',
@@ -332,7 +338,7 @@ test('PROF-04 a failed save keeps the form and does not duplicate the profile', 
 
   await saveForm(page);
   await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'forced save failure' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Let's build your profile" })).toBeVisible();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
   await expect(page.getByRole('button', { name: 'Save profile', exact: true })).toBeEnabled();
   expect(await profileCount(empty.userId)).toBe(0);

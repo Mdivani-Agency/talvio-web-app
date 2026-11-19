@@ -9,6 +9,12 @@ import {
   PROFILE_FIELDS,
   PROFILE_SECTIONS,
   PROJECT_FIELDS,
+  DRAFT_NOTE,
+  ONBOARDING_HEADING,
+  ONBOARDING_INTRO,
+  START_FASTER,
+  errorSummaryTitle,
+  sectionFixNote,
   type FieldCopy,
 } from './onboarding-copy';
 
@@ -56,5 +62,23 @@ describe('onboarding copy', () => {
   it('gives the project link an example the form accepts', () => {
     // The project form validates the link with z.url(), so the example must be an absolute URL.
     expect(z.url().safeParse(PROJECT_FIELDS.url.example).success).toBe(true);
+  });
+
+  it('uses the approved page copy', () => {
+    expect(ONBOARDING_HEADING).toBe("Let's build your profile");
+    expect(ONBOARDING_INTRO).toBe('Add your details once. Every resume you create starts from this profile.');
+    expect(START_FASTER).toEqual({
+      title: 'Start faster',
+      body: 'Import a resume PDF or paste its text to fill in the form. You review everything before saving.',
+      importLabel: 'Import from resume',
+      pasteLabel: 'Paste resume text',
+    });
+    expect(DRAFT_NOTE).toBe('Unsaved changes are kept on this device as you type.');
+  });
+
+  it('counts fields in the error summary and the side list', () => {
+    expect(errorSummaryTitle(1)).toBe('Fix 1 field to save your profile');
+    expect(errorSummaryTitle(2)).toBe('Fix 2 fields to save your profile');
+    expect(sectionFixNote(3)).toBe('Fix 3');
   });
 });

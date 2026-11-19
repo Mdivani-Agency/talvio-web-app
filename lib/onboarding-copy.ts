@@ -62,3 +62,33 @@ export const PROFILE_SECTIONS = {
   education: { title: 'Education' },
   projects: { title: 'Projects', hint: 'Optional. Add work you want on your resumes.' },
 } as const satisfies Record<string, SectionCopy>;
+
+export const ONBOARDING_HEADING = "Let's build your profile";
+export const ONBOARDING_INTRO = 'Add your details once. Every resume you create starts from this profile.';
+
+export const START_FASTER = {
+  title: 'Start faster',
+  body: 'Import a resume PDF or paste its text to fill in the form. You review everything before saving.',
+  importLabel: 'Import from resume',
+  pasteLabel: 'Paste resume text',
+} as const;
+
+export const SAVE_PROFILE_LABEL = 'Save profile';
+export const SAVING_PROFILE_LABEL = 'Saving...';
+export const DRAFT_NOTE = 'Unsaved changes are kept on this device as you type.';
+
+export const SECTION_NAV_LABEL = 'Profile sections';
+export const SECTION_OPTIONAL_NOTE = 'Optional';
+
+/** The side list's note on a section with errors, such as "Fix 2". */
+export function sectionFixNote(count: number): string {
+  return `Fix ${count}`;
+}
+
+/** Screen reader text for a section's mark in the side list. */
+export const SECTION_STATUS_TEXT = { done: 'complete', error: 'has errors', todo: 'not started' } as const;
+
+/** The error summary's heading: "Fix 2 fields to save your profile". */
+export function errorSummaryTitle(count: number): string {
+  return `Fix ${count} ${count === 1 ? 'field' : 'fields'} to save your profile`;
+}
