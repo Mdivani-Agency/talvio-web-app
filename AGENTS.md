@@ -20,7 +20,7 @@ Every path and symbol named below exists in this repository. If you find one tha
 | -- | -- |
 | `app/` | Next.js routes. Feature folders: `account`, `resume`, `auth`, `home`, `templates`, `pricing`, `terms`, `privacy-policy`, `api` |
 | `components/ui/` | shadcn-style primitives, exported from `@components/ui` |
-| `components/views/` | Shared layout pieces (`PageContainer`, `Header`, `StickyHeader`, `Footer`, `Loading`, `ErrorView`, `SortableList`), exported from `@components/views` |
+| `components/views/` | Shared layout pieces (`PageContainer`, `Header`, `StickyHeader`, `Footer`, `Loading`, `StatusView`, `ErrorView`, `SortableList`), exported from `@components/views` |
 | `components/modals/` | Modals, including `ConfirmModal`, exported from `@components/modals` |
 | `lib/` | Copy modules (`*-copy.ts`), adapters, forms, GraphQL client, drafts, schemas, Supabase clients |
 | `supabase/migrations/`, `supabase/tests/` | SQL migrations and database tests |
