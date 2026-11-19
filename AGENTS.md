@@ -30,7 +30,7 @@ Every path and symbol named below exists in this repository. If you find one tha
 
 Import aliases (`tsconfig.json`): `@/` (repo root), `@app/`, `@components/`, `@ui/` (`components/ui`), `@lib/`, `@hooks/`, `@utils/` (`lib/utils`). There is no `components/index.ts` barrel.
 
-Scripts (`package.json`): `yarn dev` (port 3002), `yarn lint`, `yarn typecheck`, `yarn test` (Vitest), `yarn test:e2e:local` (Playwright against a production build), `yarn codegen`, `yarn codegen:from-supabase`, `yarn db:start`, `yarn db:reset`, `yarn db:test`.
+Scripts (`package.json`): `yarn dev` (port 3002), `yarn lint`, `yarn typecheck`, `yarn test` (Vitest), `yarn test:e2e:local` (database tests, then Playwright against a production build), `yarn test:db:local` (database tests only, on a disposable local stack), `yarn codegen`, `yarn codegen:from-supabase`, `yarn db:start`, `yarn db:reset`, `yarn db:test`.
 
 ## Frontend stack
 

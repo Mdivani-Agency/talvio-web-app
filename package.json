@@ -23,6 +23,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:local": "node scripts/e2e-local.mjs",
+    "test:db:local": "node scripts/e2e-local.mjs --db",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "templates:previews": "node scripts/render-template-previews.mjs public/templates"

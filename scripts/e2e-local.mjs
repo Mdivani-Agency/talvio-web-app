@@ -1,11 +1,23 @@
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 import { assertReportFile } from './assert-e2e-results.mjs';
 import { localE2EEnv } from './e2e-env.mjs';
 import { confirmSimulatorReady } from './e2e-simulator-ready.mjs';
 
 const SIMULATOR_PORT = 3999;
+
+// CI runs the two halves as parallel jobs: `--db` runs only the database tests and `--e2e` only the browser suite.
+// With neither flag, a local run does both, database tests first.
+export function launcherSteps(args) {
+  const db = args.includes('--db');
+  const e2e = args.includes('--e2e');
+  if (db && e2e) {
+    throw new Error('Pass --db or --e2e, not both. Pass neither to run both.');
+  }
+  return { dbTests: !e2e, playwright: !db };
+}
 
 // CI installs the pinned CLI once (supabase/setup-cli) and sets E2E_SUPABASE_CLI; local runs fall back to npx.
 // The variable is a command line, so `supabase` and `npx supabase@2.117.0` both work.
@@ -114,7 +126,43 @@ async function stopSimulator(child) {
   });
 }
 
+/** Builds the app against the running stack and runs Playwright. `onSimulator` receives the simulator so cleanup can stop it. */
+async function runBrowserSuite(onSimulator) {
+  const statusText = await capture(SUPABASE[0], [...SUPABASE.slice(1), 'status', '-o', 'env']);
+  const env = {
+    ...process.env,
+    ...localE2EEnv(parseStatus(statusText)),
+    CI: process.env.CI ?? '1',
+  };
+  const health = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`);
+  if (!health.ok) {
+    throw new Error(`Supabase auth health check failed: ${health.status}`);
+  }
+  const simulatorToken = randomUUID();
+  const simulator = startSimulator(env, simulatorToken);
+  onSimulator(simulator);
+  await confirmSimulatorReady({
+    port: SIMULATOR_PORT,
+    token: simulatorToken,
+    isAlive: () => simulator.exitCode == null && simulator.signalCode == null,
+  });
+  let testCode = await run('yarn', ['build'], { env });
+  if (testCode === 0) {
+    testCode = await run('yarn', ['playwright', 'test'], { env });
+  }
+  if (testCode === 0) {
+    try {
+      assertReportFile('playwright-report/results.json', 'e2e/required-results.json');
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : error);
+      testCode = 1;
+    }
+  }
+  return testCode;
+}
+
 async function main() {
+  const steps = launcherSteps(process.argv.slice(2));
   let started = false;
   let simulator;
   let testCode = 1;
@@ -122,36 +170,10 @@ async function main() {
     await supabase(['start', '-x', UNUSED_SERVICES.join(',')]);
     started = true;
     await supabase(['db', 'reset']);
-    await supabase(['test', 'db']);
-    const statusText = await capture(SUPABASE[0], [...SUPABASE.slice(1), 'status', '-o', 'env']);
-    const env = {
-      ...process.env,
-      ...localE2EEnv(parseStatus(statusText)),
-      CI: process.env.CI ?? '1',
-    };
-    const health = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`);
-    if (!health.ok) {
-      throw new Error(`Supabase auth health check failed: ${health.status}`);
+    if (steps.dbTests) {
+      await supabase(['test', 'db']);
     }
-    const simulatorToken = randomUUID();
-    simulator = startSimulator(env, simulatorToken);
-    await confirmSimulatorReady({
-      port: SIMULATOR_PORT,
-      token: simulatorToken,
-      isAlive: () => simulator.exitCode == null && simulator.signalCode == null,
-    });
-    testCode = await run('yarn', ['build'], { env });
-    if (testCode === 0) {
-      testCode = await run('yarn', ['playwright', 'test'], { env });
-    }
-    if (testCode === 0) {
-      try {
-        assertReportFile('playwright-report/results.json', 'e2e/required-results.json');
-      } catch (error) {
-        console.error(error instanceof Error ? error.message : error);
-        testCode = 1;
-      }
-    }
+    testCode = steps.playwright ? await runBrowserSuite((child) => (simulator = child)) : 0;
   } finally {
     try {
       await stopSimulator(simulator);
@@ -175,7 +197,9 @@ async function main() {
   process.exit(testCode);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  });
+}
