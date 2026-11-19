@@ -24,3 +24,24 @@ export const SIGN_IN_AGREEMENT = {
   privacy: { label: 'Privacy Policy', href: '/privacy-policy' },
   after: '.',
 } as const;
+
+/** "Check your email" (`/auth/verify-request`). */
+export const VERIFY_HEADING = 'Check your email';
+export const VERIFY_SENT_TO = { before: 'We sent a sign-in link to ', after: '.' } as const;
+/** When the page is opened without a stored address. */
+export const VERIFY_SENT_GENERIC = 'We sent a sign-in link to your email.';
+export const VERIFY_SAME_BROWSER = 'Open it on this device and in this browser to finish signing in.';
+export const VERIFY_RESEND_HINT = "Didn't get it? Check your spam folder, or send a new link.";
+export const VERIFY_RESEND_LABEL = 'Resend link';
+export const VERIFY_RESENT = 'We sent a new link.';
+export const VERIFY_DIFFERENT_EMAIL = 'Use a different email';
+
+/** Supabase's own limit between sign-in emails to one address. */
+export const RESEND_COOLDOWN_SECONDS = 60;
+
+/** "Resend in 0:59" while the cooldown runs. */
+export function resendCountdownLabel(secondsLeft: number): string {
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = String(secondsLeft % 60).padStart(2, '0');
+  return `Resend in ${minutes}:${seconds}`;
+}
