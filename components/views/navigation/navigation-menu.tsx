@@ -15,10 +15,12 @@ type NavigationMenuProps = {
     image?: string | null;
   }
   withActions?: boolean;
+  /** Sign in and Start free, shown with the actions when nobody is signed in. */
+  authActions?: boolean;
   links: NavLink[];
 };
 
-export const SiteNavigationMenu = ({ className, links, user, withActions = false }: NavigationMenuProps) => {
+export const SiteNavigationMenu = ({ className, links, user, withActions = false, authActions = true }: NavigationMenuProps) => {
   return (
     <div className={cn('flex w-full', className)}>
       <NavigationMenu className={cn('flex items-center justify-center md:ml-auto gap-6 2xl:gap-10 whitespace-nowrap')}>
@@ -31,7 +33,7 @@ export const SiteNavigationMenu = ({ className, links, user, withActions = false
       {withActions && (
         <div className='flex justify-end items-center gap-2 ml-auto'>
           <ThemeToggle />
-          {user ? <UserAvatar user={user} /> : (
+          {user ? <UserAvatar user={user} /> : authActions && (
             <>
               <Link href={SIGN_IN_HREF} prefetch={false}>
                 <Button variant={'ghost'} size={'sm'}>

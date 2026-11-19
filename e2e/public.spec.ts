@@ -488,8 +488,14 @@ test('PUB-03 every public page links to the other public pages from the header a
     await expect(header.getByRole('link', { name: 'Templates', exact: true })).toHaveAttribute('href', '/templates');
     await expect(header.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
     await expect(header.getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('href', '/blog');
-    await expect(header.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
-    await expect(header.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+    if (path === '/auth/sign-in') {
+      // The visitor is already signing in, so the auth header leaves out Sign in and Start free.
+      await expect(header.getByRole('link', { name: 'Sign in' })).toHaveCount(0);
+      await expect(header.getByRole('link', { name: 'Start free', exact: true })).toHaveCount(0);
+    } else {
+      await expect(header.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
+      await expect(header.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+    }
     await expect(header.getByText('Beta', { exact: true })).toBeVisible();
     await expect(page.locator('h1')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

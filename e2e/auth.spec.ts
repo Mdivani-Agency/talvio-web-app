@@ -87,13 +87,19 @@ test('AUTH-01 new and returning users finish magic-link sign-in in this browser'
 
 test('AUTH-02 invalid email, auth failures, and callback errors can restart', async ({ page }) => {
   await page.goto('/auth/sign-in');
-  await page.getByRole('button', { name: 'With Email' }).click();
+  const email = page.getByLabel('Email', { exact: true });
+  const submit = page.getByRole('button', { name: 'Continue with email' });
+  await submit.click();
   await expect(page).toHaveURL(/\/auth\/sign-in/);
   await expect(page.getByRole('heading', { name: 'Check Your Email!' })).toHaveCount(0);
+  // The message sits under the field and is read with it.
+  await expect(email).toHaveAttribute('aria-invalid', 'true');
+  await expect(email).toHaveAccessibleDescription('Enter your email address.');
 
-  await page.getByPlaceholder('Email').fill('not-an-email');
-  await page.getByRole('button', { name: 'With Email' }).click();
+  await email.fill('not-an-email');
+  await submit.click();
   await expect(page).toHaveURL(/\/auth\/sign-in/);
+  await expect(email).toHaveAccessibleDescription('Enter a valid email address, like name@example.com.');
 
   await page.route('**/auth/v1/otp**', (route) => route.fulfill({
     status: 429,
@@ -103,9 +109,12 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
       error_code: 'over_email_send_rate_limit',
     }),
   }));
-  await page.getByPlaceholder('Email').fill(emailFor('limited'));
-  await page.getByRole('button', { name: 'With Email' }).click();
-  await expect(page.getByText('Email rate limit exceeded')).toBeVisible();
+  await email.fill(emailFor('limited'));
+  await submit.click();
+  await expect(page.getByRole('main').getByRole('alert')).toHaveText('Too many sign-in emails. Wait a minute, then try again.');
+  // Editing the address clears the alert.
+  await email.fill(emailFor('limited-edit'));
+  await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
   await page.unroute('**/auth/v1/otp**');
 
   const retryEmail = emailFor('retry');
@@ -119,8 +128,8 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
   await expect(page).toHaveURL(/localhost:3002\/$/);
   await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
   await page.goto('/auth/sign-in');
-  await expect(page.getByPlaceholder('Email')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'With Email' })).toBeVisible();
+  await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue with email' })).toBeVisible();
 
   await page.goto('/auth/callback?code=not-a-real-code');
   await expect(page.getByText('auth_callback_failed')).toBeVisible();
