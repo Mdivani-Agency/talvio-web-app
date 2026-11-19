@@ -1,94 +1,95 @@
 'use client';
-import { Icon } from "@components/icons";
-import { Button, Card, CardContent, CardFooter, Label } from "@components/ui";
-import { ErrorView, Loading, PageContainer } from "@components/views";
-import { getDocuments } from "@lib/clients/media.client";
-import { useUserSession } from "@lib/providers";
-import { useQuery } from "@tanstack/react-query";
-import { PlusIcon } from "lucide-react";
-import Link from "next/link";
-import { ResumeImage } from "./resume-image";
+
+import { useInfiniteQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+
+import { Button } from '@components/ui';
+import { Loading, PageContainer } from '@components/views';
+import { getDocuments } from '@lib/clients/media.client';
+import { useUserSession } from '@lib/providers';
+import {
+  DOCUMENTS_INTRO,
+  DOCUMENTS_LOADING,
+  DOCUMENTS_MORE_ERROR,
+  DOCUMENTS_RETRY_LABEL,
+  DOCUMENTS_TAILOR_HREF,
+  DOCUMENTS_TAILOR_LABEL,
+  DOCUMENTS_TITLE,
+  LOAD_MORE_LABEL,
+} from '@/lib/account-copy';
+
+import { DocumentGrid } from './views/document-grid';
+import { DocumentsPanel } from './views/documents-panel';
 
 export default function DocumentsPage() {
   const { session } = useUserSession();
   const userId = session?.user?.id;
 
-  const documentsQuery = useQuery({
+  // One page per media-service request; `nextToken` continues the list until it runs out.
+  const documentsQuery = useInfiniteQuery({
     queryKey: ['documents', userId],
-    queryFn: async () => {
-      const { items } = await getDocuments(userId!);
-      return items;
-    },
+    queryFn: ({ pageParam }) => getDocuments(userId!, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextToken,
     enabled: !!userId,
     retry: false,
   });
 
   if (!userId || documentsQuery.isLoading) {
-    return <Loading message="Loading your resumes..." />;
+    return <Loading message={DOCUMENTS_LOADING} />;
   }
 
-  if (documentsQuery.isError) {
-    return (
-      <ErrorView
-        title="Could not load your resumes"
-        error="The document list failed."
-        errorDescription="This is not an empty library. Check your connection and try again."
-        reset={() => {
-          void documentsQuery.refetch();
-        }}
-      />
-    );
-  }
-
-  const documents = documentsQuery.data ?? [];
+  const documents = documentsQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  // Only a failed first page replaces the list; a failed next page keeps what is already shown.
+  const firstPageFailed = documentsQuery.isError && !documentsQuery.data;
 
   return (
     <PageContainer as="section" className="flex flex-col gap-8 py-6 md:py-10">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold">Your Resumes</h1>
-        <Button asChild variant="secondary">
-          <Link href="/resume/tailor">Tailor to a job</Link>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl leading-[1.333] font-semibold text-primary md:text-[2.8rem]">{DOCUMENTS_TITLE}</h1>
+          <p className="text-sm text-muted-foreground">{DOCUMENTS_INTRO}</p>
+        </div>
+        <Button asChild variant="outline" className="h-10 border-input bg-background text-sm dark:bg-background">
+          <Link href={DOCUMENTS_TAILOR_HREF}>{DOCUMENTS_TAILOR_LABEL}</Link>
         </Button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {
-        documents.length === 0 && (
-          <Card className="w-56 px-4">
-            <CardContent className="h-48 bg-background flex justify-center items-center rounded-md">
-              <Button asChild className="rounded-full size-10">
-                <Link href="/resume" aria-label="Create resume">
-                  <PlusIcon className="w-4 h-4" aria-hidden="true" />
-                </Link>
+      </header>
+      {firstPageFailed ? (
+        <DocumentsPanel kind="error" onRetry={() => void documentsQuery.refetch()} />
+      ) : documents.length === 0 ? (
+        <DocumentsPanel kind="empty" />
+      ) : (
+        <div className="flex flex-col gap-5">
+          <DocumentGrid documents={documents} />
+          {documentsQuery.isFetchNextPageError ? (
+            <div
+              role="alert"
+              className="flex flex-col items-center gap-3 rounded-lg border border-input px-5 py-4 text-center text-sm text-foreground md:flex-row md:justify-center"
+            >
+              {DOCUMENTS_MORE_ERROR}
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 border-input bg-background text-sm dark:bg-background"
+                onClick={() => void documentsQuery.fetchNextPage()}
+              >
+                {DOCUMENTS_RETRY_LABEL}
               </Button>
-            </CardContent>
-            <CardFooter className="px-0">
-              <Label variant="muted" size="sm">
-                Create resume
-              </Label>
-            </CardFooter>
-          </Card>
-        )
-      }
-      {
-        documents.map((document) => (
-          <Card className="w-56 px-4" key={document.key}>
-            <CardContent className="h-48 bg-background flex flex-col gap-2 justify-center items-center rounded-md">
-              <ResumeImage pdfUrl={document.publicUrl} className="w-full h-full" />
-            </CardContent>
-            <CardFooter className="flex justify-center justify-between px-0">
-              <Label variant="muted" size="sm" asChild>
-                <a className="text-primary p-2" href={document.publicUrl} target="_blank" rel="noopener noreferrer">
-                  {document.name}.{document.type.split('/')[1]}
-                </a>
-              </Label>
-              <Link target="_blank" href={document.publicUrl} aria-label={`Download ${document.name}`}>
-                <Icon type={'Download'} className="size-4" />
-              </Link>
-            </CardFooter>
-          </Card>
-        ))
-      }
-      </div>
+            </div>
+          ) : documentsQuery.hasNextPage ? (
+            <Button
+              type="button"
+              variant="ghost"
+              loading={documentsQuery.isFetchingNextPage}
+              disabled={documentsQuery.isFetchingNextPage}
+              className="h-10 self-center text-sm font-semibold text-secondary dark:text-secondary-hover"
+              onClick={() => void documentsQuery.fetchNextPage()}
+            >
+              {LOAD_MORE_LABEL}
+            </Button>
+          ) : null}
+        </div>
+      )}
     </PageContainer>
   );
-};
+}
