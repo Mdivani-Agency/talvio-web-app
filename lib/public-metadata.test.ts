@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
-  ATS_DESCRIPTION,
-  ATS_TITLE,
   HOME_DESCRIPTION,
   HOME_TITLE,
   INDEXABLE_PUBLIC_PATHS,
@@ -50,7 +48,6 @@ describe('public metadata', () => {
   const pages = [
     { path: '/', title: HOME_TITLE, description: HOME_DESCRIPTION, query: /free PDF resume generator/i },
     { path: '/templates', title: TEMPLATES_TITLE, description: TEMPLATES_DESCRIPTION, query: /free resume templates/i },
-    { path: '/ats-friendly-resume', title: ATS_TITLE, description: ATS_DESCRIPTION, query: /ATS-friendly resume/i },
     { path: '/blog', title: BLOG_PAGE_TITLE, description: BLOG_PAGE_DESCRIPTION, query: /articles/i },
     { path: '/terms', title: TERMS_TITLE, description: TERMS_DESCRIPTION, query: null },
     { path: '/privacy-policy', title: PRIVACY_TITLE, description: PRIVACY_DESCRIPTION, query: null },
@@ -105,9 +102,9 @@ describe('public metadata', () => {
   });
 
   it('lists only canonical public pages', () => {
-    expect(indexablePublicPaths({ plansPage: false })).toEqual(['/', '/templates', '/ats-friendly-resume', '/blog', '/privacy-policy', '/terms']);
+    expect(indexablePublicPaths({ plansPage: false })).toEqual(['/', '/templates', '/blog', '/privacy-policy', '/terms']);
     expect(INDEXABLE_PUBLIC_PATHS).toEqual(indexablePublicPaths());
-    expect(PUBLIC_PAGE_PATHS).toEqual(['/', '/templates', '/pricing', '/ats-friendly-resume', '/blog', '/privacy-policy', '/terms']);
+    expect(PUBLIC_PAGE_PATHS).toEqual(['/', '/templates', '/pricing', '/blog', '/privacy-policy', '/terms']);
     expect(PUBLIC_PAGE_PATHS.join(' ')).not.toMatch(/\/home|\/blog\/|\/account|\/auth|\/resume/);
     expect(PRIVATE_ROBOTS_PREFIXES).toEqual(['/account', '/auth', '/resume', '/api']);
   });

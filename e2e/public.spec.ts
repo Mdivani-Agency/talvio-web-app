@@ -40,16 +40,10 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page).toHaveURL(/\/#whats-free$/);
   await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
 
-  await page.goto('/ats-friendly-resume');
-  await expect(page.getByRole('heading', { name: 'How to make an ATS-friendly resume', level: 1 })).toBeVisible();
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.talvio.co/ats-friendly-resume');
-  await expect(page.getByRole('heading', { name: 'Test your PDF' })).toBeVisible();
-  const atsMain = page.getByRole('main');
-  await expect(atsMain.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
-  await expect(atsMain.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
-  await expect(atsMain.getByRole('link', { name: /pricing/i })).toHaveCount(0);
-  await expect(atsMain.locator('a[href*="mdivani.agency"]')).toHaveCount(0);
-  expect(await atsMain.innerText()).not.toMatch(/credit|\$\d|subscription|pay-as-you-go/i);
+  // The ATS guide was removed with no redirect (MDI-578): the path answers with the normal 404.
+  const atsResponse = await page.goto('/ats-friendly-resume');
+  expect(atsResponse?.status()).toBe(404);
+  await expect(page).toHaveURL(/\/ats-friendly-resume$/);
 
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms of Service', exact: true })).toBeVisible();
@@ -426,7 +420,6 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
   const pages = [
     ['/', 'Free PDF resume generator | Talvio Beta'],
     ['/templates', 'Free resume templates by experience level | Talvio'],
-    ['/ats-friendly-resume', 'How to make an ATS-friendly resume | Talvio'],
     ['/blog', 'Resume and job search articles | Talvio'],
     ['/terms', 'Terms of Service | Talvio'],
     ['/privacy-policy', 'Privacy Policy | Talvio'],
@@ -540,7 +533,7 @@ test('PUB-02 mobile menu opens, closes, and reaches sign-in', async ({ page }) =
   await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible();
 });
 
-const PUBLIC_PAGE_PATHS = ['/templates', '/ats-friendly-resume', '/terms', '/privacy-policy', '/auth/sign-in'];
+const PUBLIC_PAGE_PATHS = ['/templates', '/terms', '/privacy-policy', '/auth/sign-in'];
 
 test('PUB-03 every public page links to the other public pages from the header and footer', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -548,7 +541,7 @@ test('PUB-03 every public page links to the other public pages from the header a
     await page.goto(path);
     const header = page.locator('header').first();
     await expect(header.getByRole('link', { name: 'Templates', exact: true })).toHaveAttribute('href', '/templates');
-    await expect(header.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
+    await expect(header.getByRole('link', { name: 'ATS-friendly resume' })).toHaveCount(0);
     await expect(header.getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('href', '/blog');
     if (path === '/auth/sign-in') {
       // The visitor is already signing in, so the auth header leaves out Sign in and Start free.
@@ -563,11 +556,11 @@ test('PUB-03 every public page links to the other public pages from the header a
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
 
-  for (const path of ['/home', '/templates', '/ats-friendly-resume', '/terms', '/privacy-policy']) {
+  for (const path of ['/home', '/templates', '/terms', '/privacy-policy']) {
     await page.goto(path);
     const footer = page.getByRole('contentinfo');
     await expect(footer.getByRole('link', { name: 'Templates', exact: true })).toHaveAttribute('href', '/templates');
-    await expect(footer.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
+    await expect(footer.getByRole('link', { name: 'ATS-friendly resume' })).toHaveCount(0);
     await expect(footer.getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('href', '/blog');
     await expect(footer.getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('href', '/privacy-policy');
     await expect(footer.getByRole('link', { name: 'Terms of Service', exact: true })).toHaveAttribute('href', '/terms');
@@ -579,11 +572,11 @@ test('PUB-03 every public page links to the other public pages from the header a
 
 test('PUB-03 the mobile menu lists the same links as the desktop header, all as links', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/ats-friendly-resume');
+  await page.goto('/templates');
   await page.locator('header').first().getByRole('button', { name: 'Open menu' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('link', { name: 'Templates', exact: true })).toHaveAttribute('href', '/templates');
-  await expect(dialog.getByRole('link', { name: 'ATS-friendly resume', exact: true })).toHaveAttribute('href', '/ats-friendly-resume');
+  await expect(dialog.getByRole('link', { name: 'ATS-friendly resume' })).toHaveCount(0);
   await expect(dialog.getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('href', '/blog');
   await expect(dialog.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
   await expect(dialog.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
@@ -605,7 +598,7 @@ test('PUB-03 the homepage header does not wrap its links or overflow at tablet a
   await expect(header.getByRole('button', { name: 'Open menu' })).toBeHidden();
   await expect(header.getByRole('link', { name: 'Start free', exact: true })).toBeInViewport({ ratio: 1 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  for (const name of ['Workflow', 'Benefits', "What's free", 'FAQ', 'Templates', 'ATS-friendly resume', 'Blog']) {
+  for (const name of ['Workflow', 'Benefits', "What's free", 'FAQ', 'Templates', 'Blog']) {
     const box = await header.getByRole('link', { name, exact: true }).boundingBox();
     expect(box?.height ?? 0, `${name} wraps`).toBeLessThan(30);
   }

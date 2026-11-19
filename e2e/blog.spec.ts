@@ -204,7 +204,7 @@ test('BLOG-07 the sitemap keeps public pages, lists each Talvio article once, an
   expect(new Set(urls).size).toBe(urls.length);
   expect(urls.every((url) => url.startsWith('https://www.talvio.co'))).toBe(true);
 
-  for (const path of ['', '/templates', '/ats-friendly-resume', '/blog', '/privacy-policy', '/terms']) {
+  for (const path of ['', '/templates', '/blog', '/privacy-policy', '/terms']) {
     expect(urls, path).toContain(`https://www.talvio.co${path}`);
   }
   for (const slug of ['talvio-guide', 'hostile-markdown', 'detail-outage', 'seo-special-chars']) {

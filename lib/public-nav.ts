@@ -9,7 +9,6 @@ export const BETA_TAG = 'Beta';
 /** Links to other public pages. Shown in the header on every public page. */
 export const PUBLIC_PAGE_LINKS: NavLink[] = [
   { name: 'Templates', href: '/templates' },
-  { name: 'ATS-friendly resume', href: '/ats-friendly-resume' },
   { name: 'Blog', href: '/blog' },
 ];
 

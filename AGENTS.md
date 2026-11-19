@@ -18,7 +18,7 @@ Every path and symbol named below exists in this repository. If you find one tha
 
 | Path | Holds |
 | -- | -- |
-| `app/` | Next.js routes. Feature folders: `account`, `resume`, `auth`, `home`, `templates`, `pricing`, `ats-friendly-resume`, `terms`, `privacy-policy`, `api` |
+| `app/` | Next.js routes. Feature folders: `account`, `resume`, `auth`, `home`, `templates`, `pricing`, `terms`, `privacy-policy`, `api` |
 | `components/ui/` | shadcn-style primitives, exported from `@components/ui` |
 | `components/views/` | Shared layout pieces (`PageContainer`, `Header`, `StickyHeader`, `Footer`, `Loading`, `ErrorView`, `SortableList`), exported from `@components/views` |
 | `components/modals/` | Modals, including `ConfirmModal`, exported from `@components/modals` |
@@ -49,7 +49,7 @@ Feature folder layout (see `app/account` and `app/resume`):
 - `query/`: `.graphql` documents and React Query hooks.
 - `hooks/`, `providers/`, `components/`, `form/`: only when the feature needs them.
 
-Public pages (`/`, `/templates`, `/pricing`, `/ats-friendly-resume`, `/terms`, `/privacy-policy`):
+Public pages (`/`, `/templates`, `/pricing`, `/blog`, `/terms`, `/privacy-policy`):
 
 - `layout.tsx` exports `metadata = publicPageMetadata(path, title, description)` from `@/lib/public-metadata` and renders `StickyHeader`, `Header` and `Footer` from `@components/views`. Reference: `app/pricing/layout.tsx`.
 - `page.tsx` is a server component. Reference: `app/pricing/page.tsx`.
