@@ -10,7 +10,7 @@ type SkillFieldsFormProps = {
 
 export const SkillFieldsForm = ({ className, form }: SkillFieldsFormProps) => {
   return (
-    <Form className={cn('space-y-6', className)}>
+    <Form className={cn('grid grid-cols-1 gap-4 md:grid-cols-2', className)}>
       <SkillsFormField form={form} name="skills" />
       <SkillsFormField form={form} name="tools" />
     </Form>

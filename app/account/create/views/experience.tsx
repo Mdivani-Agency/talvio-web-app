@@ -1,11 +1,12 @@
 'use client';
-import { useCallback, useState } from 'react';
-import { ExperienceForm } from './forms/experience.form';
+import { useCallback } from 'react';
 import { Experience } from '@lib/types';
-import { OrderedList } from './ordered-list';
-import { ConfirmModal } from '@components/modals';
-import { Label } from '@components/ui';
-import { FormList } from './form-list';
+import { ENTRY_LISTS, PROFILE_SECTIONS } from '@/lib/onboarding-copy';
+
+import { SectionHeading } from './forms/section-heading';
+import { ExperienceForm } from './forms/experience.form';
+import { EntryList } from './entry-list';
+import { experienceSummary } from './entry-summaries';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
 import { preserveDocumentFields, resumeItemToAccountDialog } from '@lib/models/resume-document';
@@ -18,65 +19,43 @@ type ExperienceViewProps = {
 };
 
 export const ExperienceView = ({ className, form, documentMode = false }: ExperienceViewProps) => {
-  const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const { fields, append, remove, update, replace } = useFormArray<Experience>(form, 'experience');
 
-  const handleAddExperience = useCallback(
-    (experience: Experience) => {
-      append(documentMode ? preserveDocumentFields(undefined, experience) : experience);
+  const handleAdd = useCallback(
+    (item: Experience) => {
+      append(documentMode ? preserveDocumentFields(undefined, item) : item);
     },
     [append, documentMode],
   );
 
-  const handleUpdateExperience = useCallback(
-    (index: number, experience: Experience) => {
-      update(index, documentMode ? preserveDocumentFields(fields[index], experience) : experience);
+  const handleUpdate = useCallback(
+    (index: number, item: Experience) => {
+      update(index, documentMode ? preserveDocumentFields(fields[index], item) : item);
     },
     [documentMode, fields, update],
   );
 
-  const handleRemoveExperience = useCallback(
-    (index: number) => {
-      remove(index);
-    },
-    [remove],
-  );
-
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">
-        Experience
-      </Label>
-      <ExperienceForm action="add" onSubmit={handleAddExperience} />
-      <OrderedList fields={fields} label="Experience">
-        {({ items, onReorder }) => (
-          <FormList
-            items={items}
-            labelKey="company"
-            renderForm={(item, onSubmit) => (
-              <ExperienceForm
-                action="edit"
-                onSubmit={onSubmit}
-                defaultValues={documentMode ? resumeItemToAccountDialog(item) : item}
-              />
-            )}
-            onReorder={(nextItems) => {
-              replace(nextItems);
-              onReorder(nextItems);
-            }}
-            handleUpdateForm={handleUpdateExperience}
-            handleRemoveForm={setRemoveItemIndex}
+      <div className="mb-6">
+        <SectionHeading copy={PROFILE_SECTIONS.experience} />
+      </div>
+      <EntryList
+        items={fields}
+        copy={ENTRY_LISTS.experience}
+        summarize={experienceSummary}
+        renderForm={({ defaultValues, submitLabel, onSubmit, onCancel }) => (
+          <ExperienceForm
+            submitLabel={submitLabel}
+            onCancel={onCancel}
+            onSubmit={(value) => onSubmit(value as (typeof fields)[number])}
+            defaultValues={defaultValues ? (documentMode ? resumeItemToAccountDialog(defaultValues) : defaultValues) : undefined}
           />
         )}
-      </OrderedList>
-      <ConfirmModal
-        isOpen={typeof removeItemIndex === 'number'}
-        title="Remove Experience"
-        description="Please confirm you want to remove this item."
-        icon={'TrashBin'}
-        className="text-error"
-        onClose={() => setRemoveItemIndex(null)}
-        onConfirm={() => typeof removeItemIndex === 'number' && handleRemoveExperience(removeItemIndex)}
+        onAdd={handleAdd}
+        onUpdate={handleUpdate}
+        onRemove={remove}
+        onReorder={replace}
       />
     </section>
   );

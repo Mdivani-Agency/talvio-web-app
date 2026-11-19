@@ -1,3 +1,4 @@
+import { ENTRY_CANCEL_LABEL } from '@/lib/onboarding-copy';
 import { Button } from '@components/ui';
 import { cn, getErrorMessage } from '@lib/utils';
 import { Project } from '@lib/types';
@@ -17,10 +18,13 @@ type ProjectFieldsProps = {
   className?: string;
   defaultValues?: Partial<ProjectFormValues>;
   onSubmit: (data: Project) => void;
-  action: 'add' | 'edit';
+  /** The submit button's text, such as "Add experience" or "Save". */
+  submitLabel: string;
+  /** Shows a Cancel button that closes the form without saving. */
+  onCancel?: () => void;
 };
 
-export const ProjectForm = ({ className, defaultValues = DEFAULT_VALUES, action, onSubmit }: ProjectFieldsProps) => {
+export const ProjectForm = ({ className, defaultValues = DEFAULT_VALUES, submitLabel, onCancel, onSubmit }: ProjectFieldsProps) => {
   const form = useAppForm<ProjectFormValues>({
     defaultValues: {
       ...DEFAULT_VALUES,
@@ -57,8 +61,13 @@ export const ProjectForm = ({ className, defaultValues = DEFAULT_VALUES, action,
     <div className={cn('space-y-6', className)}>
       <ProjectFields form={form} />
       <div className="flex justify-end gap-2">
-        <Button type="button" className={'w-36'} variant={'secondary'} size={'icon'} onClick={() => void handleSubmit()}>
-          {action === 'add' ? 'Add' : 'Save'}
+        {onCancel ? (
+          <Button type="button" variant="outline" className="h-[4rem]" onClick={onCancel}>
+            {ENTRY_CANCEL_LABEL}
+          </Button>
+        ) : null}
+        <Button type="button" className="h-[4rem]" onClick={() => void handleSubmit()}>
+          {submitLabel}
         </Button>
       </div>
     </div>

@@ -19,6 +19,10 @@ type MultiInputProps = {
   onAdd: (value: string) => void;
   onRemove: (index: number) => void;
   handleManage?: () => void;
+  /** Ties the text input to an outside label and error message. */
+  id?: string;
+  describedBy?: string;
+  invalid?: boolean;
 };
 
 export const MultiInput = ({
@@ -32,6 +36,9 @@ export const MultiInput = ({
   onAdd,
   onRemove,
   handleManage,
+  id,
+  describedBy,
+  invalid,
 }: MultiInputProps) => {
   const handleAdd = () => {
     if (currentOption) {
@@ -43,6 +50,9 @@ export const MultiInput = ({
     <div className={'mb-2'}>
       <div className={cn('flex items-center gap-2', containerClassName)}>
         <Input
+          id={id}
+          aria-describedby={describedBy}
+          aria-invalid={invalid || undefined}
           error={errorMessage}
           value={currentOption}
           onChange={(e) => setCurrentOption(e.target.value)}

@@ -7,6 +7,7 @@ import { linkSchema } from '@lib/schema/account.schema';
 import { getHostname } from '@lib/utils';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
+import { HIGHLIGHT_FIELDS } from '@/lib/onboarding-copy';
 
 interface LinksFormFieldProps {
   form: AppForm;
@@ -44,8 +45,9 @@ export const LinksFormField = ({ form }: LinksFormFieldProps) => {
         id: field.id,
         name: field.value,
       }))}
+      label={HIGHLIGHT_FIELDS.links.label}
       modalLabel={`Manage Personal Links`}
-      placeholder={`Other Personal Links (optional)`}
+      placeholder={HIGHLIGHT_FIELDS.links.example}
       errorsMessage={errorMessage}
       currentOption={currentOption}
       setCurrentOption={setCurrentOption}

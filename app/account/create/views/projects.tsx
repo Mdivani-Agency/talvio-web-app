@@ -1,11 +1,12 @@
 'use client';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Project } from '@lib/types';
-import { OrderedList } from './ordered-list';
-import { ConfirmModal } from '@components/modals';
-import { Label } from '@components/ui';
+import { ENTRY_LISTS, PROFILE_SECTIONS } from '@/lib/onboarding-copy';
+
+import { SectionHeading } from './forms/section-heading';
 import { ProjectForm } from './forms/project.form';
-import { FormList } from './form-list';
+import { EntryList } from './entry-list';
+import { projectSummary } from './entry-summaries';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
 import { preserveDocumentFields, resumeItemToAccountDialog } from '@lib/models/resume-document';
@@ -18,65 +19,43 @@ type ProjectsViewProps = {
 };
 
 export const ProjectsView = ({ className, form, documentMode = false }: ProjectsViewProps) => {
-  const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
-  const { fields, append, remove, update } = useFormArray<Project>(form, 'projects');
+  const { fields, append, remove, update, replace } = useFormArray<Project>(form, 'projects');
 
-  const handleAddProject = useCallback(
-    (project: Project) => {
-      append(documentMode ? preserveDocumentFields(undefined, project) : project);
+  const handleAdd = useCallback(
+    (item: Project) => {
+      append(documentMode ? preserveDocumentFields(undefined, item) : item);
     },
     [append, documentMode],
   );
 
-  const handleUpdateProject = useCallback(
-    (index: number, project: Project) => {
-      update(index, documentMode ? preserveDocumentFields(fields[index], project) : project);
+  const handleUpdate = useCallback(
+    (index: number, item: Project) => {
+      update(index, documentMode ? preserveDocumentFields(fields[index], item) : item);
     },
     [documentMode, fields, update],
   );
 
-  const handleRemoveProject = useCallback(
-    (index: number) => {
-      remove(index);
-    },
-    [remove],
-  );
-
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">
-        Projects
-      </Label>
-      <ProjectForm action="add" onSubmit={handleAddProject} />
-      <OrderedList fields={fields} label="Projects">
-        {({ items, onReorder }) => (
-          <FormList
-            items={items}
-            labelKey="name"
-            renderForm={(item, onSubmit) => (
-              <ProjectForm
-                action="edit"
-                onSubmit={onSubmit}
-                defaultValues={documentMode ? resumeItemToAccountDialog(item) : item}
-              />
-            )}
-            onReorder={(nextItems) => {
-              form.setFieldValue('projects', nextItems);
-              onReorder(nextItems);
-            }}
-            handleUpdateForm={handleUpdateProject}
-            handleRemoveForm={setRemoveItemIndex}
+      <div className="mb-6">
+        <SectionHeading copy={PROFILE_SECTIONS.projects} />
+      </div>
+      <EntryList
+        items={fields}
+        copy={ENTRY_LISTS.projects}
+        summarize={projectSummary}
+        renderForm={({ defaultValues, submitLabel, onSubmit, onCancel }) => (
+          <ProjectForm
+            submitLabel={submitLabel}
+            onCancel={onCancel}
+            onSubmit={(value) => onSubmit(value as (typeof fields)[number])}
+            defaultValues={defaultValues ? (documentMode ? resumeItemToAccountDialog(defaultValues) : defaultValues) : undefined}
           />
         )}
-      </OrderedList>
-      <ConfirmModal
-        isOpen={typeof removeItemIndex === 'number'}
-        title="Remove Project"
-        description="Please confirm you want to remove this item."
-        icon={'TrashBin'}
-        className="text-error"
-        onClose={() => setRemoveItemIndex(null)}
-        onConfirm={() => typeof removeItemIndex === 'number' && handleRemoveProject(removeItemIndex)}
+        onAdd={handleAdd}
+        onUpdate={handleUpdate}
+        onRemove={remove}
+        onReorder={replace}
       />
     </section>
   );

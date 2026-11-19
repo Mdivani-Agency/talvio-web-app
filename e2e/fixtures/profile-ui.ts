@@ -15,12 +15,13 @@ export async function setScenario(mode: string) {
   }
 }
 
-export function section(page: Page, placeholder: string) {
-  return page.locator('section').filter({ has: page.getByPlaceholder(placeholder) }).last();
+/** The profile section that holds the field with this visible label. */
+export function section(page: Page, label: string) {
+  return page.locator('section').filter({ has: page.getByLabel(label, { exact: true }) }).last();
 }
 
-async function fillAutocomplete(page: Page, placeholder: string, value: string) {
-  const input = page.getByPlaceholder(placeholder);
+async function fillAutocomplete(page: Page, label: string, value: string) {
+  const input = page.getByLabel(label, { exact: true });
   await input.click();
   await page.keyboard.insertText(value);
   await page.keyboard.press('Escape');
@@ -38,18 +39,18 @@ export async function fillIdentity(page: Page, values: {
   city?: string;
   country?: string;
 }) {
-  await page.getByPlaceholder('First Name').fill(values.firstName);
-  await page.getByPlaceholder('Last Name').fill(values.lastName);
-  await page.getByPlaceholder('Role').fill(values.role);
-  await page.getByPlaceholder('Email').fill(values.email);
+  await page.getByLabel('First name', { exact: true }).fill(values.firstName);
+  await page.getByLabel('Last name', { exact: true }).fill(values.lastName);
+  await page.getByLabel('Role', { exact: true }).fill(values.role);
+  await page.getByLabel('Email', { exact: true }).fill(values.email);
   if (values.tagline != null) {
-    await page.getByPlaceholder('Write a brief summary').fill(values.tagline);
+    await page.getByLabel('Summary', { exact: true }).fill(values.tagline);
   }
   if (values.phone != null) {
-    await page.getByPlaceholder('Phone').fill(values.phone);
+    await page.getByLabel('Phone', { exact: true }).fill(values.phone);
   }
   if (values.website != null) {
-    await page.getByPlaceholder('Personal Website (optional)').fill(values.website);
+    await page.getByLabel('Website (optional)', { exact: true }).fill(values.website);
   }
   if (values.city != null) {
     await fillAutocomplete(page, 'City', values.city);
@@ -91,18 +92,28 @@ export async function chooseOption(page: Page, scope: Locator, index: number, op
   await page.getByRole('option', { name: option, exact: true }).click();
 }
 
-export async function addTag(page: Page, placeholder: string, value: string) {
-  const input = page.getByPlaceholder(placeholder);
+export async function addTag(page: Page, label: string, value: string) {
+  const input = page.getByLabel(label, { exact: true });
   await input.fill(value);
   await input.press('Enter');
 }
 
-export async function expandEntries(scope: Locator, count: number) {
-  const header = scope.locator('.cursor-pointer').filter({ hasText: `(${count})` });
-  if (await header.locator('xpath=..').getAttribute('aria-expanded') === 'true') {
-    return;
-  }
-  await header.click();
+/** The Experience, Education or Projects list: the section with this h2. */
+export function entrySection(page: Page, title: string) {
+  return page.locator('section').filter({ has: page.getByRole('heading', { level: 2, name: title, exact: true }) }).last();
+}
+
+/** Open a list's inline form with its Add button, such as "Add experience", and return the list's section. */
+export async function startEntry(page: Page, title: string, addLabel: string) {
+  const list = entrySection(page, title);
+  await list.getByRole('button', { name: addLabel, exact: true }).click();
+  await expect(list.getByRole('heading', { level: 3, name: addLabel.replace(/^Add /, 'New '), exact: true })).toBeVisible();
+  return list;
+}
+
+/** A saved entry's row in a list, found by any text it shows. */
+export function entryRow(list: Locator, text: string) {
+  return list.locator('[draggable]').filter({ hasText: text });
 }
 
 export async function dragItem(page: Page, sourceText: string, targetText: string) {
