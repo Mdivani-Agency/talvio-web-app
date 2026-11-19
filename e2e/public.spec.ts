@@ -249,6 +249,35 @@ test('PUB-05f the blog index leads with the newest post and lists every other po
   await expect(page).toHaveURL(/\/blog\/talvio-guide$/);
 });
 
+test('PUB-05g a blog article reads in a 720px column with a 1.75 line height and ends with the bordered panel', async ({ page }) => {
+  for (const viewport of [
+    { width: 1280, height: 900, fontSize: 17 },
+    { width: 390, height: 844, fontSize: 16 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/blog/talvio-guide');
+    const article = page.getByRole('main').locator('article');
+    const body = await article.locator('p').filter({ hasText: 'Readable paragraph text' }).first().evaluate((paragraph) => {
+      const style = getComputedStyle(paragraph);
+      return { fontSize: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight) };
+    });
+    expect(body.fontSize, `${viewport.width}px`).toBe(viewport.fontSize);
+    expect(body.lineHeight / body.fontSize, `${viewport.width}px`).toBeCloseTo(1.75, 2);
+    expect((await article.boundingBox())!.width).toBeLessThanOrEqual(720);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    const panel = page.getByRole('heading', { name: 'Start your first resume', level: 2 }).locator('xpath=..');
+    const panelStyle = await panel.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { background: style.backgroundColor, border: parseFloat(style.borderTopWidth) };
+    });
+    expect(panelStyle.background).toBe('rgba(0, 0, 0, 0)');
+    expect(panelStyle.border).toBe(1);
+    await expect(panel.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(panel.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
+  }
+});
+
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/templates');
