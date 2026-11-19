@@ -1,10 +1,13 @@
-import { Form, FormControl, Input, FormField, FormItem, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker, MultiListInput, ErrorBadge, InfoBadge } from '@components/ui';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker, MultiListInput, ErrorBadge, InfoBadge } from '@components/ui';
 import { cn } from '@lib/utils';
 import { employmentTypeEnum, locationTypeEnum } from '@lib/schema/enums';
 import { z } from 'zod';
 import { useStore } from '@tanstack/react-form';
 import type { AppForm } from '@lib/forms/use-form';
 import { fieldErrorMessage } from '@lib/forms/errors';
+import { EXPERIENCE_FIELDS } from '@/lib/onboarding-copy';
+
+import { TextFormField } from './text-form-field';
 
 export const experienceFormValuesSchema = z.object({
   id: z.string().optional(),
@@ -41,41 +44,10 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
   const bulletPointErrors = achievementsError || responsibilitiesError || keyContributionsError;
 
   return (
-    <Form className={cn('space-y-6', className)}>
-      <div className="grid grid-cols-2 gap-2">
-        <FormField form={form} name="company">
-          {(field) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  name={field.name}
-                  value={String(field.state.value ?? '')}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder="Company"
-                  error={fieldErrorMessage(field.state.meta.errors)}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        </FormField>
-
-        <FormField form={form} name="jobTitle">
-          {(field) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  name={field.name}
-                  value={String(field.state.value ?? '')}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder="Job Title"
-                  error={fieldErrorMessage(field.state.meta.errors)}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        </FormField>
+    <Form className={cn('space-y-4', className)}>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <TextFormField form={form} name="company" copy={EXPERIENCE_FIELDS.company} />
+        <TextFormField form={form} name="jobTitle" copy={EXPERIENCE_FIELDS.jobTitle} />
       </div>
 
       <ExperienceRangePicker
@@ -93,27 +65,26 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
         }}
       />
 
-      <Label size="sm" variant="muted">
-        Additional Details
-      </Label>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FormField form={form} name="employmentType">
           {(field) => (
             <FormItem>
-              <FormControl>
-                <Select value={String(field.state.value ?? '')} onValueChange={(value) => field.handleChange(value)}>
-                  <SelectTrigger error={fieldErrorMessage(field.state.meta.errors)}>
-                    <SelectValue placeholder="Select Employment Type" />
+              <FormLabel>{EXPERIENCE_FIELDS.employmentType.label}</FormLabel>
+              <Select value={String(field.state.value ?? '')} onValueChange={(value) => field.handleChange(value)}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={EXPERIENCE_FIELDS.employmentType.example} />
                   </SelectTrigger>
-                  <SelectContent>
-                    {employmentTypeEnum.options.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
+                </FormControl>
+                <SelectContent>
+                  {employmentTypeEnum.options.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
             </FormItem>
           )}
         </FormField>
@@ -121,28 +92,30 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
         <FormField form={form} name="locationType">
           {(field) => (
             <FormItem>
-              <FormControl>
-                <Select value={String(field.state.value ?? '')} onValueChange={(value) => field.handleChange(value)}>
-                  <SelectTrigger error={fieldErrorMessage(field.state.meta.errors)}>
-                    <SelectValue placeholder="Select Location Type" />
+              <FormLabel>{EXPERIENCE_FIELDS.locationType.label}</FormLabel>
+              <Select value={String(field.state.value ?? '')} onValueChange={(value) => field.handleChange(value)}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={EXPERIENCE_FIELDS.locationType.example} />
                   </SelectTrigger>
-                  <SelectContent>
-                    {locationTypeEnum.options.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
+                </FormControl>
+                <SelectContent>
+                  {locationTypeEnum.options.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
             </FormItem>
           )}
         </FormField>
       </div>
 
       <MultiListInput
-        label="Bullet Points"
-        badge={bulletPointErrors ? <ErrorBadge error={bulletPointErrors} /> : <InfoBadge info="Please try to add at list one item for each category" />}
+        label="Bullet points"
+        badge={bulletPointErrors ? <ErrorBadge error={bulletPointErrors} /> : <InfoBadge info="Add at least one item to each list" />}
         items={{
           achievements: {
             label: 'Achievements',
@@ -157,7 +130,7 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
             onRemove: (index) => form.setFieldValue('responsibilities', responsibilities.filter((_, i) => i !== index)),
           },
           keyContributions: {
-            label: 'Key Contributions',
+            label: 'Key contributions',
             items: keyContributions,
             onAdd: (item) => form.setFieldValue('keyContributions', [...keyContributions, item]),
             onRemove: (index) => form.setFieldValue('keyContributions', keyContributions.filter((_, i) => i !== index)),
@@ -165,22 +138,7 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
         }}
       />
 
-      <FormField form={form} name="additionalDetails">
-        {(field) => (
-          <FormItem>
-            <FormControl>
-              <Textarea
-                name={field.name}
-                value={String(field.state.value ?? '')}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-                placeholder="Additional Context (if necessary)"
-                error={fieldErrorMessage(field.state.meta.errors)}
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      </FormField>
+      <TextFormField form={form} name="additionalDetails" copy={EXPERIENCE_FIELDS.additionalDetails} multiline />
     </Form>
   );
 };

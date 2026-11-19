@@ -55,6 +55,8 @@ export const Modal = ({ open, onOpenChange, children, title, description, classN
       <DrawerContent className={cn('p-6', className)}>
         <DrawerHeader>
           {title && <DrawerTitle>{title}</DrawerTitle>}
+          {/* The dialog shows the description under its title; the phone drawer used to drop it. */}
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </DrawerHeader>
         {children}
       </DrawerContent>

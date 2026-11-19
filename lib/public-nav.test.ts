@@ -7,6 +7,8 @@ import {
   HOME_SECTION_LINKS,
   PUBLIC_PAGE_LINKS,
   footerCopyright,
+  publicPageLinks,
+  withCurrentPage,
 } from './public-nav';
 import { indexablePublicPaths } from './public-metadata';
 
@@ -38,5 +40,15 @@ describe('public navigation', () => {
 
   it('writes the given year in the copyright line', () => {
     expect(footerCopyright(2026)).toBe('© 2026 Talvio. All rights reserved.');
+  });
+
+  it('lists Pricing between Templates and Blog only while the plans page is on', () => {
+    expect(publicPageLinks({ plansPage: false }).map((link) => link.name)).toEqual(['Templates', 'Blog']);
+    expect(publicPageLinks({ plansPage: true }).map((link) => link.name)).toEqual(['Templates', 'Pricing', 'Blog']);
+  });
+
+  it('marks only the current page', () => {
+    const links = withCurrentPage(publicPageLinks({ plansPage: true }), '/pricing');
+    expect(links.filter((link) => link.current).map((link) => link.href)).toEqual(['/pricing']);
   });
 });

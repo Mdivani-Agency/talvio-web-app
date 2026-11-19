@@ -41,27 +41,27 @@ describe('DownloadResumeModal', () => {
     const dialog = renderModal({ allowance: allowanceStatus(60, NOW) });
 
     expect(dialog.textContent).toContain('uses 1 of your monthly resume PDFs. You have 2 of 3 left this month.');
-    expect(screen.getByRole('button', { name: 'Generate and Download Resume' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Generate and download' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('blocks generating at zero and names the renewal date', () => {
     const dialog = renderModal({ allowance: allowanceStatus(0, NOW) });
 
     expect(dialog.textContent).toContain('No new resume PDFs left this month. You get 3 more on 1 November.');
-    expect(screen.getByRole('button', { name: 'Generate and Download Resume' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Generate and download' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('keeps re-downloading a generated PDF available at zero', () => {
     renderModal({ allowance: allowanceStatus(0, NOW), isFreeDownload: true });
 
-    expect(screen.getByRole('button', { name: 'Download Resume' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: /^Download$/ }).hasAttribute('disabled')).toBe(false);
   });
 
   it('does not block a guest, whose allowance is unknown', () => {
     const dialog = renderModal();
 
     expect(dialog.textContent).not.toContain('left this month');
-    expect(screen.getByRole('button', { name: 'Generate and Download Resume' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Generate and download' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('mentions no credits', () => {
@@ -84,6 +84,18 @@ describe('DownloadResumeModal', () => {
   it('stays disabled while a PDF is being generated', () => {
     renderModal({ allowance: allowanceStatus(60, NOW), isGenerating: true });
 
-    expect(screen.getByRole('button', { name: 'Generate and Download Resume' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Generate and download' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('labels the file name and the label, explains the label and offers Cancel', () => {
+    const onClose = vi.fn();
+    renderModal({ label: '', setLabel: vi.fn(), onClose });
+    expect(screen.getByRole('dialog', { name: /Generate your PDF/ })).toBeTruthy();
+    expect((screen.getByLabelText('File name') as HTMLInputElement).value).toBe('Ada Owner');
+    expect(screen.getByLabelText('Label (optional)').getAttribute('aria-describedby')).toBeTruthy();
+    expect(screen.getByText('Only you see it, in your documents list.')).toBeTruthy();
+    expect(screen.getByText('Re-downloads of a generated PDF are always free.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onClose).toHaveBeenCalled();
   });
 });

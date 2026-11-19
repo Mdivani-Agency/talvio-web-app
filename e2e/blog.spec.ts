@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { BLOG_UNAVAILABLE_TITLE } from '../lib/blog-copy';
+import { BLOG_GO_HOME_LABEL, BLOG_RETRY_LABEL, BLOG_UNAVAILABLE_TITLE } from '../lib/blog-copy';
 
 import { BLOG_E2E_TOKEN } from './services/blog-api.mjs';
 
@@ -54,6 +54,9 @@ test('BLOG-02 an upstream failure answers with an error status, not a 404 or an 
 
   await page.goto('/blog/detail-outage');
   await expect(page.getByRole('heading', { name: BLOG_UNAVAILABLE_TITLE })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: BLOG_RETRY_LABEL })).toBeVisible();
+  await expect(page.getByRole('link', { name: BLOG_GO_HOME_LABEL })).toHaveAttribute('href', '/');
 });
 
 test('BLOG-03 hostile Markdown cannot run script or load images from other hosts', async ({ page }) => {
@@ -166,7 +169,7 @@ test('BLOG-06 article metadata and structured data agree, for browsers and crawl
     expect(special).not.toContain('<script>window.__pwned');
     const [specialGraph] = jsonLd(special);
     expect(specialGraph['@graph']?.[0].headline).toBe('Résumé "tips" & </script><script>window.__pwned=1</script>');
-    expect(metaContent(special, 'property', 'og:image')).toEqual(['https://www.talvio.co/share-image-v1.png']);
+    expect(metaContent(special, 'property', 'og:image')).toEqual(['https://www.talvio.co/share-blog-v1.png']);
 
     for (const path of ['/blog/no-such-post', '/blog/agency-only-leak']) {
       const missing = await (await request.get(path, { headers })).text();
@@ -187,7 +190,7 @@ test('BLOG-06 article metadata and structured data agree, for browsers and crawl
   }
 
   // The fallback social image is a real asset.
-  const share = await request.get('/share-image-v1.png');
+  const share = await request.get('/share-blog-v1.png');
   expect(share.status()).toBe(200);
   expect(share.headers()['content-type']).toBe('image/png');
 });
@@ -201,7 +204,7 @@ test('BLOG-07 the sitemap keeps public pages, lists each Talvio article once, an
   expect(new Set(urls).size).toBe(urls.length);
   expect(urls.every((url) => url.startsWith('https://www.talvio.co'))).toBe(true);
 
-  for (const path of ['', '/templates', '/ats-friendly-resume', '/blog', '/privacy-policy', '/terms']) {
+  for (const path of ['', '/templates', '/blog', '/privacy-policy', '/terms']) {
     expect(urls, path).toContain(`https://www.talvio.co${path}`);
   }
   for (const slug of ['talvio-guide', 'hostile-markdown', 'detail-outage', 'seo-special-chars']) {

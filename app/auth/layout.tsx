@@ -8,10 +8,10 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   return (
     <div className="font-(family-var(--font-montserrat))">
       <Header>
-        <ResponsiveNavigationMenu links={PUBLIC_PAGE_LINKS} />
+        <ResponsiveNavigationMenu links={PUBLIC_PAGE_LINKS} authActions={false} />
       </Header>
       <StickyHeader>
-        <ResponsiveNavigationMenu links={PUBLIC_PAGE_LINKS} />
+        <ResponsiveNavigationMenu links={PUBLIC_PAGE_LINKS} authActions={false} />
       </StickyHeader>
       {children}
     </div>

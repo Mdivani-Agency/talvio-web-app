@@ -20,9 +20,11 @@ interface BurgerMenuProps {
     email: string;
     image?: string | null;
   }
+  /** Sign in and Start free, shown when nobody is signed in. */
+  authActions?: boolean;
 }
 
-export const BurgerMenu = ({ className, links, user }: BurgerMenuProps) => {
+export const BurgerMenu = ({ className, links, user, authActions = true }: BurgerMenuProps) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -42,12 +44,18 @@ export const BurgerMenu = ({ className, links, user }: BurgerMenuProps) => {
           <NavigationMenu className='w-full max-w-auto flex flex-col justify-start items-start gap-4 p-4'>
             {links.map((link) => (
               <NavigationMenuItem key={link.name} asChild onClick={() => setOpen(false)}>
-                <Link href={link.href} className='text-primary text-lg font-semibold'>{link.name}</Link>
+                <Link
+                  href={link.href}
+                  aria-current={link.current ? 'page' : undefined}
+                  className={link.current ? 'text-lg font-semibold text-secondary dark:text-secondary-hover' : 'text-lg font-semibold text-primary'}
+                >
+                  {link.name}
+                </Link>
               </NavigationMenuItem>
             ))}
             <Separator className='w-full' />
             <div className='flex flex-col gap-2'>
-              <NavigationMenuItem asChild>
+              {(user || authActions) && <NavigationMenuItem asChild>
                 {user ?
                 <Link className='flex items-center gap-2' href={'/account'}>
                   <UserAvatar user={user} />
@@ -60,8 +68,8 @@ export const BurgerMenu = ({ className, links, user }: BurgerMenuProps) => {
                   <span className='text-primary text-md font-medium'>{SIGN_IN_LABEL}</span>
                 </Link>
                 }
-              </NavigationMenuItem>
-              {!user && (
+              </NavigationMenuItem>}
+              {!user && authActions && (
                 <NavigationMenuItem asChild onClick={() => setOpen(false)}>
                   <Button asChild size={'lg'}>
                     <Link href={PRIMARY_CTA_HREF}>{PRIMARY_CTA_LABEL}</Link>

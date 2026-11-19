@@ -42,7 +42,7 @@ export function ExperienceRangePicker({
     <div className={cn('grid md:grid-cols-2 gap-4', className)}>
       <div className="flex flex-col gap-2">
         <Label className='flex items-center gap-2'>
-          Start Date
+          Start date
           {startDateError && <ErrorBadge error={startDateError} />}
         </Label>
         <DatePicker
@@ -52,7 +52,7 @@ export function ExperienceRangePicker({
       </div>
       <div className="flex flex-col gap-2">
         <Label className='flex items-center gap-2'>
-          End Date
+          End date
           {endDateError && <ErrorBadge error={endDateError} />}
         </Label>
         <DatePicker

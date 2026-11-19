@@ -65,6 +65,43 @@ describe('local media and font simulator', () => {
     ]);
   });
 
+  it('pages records like the media service: limit, nextToken, and a failing next page', async () => {
+    await reset();
+    for (const name of ['One.pdf', 'Two.pdf', 'Three.pdf']) {
+      const presign = await fetch(`${simulator.url}/presign/user-2`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-KEY': 'local-e2e-dummy' },
+        body: JSON.stringify({ name, type: 'application/pdf', path: 'resume' }),
+      });
+      const { uploadUrl } = (await presign.json()) as { uploadUrl: string };
+      await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/pdf' }, body: PDF });
+    }
+    const auth = { headers: { Authorization: 'Bearer local-session' } };
+    const page = async (query: string) => {
+      const response = await fetch(`${simulator.url}/media/user-2/records${query}`, auth);
+      return { status: response.status, body: (await response.json()) as { items?: { name: string }[]; nextToken?: string | null } };
+    };
+
+    const all = await page('?limit=50');
+    expect(all.body.items).toHaveLength(3);
+    expect(all.body.nextToken).toBeNull();
+    expect((await page('?limit=25')).status).toBe(400);
+
+    const scenario = (mode: string) =>
+      fetch(`${simulator.url}/__e2e/scenario`, { method: 'POST', body: JSON.stringify({ mode }) });
+    await scenario('records_paged');
+    const first = await page('?limit=50');
+    expect(first.body.items?.map((record) => record.name)).toEqual(['One.pdf', 'Two.pdf']);
+    const second = await page(`?limit=50&nextToken=${first.body.nextToken}`);
+    expect(second.body.items?.map((record) => record.name)).toEqual(['Three.pdf']);
+    expect(second.body.nextToken).toBeNull();
+
+    await scenario('records_paged_next_error');
+    expect((await page('?limit=50')).status).toBe(200);
+    expect((await page(`?limit=50&nextToken=${first.body.nextToken}`)).status).toBe(500);
+    await reset();
+  });
+
   it('rejects presign without the api key and records without a bearer token', async () => {
     const presign = await fetch(`${simulator.url}/media/presign/user-1`, {
       method: 'POST',

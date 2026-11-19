@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { BLOG_BREADCRUMB_HOME, BLOG_BREADCRUMB_INDEX, BLOG_PATH, blogPostPath } from '../blog-copy';
-import { PRIVATE_ROBOTS, SHARE_IMAGE, SHARE_OPEN_GRAPH, SHARE_TWITTER } from '../public-metadata';
+import { PRIVATE_ROBOTS, SHARE_IMAGE_BLOG, SHARE_OPEN_GRAPH, SHARE_TWITTER } from '../public-metadata';
 import { allowPublicIndexing, siteOrigin } from '../site';
 
 import type { BlogPost, BlogPostSummary } from './contract';
@@ -41,11 +41,11 @@ export function blogArticleTitle(title: string): string {
   return `${title} | Talvio`;
 }
 
-/** Article metadata from the same post the page renders. `coverUrl` is absolute, or `null` for the shared image. */
+/** Article metadata from the same post the page renders. `coverUrl` is absolute, or `null` for the blog's share image. */
 export function blogArticleMetadata(post: BlogPost, coverUrl: string | null): Metadata {
   const { url } = blogCanonical(post);
   const title = blogArticleTitle(post.title);
-  const images = coverUrl ? [{ url: coverUrl, alt: '' }] : [SHARE_IMAGE];
+  const images = coverUrl ? [{ url: coverUrl, alt: '' }] : [SHARE_IMAGE_BLOG];
   return {
     title: { absolute: title },
     description: post.description,

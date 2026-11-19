@@ -14,9 +14,12 @@ const COLLAPSE_CLASSES = {
 export const ResponsiveNavigationMenu = ({
   links,
   collapseBelow = 'md',
+  authActions = true,
 }: {
   links: NavLink[];
   collapseBelow?: keyof typeof COLLAPSE_CLASSES;
+  /** Sign in and Start free. Off on the auth pages, where the visitor is already signing in. */
+  authActions?: boolean;
 }) => {
   const { session } = useUserSession();
   const user = session?.user
@@ -33,9 +36,10 @@ export const ResponsiveNavigationMenu = ({
       <SiteNavigationMenu
         user={user}
         withActions={true}
+        authActions={authActions}
         className={COLLAPSE_CLASSES[collapseBelow].menu}
         links={links} />
-      <BurgerMenu className={`ml-auto ${COLLAPSE_CLASSES[collapseBelow].burger}`} links={links} user={user} />
+      <BurgerMenu className={`ml-auto ${COLLAPSE_CLASSES[collapseBelow].burger}`} links={links} user={user} authActions={authActions} />
     </div>
   )
 }

@@ -5,7 +5,16 @@ import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@lib/utils/tailwind';
 
-export function ImageCarousel({ images, currentIndex }: { images: string[]; currentIndex: number }) {
+export function ImageCarousel({
+  images,
+  currentIndex,
+  className,
+}: {
+  images: string[];
+  currentIndex: number;
+  /** The carousel is hidden below `md` unless this shows it, as the editor's phone Preview tab does. */
+  className?: string;
+}) {
   const imageRef = useRef<HTMLImageElement>(null);
 
   const variants = {
@@ -28,7 +37,7 @@ export function ImageCarousel({ images, currentIndex }: { images: string[]; curr
   };
 
   return (
-    <div className="hidden group relative w-full h-full overflow-hidden md:block">
+    <div className={cn('hidden group relative w-full h-full overflow-hidden md:block', className)}>
       <div className="flex a4-container-w">
         <AnimatePresence initial={false}>
           {images.map((image, index) => (

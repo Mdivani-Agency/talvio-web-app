@@ -2,19 +2,18 @@ import { describe, expect, it } from 'vitest';
 
 import { BRIEF_BANNED_TERMS, RELEASE_BANNED_TERMS, sentences, wordCount } from '@/test/utils/public-copy';
 
-import { atsMetadataText, atsPageText } from './ats-page-copy';
 import { homepageCopyText } from './homepage-copy';
 import { documentText } from './legal-copy';
 import { PRIVACY } from './privacy-copy';
 import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, SITE_ONE_LINER, SUPPORT_ANSWER } from './public-claims';
 import {
-  ATS_DESCRIPTION,
-  ATS_TITLE,
   HOME_DESCRIPTION,
   HOME_TITLE,
   PRIVACY_DESCRIPTION,
   PRIVACY_TITLE,
   SHARE_IMAGE,
+  SHARE_IMAGE_BLOG,
+  SHARE_IMAGE_TEMPLATES,
   TEMPLATES_DESCRIPTION,
   TEMPLATES_TITLE,
   TERMS_DESCRIPTION,
@@ -29,7 +28,6 @@ import { TERMS } from './terms-copy';
 const marketing: Record<string, string> = {
   homepage: homepageCopyText(),
   templates: [TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO].join('\n'),
-  'ATS guide': atsPageText(),
   'sign-in': [SIGN_IN_HEADING, SIGN_IN_INTRO, SIGN_IN_GOOGLE_LABEL, SIGN_IN_DIVIDER].join('\n'),
   navigation: [...HOME_NAV_LINKS, ...FOOTER_PAGE_LINKS].map((link) => link.name).concat(BETA_TAG, SIGN_IN_LABEL, FOOTER_POWERED_BY_LEAD, footerCopyright(2026)).join('\n'),
   claims: [DATA_SAFETY_ANSWER, ACCOUNT_DELETION_ANSWER, SUPPORT_ANSWER].join('\n'),
@@ -38,14 +36,13 @@ const marketing: Record<string, string> = {
     HOME_DESCRIPTION,
     TEMPLATES_TITLE,
     TEMPLATES_DESCRIPTION,
-    ATS_TITLE,
-    ATS_DESCRIPTION,
-    atsMetadataText(),
     TERMS_TITLE,
     TERMS_DESCRIPTION,
     PRIVACY_TITLE,
     PRIVACY_DESCRIPTION,
     SHARE_IMAGE.alt,
+    SHARE_IMAGE_TEMPLATES.alt,
+    SHARE_IMAGE_BLOG.alt,
     SITE_ONE_LINER,
   ].join('\n'),
 };
@@ -85,7 +82,7 @@ describe('public copy release rules', () => {
     expect(marketing.homepage).toMatch(/\bin beta\b/);
     expect(marketing.homepage).toMatch(/free forever/i);
     expect(HOME_DESCRIPTION).toMatch(/3 new resume PDFs every month/);
-    for (const name of ['templates', 'ATS guide', 'sign-in', 'navigation']) {
+    for (const name of ['templates', 'sign-in', 'navigation']) {
       expect(marketing[name], name).not.toMatch(/\b3 new resume PDFs|each month|every month/i);
     }
   });

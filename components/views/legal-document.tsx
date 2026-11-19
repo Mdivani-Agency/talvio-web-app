@@ -1,7 +1,26 @@
+import { ChevronUp } from 'lucide-react';
 import Link from 'next/link';
-import type { LegalDocument as LegalDocumentCopy, LegalInline } from '@/lib/legal-copy';
 
-const linkClassName = 'underline hover:text-secondary';
+import { cn } from '@lib/utils';
+import {
+  LEGAL_BACK_TO_TOP,
+  legalSectionId,
+  type LegalDocument as LegalDocumentCopy,
+  type LegalInline,
+} from '@/lib/legal-copy';
+import { LEGAL_LINKS } from '@/lib/public-nav';
+
+import { LegalContents } from './legal-contents';
+import { PageContainer } from './page-container';
+
+const linkClassName =
+  'text-secondary underline underline-offset-[0.3rem] hover:text-secondary-hover dark:text-secondary-hover dark:hover:text-secondary';
+
+/** The switch lists Terms first, then Privacy, with the labels the footer uses. */
+const LEGAL_SWITCH_ORDER = ['/terms', '/privacy-policy'];
+const LEGAL_SWITCH_LINKS = LEGAL_SWITCH_ORDER.map((href) => LEGAL_LINKS.find((link) => link.href === href)).filter(
+  (link) => link !== undefined,
+);
 
 function Inline({ inline }: { inline: LegalInline }) {
   if (typeof inline === 'string') {
@@ -19,11 +38,7 @@ function Inline({ inline }: { inline: LegalInline }) {
   }
   const external = inline.href.startsWith('http');
   return (
-    <a
-      href={inline.href}
-      className={linkClassName}
-      {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-    >
+    <a href={inline.href} className={linkClassName} {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}>
       {inline.text}
     </a>
   );
@@ -39,36 +54,84 @@ function InlineRun({ content }: { content: LegalInline[] }) {
   );
 }
 
-/** Renders a legal text from `lib/*-copy.ts`: one `h1`, "Last updated", then numbered sections. */
-export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
+/** Segmented links between the two legal documents; the current one carries `aria-current="page"`. */
+function LegalSwitch({ current }: { current: string }) {
   return (
-    <main className="mx-auto w-full max-w-container-3xl px-4 pb-12 pt-24 text-primary lg:px-6">
-      <header className="mb-8 flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold lg:text-3xl">{doc.title}</h1>
+    <nav aria-label="Legal documents" className="inline-flex max-w-full gap-1 rounded-lg bg-popover p-1 dark:bg-card">
+      {LEGAL_SWITCH_LINKS.map((link) => {
+        const selected = link.name === current;
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            aria-current={selected ? 'page' : undefined}
+            className={cn(
+              'inline-flex h-10 items-center rounded-md px-3 text-md whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring lg:px-4',
+              selected
+                ? 'bg-background font-semibold text-foreground shadow-sm'
+                : 'font-medium text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {link.name}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+/**
+ * Renders a legal text from `lib/*-copy.ts`: the document switch, one `h1`, "Last updated", the contents list, then
+ * numbered sections with anchors (`section-5`) and Back to top.
+ */
+export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
+  const sections = doc.sections.map((section, index) => ({ ...section, id: legalSectionId(section.heading, index) }));
+  return (
+    <PageContainer as="main" id="top" className="flex-1 pt-8 pb-14 text-primary lg:pt-14 lg:pb-24">
+      <header className="flex flex-col items-start gap-4 border-b border-input pb-6 lg:pb-8">
+        <LegalSwitch current={doc.title} />
+        <h1 className="mt-2 text-[3.2rem] leading-[1.2] font-semibold tracking-[-0.01em] lg:text-3xl">{doc.title}</h1>
         <p className="text-md text-muted-foreground">Last updated: {doc.lastUpdated}</p>
       </header>
-      <div className="flex max-w-[100ch] flex-col gap-8">
-        {doc.sections.map((section) => (
-          <section key={section.heading} className="flex flex-col gap-3">
-            <h2 className="text-xl font-semibold">{section.heading}</h2>
-            {section.blocks.map((block, index) =>
-              block.type === 'p' ? (
-                <p key={index} className="text-md text-muted-foreground">
-                  <InlineRun content={block.content} />
-                </p>
-              ) : (
-                <ul key={index} className="ml-6 flex list-disc flex-col gap-2 text-md text-muted-foreground">
-                  {block.items.map((item, itemIndex) => (
-                    <li key={itemIndex}>
-                      <InlineRun content={item} />
-                    </li>
-                  ))}
-                </ul>
-              ),
-            )}
-          </section>
-        ))}
+      <div className="mt-6 grid grid-cols-1 items-start gap-8 lg:mt-10 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-16">
+        {/* Stretches to the article's height so the desktop list can stay sticky beside it. */}
+        <div className="min-w-0 lg:self-stretch">
+          <LegalContents items={sections.map(({ id, heading }) => ({ id, heading }))} />
+        </div>
+        <article className="flex max-w-[72rem] min-w-0 flex-col text-md text-foreground">
+          {sections.map((section, index) => (
+            <section
+              key={section.id}
+              id={section.id}
+              className={cn('flex scroll-mt-24 flex-col gap-3', index === 0 ? 'pb-8' : 'border-t border-input py-8')}
+            >
+              <h2 className="text-[2rem] leading-[1.4] font-semibold text-primary lg:text-xl">{section.heading}</h2>
+              {section.blocks.map((block, blockIndex) =>
+                block.type === 'p' ? (
+                  <p key={blockIndex}>
+                    <InlineRun content={block.content} />
+                  </p>
+                ) : (
+                  <ul key={blockIndex} className="flex list-disc flex-col gap-2 pl-6">
+                    {block.items.map((item, itemIndex) => (
+                      <li key={itemIndex}>
+                        <InlineRun content={item} />
+                      </li>
+                    ))}
+                  </ul>
+                ),
+              )}
+            </section>
+          ))}
+          <a
+            href="#top"
+            className="mt-8 inline-flex min-h-[4.4rem] items-center gap-2 self-start text-md font-medium text-secondary hover:text-secondary-hover dark:text-secondary-hover dark:hover:text-secondary"
+          >
+            <ChevronUp aria-hidden="true" className="size-4" />
+            {LEGAL_BACK_TO_TOP}
+          </a>
+        </article>
       </div>
-    </main>
+    </PageContainer>
   );
 }

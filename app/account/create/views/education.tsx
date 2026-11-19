@@ -1,11 +1,12 @@
 'use client';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Education } from '@lib/types';
-import { OrderedList } from './ordered-list';
-import { ConfirmModal } from '@components/modals';
-import { Label } from '@components/ui';
+import { ENTRY_LISTS, PROFILE_SECTIONS } from '@/lib/onboarding-copy';
+
+import { SectionHeading } from './forms/section-heading';
 import { EducationForm } from './forms/education.form';
-import { FormList } from './form-list';
+import { EntryList } from './entry-list';
+import { educationSummary } from './entry-summaries';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
 import { preserveDocumentFields, resumeItemToAccountDialog } from '@lib/models/resume-document';
@@ -15,68 +16,50 @@ type EducationViewProps = {
   form: AppForm;
   /** Convert account-shaped dialogs into resume document items. */
   documentMode?: boolean;
+  /** Off where a parent already names the section, as the resume editor's accordion does. */
+  heading?: boolean;
 };
 
-export const EducationView = ({ className, form, documentMode = false }: EducationViewProps) => {
-  const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
-  const { fields, append, remove, update } = useFormArray<Education>(form, 'education');
+export const EducationView = ({ className, form, documentMode = false, heading = true }: EducationViewProps) => {
+  const { fields, append, remove, update, replace } = useFormArray<Education>(form, 'education');
 
-  const handleAddEducation = useCallback(
-    (education: Education) => {
-      append(documentMode ? preserveDocumentFields(undefined, education) : education);
+  const handleAdd = useCallback(
+    (item: Education) => {
+      append(documentMode ? preserveDocumentFields(undefined, item) : item);
     },
     [append, documentMode],
   );
 
-  const handleUpdateEducation = useCallback(
-    (index: number, education: Education) => {
-      update(index, documentMode ? preserveDocumentFields(fields[index], education) : education);
+  const handleUpdate = useCallback(
+    (index: number, item: Education) => {
+      update(index, documentMode ? preserveDocumentFields(fields[index], item) : item);
     },
     [documentMode, fields, update],
   );
 
-  const handleRemoveEducation = useCallback(
-    (index: number) => {
-      remove(index);
-    },
-    [remove],
-  );
-
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">
-        Education
-      </Label>
-      <EducationForm action="add" onSubmit={handleAddEducation} />
-      <OrderedList fields={fields} label="Education">
-        {({ items, onReorder }) => (
-          <FormList
-            items={items}
-            labelKey="name"
-            renderForm={(item, onSubmit) => (
-              <EducationForm
-                action="edit"
-                onSubmit={onSubmit}
-                defaultValues={documentMode ? resumeItemToAccountDialog(item) : item}
-              />
-            )}
-            onReorder={(nextItems) => {
-              form.setFieldValue('education', nextItems);
-              onReorder(nextItems);
-            }}
-            handleUpdateForm={handleUpdateEducation}
-            handleRemoveForm={setRemoveItemIndex}
+      {heading ? (
+        <div className="mb-6">
+          <SectionHeading copy={PROFILE_SECTIONS.education} />
+        </div>
+      ) : null}
+      <EntryList
+        items={fields}
+        copy={ENTRY_LISTS.education}
+        summarize={educationSummary}
+        renderForm={({ defaultValues, submitLabel, onSubmit, onCancel }) => (
+          <EducationForm
+            submitLabel={submitLabel}
+            onCancel={onCancel}
+            onSubmit={(value) => onSubmit(value as (typeof fields)[number])}
+            defaultValues={defaultValues ? (documentMode ? resumeItemToAccountDialog(defaultValues) : defaultValues) : undefined}
           />
         )}
-      </OrderedList>
-      <ConfirmModal
-        isOpen={typeof removeItemIndex === 'number'}
-        title="Remove Education"
-        description="Please confirm you want to remove this item."
-        icon={'TrashBin'}
-        className="text-error"
-        onClose={() => setRemoveItemIndex(null)}
-        onConfirm={() => typeof removeItemIndex === 'number' && handleRemoveEducation(removeItemIndex)}
+        onAdd={handleAdd}
+        onUpdate={handleUpdate}
+        onRemove={remove}
+        onReorder={replace}
       />
     </section>
   );

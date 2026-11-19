@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BLOG_EMPTY_HEADING, BLOG_PAGE_HEADING } from '@/lib/blog-copy';
+import { BLOG_EMPTY_HEADING, BLOG_PAGE_HEADING, BLOG_READ_ARTICLE_LABEL } from '@/lib/blog-copy';
+import { PRIMARY_CTA_HREF, SECONDARY_CTA_HREF } from '@/lib/homepage-copy';
 import type { BlogPostSummary } from '@/lib/blog/contract';
 
 const reader = vi.hoisted(() => ({
@@ -88,10 +89,36 @@ describe('/blog', () => {
     expect(html).toMatch(/<img[^>]*alt=""/);
   });
 
+  it('leads with the first post and lists the rest in the grid, each once', async () => {
+    reader.getBlogPosts.mockResolvedValue({
+      status: 'ok',
+      data: [summary('lead', '2026-09-20T09:00:00.000Z'), summary('second', '2026-09-10T09:00:00.000Z'), summary('third', '2026-09-01T09:00:00.000Z')],
+      fetchedAt: 0,
+    });
+    const html = await renderPage();
+    const [leadCard, grid] = html.split('<ul');
+    expect(leadCard).toContain('href="/blog/lead"');
+    expect(leadCard).toContain(`<span aria-hidden="true"`);
+    expect(leadCard).toContain(BLOG_READ_ARTICLE_LABEL);
+    expect(grid.match(/<li/g)).toHaveLength(2);
+    expect(grid).not.toContain('/blog/lead');
+    expect(html.match(new RegExp(BLOG_READ_ARTICLE_LABEL, 'g'))).toHaveLength(1);
+  });
+
+  it('renders a single post as the lead card with no empty grid', async () => {
+    reader.getBlogPosts.mockResolvedValue({ status: 'ok', data: [summary('only', '2026-09-20T09:00:00.000Z')], fetchedAt: 0 });
+    const html = await renderPage();
+    expect(html).toContain('href="/blog/only"');
+    expect(html).not.toContain('<ul');
+  });
+
   it('renders the empty state only for a successful empty list', async () => {
     reader.getBlogPosts.mockResolvedValue({ status: 'ok', data: [], fetchedAt: 0 });
     const html = await renderPage();
+    expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).toContain(BLOG_EMPTY_HEADING);
+    expect(html).toContain(`href="${PRIMARY_CTA_HREF}"`);
+    expect(html).toContain(`href="${SECONDARY_CTA_HREF}"`);
     expect(html).not.toMatch(/href="\/blog\//);
   });
 

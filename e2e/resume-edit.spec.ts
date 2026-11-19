@@ -9,6 +9,7 @@ import {
   recordedDownloads,
   resetAndGuard,
   waitForPreview,
+  renameResume,
 } from './fixtures/resume-ui';
 import {
   contentProfile,
@@ -19,7 +20,6 @@ import {
   SEEDED_RESUME_CONTENT,
 } from './fixtures/resumes';
 
-test.describe.configure({ timeout: 180_000 });
 
 test.beforeEach(async ({ page }) => {
   await resetAndGuard(page);
@@ -38,32 +38,32 @@ test('RES-04 edits a draft once and keeps rapid acknowledged saves', async ({ pa
     throw new Error('Draft persona has no resume');
   }
   await openSignedIn(page, draft, `/resume/${draft.resumeId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
 
-  await page.getByPlaceholder('Role').fill('Rapid One');
+  await page.getByLabel('Role', { exact: true }).fill('Rapid One');
   await waitForRole(draft.userId, 'Rapid One');
-  await expect(page.getByText('Saved to account')).toBeVisible();
+  await expect(page.getByText('Saved to your account')).toBeVisible();
 
-  await page.getByPlaceholder('Role').fill('Rapid Two');
-  await page.getByPlaceholder('Role').fill('Rapid Three');
+  await page.getByLabel('Role', { exact: true }).fill('Rapid Two');
+  await page.getByLabel('Role', { exact: true }).fill('Rapid Three');
   await waitForRole(draft.userId, 'Rapid Three');
-  await expect(page.getByText('Saved to account')).toBeVisible();
+  await expect(page.getByText('Saved to your account')).toBeVisible();
 
-  await chooseTemplate(page, 'Mid Level', 'mid Talvio');
+  await chooseTemplate(page, 'Mid level', 'Talvio');
   await expect.poll(async () => (await listResumes(draft.userId))[0]?.templateKey).toBe('mid-level-talvio');
   await chooseColor(page, '#005BA2');
   await expect.poll(async () => (await listResumes(draft.userId))[0]?.color).toBe('#005BA2');
   await chooseFontSize(page, 'L');
   await expect.poll(async () => (await listResumes(draft.userId))[0]?.fontSize).toBe('lg');
-  await expect(page.getByText('Saved to account')).toBeVisible();
+  await expect(page.getByText('Saved to your account')).toBeVisible();
 
   await seedProfile(draft.userId);
   await page.goto('/account');
   await expect(page.getByRole('link', { name: 'Draft resume', exact: true })).toBeVisible();
   await page.goto(`/resume/${draft.resumeId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Rapid Three');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Rapid Three');
   await page.reload();
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Rapid Three');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Rapid Three');
 
   const rows = await listResumes(draft.userId);
   expect(rows).toHaveLength(1);
@@ -86,14 +86,14 @@ test('RES-05 forks one draft from a generated resume and can discard it', async 
   const originalUrl = before[0]?.pdfUrl;
 
   await openSignedIn(page, owner, `/resume/${originalId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
-  await page.getByPlaceholder('Role').fill('Draft Role');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
+  await page.getByLabel('Role', { exact: true }).fill('Draft Role');
   await expect(page.getByRole('dialog', { name: 'Create a draft' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByText('Draft created')).toBeVisible();
-  await expect(page.getByText('Editing a draft. Your generated PDF stays downloadable.')).toBeVisible();
+  await expect(page.getByText('You are editing a draft. Your generated PDF stays downloadable.')).toBeVisible();
 
-  await page.getByPlaceholder('Role').fill('Draft Role Two');
+  await page.getByLabel('Role', { exact: true }).fill('Draft Role Two');
   await expect(page.getByRole('dialog', { name: 'Create a draft' })).toHaveCount(0);
   await expect.poll(async () => {
     const rows = await listResumes(owner.userId);
@@ -109,9 +109,9 @@ test('RES-05 forks one draft from a generated resume and can discard it', async 
 
   await page.getByRole('button', { name: 'View original' }).click();
   await expect(page.getByText('Viewing the generated PDF. This version is read-only.')).toBeVisible();
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
-  await page.getByRole('button', { name: 'View draft' }).click();
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Draft Role Two');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
+  await page.getByRole('button', { name: 'Back to draft' }).click();
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Draft Role Two');
 
   await page.getByRole('button', { name: 'Discard draft' }).click();
   await expect(page.getByRole('dialog', { name: 'Discard draft' })).toBeVisible();
@@ -138,11 +138,11 @@ test('RES-05 concurrent draft creation keeps a single open draft', async ({ page
   await openSignedIn(page, owner, `/resume/${originalId}`);
   const other = await page.context().newPage();
   await other.goto(`/resume/${originalId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
-  await expect(other.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
+  await expect(other.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
 
-  await page.getByPlaceholder('Role').fill('Left edit');
-  await other.getByPlaceholder('Role').fill('Right edit');
+  await page.getByLabel('Role', { exact: true }).fill('Left edit');
+  await other.getByLabel('Role', { exact: true }).fill('Right edit');
   await expect(page.getByRole('dialog', { name: 'Create a draft' })).toBeVisible();
   await expect(other.getByRole('dialog', { name: 'Create a draft' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirm' }).click();
@@ -177,10 +177,9 @@ test('RES-06 changes a generated label without a draft, render, or charge', asyn
     }
   });
 
-  await page.getByLabel('Resume label').fill('Board copy');
-  await page.getByLabel('Resume label').blur();
+  await renameResume(page, 'Board copy');
   await expect.poll(async () => (await listResumes(owner.userId))[0]?.label).toBe('Board copy');
-  await expect(page.getByText('Saved to account')).toBeVisible();
+  await expect(page.getByText('Saved to your account')).toBeVisible();
 
   const rows = await listResumes(owner.userId);
   expect(rows).toHaveLength(1);
@@ -189,7 +188,7 @@ test('RES-06 changes a generated label without a draft, render, or charge', asyn
   expect(rows[0]?.sourceResumeId).toBeNull();
   expect(await creditBalance(owner.userId)).toBe(0);
 
-  await page.getByRole('button', { name: 'Download resume' }).click();
+  await page.getByRole('button', { name: 'Download PDF' }).click();
   await expect.poll(async () => (await recordedDownloads(page)).length).toBe(1);
   expect((await recordedDownloads(page))[0]?.download).toBe('Ada Owner.pdf');
   expect(generateCalls).toEqual([]);
@@ -198,7 +197,7 @@ test('RES-06 changes a generated label without a draft, render, or charge', asyn
 
   await seedProfile(owner.userId);
   await page.reload();
-  await expect(page.getByLabel('Resume label')).toHaveValue('Board copy');
+  await expect(page.getByRole('button', { name: 'Rename resume: Board copy' })).toBeVisible();
   await page.goto('/account');
   await expect(page.getByRole('link', { name: 'Board copy', exact: true })).toBeVisible();
   await expect(page.getByText('PDF ready', { exact: false })).toBeVisible();
@@ -239,7 +238,7 @@ test('RES-09 renders long Unicode content across preview pages and style changes
     content: longResume(),
   });
   await openSignedIn(page, owner, `/resume/${resumeId}`);
-  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Naïve');
+  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Naïve');
   await waitForPreview(page);
 
   const pageCount = async () => {
@@ -263,21 +262,21 @@ test('RES-09 renders long Unicode content across preview pages and style changes
   ));
   expect(imagesReady).toBe(true);
 
-  await page.getByRole('button', { name: 'Full size preview' }).click();
+  await page.getByRole('button', { name: 'Full size', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Full Size Resume' });
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('img[alt^="PDF Page Preview"]')).toHaveCount(total);
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 
-  await chooseTemplate(page, 'Senior Level', 'senior Mint');
+  await chooseTemplate(page, 'Senior level', 'Mint');
   await waitForPreview(page);
   await chooseFontSize(page, 'L');
   await waitForPreview(page);
   await chooseColor(page, '#670000');
   await waitForPreview(page);
 
-  const download = page.getByRole('button', { name: 'Download resume' });
+  const download = page.getByRole('button', { name: 'Download PDF' });
   await expect(download).toBeVisible();
   const box = await download.boundingBox();
   const viewport = page.viewportSize();

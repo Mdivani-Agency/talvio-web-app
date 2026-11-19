@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
-import { Select, Pill, AutocompleteInput, Button, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@components/ui';
+import { Select, Pill, AutocompleteInput, Button, Label, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@components/ui';
 import { languageSchema } from '@lib/schema/account.schema';
 import { Language, LanguageProficiency as LanguageProficiencyType } from '@lib/types';
 import { LanguageProficiency } from '@lib/schema/enums';
@@ -9,6 +9,9 @@ import iso from 'iso-639-1';
 import { Icon } from '@components/icons';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
+import { ADD_LANGUAGE_LABEL, HIGHLIGHT_FIELDS, LANGUAGES_LABEL } from '@/lib/onboarding-copy';
+
+const LABEL_CLASS = 'leading-[1.4286] font-medium text-foreground';
 
 type LanguageFormFieldProps = {
   label?: string;
@@ -22,6 +25,7 @@ export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
   });
 
   const { fields, append, remove } = useFormArray<Language>(form, 'languages');
+  const id = useId();
 
   const addLanguage = async () => {
     const { success, data } = languageSchema.safeParse(currentLanguage);
@@ -42,20 +46,29 @@ export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
   };
 
   return (
-    <div className={'flex flex-col gap-2'}>
-      <div className={'grid md:grid-cols-2 gap-2'}>
-        <AutocompleteInput
-          placeholder={'Language'}
-          options={iso.getAllNames()}
-          selected={currentLanguage.language}
-          onSelect={handleLanguageChange}
-          onChange={handleLanguageChange}
-        />
-
-        <div className={'flex items-center gap-2'}>
+    <fieldset className="flex min-w-0 flex-col gap-2">
+      <legend className="mb-2 text-md font-semibold text-primary">{LANGUAGES_LABEL}</legend>
+      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+        <div className="grid min-w-0 gap-1.5">
+          <Label htmlFor={`${id}-language`} size="sm" className={LABEL_CLASS}>
+            {HIGHLIGHT_FIELDS.language.label}
+          </Label>
+          <AutocompleteInput
+            id={`${id}-language`}
+            placeholder={HIGHLIGHT_FIELDS.language.example}
+            options={iso.getAllNames()}
+            selected={currentLanguage.language}
+            onSelect={handleLanguageChange}
+            onChange={handleLanguageChange}
+          />
+        </div>
+        <div className="grid min-w-0 gap-1.5">
+          <Label htmlFor={`${id}-proficiency`} size="sm" className={LABEL_CLASS}>
+            {HIGHLIGHT_FIELDS.proficiency.label}
+          </Label>
           <Select value={currentLanguage.proficiency} onValueChange={handleProficiencyChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={'Select Proficiency'} />
+            <SelectTrigger id={`${id}-proficiency`}>
+              <SelectValue placeholder={HIGHLIGHT_FIELDS.proficiency.example} />
             </SelectTrigger>
             <SelectContent>
               {LanguageProficiency.options.map((option) => (
@@ -65,10 +78,10 @@ export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
               ))}
             </SelectContent>
           </Select>
-          <Button type={'button'} variant={'outline'} size={'icon'} onClick={addLanguage}>
-            <Icon type={'Add'} className={'size-4'} />
-          </Button>
         </div>
+        <Button type="button" variant="outline" size="icon" className="size-12" aria-label={ADD_LANGUAGE_LABEL} onClick={addLanguage}>
+          <Icon type={'Add'} className={'size-4'} />
+        </Button>
       </div>
 
       {fields.length > 0 && (
@@ -78,6 +91,6 @@ export const LanguagesFormFields = ({ form }: LanguageFormFieldProps) => {
           ))}
         </div>
       )}
-    </div>
+    </fieldset>
   );
 };

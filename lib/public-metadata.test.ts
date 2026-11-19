@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
-  ATS_DESCRIPTION,
-  ATS_TITLE,
   HOME_DESCRIPTION,
   HOME_TITLE,
   INDEXABLE_PUBLIC_PATHS,
@@ -17,6 +15,8 @@ import {
   publicPageMetadata,
   publicSitemap,
   SHARE_IMAGE,
+  SHARE_IMAGE_BLOG,
+  SHARE_IMAGE_TEMPLATES,
   TEMPLATES_DESCRIPTION,
   TEMPLATES_TITLE,
   TERMS_DESCRIPTION,
@@ -50,7 +50,6 @@ describe('public metadata', () => {
   const pages = [
     { path: '/', title: HOME_TITLE, description: HOME_DESCRIPTION, query: /free PDF resume generator/i },
     { path: '/templates', title: TEMPLATES_TITLE, description: TEMPLATES_DESCRIPTION, query: /free resume templates/i },
-    { path: '/ats-friendly-resume', title: ATS_TITLE, description: ATS_DESCRIPTION, query: /ATS-friendly resume/i },
     { path: '/blog', title: BLOG_PAGE_TITLE, description: BLOG_PAGE_DESCRIPTION, query: /articles/i },
     { path: '/terms', title: TERMS_TITLE, description: TERMS_DESCRIPTION, query: null },
     { path: '/privacy-policy', title: PRIVACY_TITLE, description: PRIVACY_DESCRIPTION, query: null },
@@ -75,13 +74,29 @@ describe('public metadata', () => {
   });
 
   it('shares a 1200x630 large image card on every public page', () => {
-    expect(SHARE_IMAGE).toMatchObject({ url: '/share-image-v1.png', width: 1200, height: 630 });
+    expect(SHARE_IMAGE).toMatchObject({ url: '/share-image-v2.png', width: 1200, height: 630 });
     expect(SHARE_IMAGE.alt).toContain('Free PDF resume generator');
     for (const page of pages) {
       const metadata = publicPageMetadata(page.path, page.title, page.description);
       expect(metadata.openGraph).toMatchObject({ title: page.title, description: page.description, images: [SHARE_IMAGE] });
       expect(metadata.twitter).toMatchObject({ card: 'summary_large_image', title: page.title, images: [SHARE_IMAGE] });
     }
+  });
+
+  it('gives the templates page and the blog their own share image, on both Open Graph and X', () => {
+    for (const image of [SHARE_IMAGE_TEMPLATES, SHARE_IMAGE_BLOG]) {
+      expect(image).toMatchObject({ width: 1200, height: 630 });
+      expect(image.url).toMatch(/^\/share-[a-z]+-v\d+\.png$/);
+      expect(image.alt.length).toBeGreaterThan(20);
+    }
+    expect(new Set([SHARE_IMAGE.url, SHARE_IMAGE_TEMPLATES.url, SHARE_IMAGE_BLOG.url]).size).toBe(3);
+
+    const templates = publicPageMetadata('/templates', TEMPLATES_TITLE, TEMPLATES_DESCRIPTION, SHARE_IMAGE_TEMPLATES);
+    expect(templates.openGraph).toMatchObject({ images: [SHARE_IMAGE_TEMPLATES] });
+    expect(templates.twitter).toMatchObject({ card: 'summary_large_image', images: [SHARE_IMAGE_TEMPLATES] });
+    const blog = publicPageMetadata('/blog', BLOG_PAGE_TITLE, BLOG_PAGE_DESCRIPTION, SHARE_IMAGE_BLOG);
+    expect(blog.openGraph).toMatchObject({ images: [SHARE_IMAGE_BLOG] });
+    expect(blog.twitter).toMatchObject({ images: [SHARE_IMAGE_BLOG] });
   });
 
   it('gives every sitemap entry a lastModified date', () => {
@@ -105,9 +120,9 @@ describe('public metadata', () => {
   });
 
   it('lists only canonical public pages', () => {
-    expect(indexablePublicPaths({ plansPage: false })).toEqual(['/', '/templates', '/ats-friendly-resume', '/blog', '/privacy-policy', '/terms']);
+    expect(indexablePublicPaths({ plansPage: false })).toEqual(['/', '/templates', '/blog', '/privacy-policy', '/terms']);
     expect(INDEXABLE_PUBLIC_PATHS).toEqual(indexablePublicPaths());
-    expect(PUBLIC_PAGE_PATHS).toEqual(['/', '/templates', '/pricing', '/ats-friendly-resume', '/blog', '/privacy-policy', '/terms']);
+    expect(PUBLIC_PAGE_PATHS).toEqual(['/', '/templates', '/pricing', '/blog', '/privacy-policy', '/terms']);
     expect(PUBLIC_PAGE_PATHS.join(' ')).not.toMatch(/\/home|\/blog\/|\/account|\/auth|\/resume/);
     expect(PRIVATE_ROBOTS_PREFIXES).toEqual(['/account', '/auth', '/resume', '/api']);
   });
@@ -133,8 +148,11 @@ describe('public metadata', () => {
     expect(allowPublicIndexing()).toBe(true);
   });
 
-  it('dates the privacy policy by its last change', () => {
-    const privacy = publicSitemap({ plansPage: false }).find((entry) => entry.url.endsWith('/privacy-policy'))?.lastModified;
-    expect(privacy).toBe('2026-11-16');
+  it('dates the legal pages by their last visible change', () => {
+    const sitemap = publicSitemap({ plansPage: false });
+    const lastModified = (path: string) => sitemap.find((entry) => entry.url.endsWith(path))?.lastModified;
+    // The contents list and Back to top changed both pages; the legal text and its "Last updated" dates did not.
+    expect(lastModified('/privacy-policy')).toBe('2026-11-19');
+    expect(lastModified('/terms')).toBe('2026-11-19');
   });
 });

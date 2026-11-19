@@ -1,31 +1,21 @@
 'use client';
 import { redirect } from 'next/navigation';
-import Templates from '../resume/views/templates';
-import { useTemplates } from '@hooks/use-templates';
-import { TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO } from '@/lib/templates-page-copy';
 import { useState } from 'react';
 
-export default function TemplatesPage() {
-  const [level, setLevel] = useState<'entry' | 'mid' | 'senior'>('senior');
+import { TEMPLATES_DEFAULT_LEVEL, type TemplatesPageLevel } from '@/lib/templates-page-copy';
 
-  const templates = useTemplates({
-    level,
-    onSelect: (_, key) => redirect(`/resume?template=${key}`),
-  });
+import { TemplateGallery } from './views/template-gallery';
+import { TemplatesHeader } from './views/templates-header';
+import { PageContainer } from '@components/views';
+
+export default function TemplatesPage() {
+  const [level, setLevel] = useState<TemplatesPageLevel>(TEMPLATES_DEFAULT_LEVEL);
 
   return (
-    <main className="w-full">
-      <Templates
-        className="h-auto overflow-visible pt-24 pb-12"
-        headingClassName="text-2xl lg:text-3xl 2xl:text-3xl"
-        templatesContainerClassName='grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-        heading={TEMPLATES_PAGE_HEADING}
-        intro={TEMPLATES_PAGE_INTRO}
-        level={level}
-        onChangeLevel={setLevel}
-      >
-        {templates}
-      </Templates>
-    </main>
+    <PageContainer as="main" className="pt-10 pb-14 lg:pt-[7.2rem] lg:pb-24">
+      <TemplatesHeader level={level} onChangeLevel={setLevel} />
+      {/* Keyed by level so the carousel starts at the first card. */}
+      <TemplateGallery key={level} level={level} onSelect={(key) => redirect(`/resume?template=${key}`)} />
+    </PageContainer>
   );
 }

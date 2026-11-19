@@ -1,8 +1,8 @@
 name: CI
 
-# PRs and pushes: quality, local database tests, Playwright, then a release gate.
+# PRs and pushes: quality, local database tests and Playwright run in parallel, then a release gate.
 # Push to main / development: release gate → db push → Vercel CLI deploy.
-# The gate fails unless quality and local-e2e both succeed, including when one is skipped.
+# The gate fails unless quality, db-tests and local-e2e all succeed, including when one is skipped.
 # Push runs stay queued. Each hosted mutation refuses a checkout that is no longer the branch tip.
 # Vercel Git deployments are off for every branch (see vercel.json). CLI deploys use a pinned CLI.
 #
@@ -73,8 +73,36 @@ jobs:
       - name: Build
         run: yarn build
 
+  db-tests:
+    name: Local database tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # The launcher uses only Node built-ins, so this job needs no Yarn install.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Supabase binds fixed host ports 54320-54329, inside Linux's default ephemeral range (32768-60999). An outgoing
+      # connection, such as an image pull, can hold one of them and "supabase start" then fails with "address already in
+      # use". End the ephemeral range below them.
+      - name: Keep the Supabase ports out of the ephemeral range
+        run: sudo sysctl -w net.ipv4.ip_local_port_range="32768 54000"
+
+      - name: Set up Supabase CLI
+        uses: ./.github/actions/setup-supabase-cli
+
+      - name: Database tests
+        env:
+          E2E_SUPABASE_CLI: supabase
+        run: node scripts/e2e-local.mjs --db
+
   local-e2e:
-    name: Local database and Playwright
+    name: Local Playwright
     # Playwright 1.55 cannot install Chromium on ubuntu-latest (26.04); pin the image it supports.
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -90,6 +118,12 @@ jobs:
         with:
           node-version: 22
           cache: yarn
+
+      # Supabase binds fixed host ports 54320-54329, inside Linux's default ephemeral range (32768-60999). An outgoing
+      # connection, such as an image pull, can hold one of them and "supabase start" then fails with "address already in
+      # use". End the ephemeral range below them.
+      - name: Keep the Supabase ports out of the ephemeral range
+        run: sudo sysctl -w net.ipv4.ip_local_port_range="32768 54000"
 
       - name: Set up Supabase CLI
         uses: ./.github/actions/setup-supabase-cli
@@ -107,9 +141,12 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      # Skips binaries already restored from the cache; the OS packages are installed every run.
+      # Browser only, no --with-deps. ubuntu-24.04 already has every library Chromium needs; --with-deps only added
+      # CJK, Thai and X11 font packages and Mesa patch updates, about 32 MB from the Ubuntu mirrors on every run (5+
+      # minutes when the mirror is slow, and failed runs when it returned 503). No test needs those fonts. If the image
+      # ever drops a library, Chromium fails at launch and names it. The binary itself comes from the cache above.
       - name: Install Playwright browsers
-        run: yarn playwright install --with-deps chromium
+        run: yarn playwright install chromium
 
       # The build bakes in the local Supabase URL and keys, so it cannot reuse the
       # quality job's output. Next's own cache (.next/cache) is still valid across
@@ -123,10 +160,11 @@ jobs:
             nextjs-${{ runner.os }}-${{ hashFiles('yarn.lock') }}-
             nextjs-${{ runner.os }}-
 
-      - name: Local database tests and Playwright
+      # The database tests run in the db-tests job; this one resets the stack and runs only Playwright.
+      - name: Playwright
         env:
           E2E_SUPABASE_CLI: supabase
-        run: yarn test:e2e:local
+        run: node scripts/e2e-local.mjs --e2e
 
       # A failed Playwright run does not invalidate the build cache, so keep it unless the job was cancelled.
       - name: Save Next.js build cache
@@ -149,7 +187,7 @@ jobs:
 
   release-gate:
     name: Release gate
-    needs: [quality, local-e2e]
+    needs: [quality, db-tests, local-e2e]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -157,9 +195,10 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Require quality and local end-to-end
+      - name: Require quality, database tests and local end-to-end
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
+          DB_TESTS_RESULT: ${{ needs['db-tests'].result }}
           LOCAL_E2E_RESULT: ${{ needs.local-e2e.result }}
         run: node scripts/release-gate.mjs
 

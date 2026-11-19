@@ -45,7 +45,6 @@ async function failGraphql(page: Page, marker: string) {
 }
 
 test('UX-01 named controls, keyboard entry, and dialog escape', async ({ page, personas }) => {
-  test.setTimeout(180_000);
   await page.goto('/home');
   await expectNamedControls(page);
   await page.goto('/auth/sign-in');
@@ -63,9 +62,14 @@ test('UX-01 named controls, keyboard entry, and dialog escape', async ({ page, p
 
   await page.goto('/templates');
   await expectNamedControls(page);
-  await page.getByRole('button', { name: 'Entry Level', exact: true }).focus();
+  await page.getByRole('button', { name: 'Entry level', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'Entry Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Mid level', exact: true })).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('button', { name: 'Mid level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'false');
 
   const owner = persona(personas, 'complete');
   const resumeId = await seedResume({ userId: owner.userId, name: 'Keyboard resume' });
@@ -74,16 +78,16 @@ test('UX-01 named controls, keyboard entry, and dialog escape', async ({ page, p
   await waitForPreview(page);
   await expectNamedControls(page);
 
-  const download = page.getByRole('button', { name: 'Download resume' });
+  const download = page.getByRole('button', { name: 'Download PDF' });
   await download.click();
-  await expect(page.getByRole('dialog', { name: 'Final Review' })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Resume name' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: /Generate your PDF/ })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'File name' })).toBeVisible();
   await expectNamedControls(page);
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: 'Final Review' })).toBeHidden();
+  await expect(page.getByRole('dialog', { name: /Generate your PDF/ })).toBeHidden();
   await expect(download).toBeFocused();
 
-  await page.getByRole('button', { name: 'Full size preview' }).click();
+  await page.getByRole('button', { name: 'Full size', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Full Size Resume' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Full Size Resume' })).toBeHidden();
@@ -102,7 +106,6 @@ test.describe('mobile', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('UX-02 mobile sign-in, editing, download, and delete stay on screen', async ({ page, personas }) => {
-    test.setTimeout(180_000);
     await page.goto('/home');
     await expectNoHorizontalOverflow(page);
     const menu = page.locator('header').first().getByRole('button', { name: 'Open menu' });
@@ -119,12 +122,14 @@ test.describe('mobile', () => {
     await signInWithLocalMagicLink(page, owner);
 
     await page.goto(`/resume/${resumeId}`);
+    // Phones show Content, Design or Preview one at a time.
+    await page.getByRole('tab', { name: 'Preview', exact: true }).click();
     await waitForPreview(page);
     await expectNoHorizontalOverflow(page);
-    await page.getByRole('button', { name: 'Download resume' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Final Review' });
+    await page.getByRole('button', { name: 'Download PDF' }).click();
+    const dialog = page.getByRole('dialog', { name: /Generate your PDF/ });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Generate and Download Resume' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Generate and download', exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await page.keyboard.press('Escape');
 
@@ -139,7 +144,6 @@ test.describe('mobile', () => {
 });
 
 test('UX-03 failed profile, resume, and document reads recover, and a pending generate stays disabled', async ({ page, personas }) => {
-  test.setTimeout(120_000);
   const owner = persona(personas, 'complete');
   const resumeId = await seedResume({ userId: owner.userId, name: 'Recovered resume' });
   await signInWithLocalMagicLink(page, owner);
@@ -155,10 +159,10 @@ test('UX-03 failed profile, resume, and document reads recover, and a pending ge
   const resumeFailure = await failGraphql(page, 'ResumeById');
   await page.goto(`/resume/${resumeId}`);
   await expect(page.getByRole('heading', { name: 'Could not load this resume' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Resume not found' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: "We can't find this resume" })).toHaveCount(0);
   resumeFailure.stop();
   await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
 
   let releaseGenerate: () => void = () => undefined;
   const gate = new Promise<void>((resolve) => {

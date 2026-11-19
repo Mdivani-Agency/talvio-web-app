@@ -1,22 +1,22 @@
-import {
-  BLOG_EMPTY_BODY,
-  BLOG_EMPTY_HEADING,
-  BLOG_PAGE_DESCRIPTION,
-  BLOG_PAGE_HEADING,
-  BLOG_PAGE_INTRO,
-  BLOG_PAGE_TITLE,
-  BLOG_PATH,
-} from '@/lib/blog-copy';
+import Link from 'next/link';
+import { Newspaper } from 'lucide-react';
+
+import { Button } from '@components/ui';
+import { BLOG_EMPTY_BODY, BLOG_EMPTY_HEADING, BLOG_PAGE_DESCRIPTION, BLOG_PAGE_TITLE, BLOG_PATH } from '@/lib/blog-copy';
 import { blogAssetUrl, getBlogPosts } from '@/lib/blog/reader';
-import { publicPageMetadata } from '@/lib/public-metadata';
+import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL, SECONDARY_CTA_HREF, SECONDARY_CTA_LABEL } from '@/lib/homepage-copy';
+import { publicPageMetadata, SHARE_IMAGE_BLOG } from '@/lib/public-metadata';
 
 import { BlogUnavailableError } from './blog-unavailable';
+import { BLOG_INDEX_CLASS, BlogIndexHeader } from './views/blog-index-header';
 import { BlogPostList } from './views/blog-post-list';
+import { BlogStatePanel } from './views/blog-state-panel';
+import { PageContainer } from '@components/views';
 
 // Rendered per request through the cached reader: no ISR, so no rendered HTML outlives the 300 s freshness budget.
 export const dynamic = 'force-dynamic';
 
-export const metadata = publicPageMetadata(BLOG_PATH, BLOG_PAGE_TITLE, BLOG_PAGE_DESCRIPTION);
+export const metadata = publicPageMetadata(BLOG_PATH, BLOG_PAGE_TITLE, BLOG_PAGE_DESCRIPTION, SHARE_IMAGE_BLOG);
 
 export default async function BlogPage() {
   const result = await getBlogPosts();
@@ -27,20 +27,27 @@ export default async function BlogPage() {
   const posts = result.status === 'ok' ? result.data : [];
 
   return (
-    <main className="mx-auto flex w-full max-w-container-3xl flex-col gap-12 px-4 pb-12 pt-24 text-primary lg:px-6">
-      <header className="flex max-w-3xl flex-col gap-4">
-        <h1 className="text-2xl font-semibold">{BLOG_PAGE_HEADING}</h1>
-        <p className="text-lg text-muted-foreground">{BLOG_PAGE_INTRO}</p>
-      </header>
+    <PageContainer as="main" className={BLOG_INDEX_CLASS}>
+      <BlogIndexHeader />
 
       {posts.length > 0 ? (
         <BlogPostList posts={posts} coverUrl={(post) => (post.coverImagePath ? blogAssetUrl(post.coverImagePath) : null)} />
       ) : (
-        <section className="flex max-w-3xl flex-col gap-2">
-          <h2 className="text-xl font-semibold">{BLOG_EMPTY_HEADING}</h2>
-          <p className="text-md text-muted-foreground">{BLOG_EMPTY_BODY}</p>
-        </section>
+        <BlogStatePanel
+          icon={Newspaper}
+          iconClassName="text-secondary dark:text-secondary-hover"
+          title={BLOG_EMPTY_HEADING}
+          titleLevel="h2"
+          body={BLOG_EMPTY_BODY}
+        >
+          <Button asChild size="lg">
+            <Link href={PRIMARY_CTA_HREF}>{PRIMARY_CTA_LABEL}</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="border-input">
+            <Link href={SECONDARY_CTA_HREF}>{SECONDARY_CTA_LABEL}</Link>
+          </Button>
+        </BlogStatePanel>
       )}
-    </main>
+    </PageContainer>
   );
 }
