@@ -129,9 +129,12 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      # Skips binaries already restored from the cache; the OS packages are installed every run.
+      # Browser only, no --with-deps. ubuntu-24.04 already has every library Chromium needs; --with-deps only added
+      # CJK, Thai and X11 font packages and Mesa patch updates, about 32 MB from the Ubuntu mirrors on every run (5+
+      # minutes when the mirror is slow, and failed runs when it returned 503). No test needs those fonts. If the image
+      # ever drops a library, Chromium fails at launch and names it. The binary itself comes from the cache above.
       - name: Install Playwright browsers
-        run: yarn playwright install --with-deps chromium
+        run: yarn playwright install chromium
 
       # The build bakes in the local Supabase URL and keys, so it cannot reuse the
       # quality job's output. Next's own cache (.next/cache) is still valid across
