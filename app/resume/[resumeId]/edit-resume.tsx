@@ -312,8 +312,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     return (
       <ErrorView
         title="Could not load this resume"
-        error="The resume lookup failed."
-        errorDescription="This is not a missing resume. Check your connection and try again."
+        body="The resume lookup failed. This is not a missing resume. Check your connection and try again."
         reset={() => {
           void refetchResume();
         }}

@@ -71,9 +71,17 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   expect(privacyText).toContain('uploaded files within 24 hours');
   expect(privacyText).not.toContain('OpenAI');
 
-  await page.goto('/this-page-does-not-exist');
-  await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
-  await page.getByRole('link', { name: 'Go Home' }).click();
+  const missing = await page.goto('/this-page-does-not-exist');
+  expect(missing?.status()).toBe(404);
+  await expect(page.getByRole('heading', { level: 1, name: "We can't find that page" })).toBeVisible();
+  await expect(page.getByText('404', { exact: true })).toBeVisible();
+  // The 404 sits inside the public header and footer.
+  await expect(page.getByRole('contentinfo')).toBeVisible();
+  const popular = page.getByRole('navigation', { name: 'Popular pages' });
+  await expect(popular.getByRole('link', { name: 'Blog' })).toHaveAttribute('href', '/blog');
+  await expect(popular.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(page.getByRole('main').getByRole('link', { name: 'See templates' })).toHaveAttribute('href', '/templates');
+  await page.getByRole('main').getByRole('link', { name: 'Go to the homepage' }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
 
@@ -452,8 +460,8 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
   expect(sitemap.match(/<lastmod>/g)?.length).toBe(sitemap.match(/<url>/g)?.length);
 });
 
-/** Every indexable page plus sign-in. */
-const PUBLIC_PAGES = [...INDEXABLE_PUBLIC_PATHS, '/auth/sign-in'];
+/** Every indexable page plus sign-in and the 404 page. */
+const PUBLIC_PAGES = [...INDEXABLE_PUBLIC_PATHS, '/auth/sign-in', '/this-page-does-not-exist'];
 const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 async function axeViolations(page: import('@playwright/test').Page) {
