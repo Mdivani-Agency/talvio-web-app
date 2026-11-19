@@ -3,6 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { BRIEF_BANNED_TERMS } from '@/test/utils/public-copy';
 
 import {
+  LINK_ERROR_BACK_LABEL,
+  LINK_ERROR_BODY,
+  LINK_ERROR_HEADING,
+  LINK_ERROR_HOME_LABEL,
+  linkErrorCodeLabel,
   SIGN_IN_AGREEMENT,
   SIGN_IN_EMAIL_INVALID,
   SIGN_IN_EMAIL_PLACEHOLDER,
@@ -45,5 +50,14 @@ describe('sign-in copy', () => {
     expect(resendCountdownLabel(60)).toBe('Resend in 1:00');
     expect(resendCountdownLabel(59)).toBe('Resend in 0:59');
     expect(resendCountdownLabel(5)).toBe('Resend in 0:05');
+  });
+
+  it('explains a failed link without blaming the user', () => {
+    expect(LINK_ERROR_HEADING).toBe("This sign-in link didn't work");
+    expect(LINK_ERROR_BODY).toContain('Request a new link to sign in.');
+    expect(LINK_ERROR_BACK_LABEL).toBe('Back to sign in');
+    expect(LINK_ERROR_HOME_LABEL).toBe('Go home');
+    expect(linkErrorCodeLabel('access_denied')).toBe('Error code: access_denied');
+    expect([LINK_ERROR_HEADING, LINK_ERROR_BODY].join(' ')).not.toMatch(BRIEF_BANNED_TERMS);
   });
 });

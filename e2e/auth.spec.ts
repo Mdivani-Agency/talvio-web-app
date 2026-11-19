@@ -129,9 +129,10 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
   await expect(page.getByLabel('Email', { exact: true })).toHaveValue(retryEmail);
 
   await page.goto('/auth/callback');
-  await expect(page.getByRole('heading', { name: 'Authentication Error' })).toBeVisible();
-  await expect(page.getByText('Could not complete sign-in. Try again.')).toBeVisible();
-  await page.getByRole('link', { name: 'Go Home' }).click();
+  await expect(page.getByRole('heading', { name: "This sign-in link didn't work" })).toBeVisible();
+  await expect(page.getByText('Error code: auth_callback_failed')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to sign in' })).toHaveAttribute('href', '/auth/sign-in');
+  await page.getByRole('link', { name: 'Go home' }).click();
   await expect(page).toHaveURL(/localhost:3002\/$/);
   await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
   await page.goto('/auth/sign-in');
@@ -296,8 +297,9 @@ test('AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the
   });
   await expect(page).toHaveURL(/localhost:3002\/auth\/sign-in/);
   await page.goto('/auth/callback?error=access_denied&error_description=User%20cancelled&next=https://evil.example');
-  await expect(page.getByRole('heading', { name: 'Authentication Error' })).toBeVisible();
-  await expect(page.getByText('access_denied')).toBeVisible();
+  await expect(page.getByRole('heading', { name: "This sign-in link didn't work" })).toBeVisible();
+  await expect(page.getByText('Error code: access_denied')).toBeVisible();
+  await expect(page.getByText('User cancelled')).toHaveCount(0);
   expect(page.url()).not.toContain('evil.example');
 
   await page.route('**/auth/v1/authorize**', (route) => route.fulfill({
