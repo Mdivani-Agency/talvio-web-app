@@ -159,7 +159,7 @@ test('AUTH-03 guests can open the editor and protected account routes require si
 
   await page.goto('/resume?template=mid-level-ember');
   await page.getByText('Fill Manually').click();
-  await expect(page.getByLabel('Resume label')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Rename resume:/ })).toBeVisible();
 });
 
 test('AUTH-04 sign-out blocks protected routes and the next user does not see the previous profile', async ({ page }) => {

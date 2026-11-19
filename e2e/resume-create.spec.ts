@@ -36,9 +36,9 @@ test('RES-01 creates a resume without a profile and keeps it after reload', asyn
   await openResumeSection(page, 'Contact Information', 'Email');
   await page.getByLabel('Email', { exact: true }).fill('nia.manual@talvio.test');
   await openResumeSection(page, 'Personal Details', 'First name');
-  await page.getByRole('button', { name: 'Switch Template' }).click();
+  await page.getByRole('tab', { name: /^Design/ }).click();
   await page.getByRole('img', { name: 'senior Ember', exact: true }).click();
-  await page.getByRole('button', { name: 'Edit Resume' }).click();
+  await page.getByRole('tab', { name: /^Content/ }).click();
 
   const downloads = await generateFromModal(page, 'Nia Manual Resume', 'First resume');
   expect(downloads.at(-1)?.download).toBe('Nia Manual Resume.pdf');
@@ -65,7 +65,7 @@ test('RES-01 creates a resume without a profile and keeps it after reload', asyn
   await page.goto(`/resume/${rows[0]?.id}`);
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Nia');
   await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Manual');
-  await expect(page.getByText('Saved to account')).toBeVisible();
+  await expect(page.getByText('Saved to your account')).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(1);
 });
 
@@ -105,7 +105,7 @@ test('RES-01 guest download returns to the resume and can keep the draft', async
   await page.getByLabel('Role', { exact: true }).fill('Guest');
   await page.waitForFunction(() => Object.values(localStorage).some((value) => value?.includes('Guestkeep')));
   await waitForPreview(page);
-  await page.getByRole('button', { name: 'Download resume' }).click();
+  await page.getByRole('button', { name: 'Download PDF' }).click();
   await page.getByRole('dialog', { name: 'Final Review' }).getByRole('button', { name: 'Generate and Download Resume' }).click();
   await page.waitForURL(/\/auth\/sign-in/);
   expect(new URL(page.url()).searchParams.get('callbackURL')).toBe('/resume');
@@ -124,7 +124,7 @@ test('RES-01 guest download keeps a template return path', async ({ page }) => {
   await chooseManual(page);
   await page.getByLabel('First name', { exact: true }).fill('Templated');
   await waitForPreview(page);
-  await page.getByRole('button', { name: 'Download resume' }).click();
+  await page.getByRole('button', { name: 'Download PDF' }).click();
   await page.getByRole('dialog', { name: 'Final Review' }).getByRole('button', { name: 'Generate and Download Resume' }).click();
   await page.waitForURL(/\/auth\/sign-in/);
   expect(new URL(page.url()).searchParams.get('callbackURL')).toBe('/resume?template=senior-level-ember');
