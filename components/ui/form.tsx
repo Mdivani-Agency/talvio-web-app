@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
+import { CircleAlert } from 'lucide-react';
 import type { AnyFieldApi } from '@tanstack/react-form';
 import type { AppForm } from '@lib/forms/use-form';
 
@@ -70,7 +71,7 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div data-slot="form-item" className={cn('grid gap-2', className)} {...props} />
+      <div data-slot="form-item" className={cn('grid min-w-0 content-start gap-1.5', className)} {...props} />
     </FormItemContext.Provider>
   );
 }
@@ -79,10 +80,12 @@ function FormLabel({ className, ...props }: LabelProps) {
   const { error, formItemId } = useFormField();
 
   return (
+    // The label stays in the text colour on error; the message under the field says what is wrong.
     <Label
       data-slot="form-label"
       data-error={!!error}
-      className={cn('data-[error=true]:text-destructive', className)}
+      size="sm"
+      className={cn('leading-[1.4286] font-medium text-foreground', className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -120,8 +123,15 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   }
 
   return (
-    <p data-slot="form-message" id={formMessageId} className={cn('text-destructive text-sm', className)} {...props}>
-      {body}
+    // Text in the foreground colour with a red icon: red text on the light background is below WCAG AA at this size.
+    <p
+      data-slot="form-message"
+      id={formMessageId}
+      className={cn('flex items-start gap-1.5 text-sm leading-[1.4286] text-foreground', className)}
+      {...props}
+    >
+      <CircleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-destructive" strokeWidth={2} />
+      <span>{body}</span>
     </p>
   );
 }

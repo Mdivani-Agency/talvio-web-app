@@ -1,8 +1,11 @@
 import { City, Country } from 'country-state-city';
-import { AutocompleteInput, Form, FormControl, FormField, FormItem, Input, Label } from '@components/ui';
+import { AutocompleteInput, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@components/ui';
 import { cn } from '@lib/utils';
 import type { AppForm } from '@lib/forms/use-form';
-import { fieldErrorMessage } from '@lib/forms/errors';
+import { CONTACT_FIELDS, PROFILE_SECTIONS } from '@/lib/onboarding-copy';
+
+import { SectionHeading } from './section-heading';
+import { TextFormField } from './text-form-field';
 
 export const ACCOUNT_CONTACT_FIELDS = {
   email: 'profile.email',
@@ -36,97 +39,48 @@ type ContactsFormProps = {
 
 export const ContactsForm = ({ className, form, fields = ACCOUNT_CONTACT_FIELDS }: ContactsFormProps) => {
   return (
-    <Form className={cn('space-y-6', className)}>
-      <Label size="lg">Contact Information</Label>
-      <div className="grid grid-cols-2 gap-4">
-        <FormField form={form} name={fields.email}>
-          {(field) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  name={field.name}
-                  value={String(field.state.value ?? '')}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder="Email"
-                  error={fieldErrorMessage(field.state.meta.errors)}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        </FormField>
-        <FormField form={form} name={fields.phone}>
-          {(field) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  name={field.name}
-                  value={String(field.state.value ?? '')}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder="Phone"
-                  error={fieldErrorMessage(field.state.meta.errors)}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        </FormField>
+    <Form className={cn('space-y-4', className)}>
+      <SectionHeading copy={PROFILE_SECTIONS.contact} />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <TextFormField form={form} name={fields.email} copy={CONTACT_FIELDS.email} type="email" autoComplete="email" />
+        <TextFormField form={form} name={fields.phone} copy={CONTACT_FIELDS.phone} type="tel" autoComplete="tel" />
       </div>
-      <FormField form={form} name={fields.url}>
-        {(field) => (
-          <FormItem>
-            <FormControl>
-              <Input
-                name={field.name}
-                value={String(field.state.value ?? '')}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-                placeholder="Personal Website (optional)"
-                error={fieldErrorMessage(field.state.meta.errors)}
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      </FormField>
-
-      <div className="space-y-2">
-        <Label size="sm" variant="muted">
-          Location
-        </Label>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField form={form} name={fields.city}>
-            {(field) => (
-              <FormItem>
-                <FormControl>
-                  <AutocompleteInput
-                    selected={String(field.state.value ?? '')}
-                    placeholder="City"
-                    options={City.getAllCities().map((city) => city.name)}
-                    onSelect={(value) => field.handleChange(value)}
-                    onChange={(value) => field.handleChange(value)}
-                    error={fieldErrorMessage(field.state.meta.errors)}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          </FormField>
-          <FormField form={form} name={fields.country}>
-            {(field) => (
-              <FormItem>
-                <FormControl>
-                  <AutocompleteInput
-                    selected={String(field.state.value ?? '')}
-                    placeholder="Country"
-                    options={Country.getAllCountries().map((country) => country.name)}
-                    onSelect={(value) => field.handleChange(value)}
-                    onChange={(value) => field.handleChange(value)}
-                    error={fieldErrorMessage(field.state.meta.errors)}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          </FormField>
-        </div>
+      <TextFormField form={form} name={fields.url} copy={CONTACT_FIELDS.website} type="url" autoComplete="url" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <FormField form={form} name={fields.country}>
+          {(field) => (
+            <FormItem>
+              <FormLabel>{CONTACT_FIELDS.country.label}</FormLabel>
+              <FormControl>
+                <AutocompleteInput
+                  selected={String(field.state.value ?? '')}
+                  placeholder={CONTACT_FIELDS.country.example}
+                  options={Country.getAllCountries().map((country) => country.name)}
+                  onSelect={(value) => field.handleChange(value)}
+                  onChange={(value) => field.handleChange(value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        </FormField>
+        <FormField form={form} name={fields.city}>
+          {(field) => (
+            <FormItem>
+              <FormLabel>{CONTACT_FIELDS.city.label}</FormLabel>
+              <FormControl>
+                <AutocompleteInput
+                  selected={String(field.state.value ?? '')}
+                  placeholder={CONTACT_FIELDS.city.example}
+                  options={City.getAllCities().map((city) => city.name)}
+                  onSelect={(value) => field.handleChange(value)}
+                  onChange={(value) => field.handleChange(value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        </FormField>
       </div>
     </Form>
   );

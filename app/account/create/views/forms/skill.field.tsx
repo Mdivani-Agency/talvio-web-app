@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { skillSchema } from '@lib/schema/account.schema';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
+import { HIGHLIGHT_FIELDS } from '@/lib/onboarding-copy';
 
 interface SkillsFormFieldProps {
   form: AppForm;
@@ -34,8 +35,9 @@ export const SkillsFormField = ({ form, name }: SkillsFormFieldProps) => {
   return (
     <ManageSortableItems
       items={fields.map((field) => ({ id: field.id, name: field.name }))}
+      label={HIGHLIGHT_FIELDS[name].label}
       modalLabel={`Manage ${name}`}
-      placeholder={`Add ${name}`}
+      placeholder={HIGHLIGHT_FIELDS[name].example}
       errorsMessage={errorMessage}
       currentOption={currentOption}
       setCurrentOption={setCurrentOption}

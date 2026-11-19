@@ -3,7 +3,9 @@ import { useCallback, useState } from 'react';
 import { Education } from '@lib/types';
 import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
-import { Label } from '@components/ui';
+import { PROFILE_SECTIONS } from '@/lib/onboarding-copy';
+
+import { SectionHeading } from './forms/section-heading';
 import { EducationForm } from './forms/education.form';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
@@ -44,9 +46,9 @@ export const EducationView = ({ className, form, documentMode = false }: Educati
 
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">
-        Education
-      </Label>
+      <div className="mb-6">
+        <SectionHeading copy={PROFILE_SECTIONS.education} />
+      </div>
       <EducationForm action="add" onSubmit={handleAddEducation} />
       <OrderedList fields={fields} label="Education">
         {({ items, onReorder }) => (

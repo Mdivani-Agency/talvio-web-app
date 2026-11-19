@@ -117,7 +117,7 @@ test('SEC-04 a guest on a saved resume link is asked to sign in and lands back o
   await page.goto(await latestMagicLink(owner.email));
 
   await expect(page).toHaveURL(new RegExp(`/resume/${resumeId}$`));
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
 });
 
 test('SEC-02 pdf and presign routes reject bad auth and ignore forged ownership', async ({ page, personas }) => {

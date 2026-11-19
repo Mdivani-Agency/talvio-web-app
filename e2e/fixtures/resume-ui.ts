@@ -78,7 +78,7 @@ export async function openSignedIn(page: Page, person: Persona, path: string) {
 
 export async function chooseManual(page: Page) {
   await page.getByText('Fill Manually', { exact: true }).click();
-  await expect(page.getByPlaceholder('First Name')).toBeVisible();
+  await expect(page.getByLabel('First name', { exact: true })).toBeVisible();
 }
 
 export async function waitForPreview(page: Page) {
@@ -91,7 +91,7 @@ export async function chooseTemplate(page: Page, level: string, imageName: strin
   await page.getByRole('button', { name: level, exact: true }).click();
   await page.getByRole('img', { name: imageName, exact: true }).click();
   await page.getByRole('button', { name: 'Edit Resume' }).click();
-  await expect(page.getByPlaceholder('First Name')).toBeVisible();
+  await expect(page.getByLabel('First name', { exact: true })).toBeVisible();
 }
 
 export async function chooseColor(page: Page, color: string) {
@@ -167,9 +167,9 @@ export async function generateFromModal(page: Page, filename: string, label?: st
   return recordedDownloads(page);
 }
 
-export async function openResumeSection(page: Page, title: string, placeholder: string) {
+export async function openResumeSection(page: Page, title: string, fieldLabel: string) {
   const tab = page.getByRole('button', { name: title, exact: true });
-  const field = page.getByPlaceholder(placeholder);
+  const field = page.getByLabel(fieldLabel, { exact: true });
   // Global smooth scrolling keeps moving the tab during Playwright's click,
   // so WebKit focuses the button and drops the click. Jump, then retry.
   await page.evaluate(() => {

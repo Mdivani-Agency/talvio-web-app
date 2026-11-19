@@ -68,38 +68,38 @@ test('PROF-01 manual profile saves from the form without AI and survives reload'
   });
 
   const experience = section(page, 'Company');
-  await experience.getByPlaceholder('Company').fill('Alpha Corp');
-  await experience.getByPlaceholder('Job Title').fill('Engineer');
-  await chooseDate(page, experience, 'Start Date', 'Jan', '2020');
-  await chooseDate(page, experience, 'End Date', 'Jun', '2022');
+  await experience.getByLabel('Company', { exact: true }).fill('Alpha Corp');
+  await experience.getByLabel('Job title', { exact: true }).fill('Engineer');
+  await chooseDate(page, experience, 'Start date', 'Jan', '2020');
+  await chooseDate(page, experience, 'End date', 'Jun', '2022');
   await chooseOption(page, experience, 0, 'full-time');
   await chooseOption(page, experience, 1, 'remote');
-  await experience.getByPlaceholder('Additional Context (if necessary)').fill('Led the platform team.');
+  await experience.getByLabel('Additional context (optional)', { exact: true }).fill('Led the platform team.');
   await experience.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(experience.locator('.cursor-pointer').filter({ hasText: '(1)' })).toBeVisible();
 
-  const education = section(page, 'School Name');
-  await education.getByPlaceholder('School Name').fill('Talvio Institute');
+  const education = section(page, 'School');
+  await education.getByLabel('School', { exact: true }).fill('Talvio Institute');
   await chooseOption(page, education, 0, "Bachelor's Degree");
-  await chooseDate(page, education, 'Start Date', 'Sep', '2016');
-  await chooseDate(page, education, 'End Date', 'Jun', '2020');
+  await chooseDate(page, education, 'Start date', 'Sep', '2016');
+  await chooseDate(page, education, 'End date', 'Jun', '2020');
   await education.getByRole('button', { name: 'Add', exact: true }).click();
 
-  const projects = section(page, 'Project Name');
-  await projects.getByPlaceholder('Project Name').fill('Signal Board');
-  await projects.getByPlaceholder('Project URL').fill('https://ada.manual.talvio.test/board');
-  await projects.getByPlaceholder('Additional Details').fill(PROJECT_DETAILS);
+  const projects = section(page, 'Project name');
+  await projects.getByLabel('Project name', { exact: true }).fill('Signal Board');
+  await projects.getByLabel('Project link (optional)', { exact: true }).fill('https://ada.manual.talvio.test/board');
+  await projects.getByLabel('Description', { exact: true }).fill(PROJECT_DETAILS);
   await projects.getByRole('button', { name: 'Add', exact: true }).click();
 
-  await addTag(page, 'Add skills', 'TypeScript');
-  await addTag(page, 'Add skills', 'React');
-  await addTag(page, 'Add tools', 'Playwright');
-  await addTag(page, 'Other Personal Links (optional)', 'https://github.com/talvio');
-  const language = page.getByPlaceholder('Language');
+  await addTag(page, 'Skills', 'TypeScript');
+  await addTag(page, 'Skills', 'React');
+  await addTag(page, 'Tools', 'Playwright');
+  await addTag(page, 'Other links (optional)', 'https://github.com/talvio');
+  const language = page.getByLabel('Language', { exact: true });
   await language.click();
   await page.keyboard.insertText('English');
   await page.keyboard.press('Escape');
-  await language.locator('xpath=ancestor::div[contains(@class,"grid")][1]').getByRole('button').last().click();
+  await page.getByRole('button', { name: 'Add language', exact: true }).click();
   await expect(page.getByText('English', { exact: true }).first()).toBeVisible();
 
   await saveForm(page);
@@ -140,30 +140,30 @@ test('PROF-02 rejects invalid profile input and keeps optional sections empty', 
   await saveForm(page);
   await expect(page.getByText('Invalid email address').first()).toBeVisible();
 
-  await page.getByPlaceholder('Email').fill('ada.invalid@talvio.test');
-  await addTag(page, 'Other Personal Links (optional)', 'not-a-url');
-  await page.getByPlaceholder('Other Personal Links (optional)').locator('xpath=..').getByRole('button').hover();
-  await expect(page.getByRole('tooltip')).toHaveText('Enter a valid URL');
+  await page.getByLabel('Email', { exact: true }).fill('ada.invalid@talvio.test');
+  await addTag(page, 'Other links (optional)', 'not-a-url');
+  // The error shows under the field and describes the input.
+  await expect(page.getByLabel('Other links (optional)', { exact: true })).toHaveAccessibleDescription('Enter a valid URL');
 
   const experience = section(page, 'Company');
-  await experience.getByPlaceholder('Company').fill('Date Check');
-  await experience.getByPlaceholder('Job Title').fill('Engineer');
-  await chooseDate(page, experience, 'Start Date', 'Jun', '2022');
-  const endDate = experience.getByText('End Date', { exact: true }).locator('xpath=..');
+  await experience.getByLabel('Company', { exact: true }).fill('Date Check');
+  await experience.getByLabel('Job title', { exact: true }).fill('Engineer');
+  await chooseDate(page, experience, 'Start date', 'Jun', '2022');
+  const endDate = experience.getByText('End date', { exact: true }).locator('xpath=..');
   await endDate.getByRole('button').nth(1).click();
   await page.getByRole('option', { name: '2022', exact: true }).click();
   await endDate.getByRole('button').nth(0).click();
   await expect(page.getByRole('option', { name: 'Jan', exact: true })).toHaveAttribute('aria-disabled', 'true');
   await page.keyboard.press('Escape');
 
-  const projects = section(page, 'Project Name');
-  await projects.getByPlaceholder('Project Name').fill('Short Project');
-  await projects.getByPlaceholder('Project URL').fill('notaurl');
-  await projects.getByPlaceholder('Additional Details').fill('Too short to save.');
+  const projects = section(page, 'Project name');
+  await projects.getByLabel('Project name', { exact: true }).fill('Short Project');
+  await projects.getByLabel('Project link (optional)', { exact: true }).fill('notaurl');
+  await projects.getByLabel('Description', { exact: true }).fill('Too short to save.');
   await projects.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByText(/Invalid URL|at least 150 characters/).first()).toBeVisible();
 
-  await page.getByPlaceholder('First Name').fill('Ada');
+  await page.getByLabel('First name', { exact: true }).fill('Ada');
   await saveForm(page);
   await expect(page.getByRole('heading', { level: 1, name: 'Ada Invalid' })).toBeVisible();
   await expect(page.getByText('Experience', { exact: true })).toHaveCount(0);
@@ -187,10 +187,10 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
 
   const experience = section(page, 'Company');
   for (const company of ['Alpha Corp', 'Beta Labs']) {
-    await experience.getByPlaceholder('Company').fill(company);
-    await experience.getByPlaceholder('Job Title').fill('Engineer');
-    await chooseDate(page, experience, 'Start Date', 'Jan', '2020');
-    await chooseDate(page, experience, 'End Date', 'Jun', '2022');
+    await experience.getByLabel('Company', { exact: true }).fill(company);
+    await experience.getByLabel('Job title', { exact: true }).fill('Engineer');
+    await chooseDate(page, experience, 'Start date', 'Jan', '2020');
+    await chooseDate(page, experience, 'End date', 'Jun', '2022');
     await experience.getByRole('button', { name: 'Add', exact: true }).click();
   }
   await expandEntries(experience, 2);
@@ -198,16 +198,16 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(experience.getByRole('heading', { name: 'Alpha Corp' })).toHaveCount(0);
 
-  await experience.getByPlaceholder('Company').fill('Alpha Corp');
-  await experience.getByPlaceholder('Job Title').fill('Engineer');
-  await chooseDate(page, experience, 'Start Date', 'Jan', '2019');
-  await chooseDate(page, experience, 'End Date', 'Dec', '2019');
+  await experience.getByLabel('Company', { exact: true }).fill('Alpha Corp');
+  await experience.getByLabel('Job title', { exact: true }).fill('Engineer');
+  await chooseDate(page, experience, 'Start date', 'Jan', '2019');
+  await chooseDate(page, experience, 'End date', 'Dec', '2019');
   await experience.getByRole('button', { name: 'Add', exact: true }).click();
   await expandEntries(experience, 2);
   await experience.getByRole('heading', { name: 'Beta Labs' }).locator('xpath=ancestor::div[contains(@class,"justify-between")][1]').getByRole('button', { name: 'Edit entry' }).click();
   await expect(experience.getByRole('heading', { name: 'Edit Beta Labs' })).toBeVisible();
   const editor = experience.locator('div').filter({ has: page.getByRole('heading', { name: 'Edit Beta Labs' }) }).filter({ has: page.getByRole('button', { name: 'Save', exact: true }) }).last();
-  await editor.getByPlaceholder('Company').fill('Beta Edited');
+  await editor.getByLabel('Company', { exact: true }).fill('Beta Edited');
   await editor.getByRole('button', { name: 'Save', exact: true }).click();
   const savedHeading = experience.getByRole('heading', { name: 'Beta Edited' });
   if (await savedHeading.count() === 0) {
@@ -218,9 +218,9 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
   await dragItem(page, 'Beta Edited', 'Alpha Corp');
   await expect(experience.locator('[draggable="true"]').first()).toContainText('Alpha Corp');
 
-  await addTag(page, 'Add skills', 'First');
-  await addTag(page, 'Add skills', 'Second');
-  await page.getByPlaceholder('Add skills').locator('xpath=ancestor::div[contains(@class,"mb-2")][1]').getByRole('button', { name: 'Manage Items' }).click();
+  await addTag(page, 'Skills', 'First');
+  await addTag(page, 'Skills', 'Second');
+  await page.getByLabel('Skills', { exact: true }).locator('xpath=ancestor::div[contains(@class,"mb-2")][1]').getByRole('button', { name: 'Manage Items' }).click();
   await dragItem(page, 'Second', 'First');
   await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
 
@@ -239,24 +239,24 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
 test('PROF-03 imported resume stays editable through save', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openCreate(page, empty);
-  await page.getByPlaceholder('First Name').fill('Keep This');
+  await page.getByLabel('First name', { exact: true }).fill('Keep This');
   await uploadResume(page, PDF);
   await expect(page.getByRole('heading', { name: 'Replace current profile?' })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Keep This');
   await expect(page.getByRole('button', { name: 'Import from resume' })).toBeEnabled();
 
   await uploadResume(page, PDF);
   await page.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
-  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Owner');
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Engineer');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
+  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Owner');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Engineer');
   await expect(section(page, 'Company').locator('.cursor-pointer').filter({ hasText: '(1)' })).toBeVisible();
   await expect.poll(() => page.evaluate((key) => {
     const draft = JSON.parse(window.localStorage.getItem(key) ?? 'null');
     return typeof draft?.content?.scrapedResume === 'string' && draft.content.scrapedResume.trim().length > 0;
   }, `talvio-draft-v1:account:user:${empty.userId}:profile`)).toBe(true);
-  await page.getByPlaceholder('First Name').fill('Ada Edited');
+  await page.getByLabel('First name', { exact: true }).fill('Ada Edited');
 
   await saveForm(page);
 
@@ -274,28 +274,28 @@ test('PROF-03 imported resume stays editable through save', async ({ page, perso
 test('PROF-04 provider failures recover without stranding the profile', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openCreate(page, empty);
-  await page.getByPlaceholder('First Name').fill('Keep This');
-  await page.getByPlaceholder('Last Name').fill('Owner');
-  await page.getByPlaceholder('Role').fill('Engineer');
-  await page.getByPlaceholder('Email').fill('ada.recover@talvio.test');
+  await page.getByLabel('First name', { exact: true }).fill('Keep This');
+  await page.getByLabel('Last name', { exact: true }).fill('Owner');
+  await page.getByLabel('Role', { exact: true }).fill('Engineer');
+  await page.getByLabel('Email', { exact: true }).fill('ada.recover@talvio.test');
 
   await setScenario('malformed');
   await uploadResume(page, PDF);
   await expect(page.getByText('Failed to parse resume').last()).toBeVisible();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Keep This');
   await expect(page.getByRole('button', { name: 'Import from resume' })).toBeVisible();
 
   await setScenario('parse_error');
   await uploadResume(page, PDF);
   await expect(page.getByText('This could not be processed. Edit it and try again.').last()).toBeVisible();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Keep This');
   await expect(page.getByRole('button', { name: 'Import from resume' })).toBeEnabled();
 
   await setScenario('success');
   await uploadResume(page, PDF);
   await page.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
-  await page.getByPlaceholder('First Name').fill('Ada Recovered');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
+  await page.getByLabel('First name', { exact: true }).fill('Ada Recovered');
 
   await saveForm(page);
   await expect(page.getByRole('heading', { level: 1, name: 'Ada Recovered' })).toBeVisible();
@@ -333,11 +333,11 @@ test('PROF-04 a failed save keeps the form and does not duplicate the profile', 
   await saveForm(page);
   await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'forced save failure' })).toBeVisible();
   await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
   await expect(page.getByRole('button', { name: 'Save profile', exact: true })).toBeEnabled();
   expect(await profileCount(empty.userId)).toBe(0);
 
-  await page.getByPlaceholder('First Name').fill('Ada Retried');
+  await page.getByLabel('First name', { exact: true }).fill('Ada Retried');
   await saveForm(page);
   await expect(page.getByRole('heading', { level: 1, name: 'Ada Retried' })).toBeVisible();
   await page.reload();
@@ -348,7 +348,7 @@ test('PROF-04 a failed save keeps the form and does not duplicate the profile', 
 test('PROF-05 pasted resume text imports within the 2,000-character limit', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openCreate(page, empty);
-  await page.getByPlaceholder('First Name').fill('Keep This');
+  await page.getByLabel('First name', { exact: true }).fill('Keep This');
 
   const resumeText = 'Ada Owner. Engineer at Imported Labs, building resume tools. '.repeat(40).slice(0, 1800);
   const paste = page.getByRole('dialog', { name: 'Paste resume text' });
@@ -367,7 +367,7 @@ test('PROF-05 pasted resume text imports within the 2,000-character limit', asyn
   await expect(paste.getByText('1,800 / 2,000 characters')).toBeVisible();
   await paste.getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByText('This could not be processed. Edit it and try again.').last()).toBeVisible();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Keep This');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Keep This');
   await expect(page.getByRole('button', { name: 'Paste resume text' })).toBeEnabled();
 
   await setScenario('success');
@@ -375,9 +375,9 @@ test('PROF-05 pasted resume text imports within the 2,000-character limit', asyn
   await paste.getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByRole('heading', { name: 'Replace current profile?' })).toBeVisible();
   await page.getByRole('dialog', { name: 'Replace current profile?' }).getByRole('button', { name: 'Confirm' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
-  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Owner');
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Engineer');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
+  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Owner');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Engineer');
 
   const draftKey = `talvio-draft-v1:account:user:${empty.userId}:profile`;
   await expect.poll(() => page.evaluate((key) => {
