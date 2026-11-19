@@ -61,9 +61,34 @@ test('DOC-01 documents show an empty library, a failed list, and a downloadable 
   const card = page.getByTestId('document-card').filter({ has: download });
   await expect(card.getByRole('link', { name: 'Open Library resume' })).toHaveAttribute('href', publicUrl);
   await expect(card.getByText('Library resume.pdf')).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Resume Render' })).toBeVisible({ timeout: 30_000 });
+  await expect(card.getByRole('img', { name: 'First page of Library resume' })).toBeVisible({ timeout: 30_000 });
   const file = await page.request.get(publicUrl);
   expect(file.ok()).toBe(true);
   expect(file.headers()['content-type']).toContain('application/pdf');
   expect((await file.body()).byteLength).toBeGreaterThan(100);
+});
+
+test('DOC-02 a preview that cannot load says so, and Download still works', async ({ page, personas }) => {
+  const owner = persona(personas, 'complete');
+  await setScenario('success');
+  const publicUrl = await uploadDocument(owner.userId, 'Blocked preview');
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  // Block the PDF bytes the preview needs; the link itself stays the same.
+  await page.route(publicUrl, (route) => route.abort());
+  await openSignedIn(page, owner, '/account/documents');
+  const card = page.getByTestId('document-card').filter({ hasText: 'Blocked preview.pdf' });
+  await expect(card.getByText('Preview not available')).toBeVisible({ timeout: 30_000 });
+  await expect(card.getByRole('link', { name: 'Download Blocked preview' })).toHaveAttribute('href', publicUrl);
+  expect(errors).toEqual([]);
+
+  // On a phone the same file is a row: thumbnail, name and a 44px download icon, with no horizontal scroll.
+  await page.setViewportSize({ width: 390, height: 844 });
+  const download = card.getByRole('link', { name: 'Download Blocked preview' });
+  await expect(download).toBeVisible();
+  const box = await download.boundingBox();
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+  expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+  await expect(card.getByRole('link', { name: 'Open Blocked preview' })).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

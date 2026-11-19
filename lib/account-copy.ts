@@ -144,3 +144,12 @@ export function documentFileName(name: string, type: string): string {
   if (!extension || name.toLowerCase().endsWith(`.${extension.toLowerCase()}`)) return name;
   return `${name}.${extension}`;
 }
+
+/** Preview states inside a document's A4 area. */
+export const DOCUMENT_PREVIEW_LOADING = 'Loading preview';
+export const DOCUMENT_PREVIEW_UNAVAILABLE = 'Preview not available';
+
+/** The preview image's alt text on a card: "First page of Resume". */
+export function documentPreviewAlt(name: string): string {
+  return `First page of ${name}`;
+}
