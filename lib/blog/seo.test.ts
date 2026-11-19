@@ -81,9 +81,10 @@ describe('blogArticleMetadata', () => {
     expect(metadata.twitter).toMatchObject({ card: 'summary_large_image', images: [{ url: cover, alt: '' }] });
   });
 
-  it('falls back to the shared image when the post has no cover', () => {
+  it('falls back to the blog share image when the post has no cover', () => {
     const metadata = blogArticleMetadata({ ...talvioOnly, coverImagePath: null }, null);
-    expect(metadata.openGraph).toMatchObject({ images: [{ url: '/share-image-v1.png', width: 1200, height: 630 }] });
+    expect(metadata.openGraph).toMatchObject({ images: [{ url: '/share-blog-v1.png', width: 1200, height: 630 }] });
+    expect(metadata.twitter).toMatchObject({ images: [{ url: '/share-blog-v1.png', width: 1200, height: 630 }] });
   });
 
   it('gives a shared post the agency canonical in both the link and Open Graph', () => {

@@ -49,7 +49,7 @@ describe('safeBlogImageSrc', () => {
   it.each([
     ['/uploads/a.png', 'https://content.example.test/uploads/a.png'],
     ['https://content.example.test/uploads/a.png', 'https://content.example.test/uploads/a.png'],
-    ['https://www.talvio.co/share-image-v1.png', 'https://www.talvio.co/share-image-v1.png'],
+    ['https://www.talvio.co/share-blog-v1.png', 'https://www.talvio.co/share-blog-v1.png'],
   ])('loads %s', (raw, expected) => {
     expect(safeBlogImageSrc(raw, origins)).toBe(expected);
   });

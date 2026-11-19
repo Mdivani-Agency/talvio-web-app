@@ -15,6 +15,8 @@ import {
   publicPageMetadata,
   publicSitemap,
   SHARE_IMAGE,
+  SHARE_IMAGE_BLOG,
+  SHARE_IMAGE_TEMPLATES,
   TEMPLATES_DESCRIPTION,
   TEMPLATES_TITLE,
   TERMS_DESCRIPTION,
@@ -72,13 +74,29 @@ describe('public metadata', () => {
   });
 
   it('shares a 1200x630 large image card on every public page', () => {
-    expect(SHARE_IMAGE).toMatchObject({ url: '/share-image-v1.png', width: 1200, height: 630 });
+    expect(SHARE_IMAGE).toMatchObject({ url: '/share-image-v2.png', width: 1200, height: 630 });
     expect(SHARE_IMAGE.alt).toContain('Free PDF resume generator');
     for (const page of pages) {
       const metadata = publicPageMetadata(page.path, page.title, page.description);
       expect(metadata.openGraph).toMatchObject({ title: page.title, description: page.description, images: [SHARE_IMAGE] });
       expect(metadata.twitter).toMatchObject({ card: 'summary_large_image', title: page.title, images: [SHARE_IMAGE] });
     }
+  });
+
+  it('gives the templates page and the blog their own share image, on both Open Graph and X', () => {
+    for (const image of [SHARE_IMAGE_TEMPLATES, SHARE_IMAGE_BLOG]) {
+      expect(image).toMatchObject({ width: 1200, height: 630 });
+      expect(image.url).toMatch(/^\/share-[a-z]+-v\d+\.png$/);
+      expect(image.alt.length).toBeGreaterThan(20);
+    }
+    expect(new Set([SHARE_IMAGE.url, SHARE_IMAGE_TEMPLATES.url, SHARE_IMAGE_BLOG.url]).size).toBe(3);
+
+    const templates = publicPageMetadata('/templates', TEMPLATES_TITLE, TEMPLATES_DESCRIPTION, SHARE_IMAGE_TEMPLATES);
+    expect(templates.openGraph).toMatchObject({ images: [SHARE_IMAGE_TEMPLATES] });
+    expect(templates.twitter).toMatchObject({ card: 'summary_large_image', images: [SHARE_IMAGE_TEMPLATES] });
+    const blog = publicPageMetadata('/blog', BLOG_PAGE_TITLE, BLOG_PAGE_DESCRIPTION, SHARE_IMAGE_BLOG);
+    expect(blog.openGraph).toMatchObject({ images: [SHARE_IMAGE_BLOG] });
+    expect(blog.twitter).toMatchObject({ images: [SHARE_IMAGE_BLOG] });
   });
 
   it('gives every sitemap entry a lastModified date', () => {

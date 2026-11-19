@@ -437,14 +437,15 @@ test('PUB-05b every template preview PNG loads for each experience level', async
 });
 
 test('PUB-06 public pages render complete search and share metadata', async ({ page, request }) => {
+  // Each page's link preview image: the homepage one is the default.
   const pages = [
-    ['/', 'Free PDF resume generator | Talvio Beta'],
-    ['/templates', 'Free resume templates by experience level | Talvio'],
-    ['/blog', 'Resume and job search articles | Talvio'],
-    ['/terms', 'Terms of Service | Talvio'],
-    ['/privacy-policy', 'Privacy Policy | Talvio'],
+    ['/', 'Free PDF resume generator | Talvio Beta', 'share-image-v2.png'],
+    ['/templates', 'Free resume templates by experience level | Talvio', 'share-templates-v1.png'],
+    ['/blog', 'Resume and job search articles | Talvio', 'share-blog-v1.png'],
+    ['/terms', 'Terms of Service | Talvio', 'share-image-v2.png'],
+    ['/privacy-policy', 'Privacy Policy | Talvio', 'share-image-v2.png'],
   ] as const;
-  for (const [path, title] of pages) {
+  for (const [path, title, image] of pages) {
     await page.goto(path);
     await expect(page).toHaveTitle(title);
     expect(title.length, path).toBeLessThanOrEqual(60);
@@ -452,20 +453,22 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
     expect(description.length, path).toBeGreaterThanOrEqual(120);
     expect(description.length, path).toBeLessThanOrEqual(155);
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /\/share-image-v\d+\.png$/);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', new RegExp(`^https?://[^/]+/${image}$`));
     await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200');
     await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
-    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', /\/share-image-v\d+\.png$/);
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', new RegExp(`^https?://[^/]+/${image}$`));
   }
 
   await page.goto('/');
   const jsonLd = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}');
   expect(jsonLd['@graph'].map((node: { '@type': string }) => node['@type'])).toEqual(['Organization', 'WebSite', 'WebApplication']);
 
-  const image = await request.get('/share-image-v1.png');
-  expect(image.ok()).toBe(true);
-  expect(image.headers()['content-type']).toBe('image/png');
+  for (const file of ['share-image-v2.png', 'share-templates-v1.png', 'share-blog-v1.png']) {
+    const image = await request.get(`/${file}`);
+    expect(image.ok(), file).toBe(true);
+    expect(image.headers()['content-type'], file).toBe('image/png');
+  }
 
   const sitemap = await (await request.get('/sitemap.xml')).text();
   expect(sitemap.match(/<url>/g)?.length).toBeGreaterThan(0);
