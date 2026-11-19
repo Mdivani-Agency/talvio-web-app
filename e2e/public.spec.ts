@@ -56,8 +56,15 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByText(/^Last updated: [A-Z][a-z]+ \d{4}$/)).toBeVisible();
   await expect(page.getByRole('heading', { name: '5. Free use and the monthly limit', exact: true })).toBeVisible();
   await expect(page.getByText('This free allowance is permanent.')).toBeVisible();
-  await expect(page.getByRole('main').getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('href', '/privacy-policy');
-  await expect(page.getByRole('main').getByRole('link', { name: 'MDIO', exact: true })).toHaveAttribute('href', 'https://mdivani.agency');
+  await expect(page.getByRole('article').getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('href', '/privacy-policy');
+  await expect(page.getByRole('article').getByRole('link', { name: 'MDIO', exact: true })).toHaveAttribute('href', 'https://mdivani.agency');
+  // The Terms / Privacy switch marks the open document and moves to the other one.
+  const legalSwitch = page.getByRole('navigation', { name: 'Legal documents' });
+  await expect(legalSwitch.getByRole('link', { name: 'Terms of Service', exact: true })).toHaveAttribute('aria-current', 'page');
+  await legalSwitch.getByRole('link', { name: 'Privacy Policy', exact: true }).click();
+  await expect(page).toHaveURL(/\/privacy-policy$/);
+  await expect(legalSwitch.getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(legalSwitch.getByRole('link', { name: 'Terms of Service', exact: true })).not.toHaveAttribute('aria-current', 'page');
   await page.goto('/privacy-policy');
   await expect(page.getByRole('heading', { name: 'Privacy Policy', exact: true })).toBeVisible();
   await expect(page.getByText(/^Last updated: [A-Z][a-z]+ \d{4}$/)).toBeVisible();
@@ -77,6 +84,61 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
 
   expect(errors).toEqual([]);
+});
+
+test('PUB-01b legal pages link every section from On this page, land anchors below the header, and return to the top', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/terms#section-5');
+  const fifth = page.getByRole('heading', { name: '5. Free use and the monthly limit', exact: true });
+  await expect(fifth).toBeInViewport();
+  // The anchor clears the 72px sticky header.
+  expect((await fifth.boundingBox())!.y).toBeGreaterThanOrEqual(72);
+
+  const contents = page.getByRole('navigation', { name: 'On this page' });
+  const headings = page.getByRole('article').getByRole('heading', { level: 2 });
+  await expect(contents.getByRole('link')).toHaveCount(await headings.count());
+  await expect(contents.getByRole('link', { name: '5. Free use and the monthly limit' })).toHaveAttribute('aria-current', 'location');
+
+  // The highlighted entry follows scrolling, and the list stays beside the text.
+  await page.getByRole('heading', { name: '12. Ending your use', exact: true }).scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 200);
+  await expect(contents.getByRole('link', { name: '12. Ending your use' })).toHaveAttribute('aria-current', 'location');
+  await expect(contents).toBeInViewport();
+
+  // On a wide screen the reading line is still a third of the height (the observer margin is in pixels).
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.evaluate(() => document.getElementById('section-9')?.scrollIntoView());
+  await expect(contents.getByRole('link', { name: '9. Acceptable use' })).toHaveAttribute('aria-current', 'location');
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await contents.getByRole('link', { name: '15. Privacy', exact: true }).click();
+  await expect(page).toHaveURL(/\/terms#section-15$/);
+  await expect(page.getByRole('heading', { name: '15. Privacy', exact: true })).toBeInViewport();
+
+  // On a short screen the list scrolls on its own, so its last entry stays reachable.
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const box = (await contents.boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(720);
+  await contents.getByRole('link', { name: '18. Contact', exact: true }).click();
+  await expect(page).toHaveURL(/\/terms#section-18$/);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await page.getByRole('link', { name: 'Back to top', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Terms of Service', level: 1 })).toBeInViewport();
+
+  // On a phone the same sections sit behind a closed disclosure above the text.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/privacy-policy');
+  const toggle = page.getByRole('button', { name: 'On this page' });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('navigation', { name: 'On this page' }).getByRole('link', { name: '6. Who we share data with' }).click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(page).toHaveURL(/\/privacy-policy#section-6$/);
+  await expect(page.getByRole('heading', { name: '6. Who we share data with', exact: true })).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
 test('PUB-02 desktop navigation reaches sections, templates, and sign-in', async ({ page }) => {
