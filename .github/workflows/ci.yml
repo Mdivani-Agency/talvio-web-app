@@ -87,6 +87,12 @@ jobs:
         with:
           node-version: 22
 
+      # Supabase binds fixed host ports 54320-54329, inside Linux's default ephemeral range (32768-60999). An outgoing
+      # connection, such as an image pull, can hold one of them and "supabase start" then fails with "address already in
+      # use". End the ephemeral range below them.
+      - name: Keep the Supabase ports out of the ephemeral range
+        run: sudo sysctl -w net.ipv4.ip_local_port_range="32768 54000"
+
       - name: Set up Supabase CLI
         uses: ./.github/actions/setup-supabase-cli
 
@@ -112,6 +118,12 @@ jobs:
         with:
           node-version: 22
           cache: yarn
+
+      # Supabase binds fixed host ports 54320-54329, inside Linux's default ephemeral range (32768-60999). An outgoing
+      # connection, such as an image pull, can hold one of them and "supabase start" then fails with "address already in
+      # use". End the ephemeral range below them.
+      - name: Keep the Supabase ports out of the ephemeral range
+        run: sudo sysctl -w net.ipv4.ip_local_port_range="32768 54000"
 
       - name: Set up Supabase CLI
         uses: ./.github/actions/setup-supabase-cli
