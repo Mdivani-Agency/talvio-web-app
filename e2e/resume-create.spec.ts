@@ -25,7 +25,7 @@ test.beforeEach(async ({ page }) => {
 test('RES-01 creates a resume without a profile and keeps it after reload', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openSignedIn(page, empty, '/resume');
-  await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
   await chooseManual(page);
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('');
   await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('');
@@ -98,7 +98,7 @@ test('RES-01 prefills a resume from the profile and saves the edited draft', asy
 test('RES-01 guest download returns to the resume and can keep the draft', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await page.goto('/resume');
-  await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
   await chooseManual(page);
   await page.getByLabel('First name', { exact: true }).fill('Guestkeep');
   await page.getByLabel('Last name', { exact: true }).fill('Draft');
@@ -133,8 +133,8 @@ test('RES-01 guest download keeps a template return path', async ({ page }) => {
 test('RES-02 imports a resume, edits the parsed values, and generates them', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openSignedIn(page, empty, '/resume');
-  await page.getByText('Use Existing Resume', { exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
+  await page.getByText('Import a resume', { exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
   await page.getByTestId('file-input').setInputFiles(PDF);
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada', { timeout: 30_000 });
   await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Engineer');
@@ -176,7 +176,7 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
 test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openSignedIn(page, empty, '/resume');
-  await page.getByText('Use Existing Resume', { exact: true }).click();
+  await page.getByText('Import a resume', { exact: true }).click();
   const input = page.getByTestId('file-input');
 
   await input.setInputFiles('e2e/assets/notes.txt');
@@ -187,13 +187,13 @@ test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', 
   await input.setInputFiles('e2e/assets/empty.pdf');
   await expect(page.getByText('Parsing resume...')).toBeHidden();
   await expect(page.locator('[data-sonner-toast]').last()).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(0);
 
   await input.setInputFiles('e2e/assets/corrupt.pdf');
   await expect(page.getByText('Parsing resume...')).toBeHidden();
   await expect(page.locator('[data-sonner-toast]').last()).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(0);
 
   // The upload control accepts any application/pdf and publishes no byte cap.
@@ -204,7 +204,7 @@ test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', 
   });
   await expect(page.getByText('Parsing resume...')).toBeHidden();
   await expect(page.locator('[data-sonner-toast]').last()).not.toHaveText('Invalid file type. Please upload a PDF file.');
-  await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(0);
 
   await input.setInputFiles(PDF);

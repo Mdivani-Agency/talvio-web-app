@@ -45,7 +45,7 @@ test.describe('templates', () => {
 
     await page.getByRole('button', { name: 'Entry level', exact: true }).click();
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
-    await page.getByRole('button', { name: /Fill Manually/ }).click();
+    await page.getByRole('button', { name: /Fill it in yourself/ }).click();
     await waitForPreview(page);
     await page.getByRole('tab', { name: 'Design', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -55,9 +55,9 @@ test.describe('templates', () => {
   test('TPL-02 a missing or invalid template falls back without getting stuck', async ({ page }) => {
     for (const path of ['/resume', '/resume?template=not-a-template']) {
       await page.goto(path);
-      await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
       await expect(page.getByText('Preparing resume...')).toHaveCount(0);
-      await page.getByRole('button', { name: /Fill Manually/ }).click();
+      await page.getByRole('button', { name: /Fill it in yourself/ }).click();
       await waitForPreview(page);
       await page.getByRole('tab', { name: 'Design', exact: true }).click();
       await expect(page.getByRole('button', { name: 'Senior level', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -71,14 +71,14 @@ test.describe('restored editor template', () => {
 
   test('TPL-01 a restored editor draft uses the newly selected template once', async ({ page }) => {
     await page.goto('/resume?template=senior-level-talvio');
-    await page.getByRole('button', { name: /Fill Manually/ }).click();
+    await page.getByRole('button', { name: /Fill it in yourself/ }).click();
     await waitForPreview(page);
 
     await page.goto('/templates');
     await page.getByRole('button', { name: 'Entry level', exact: true }).click();
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
     await waitForPreview(page);
-    await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Start a new resume' })).toHaveCount(0);
     await page.getByRole('tab', { name: 'Design', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: 'Use the Modern template, entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -95,13 +95,13 @@ harnessTest.describe('restored import template', () => {
   harnessTest('TPL-01 a restored import draft uses the newly selected template', async ({ page, personas }) => {
     const empty = persona(personas, 'empty');
     await openSignedIn(page, empty, '/resume?template=senior-level-talvio');
-    await page.getByRole('button', { name: /Use Existing Resume/ }).click();
-    await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
+    await page.getByRole('button', { name: /Import a resume/ }).click();
+    await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
 
     await page.goto('/templates');
     await page.getByRole('button', { name: 'Entry level', exact: true }).click();
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
     await expect.poll(async () => page.evaluate(() => {
       const raw = Object.values(localStorage).find((value) => value?.includes('"importResume"'));
       if (!raw) {

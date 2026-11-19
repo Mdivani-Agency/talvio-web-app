@@ -77,7 +77,7 @@ export async function openSignedIn(page: Page, person: Persona, path: string) {
 }
 
 export async function chooseManual(page: Page) {
-  await page.getByText('Fill Manually', { exact: true }).click();
+  await page.getByText('Fill it in yourself', { exact: true }).click();
   await expect(page.getByLabel('First name', { exact: true })).toBeVisible();
 }
 
