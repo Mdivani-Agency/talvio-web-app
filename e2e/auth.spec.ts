@@ -79,7 +79,7 @@ test('AUTH-01 new and returning users finish magic-link sign-in in this browser'
   const returningId = await createConfirmedUser(returningEmail);
   await page.context().clearCookies();
   await signInThroughLocalMail(page, returningEmail, '/account');
-  await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Let's build your profile" })).toBeVisible();
   await page.reload();
   await expect(page).toHaveURL(/\/account/);
   expect(returningId).toBeTruthy();
@@ -193,7 +193,7 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
   await signInThroughLocalMail(page, secondEmail, '/account');
   await expect(page.getByText('First Owner')).toHaveCount(0);
   await expect(page.getByText(firstEmail)).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Let's build your profile" })).toBeVisible();
 });
 
 test('AUTH-07 the account sidebar marks the page, switches theme and signs out; the phone menu traps focus', async ({ page }) => {

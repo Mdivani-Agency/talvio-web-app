@@ -9,6 +9,13 @@ import { ConfirmModal, PasteResumeModal, UploadModal } from '@components/modals'
 import { PageContainer } from '@components/views';
 import { useResumeParser } from '@hooks/use-resume-parser';
 import { toastImportReview } from '@components/import/import-review';
+import {
+  ONBOARDING_HEADING,
+  ONBOARDING_INTRO,
+  SAVE_PROFILE_LABEL,
+  SAVING_PROFILE_LABEL,
+  START_FASTER,
+} from '@/lib/onboarding-copy';
 
 import { useSaveProfileFlow } from '../../hooks/use-save-profile-flow';
 import { useAccountContext } from '../../providers/state-provider';
@@ -41,31 +48,42 @@ export default function AccountFormPage() {
   };
 
   return (
-    <PageContainer as="section" className="flex flex-col gap-4 pb-10">
-      <h1 className="text-2xl font-bold mt-8">Let&apos;s Build Your Profile!</h1>
-      <p className="text-sm font-medium text-muted-foreground">
-        Please fill out your details as thoroughly as possible. The more information you provide, the more tailored
-        and professional your resume will be. Focus on sharing your key achievements, skills, and experience to make
-        your profile stand out!
-      </p>
-      <div className="flex flex-wrap items-center justify-start gap-3">
-        <Button onClick={() => setIsUploadModalOpen(true)} loading={loading}>
-          <UploadIcon className="size-4" />
-          {loading ? (offline ? 'Waiting for a connection...' : 'Parsing resume...') : 'Import from resume'}
-        </Button>
-        <Button variant="secondary" onClick={() => setIsPasteModalOpen(true)} disabled={loading}>
-          <ClipboardPasteIcon className="size-4" />
-          Paste resume text
-        </Button>
+    <PageContainer as="section" className="flex flex-col gap-6 pt-8 pb-10 lg:pt-10">
+      <div className="flex flex-col gap-1.5">
+        <h1 className="text-[2.4rem] leading-[1.333] font-semibold text-primary md:text-[2.8rem]">{ONBOARDING_HEADING}</h1>
+        <p className="max-w-[64rem] text-md text-muted-foreground">{ONBOARDING_INTRO}</p>
       </div>
       <AccountForm
         key={formRevision}
-        submitLabel={isSaving ? 'Saving...' : 'Save profile'}
+        submitLabel={isSaving ? SAVING_PROFILE_LABEL : SAVE_PROFILE_LABEL}
         submitting={isSaving}
         onSubmit={(dto) => {
           submitProfile(dto);
           save(dto);
         }}
+        startFaster={
+          <section aria-labelledby="start-faster-title" className="flex flex-col gap-3 rounded-[1.2rem] bg-card p-4 lg:p-5">
+            <h2 id="start-faster-title" className="text-md font-semibold text-primary">
+              {START_FASTER.title}
+            </h2>
+            <p className="text-sm leading-[1.4286] text-muted-foreground">{START_FASTER.body}</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <Button className="h-[4.4rem]" onClick={() => setIsUploadModalOpen(true)} loading={loading}>
+                <UploadIcon aria-hidden="true" className="size-4" />
+                {loading ? (offline ? 'Waiting for a connection...' : 'Parsing resume...') : START_FASTER.importLabel}
+              </Button>
+              <Button
+                className="h-[4.4rem]"
+                variant="outline"
+                onClick={() => setIsPasteModalOpen(true)}
+                disabled={loading}
+              >
+                <ClipboardPasteIcon aria-hidden="true" className="size-4" />
+                {START_FASTER.pasteLabel}
+              </Button>
+            </div>
+          </section>
+        }
       />
       <UploadModal
         title="Upload Resume"

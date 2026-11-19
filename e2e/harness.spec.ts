@@ -13,7 +13,7 @@ function persona(personas: Persona[], kind: Persona['kind']) {
 test('isolated users sign in against the local production build', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await signInWithLocalMagicLink(page, empty);
-  await expect(page.getByRole('heading', { name: "Let's Build Your Profile!" })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Let's build your profile" })).toBeVisible();
 
   const complete = persona(personas, 'complete');
   await page.context().clearCookies();

@@ -145,7 +145,7 @@ Submit pattern:
 - `<Form>` is a layout `<div>`, not a `<form>`. It takes no `onSubmit`.
 - Each action button is `type="button"` with an explicit `onClick` handler.
 - Either call `void form.handleSubmit()` (runs the hook's `onSubmit`), or validate in the handler (`await form.validateAllFields('submit')`, `await form.validate('submit')`) and then read `form.state.values` directly. No hidden fields.
-- When the form is invalid on submit, toast `firstFormError(form)` with `sonner`.
+- When the form is invalid on submit, toast `firstFormError(form)` with `sonner`. Exception: a form that shows an error summary on submit does not toast as well. The summary lists every error, links each to its field and takes focus. Reference: `app/account/create/views/account.form.tsx` with `views/error-summary.tsx`.
 - Wrap a mutation call in `submitWrapper` from `@app/actions/action.utils` for toast handling.
 
 File split and drafts:
