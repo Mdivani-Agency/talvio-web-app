@@ -18,7 +18,6 @@ const STYLES = [
 ] as const;
 
 test.describe('templates', () => {
-  test.describe.configure({ timeout: 180_000 });
 
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => window.localStorage.clear());
@@ -69,7 +68,6 @@ test.describe('templates', () => {
 });
 
 test.describe('restored editor template', () => {
-  test.describe.configure({ timeout: 180_000 });
 
   test('TPL-01 a restored editor draft uses the newly selected template once', async ({ page }) => {
     await page.goto('/resume?template=senior-level-talvio');
@@ -93,7 +91,6 @@ test.describe('restored editor template', () => {
 });
 
 harnessTest.describe('restored import template', () => {
-  harnessTest.describe.configure({ timeout: 180_000 });
 
   harnessTest('TPL-01 a restored import draft uses the newly selected template', async ({ page, personas }) => {
     const empty = persona(personas, 'empty');

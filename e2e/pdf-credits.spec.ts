@@ -29,7 +29,6 @@ import {
   SEEDED_RESUME_CONTENT,
 } from './fixtures/resumes';
 
-test.describe.configure({ timeout: 180_000 });
 
 test.beforeEach(async ({ page }) => {
   await resetAndGuard(page);
@@ -52,7 +51,7 @@ function shownAllowance(page: Page) {
 function failedGeneration(page: Page) {
   return page.waitForResponse(
     (response) => response.url().includes('/api/resume/generate-pdf') && response.status() >= 400,
-    { timeout: 60_000 },
+    { timeout: 30_000 },
   );
 }
 
@@ -105,7 +104,7 @@ test('PDF-01 generates a final PDF from the editor and the dashboard', async ({ 
   await rememberDownloads(page);
   const row = resumeRow(page, 'Dashboard copy');
   await generateButton(page, 'Dashboard copy').click();
-  await expect(row.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+  await expect(row.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 30_000 });
   await expect(shownAllowance(page)).toHaveText('1 of 3 left this month');
 
   const dashboard = (await listResumes(owner.userId)).find((row) => row.name === 'Dashboard copy');
@@ -126,7 +125,7 @@ test('PDF-02 charges exactly 30, blocks 29 and 0 with the renewal date, and reje
   await expect(shownAllowance(page)).toHaveText('1 of 3 left this month');
   const exactRow = resumeRow(page, 'Exact resume');
   await generateButton(page, 'Exact resume').click();
-  await expect(exactRow.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+  await expect(exactRow.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 30_000 });
   await expect(shownAllowance(page)).toHaveText('0 of 3 left this month');
   await expect(page.getByTestId('allowance-exhausted')).toHaveText(EXHAUSTED());
   await expect(page.locator('a[href^="/account/upgrade"], a[href^="/account/credits"]')).toHaveCount(0);
@@ -224,7 +223,7 @@ test('PDF-04 one double click and two concurrent requests charge once', async ({
   await openSignedIn(page, owner, '/account');
 
   await generateButton(page, 'Double resume').dblclick();
-  await expect(resumeRow(page, 'Double resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+  await expect(resumeRow(page, 'Double resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 30_000 });
   const doubled = (await listResumes(owner.userId)).find((row) => row.name === 'Double resume');
   expect(doubled?.pdfUrl).toBeTruthy();
   expect(await creditBalance(owner.userId)).toBe(60);
@@ -293,7 +292,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   }).toBe('Engineer');
   await page.goto('/account');
   await generateButton(page, 'Unreadable resume').click();
-  await expect(resumeRow(page, 'Unreadable resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+  await expect(resumeRow(page, 'Unreadable resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 30_000 });
   expect(await creditBalance(owner.userId)).toBe(60);
 
   await setScenario('presign_error');
@@ -309,7 +308,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
 
   await setScenario('success');
   await generateButton(page, 'Presign resume').click();
-  await expect(resumeRow(page, 'Presign resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+  await expect(resumeRow(page, 'Presign resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 30_000 });
   expect(await creditBalance(owner.userId)).toBe(30);
 
   await setScenario('upload_error');
@@ -324,7 +323,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
 
   await setScenario('success');
   await generateButton(page, 'Upload resume').click();
-  await expect(resumeRow(page, 'Upload resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+  await expect(resumeRow(page, 'Upload resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 30_000 });
   expect(await creditBalance(owner.userId)).toBe(0);
 
   // Three PDFs used the whole allowance, so generate is blocked. Top up and reload so this generation can start.
@@ -348,7 +347,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await page.reload();
   await expect(shownAllowance(page)).toHaveText('1 of 3 left this month');
   await generateButton(page, 'Finalize resume').click();
-  await expect(resumeRow(page, 'Finalize resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+  await expect(resumeRow(page, 'Finalize resume').getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 30_000 });
   expect(await creditBalance(owner.userId)).toBe(0);
   expect((await listResumes(owner.userId)).find((row) => row.id === finalizeId)?.pdfUrl).toBeTruthy();
 
@@ -367,7 +366,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await rememberDownloads(page);
   await page.getByRole('button', { name: 'Download resume' }).click();
   await page.getByRole('dialog', { name: 'Final Review' }).getByRole('button', { name: 'Generate and Download Resume' }).click();
-  await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 30_000 });
   const lost = (await listResumes(owner.userId)).find((row) => row.id === lostId);
   expect(lost?.pdfUrl).toBeTruthy();
   expect(await creditBalance(owner.userId)).toBe(60);
@@ -403,7 +402,7 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   await expect.poll(async () => {
     const draft = (await listResumes(owner.userId)).find((row) => row.sourceResumeId === originalId);
     return draft?.pdfUrl ?? '';
-  }, { timeout: 90_000 }).not.toBe('');
+  }, { timeout: 30_000 }).not.toBe('');
   await expect.poll(async () => (await recordedDownloads(page)).at(-1)?.download).toBe('Edited family.pdf');
   await download;
 
@@ -429,7 +428,6 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
 });
 
 test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero', async ({ page, personas }) => {
-  test.setTimeout(240_000);
   const owner = persona(personas, 'creditsAmple');
   await seedProfile(owner.userId);
   const titles = ['First resume', 'Second resume', 'Third resume', 'Fourth resume'];
@@ -442,9 +440,9 @@ test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero
 
   for (const [index, name] of titles.slice(0, 3).entries()) {
     // WebKit reports the next page.goto as "Download is starting" until each PDF download finishes.
-    const download = page.waitForEvent('download', { timeout: 90_000 });
+    const download = page.waitForEvent('download', { timeout: 30_000 });
     await generateButton(page, name).click();
-    await expect(resumeRow(page, name).getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 90_000 });
+    await expect(resumeRow(page, name).getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 30_000 });
     await download;
     await expect(shownAllowance(page)).toHaveText(`${2 - index} of 3 left this month`);
   }

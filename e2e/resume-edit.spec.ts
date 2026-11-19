@@ -19,7 +19,6 @@ import {
   SEEDED_RESUME_CONTENT,
 } from './fixtures/resumes';
 
-test.describe.configure({ timeout: 180_000 });
 
 test.beforeEach(async ({ page }) => {
   await resetAndGuard(page);

@@ -37,7 +37,6 @@ async function saveForm(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Save profile', exact: true }).click();
 }
 
-test.describe.configure({ timeout: 180_000 });
 
 test.beforeEach(async ({ page }) => {
   await fetch('http://127.0.0.1:3999/__e2e/reset', { method: 'POST' });

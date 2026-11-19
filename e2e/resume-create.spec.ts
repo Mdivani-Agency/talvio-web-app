@@ -14,7 +14,6 @@ import { contentProfile, creditBalance, listResumes, seedProfile } from './fixtu
 
 const PDF = 'e2e/assets/resume-import.pdf';
 
-test.describe.configure({ timeout: 180_000 });
 
 test.beforeEach(async ({ page }) => {
   await resetAndGuard(page);

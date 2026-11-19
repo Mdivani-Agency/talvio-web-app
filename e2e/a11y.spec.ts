@@ -45,7 +45,6 @@ async function failGraphql(page: Page, marker: string) {
 }
 
 test('UX-01 named controls, keyboard entry, and dialog escape', async ({ page, personas }) => {
-  test.setTimeout(180_000);
   await page.goto('/home');
   await expectNamedControls(page);
   await page.goto('/auth/sign-in');
@@ -107,7 +106,6 @@ test.describe('mobile', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('UX-02 mobile sign-in, editing, download, and delete stay on screen', async ({ page, personas }) => {
-    test.setTimeout(180_000);
     await page.goto('/home');
     await expectNoHorizontalOverflow(page);
     const menu = page.locator('header').first().getByRole('button', { name: 'Open menu' });
@@ -144,7 +142,6 @@ test.describe('mobile', () => {
 });
 
 test('UX-03 failed profile, resume, and document reads recover, and a pending generate stays disabled', async ({ page, personas }) => {
-  test.setTimeout(120_000);
   const owner = persona(personas, 'complete');
   const resumeId = await seedResume({ userId: owner.userId, name: 'Recovered resume' });
   await signInWithLocalMagicLink(page, owner);

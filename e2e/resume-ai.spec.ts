@@ -22,7 +22,6 @@ const POLISHED = 'Engineer who ships reliable tools.';
 const FIRST_QUESTION = 'How many people used what you built?';
 const SESSION_PREFIX = 'talvio-llm-improve:v1:';
 
-test.describe.configure({ timeout: 180_000 });
 
 test.beforeEach(async ({ page }) => {
   await resetAndGuard(page);

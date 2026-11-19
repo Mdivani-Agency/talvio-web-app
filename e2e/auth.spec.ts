@@ -144,7 +144,6 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
 });
 
 test('AUTH-03 guests can open the editor and protected account routes require sign-in', async ({ page }) => {
-  test.setTimeout(90_000);
   for (const path of ['/account', '/account/create', '/account/documents']) {
     await page.context().clearCookies();
     await page.goto(path);
@@ -164,7 +163,6 @@ test('AUTH-03 guests can open the editor and protected account routes require si
 });
 
 test('AUTH-04 sign-out blocks protected routes and the next user does not see the previous profile', async ({ page }) => {
-  test.setTimeout(90_000);
   const firstEmail = emailFor('first');
   const firstId = await createConfirmedUser(firstEmail);
   await serviceClient().from('profiles').insert({
@@ -199,7 +197,6 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
 });
 
 test('AUTH-07 the account sidebar marks the page, switches theme and signs out; the phone menu traps focus', async ({ page }) => {
-  test.setTimeout(90_000);
   const email = emailFor('sidebar');
   await createConfirmedUser(email);
   await signInThroughLocalMail(page, email, '/account/documents');
@@ -276,7 +273,6 @@ test('AUTH-05 a live session refreshes and a revoked session returns to sign-in'
 });
 
 test('AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the provider boundary', async ({ page }) => {
-  test.setTimeout(90_000);
   const email = emailFor('safe-next');
   await createConfirmedUser(email);
   await signInThroughLocalMail(page, email, 'https://evil.example/phish');
