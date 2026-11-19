@@ -71,8 +71,9 @@ Private pages (`/account`, `/resume`, `/auth`, `/api`):
 Page width:
 
 - A page's outer wrapper is `PageContainer` from `@components/views` (`components/views/page-container.tsx`). Use `as="main"` for a route's main content.
-- It takes the full available width and sets no maximum width. Content stays off the screen edges through the shared gutter `PAGE_GUTTER_CLASS` (16px, 24px from `md`, 40px from `lg`). `Header` and `Footer` use the same gutter.
-- Do not add a page-level `max-w-*` or your own side padding. Narrow reading columns inside a page (blog article and legal text at 720px, the 440px auth card, forms, dialogs) keep their own `max-w-*`.
+- By default it takes the full available width. Content stays off the screen edges through the shared gutter `PAGE_GUTTER_CLASS` (16px, 24px from `md`, 40px from `lg`). `Header` and `Footer` use the same gutter.
+- A page may cap its width. Set it on the container with `maxWidth`, for example `<PageContainer as="main" maxWidth="max-w-[80rem]">`. The container centres itself and keeps the gutter inside the cap. Do not add an inner wrapper with its own `mx-auto max-w-*` or side padding for the page as a whole.
+- Narrow reading columns inside a page (blog article and legal text at 720px, the 440px auth card, forms, dialogs) keep their own `max-w-*`.
 
 Route entries and states:
 

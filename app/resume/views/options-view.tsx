@@ -26,7 +26,7 @@ export default function OptionsView() {
   ];
 
   return (
-    <PageContainer as="main" className="flex min-h-dvh flex-col justify-center gap-8 pt-24 pb-12">
+    <PageContainer as="main" maxWidth="max-w-[80rem]" className="flex min-h-dvh flex-col justify-center gap-8 pt-24 pb-12">
       <div className="mx-auto flex max-w-[64rem] flex-col gap-2 text-center">
         <h1 className="text-[2.8rem] leading-[1.333] font-semibold text-primary">{START_SCREEN.title}</h1>
         <p className="text-md text-muted-foreground">{START_SCREEN.intro}</p>
