@@ -160,7 +160,7 @@ test('UX-03 failed profile, resume, and document reads recover, and a pending ge
   const resumeFailure = await failGraphql(page, 'ResumeById');
   await page.goto(`/resume/${resumeId}`);
   await expect(page.getByRole('heading', { name: 'Could not load this resume' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Resume not found' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: "We can't find this resume" })).toHaveCount(0);
   resumeFailure.stop();
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
