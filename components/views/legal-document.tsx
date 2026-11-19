@@ -11,6 +11,7 @@ import {
 import { LEGAL_LINKS } from '@/lib/public-nav';
 
 import { LegalContents } from './legal-contents';
+import { PageContainer } from './page-container';
 
 const linkClassName =
   'text-secondary underline underline-offset-[0.3rem] hover:text-secondary-hover dark:text-secondary-hover dark:hover:text-secondary';
@@ -86,7 +87,7 @@ function LegalSwitch({ current }: { current: string }) {
 export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
   const sections = doc.sections.map((section, index) => ({ ...section, id: legalSectionId(section.heading, index) }));
   return (
-    <main id="top" className="mx-auto w-full max-w-[120rem] flex-1 px-4 pt-8 pb-14 text-primary lg:px-10 lg:pt-14 lg:pb-24">
+    <PageContainer as="main" id="top" className="flex-1 pt-8 pb-14 text-primary lg:pt-14 lg:pb-24">
       <header className="flex flex-col items-start gap-4 border-b border-input pb-6 lg:pb-8">
         <LegalSwitch current={doc.title} />
         <h1 className="mt-2 text-[3.2rem] leading-[1.2] font-semibold tracking-[-0.01em] lg:text-3xl">{doc.title}</h1>
@@ -131,6 +132,6 @@ export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
           </a>
         </article>
       </div>
-    </main>
+    </PageContainer>
   );
 }

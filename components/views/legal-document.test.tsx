@@ -70,7 +70,7 @@ describe('LegalDocument', () => {
 
   it('ends the article with Back to top', () => {
     const html = renderToStaticMarkup(<LegalDocument doc={TERMS} />);
-    expect(html).toContain('<main id="top"');
+    expect(html).toMatch(/<main [^>]*id="top"/);
     expect(html).toMatch(/<a [^>]*href="#top"[^>]*>[\s\S]*?Back to top<\/a><\/article>/);
   });
 });

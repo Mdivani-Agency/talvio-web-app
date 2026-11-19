@@ -11,10 +11,11 @@ import {
   ATS_SECTIONS,
 } from '@/lib/ats-page-copy';
 import Link from 'next/link';
+import { PageContainer } from '@components/views';
 
 export default function AtsFriendlyResumePage() {
   return (
-    <main className="mx-auto flex w-full max-w-container-3xl flex-col gap-12 px-4 pb-12 pt-24 text-primary lg:px-6">
+    <PageContainer as="main" className="flex flex-col gap-12 pb-12 pt-24 text-primary">
       <header className="flex flex-col gap-4">
         <h1 className="text-2xl font-semibold lg:text-3xl">{ATS_PAGE_HEADING}</h1>
         <p className="max-w-[70ch] text-lg text-muted-foreground">{ATS_PAGE_INTRO}</p>
@@ -42,6 +43,6 @@ export default function AtsFriendlyResumePage() {
           </Button>
         </div>
       </section>
-    </main>
+    </PageContainer>
   );
 }

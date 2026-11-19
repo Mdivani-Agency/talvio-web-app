@@ -12,3 +12,4 @@ export * from "./public-shell";
 export * from "./navigation/responsive-navigation-menu";
 export * from "./navigation/navigation-menu";
 export * from "./legal-document";
+export * from "./page-container";

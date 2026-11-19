@@ -13,7 +13,7 @@ import Link from 'next/link';
 
 export const Cta = () => {
   return (
-    <section className={'mx-auto w-full max-w-[120rem] pb-[5.6rem] lg:px-4 lg:pb-[9.6rem]'}>
+    <section className={'w-full pb-[5.6rem] lg:pb-[9.6rem]'}>
       <div
         className={
           'grid grid-cols-1 items-end overflow-hidden rounded-xl border border-input lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'

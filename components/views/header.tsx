@@ -2,6 +2,7 @@ import { PropsWithChildren } from 'react';
 import { cn } from '@utils/tailwind';
 import { Logo } from '@components/ui';
 import { BetaTag } from './beta-tag';
+import { PAGE_GUTTER_CLASS } from './page-container';
 
 type HeaderProps = {
   className?: string;
@@ -19,7 +20,7 @@ export const Header = ({
   inert,
 }: PropsWithChildren<HeaderProps>) => {
   return (
-    <header inert={inert} className={cn('absolute z-50 flex w-full items-center justify-between shadow-sm py-2 px-4 lg:py-2.5 lg:px-6', className)}>
+    <header inert={inert} className={cn('absolute z-50 flex w-full items-center justify-between shadow-sm py-2 lg:py-2.5', PAGE_GUTTER_CLASS, className)}>
       <div className="flex shrink-0 items-center gap-2">
         <Logo size={size} onLogoClick={onLogoClick} />
         <BetaTag />

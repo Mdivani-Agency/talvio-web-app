@@ -11,6 +11,7 @@ import { BlogUnavailableError } from './blog-unavailable';
 import { BLOG_INDEX_CLASS, BlogIndexHeader } from './views/blog-index-header';
 import { BlogPostList } from './views/blog-post-list';
 import { BlogStatePanel } from './views/blog-state-panel';
+import { PageContainer } from '@components/views';
 
 // Rendered per request through the cached reader: no ISR, so no rendered HTML outlives the 300 s freshness budget.
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export default async function BlogPage() {
   const posts = result.status === 'ok' ? result.data : [];
 
   return (
-    <main className={BLOG_INDEX_CLASS}>
+    <PageContainer as="main" className={BLOG_INDEX_CLASS}>
       <BlogIndexHeader />
 
       {posts.length > 0 ? (
@@ -47,6 +48,6 @@ export default async function BlogPage() {
           </Button>
         </BlogStatePanel>
       )}
-    </main>
+    </PageContainer>
   );
 }

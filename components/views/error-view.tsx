@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@components/ui/button';
 import Image from 'next/image';
+import { PageContainer } from './page-container';
 
 interface ErrorContentProps {
   title?: string | null;
@@ -11,7 +12,7 @@ interface ErrorContentProps {
 
 export function ErrorView({ title = 'Unexpected error', error, errorDescription, reset }: ErrorContentProps) {
   return (
-    <div className={'flex flex-col pt-16 items-center justify-center max-w-screen-xl mx-auto px-4 lg:px-6 h-full'}>
+    <PageContainer className="flex h-full flex-col items-center justify-center pt-16">
       <h1 className={'text-2xl font-bold'}>{title || 'Unexpected error'}</h1>
       <picture className={'relative block w-4/5 lg:w-1/3 aspect-square'}>
         <Image src={'/troubleshooting.png'} alt={'Error'} fill />
@@ -27,6 +28,6 @@ export function ErrorView({ title = 'Unexpected error', error, errorDescription,
           <Button variant={'default'} onClick={reset}>Try again</Button>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

@@ -21,7 +21,7 @@ export const Hero = () => {
   return (
     <section
       className={
-        'mx-auto flex w-full max-w-[120rem] flex-col gap-[4rem] pb-[5.6rem] md:pt-[14.8rem] lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-[6.4rem] lg:px-4 lg:pb-[8rem]'
+        'flex w-full flex-col gap-[4rem] pb-[5.6rem] md:pt-[14.8rem] lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-[6.4rem] lg:pb-[8rem]'
       }
     >
       <div className={'flex flex-col items-start'}>

@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Talvio web app: rules for all agents
 
-This file is the canonical rule set for every agent working in this repository. Where another rule file disagrees with it, this file wins. The former `.cursor/rules/` directory has been removed; this file replaces it. Some of those rules described components from another codebase that do not exist here, such as `AccessLayer`, `PageContainer`, `paginated-list` and `useTemplateResponseForm`. Do not create or import those.
+This file is the canonical rule set for every agent working in this repository. Where another rule file disagrees with it, this file wins. The former `.cursor/rules/` directory has been removed; this file replaces it. Some of those rules described components from another codebase that do not exist here, such as `AccessLayer`, `paginated-list` and `useTemplateResponseForm`. Do not create or import those. (`PageContainer` now exists in this repository; see Pages.)
 
 Every path and symbol named below exists in this repository. If you find one that does not, say so and follow the nearest existing pattern instead of creating it.
 
@@ -20,7 +20,7 @@ Every path and symbol named below exists in this repository. If you find one tha
 | -- | -- |
 | `app/` | Next.js routes. Feature folders: `account`, `resume`, `auth`, `home`, `templates`, `pricing`, `ats-friendly-resume`, `terms`, `privacy-policy`, `api` |
 | `components/ui/` | shadcn-style primitives, exported from `@components/ui` |
-| `components/views/` | Shared layout pieces (`Header`, `StickyHeader`, `Footer`, `Loading`, `ErrorView`, `SortableList`), exported from `@components/views` |
+| `components/views/` | Shared layout pieces (`PageContainer`, `Header`, `StickyHeader`, `Footer`, `Loading`, `ErrorView`, `SortableList`), exported from `@components/views` |
 | `components/modals/` | Modals, including `ConfirmModal`, exported from `@components/modals` |
 | `lib/` | Copy modules (`*-copy.ts`), adapters, forms, GraphQL client, drafts, schemas, Supabase clients |
 | `supabase/migrations/`, `supabase/tests/` | SQL migrations and database tests |
@@ -67,6 +67,12 @@ Private pages (`/account`, `/resume`, `/auth`, `/api`):
 - Client pages read the session with `useUserSession()` from `@lib/providers` and account state with `useAccountContext()`.
 - There is no role or permission system. Do not add access-layer or protected-button wrappers. A user can reach only their own rows, enforced by RLS (see `docs/supabase-rls.md`).
 - The session cookie is refreshed in `proxy.ts` through `lib/supabase/middleware.ts`.
+
+Page width:
+
+- A page's outer wrapper is `PageContainer` from `@components/views` (`components/views/page-container.tsx`). Use `as="main"` for a route's main content.
+- It takes the full available width and sets no maximum width. Content stays off the screen edges through the shared gutter `PAGE_GUTTER_CLASS` (16px, 24px from `md`, 40px from `lg`). `Header` and `Footer` use the same gutter.
+- Do not add a page-level `max-w-*` or your own side padding. Narrow reading columns inside a page (blog article and legal text at 720px, the 440px auth card, forms, dialogs) keep their own `max-w-*`.
 
 Route entries and states:
 

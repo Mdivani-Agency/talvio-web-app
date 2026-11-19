@@ -10,6 +10,7 @@ import {
   SOCIAL_LINKS,
   footerCopyright,
 } from '@/lib/public-nav';
+import { PAGE_GUTTER_CLASS } from './page-container';
 
 type FooterProps = {
   className?: string;
@@ -20,7 +21,7 @@ const linkClassName = 'text-primary text-md font-regular hover:text-secondary ho
 
 export const Footer = ({ children, className, size = 'small' }: PropsWithChildren<FooterProps>) => {
   return (
-    <footer className={cn('px-4 pb-12 md:pb-24 md:px-6', className)}>
+    <footer className={cn('pb-12 md:pb-24', PAGE_GUTTER_CLASS, className)}>
       <Logo size={size} />
       <div
         className={cn(
