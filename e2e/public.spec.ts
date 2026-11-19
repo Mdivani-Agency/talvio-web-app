@@ -311,6 +311,26 @@ test('PUB-05h on a phone the templates swipe in a carousel with arrows and dots,
   await expect(page).toHaveURL(/\/resume\?template=entry-level-modern$/);
 });
 
+test('PUB-05i every template in the phone carousel has its own position, including on wide phones', async ({ page }) => {
+  for (const width of [390, 700]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/templates');
+    const carousel = page.getByRole('region', { name: 'Senior level templates' });
+    const track = carousel.getByRole('list');
+    const positions: number[] = [];
+    for (const name of ['Modern', 'Ember', 'Mint', 'Talvio']) {
+      await carousel.getByRole('button', { name: `Show ${name}`, exact: true }).click();
+      // The dot stays on the card that was asked for once the row stops scrolling.
+      await expect(carousel.locator('[aria-current="true"]'), `${width}px ${name}`).toHaveAccessibleName(`Show ${name}`);
+      await expect.poll(async () => track.evaluate((list) => list.scrollLeft)).not.toBe(positions.at(-1));
+      positions.push(await track.evaluate((list) => list.scrollLeft));
+    }
+    expect(new Set(positions).size, `${width}px`).toBe(4);
+    await expect(carousel.getByRole('button', { name: 'Next template' })).toBeDisabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
+});
+
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/templates');

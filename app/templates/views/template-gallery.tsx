@@ -55,14 +55,11 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
     if (!track) {
       return;
     }
-    // The last card cannot reach the snap start, so the end of the track counts as the last slide.
-    const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
     const offsets = slideOffsets();
-    const nearest = offsets.reduce(
+    const current = offsets.reduce(
       (best, offset, index) => (Math.abs(offset - track.scrollLeft) < Math.abs(offsets[best] - track.scrollLeft) ? index : best),
       0,
     );
-    const current = atEnd ? last : nearest;
     if (current !== slide) {
       setSlide(current);
     }
@@ -73,7 +70,13 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
       <ul
         ref={trackRef}
         onScroll={onScroll}
-        className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:px-0 lg:grid-cols-4"
+        className={cn(
+          '-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 [scrollbar-width:none]',
+          // A spacer after the last card, the row's width less one card and gap (31.2rem), lets every card reach its
+          // snap position, so each has its own scroll offset at any width below md.
+          "after:block after:w-[calc(100%-31.2rem)] after:shrink-0 after:content-['']",
+          'md:mx-0 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:px-0 md:after:hidden lg:grid-cols-4',
+        )}
       >
         {templates.map(({ key, name, description, imageUrl }, index) => (
           <li
