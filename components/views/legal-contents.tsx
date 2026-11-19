@@ -102,7 +102,7 @@ export function LegalContents({ items }: { items: LegalContentsItem[] }) {
                   setCurrent(item.id);
                   setOpen(false);
                 }}
-                className="flex min-h-11 items-center rounded-md px-2 text-md text-foreground outline-none hover:bg-popover focus-visible:ring-2 focus-visible:ring-ring dark:hover:bg-accent"
+                className="flex min-h-[4.4rem] items-center rounded-md px-2 text-md text-foreground outline-none hover:bg-popover focus-visible:ring-2 focus-visible:ring-ring dark:hover:bg-accent"
               >
                 {item.heading}
               </a>
