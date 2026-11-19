@@ -44,7 +44,13 @@ export const BurgerMenu = ({ className, links, user, authActions = true }: Burge
           <NavigationMenu className='w-full max-w-auto flex flex-col justify-start items-start gap-4 p-4'>
             {links.map((link) => (
               <NavigationMenuItem key={link.name} asChild onClick={() => setOpen(false)}>
-                <Link href={link.href} className='text-primary text-lg font-semibold'>{link.name}</Link>
+                <Link
+                  href={link.href}
+                  aria-current={link.current ? 'page' : undefined}
+                  className={link.current ? 'text-lg font-semibold text-secondary dark:text-secondary-hover' : 'text-lg font-semibold text-primary'}
+                >
+                  {link.name}
+                </Link>
               </NavigationMenuItem>
             ))}
             <Separator className='w-full' />
