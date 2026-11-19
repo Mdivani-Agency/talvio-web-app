@@ -23,12 +23,21 @@ function useCurrentSection(ids: string[]) {
       const passed = sections.filter((section) => section.getBoundingClientRect().top <= line);
       setCurrent((passed.at(-1) ?? sections[0])?.id ?? ids[0]);
     };
-    // The observer's band ends at the reading line, so it calls back whenever a section crosses it.
-    const observer = new IntersectionObserver(update, {
-      rootMargin: `0px 0px -${Math.round((1 - READING_LINE) * 100)}% 0px`,
-    });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+    // The observer's band ends at the reading line, so it calls back whenever a section crosses it. The margin is in
+    // pixels from the viewport height, so no browser can resolve it against the width; a resize rebuilds it.
+    let observer: IntersectionObserver | undefined;
+    const observe = () => {
+      observer?.disconnect();
+      const bottom = Math.round(window.innerHeight * (1 - READING_LINE));
+      observer = new IntersectionObserver(update, { rootMargin: `0px 0px -${bottom}px 0px` });
+      sections.forEach((section) => observer?.observe(section));
+    };
+    observe();
+    window.addEventListener('resize', observe);
+    return () => {
+      window.removeEventListener('resize', observe);
+      observer?.disconnect();
+    };
   }, [ids]);
 
   return [current, setCurrent] as const;

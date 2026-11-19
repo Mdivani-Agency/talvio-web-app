@@ -105,6 +105,12 @@ test('PUB-01b legal pages link every section from On this page, land anchors bel
   await expect(contents.getByRole('link', { name: '12. Ending your use' })).toHaveAttribute('aria-current', 'location');
   await expect(contents).toBeInViewport();
 
+  // On a wide screen the reading line is still a third of the height (the observer margin is in pixels).
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.evaluate(() => document.getElementById('section-9')?.scrollIntoView());
+  await expect(contents.getByRole('link', { name: '9. Acceptable use' })).toHaveAttribute('aria-current', 'location');
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   await contents.getByRole('link', { name: '15. Privacy', exact: true }).click();
   await expect(page).toHaveURL(/\/terms#section-15$/);
   await expect(page.getByRole('heading', { name: '15. Privacy', exact: true })).toBeInViewport();
