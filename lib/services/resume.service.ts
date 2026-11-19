@@ -95,4 +95,15 @@ export class ResumeService {
   }
 }
 
-export const resumeService = new ResumeService();
+let instance: ResumeService | undefined;
+
+/**
+ * The shared service, built on first use. Building it starts loading the fonts without waiting for them, so doing it
+ * at import made every importer (tests included) start a font fetch whose failure nothing caught.
+ */
+export const resumeService = {
+  generate(...args: Parameters<ResumeService['generate']>) {
+    instance ??= new ResumeService();
+    return instance.generate(...args);
+  },
+};
