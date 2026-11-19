@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useId } from 'react';
+import { useId } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 
@@ -19,7 +19,10 @@ import {
 import { signInSchema, SignInValues } from './schema';
 
 interface SignInFormProps {
-  /** Filled in once, when the field is still empty: the address from the last attempt in this tab. */
+  /**
+   * The address from the last attempt in this tab. It is only known after hydration, so it arrives as a changed default
+   * value: TanStack Form applies new defaults only while the form is untouched, so it never overwrites what was typed.
+   */
   initialEmail?: string;
   onSubmit: (values: SignInValues) => void | Promise<void>;
   /** Called on every edit, so the page can clear an alert about the previous address. */
@@ -28,29 +31,20 @@ interface SignInFormProps {
 
 export const SignInForm = ({ initialEmail, onSubmit, onValuesChange }: SignInFormProps) => {
   const form = useAppForm<SignInValues>({
-    defaultValues: { email: '' },
+    defaultValues: { email: initialEmail ?? '' },
     schema: signInSchema,
     onSubmit,
     onValuesChange,
   });
   const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
-  // Errors show from the first submit on, then update as the address is edited.
-  const submitted = useStore(form.store, (state) => state.submissionAttempts > 0);
   const inputId = useId();
-
-  // The stored address only exists in the browser, after hydration, so it can't be a default value.
-  useEffect(() => {
-    if (initialEmail && !form.getFieldValue('email')) {
-      form.setFieldValue('email', initialEmail);
-    }
-  }, [form, initialEmail]);
   const errorId = `${inputId}-error`;
 
   return (
     <Form className="flex flex-col gap-6">
       <FormField form={form} name="email">
         {(field) => {
-          const error = submitted ? fieldErrorMessage(field.state.meta.errors) : undefined;
+          const error = fieldErrorMessage(field.state.meta.errors);
           return (
             <FormItem className="gap-2">
               {/* The label and the message point at the <input> itself: FormControl would put them on Input's wrapper. */}

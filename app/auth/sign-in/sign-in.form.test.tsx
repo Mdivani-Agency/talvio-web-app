@@ -12,13 +12,17 @@ describe('SignInForm', () => {
   const email = () => screen.getByLabelText('Email') as HTMLInputElement;
   const submit = () => fireEvent.click(screen.getByRole('button', { name: SIGN_IN_SUBMIT_LABEL }));
 
-  it('labels the email field and shows no error before a submit', () => {
+  it('labels the email field and shows no error until it is edited', async () => {
     render(<SignInForm onSubmit={vi.fn()} />);
     expect(email().type).toBe('email');
     expect(email().autocomplete).toBe('email');
-    fireEvent.change(email(), { target: { value: 'ada' } });
     expect(email().getAttribute('aria-invalid')).toBe('false');
-    expect(screen.queryByText(SIGN_IN_EMAIL_INVALID)).toBeNull();
+
+    // The default change validation shows the message inline as the user types (AGENTS.md).
+    fireEvent.change(email(), { target: { value: 'ada' } });
+    const invalid = await screen.findByText(SIGN_IN_EMAIL_INVALID);
+    expect(email().getAttribute('aria-invalid')).toBe('true');
+    expect(email().getAttribute('aria-describedby')).toBe(invalid.id);
   });
 
   it('shows the empty and invalid messages under the field, linked for screen readers', async () => {
@@ -57,7 +61,12 @@ describe('SignInForm', () => {
     expect(await screen.findByRole('button', { name: SIGN_IN_SUBMIT_LABEL })).toBeTruthy();
   });
 
-  it('fills in the address from the last attempt once, without overwriting what was typed', async () => {
+  it('fills in the address from the last attempt after hydration, without overwriting what was typed', async () => {
+    const { rerender: rerenderUntouched } = render(<SignInForm onSubmit={vi.fn()} />);
+    rerenderUntouched(<SignInForm initialEmail="ada@example.com" onSubmit={vi.fn()} />);
+    await waitFor(() => expect(email().value).toBe('ada@example.com'));
+    cleanup();
+
     const { rerender } = render(<SignInForm onSubmit={vi.fn()} />);
     fireEvent.change(email(), { target: { value: 'typed@example.com' } });
     rerender(<SignInForm initialEmail="ada@example.com" onSubmit={vi.fn()} />);
