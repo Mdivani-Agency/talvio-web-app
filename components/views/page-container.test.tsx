@@ -1,16 +1,27 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { PageContainer } from './page-container';
+import { PAGE_GUTTER_CLASS, PageContainer } from './page-container';
 
 describe('PageContainer', () => {
-  it('takes the full width with the shared gutter by default', () => {
-    const html = renderToStaticMarkup(<PageContainer as="main">Page</PageContainer>);
-    expect(html).toContain('<main class="w-full px-4 md:px-6 lg:px-10">');
+  it('renders the chosen element at full width with the shared gutter and no maximum width', () => {
+    const html = renderToStaticMarkup(
+      <PageContainer as="main" id="top" className="pt-8">
+        Content
+      </PageContainer>,
+    );
+    expect(html).toMatch(/^<main /);
+    expect(html).toContain('id="top"');
+    for (const name of ['w-full', ...PAGE_GUTTER_CLASS.split(' '), 'pt-8']) {
+      expect(html).toContain(name);
+    }
+    expect(html).not.toMatch(/max-w-/);
   });
 
-  it('centres a capped page and keeps the gutter inside the cap', () => {
-    const html = renderToStaticMarkup(<PageContainer maxWidth="max-w-[80rem]">Page</PageContainer>);
-    expect(html).toContain('w-full px-4 md:px-6 lg:px-10 mx-auto max-w-[80rem]');
+  it('lets a page override the gutter for one breakpoint', () => {
+    const html = renderToStaticMarkup(<PageContainer className="lg:px-0">Content</PageContainer>);
+    expect(html).toMatch(/^<div /);
+    expect(html).toContain('lg:px-0');
+    expect(html).not.toContain('lg:px-10');
   });
 });

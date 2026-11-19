@@ -47,7 +47,7 @@ export default function ImportResumePage() {
   }
 
   return (
-    <PageContainer as="main" maxWidth="max-w-[72rem]" className="flex min-h-dvh flex-col justify-center pt-24 pb-12">
+    <PageContainer as="main" className="flex min-h-dvh flex-col justify-center pt-24 pb-12">
       <div className="flex w-full flex-col gap-6">
         <button
           type="button"
