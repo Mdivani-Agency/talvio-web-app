@@ -92,3 +92,45 @@ export const SECTION_STATUS_TEXT = { done: 'complete', error: 'has errors', todo
 export function errorSummaryTitle(count: number): string {
   return `Fix ${count} ${count === 1 ? 'field' : 'fields'} to save your profile`;
 }
+
+export const ENTRY_CANCEL_LABEL = 'Cancel';
+export const ENTRY_SAVE_LABEL = 'Save';
+export const ENTRY_PRESENT_LABEL = 'Present';
+export const ENTRY_UNTITLED = 'Untitled entry';
+
+export type EntryListCopy = {
+  addLabel: string;
+  newTitle: string;
+  removeTitle: string;
+  empty: string;
+};
+
+/** Experience, education and project lists: the add button, the new-entry form, the remove confirm and the empty line. */
+export const ENTRY_LISTS = {
+  experience: {
+    addLabel: 'Add experience',
+    newTitle: 'New experience',
+    removeTitle: 'Remove experience',
+    empty: 'No experience added yet.',
+  },
+  education: {
+    addLabel: 'Add education',
+    newTitle: 'New education',
+    removeTitle: 'Remove education',
+    empty: 'No education added yet.',
+  },
+  projects: {
+    addLabel: 'Add project',
+    newTitle: 'New project',
+    removeTitle: 'Remove project',
+    empty: 'No projects added yet.',
+  },
+} as const satisfies Record<string, EntryListCopy>;
+
+export const entryEditTitle = (name: string) => `Edit ${name}`;
+export const entryRemoveLabel = (name: string) => `Remove ${name}`;
+export const entryReorderLabel = (name: string) => `Reorder ${name}`;
+export const entryRemoveBody = (name: string) => `${name} will be removed. You can add it again later.`;
+export const ENTRY_REORDER_HINT = 'Drag, or press the up or down arrow key to move it.';
+export const entryMovedAnnouncement = (name: string, position: number, total: number) =>
+  `${name} moved to position ${position} of ${total}.`;

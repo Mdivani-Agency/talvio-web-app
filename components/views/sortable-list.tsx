@@ -14,6 +14,8 @@ interface SortableListProps<T extends DraggableItem> {
   itemClassName?: string;
   disabled?: boolean;
   canDrag?: boolean;
+  /** Draw the built-in drag icon. Turn it off when `renderItem` draws its own handle. */
+  showHandle?: boolean;
   renderItem: (params: { item: T; isDragging: boolean; index: number }) => React.ReactNode;
   onReorder: (items: T[]) => void;
 }
@@ -24,6 +26,7 @@ export const SortableList = <T extends DraggableItem>({
   itemClassName,
   disabled = false,
   canDrag = true,
+  showHandle = true,
   onReorder,
   renderItem,
 }: SortableListProps<T>) => {
@@ -114,7 +117,7 @@ export const SortableList = <T extends DraggableItem>({
               itemClassName,
             )}
           >
-            {canDrag && (
+            {canDrag && showHandle && (
               <Icon
                 type={'Drag'}
                 className={cn(

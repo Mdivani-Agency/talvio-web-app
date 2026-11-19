@@ -1,3 +1,4 @@
+import { ENTRY_CANCEL_LABEL } from '@/lib/onboarding-copy';
 import { Button } from '@components/ui';
 import { cn, getErrorMessage } from '@lib/utils';
 import { Experience } from '@lib/types';
@@ -24,14 +25,17 @@ type ExperienceFieldsProps = {
   className?: string;
   defaultValues?: Partial<ExperienceFormValues>;
   onSubmit: (data: Experience) => void;
-  action: 'add' | 'edit';
+  /** The submit button's text, such as "Add experience" or "Save". */
+  submitLabel: string;
+  /** Shows a Cancel button that closes the form without saving. */
+  onCancel?: () => void;
 };
 
 function definedDefaults(values: Partial<ExperienceFormValues>) {
   return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined)) as Partial<ExperienceFormValues>;
 }
 
-export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, action, onSubmit }: ExperienceFieldsProps) => {
+export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, submitLabel, onCancel, onSubmit }: ExperienceFieldsProps) => {
   const form = useAppForm<ExperienceFormValues>({
     defaultValues: {
       ...DEFAULT_VALUES,
@@ -77,8 +81,13 @@ export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, acti
     <div className={cn('space-y-6', className)}>
       <ExperienceFields form={form} />
       <div className="relative z-10 flex justify-end gap-2">
-        <Button type="button" className="w-36" variant={'secondary'} size={'icon'} onClick={() => void handleSubmit()}>
-          {action === 'add' ? 'Add' : 'Save'}
+        {onCancel ? (
+          <Button type="button" variant="outline" className="h-[4rem]" onClick={onCancel}>
+            {ENTRY_CANCEL_LABEL}
+          </Button>
+        ) : null}
+        <Button type="button" className="h-[4rem]" onClick={() => void handleSubmit()}>
+          {submitLabel}
         </Button>
       </div>
     </div>

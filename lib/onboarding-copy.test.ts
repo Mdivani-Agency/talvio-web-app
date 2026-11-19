@@ -10,6 +10,8 @@ import {
   PROFILE_SECTIONS,
   PROJECT_FIELDS,
   DRAFT_NOTE,
+  ENTRY_LISTS,
+  entryRemoveBody,
   ONBOARDING_HEADING,
   ONBOARDING_INTRO,
   START_FASTER,
@@ -80,5 +82,15 @@ describe('onboarding copy', () => {
     expect(errorSummaryTitle(1)).toBe('Fix 1 field to save your profile');
     expect(errorSummaryTitle(2)).toBe('Fix 2 fields to save your profile');
     expect(sectionFixNote(3)).toBe('Fix 3');
+  });
+
+  it('names the entry lists in sentence case', () => {
+    expect(Object.values(ENTRY_LISTS).map((list) => list.removeTitle)).toEqual([
+      'Remove experience',
+      'Remove education',
+      'Remove project',
+    ]);
+    expect(Object.values(ENTRY_LISTS).map((list) => list.addLabel)).toEqual(['Add experience', 'Add education', 'Add project']);
+    expect(entryRemoveBody('Signal Board')).toBe('Signal Board will be removed. You can add it again later.');
   });
 });

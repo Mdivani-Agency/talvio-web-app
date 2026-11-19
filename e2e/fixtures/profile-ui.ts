@@ -98,12 +98,22 @@ export async function addTag(page: Page, label: string, value: string) {
   await input.press('Enter');
 }
 
-export async function expandEntries(scope: Locator, count: number) {
-  const header = scope.locator('.cursor-pointer').filter({ hasText: `(${count})` });
-  if (await header.locator('xpath=..').getAttribute('aria-expanded') === 'true') {
-    return;
-  }
-  await header.click();
+/** The Experience, Education or Projects list: the section with this h2. */
+export function entrySection(page: Page, title: string) {
+  return page.locator('section').filter({ has: page.getByRole('heading', { level: 2, name: title, exact: true }) }).last();
+}
+
+/** Open a list's inline form with its Add button, such as "Add experience", and return the list's section. */
+export async function startEntry(page: Page, title: string, addLabel: string) {
+  const list = entrySection(page, title);
+  await list.getByRole('button', { name: addLabel, exact: true }).click();
+  await expect(list.getByRole('heading', { level: 3, name: addLabel.replace(/^Add /, 'New '), exact: true })).toBeVisible();
+  return list;
+}
+
+/** A saved entry's row in a list, found by any text it shows. */
+export function entryRow(list: Locator, text: string) {
+  return list.locator('[draggable]').filter({ hasText: text });
 }
 
 export async function dragItem(page: Page, sourceText: string, targetText: string) {
