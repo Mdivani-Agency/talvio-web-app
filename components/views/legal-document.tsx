@@ -1,8 +1,16 @@
+import { ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 
 import { cn } from '@lib/utils';
-import type { LegalDocument as LegalDocumentCopy, LegalInline } from '@/lib/legal-copy';
+import {
+  LEGAL_BACK_TO_TOP,
+  legalSectionId,
+  type LegalDocument as LegalDocumentCopy,
+  type LegalInline,
+} from '@/lib/legal-copy';
 import { LEGAL_LINKS } from '@/lib/public-nav';
+
+import { LegalContents } from './legal-contents';
 
 const linkClassName =
   'text-secondary underline underline-offset-[0.3rem] hover:text-secondary-hover dark:text-secondary-hover dark:hover:text-secondary';
@@ -71,23 +79,30 @@ function LegalSwitch({ current }: { current: string }) {
   );
 }
 
-/** Renders a legal text from `lib/*-copy.ts`: the document switch, one `h1`, "Last updated", then numbered sections. */
+/**
+ * Renders a legal text from `lib/*-copy.ts`: the document switch, one `h1`, "Last updated", the contents list, then
+ * numbered sections with anchors (`section-5`) and Back to top.
+ */
 export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
+  const sections = doc.sections.map((section, index) => ({ ...section, id: legalSectionId(section.heading, index) }));
   return (
-    <main className="mx-auto w-full max-w-[120rem] flex-1 px-4 pt-8 pb-14 text-primary lg:px-10 lg:pt-14 lg:pb-24">
+    <main id="top" className="mx-auto w-full max-w-[120rem] flex-1 px-4 pt-8 pb-14 text-primary lg:px-10 lg:pt-14 lg:pb-24">
       <header className="flex flex-col items-start gap-4 border-b border-input pb-6 lg:pb-8">
         <LegalSwitch current={doc.title} />
         <h1 className="mt-2 text-[3.2rem] leading-[1.2] font-semibold tracking-[-0.01em] lg:text-3xl">{doc.title}</h1>
         <p className="text-md text-muted-foreground">Last updated: {doc.lastUpdated}</p>
       </header>
-      <div className="mt-6 grid grid-cols-1 items-start gap-16 lg:mt-10 lg:grid-cols-[24rem_minmax(0,1fr)]">
-        {/* Kept for the contents list (legal refresh 2/2). */}
-        <div aria-hidden="true" className="hidden lg:block" />
+      <div className="mt-6 grid grid-cols-1 items-start gap-8 lg:mt-10 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-16">
+        {/* Stretches to the article's height so the desktop list can stay sticky beside it. */}
+        <div className="min-w-0 lg:self-stretch">
+          <LegalContents items={sections.map(({ id, heading }) => ({ id, heading }))} />
+        </div>
         <article className="flex max-w-[72rem] min-w-0 flex-col text-md text-foreground">
-          {doc.sections.map((section, index) => (
+          {sections.map((section, index) => (
             <section
-              key={section.heading}
-              className={cn('flex flex-col gap-3', index === 0 ? 'pb-8' : 'border-t border-input py-8')}
+              key={section.id}
+              id={section.id}
+              className={cn('flex scroll-mt-24 flex-col gap-3', index === 0 ? 'pb-8' : 'border-t border-input py-8')}
             >
               <h2 className="text-[2rem] leading-[1.4] font-semibold text-primary lg:text-xl">{section.heading}</h2>
               {section.blocks.map((block, blockIndex) =>
@@ -107,6 +122,13 @@ export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
               )}
             </section>
           ))}
+          <a
+            href="#top"
+            className="mt-8 inline-flex min-h-11 items-center gap-2 self-start text-md font-medium text-secondary hover:text-secondary-hover dark:text-secondary-hover dark:hover:text-secondary"
+          >
+            <ChevronUp aria-hidden="true" className="size-4" />
+            {LEGAL_BACK_TO_TOP}
+          </a>
         </article>
       </div>
     </main>
