@@ -109,6 +109,14 @@ test('PUB-01b legal pages link every section from On this page, land anchors bel
   await expect(page).toHaveURL(/\/terms#section-15$/);
   await expect(page.getByRole('heading', { name: '15. Privacy', exact: true })).toBeInViewport();
 
+  // On a short screen the list scrolls on its own, so its last entry stays reachable.
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const box = (await contents.boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(720);
+  await contents.getByRole('link', { name: '18. Contact', exact: true }).click();
+  await expect(page).toHaveURL(/\/terms#section-18$/);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   await page.getByRole('link', { name: 'Back to top', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Terms of Service', level: 1 })).toBeInViewport();
 

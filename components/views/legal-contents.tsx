@@ -46,7 +46,11 @@ export function LegalContents({ items }: { items: LegalContentsItem[] }) {
 
   return (
     <>
-      <nav aria-label={LEGAL_ON_THIS_PAGE} className="sticky top-[10.4rem] hidden flex-col gap-0.5 lg:flex">
+      <nav
+        aria-label={LEGAL_ON_THIS_PAGE}
+        // On short screens the list scrolls on its own, so every entry stays reachable below the sticky header.
+        className="sticky top-[10.4rem] hidden max-h-[calc(100svh-12rem)] flex-col gap-0.5 overflow-y-auto overscroll-contain p-1 lg:flex"
+      >
         <p className="mb-2 px-3 text-md font-semibold text-foreground">{LEGAL_ON_THIS_PAGE}</p>
         {items.map((item) => {
           const selected = item.id === current;
