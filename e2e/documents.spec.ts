@@ -51,7 +51,7 @@ test('DOC-01 documents show an empty library, a failed list, and a downloadable 
   await expect(page.getByRole('heading', { name: 'No resume PDFs yet' })).toBeVisible();
   await page.getByRole('main').getByRole('link', { name: 'Create resume' }).click();
   await expect(page).toHaveURL(/\/resume$/);
-  await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
 
   const publicUrl = await uploadDocument(owner.userId, 'Library resume');
   await page.goto('/account/documents');

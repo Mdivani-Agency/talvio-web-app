@@ -262,7 +262,8 @@ test('PROF-03 imported resume stays editable through save', async ({ page, perso
   await expect(page.getByRole('button', { name: 'Import from resume' })).toBeEnabled();
 
   await uploadResume(page, PDF);
-  await page.getByRole('button', { name: 'Confirm' }).click();
+  // Scope to the replace dialog: the upload dialog's own Confirm can still be closing when this runs.
+  await page.getByRole('dialog', { name: 'Replace current profile?' }).getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
   await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Owner');
   await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Engineer');
@@ -308,7 +309,8 @@ test('PROF-04 provider failures recover without stranding the profile', async ({
 
   await setScenario('success');
   await uploadResume(page, PDF);
-  await page.getByRole('button', { name: 'Confirm' }).click();
+  // Scope to the replace dialog: the upload dialog's own Confirm can still be closing when this runs.
+  await page.getByRole('dialog', { name: 'Replace current profile?' }).getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
   await page.getByLabel('First name', { exact: true }).fill('Ada Recovered');
 

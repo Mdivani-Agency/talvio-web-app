@@ -16,9 +16,11 @@ type ExperienceViewProps = {
   form: AppForm;
   /** Convert account-shaped dialogs into resume document items. */
   documentMode?: boolean;
+  /** Off where a parent already names the section, as the resume editor's accordion does. */
+  heading?: boolean;
 };
 
-export const ExperienceView = ({ className, form, documentMode = false }: ExperienceViewProps) => {
+export const ExperienceView = ({ className, form, documentMode = false, heading = true }: ExperienceViewProps) => {
   const { fields, append, remove, update, replace } = useFormArray<Experience>(form, 'experience');
 
   const handleAdd = useCallback(
@@ -37,9 +39,11 @@ export const ExperienceView = ({ className, form, documentMode = false }: Experi
 
   return (
     <section className={className}>
-      <div className="mb-6">
-        <SectionHeading copy={PROFILE_SECTIONS.experience} />
-      </div>
+      {heading ? (
+        <div className="mb-6">
+          <SectionHeading copy={PROFILE_SECTIONS.experience} />
+        </div>
+      ) : null}
       <EntryList
         items={fields}
         copy={ENTRY_LISTS.experience}

@@ -51,7 +51,7 @@ test('RES-07 groups families and load more keeps every record', async ({ page, p
 
   await page.getByRole('link', { name: 'Family label', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/resume/${originalId}$`));
-  await expect(page.getByText('Editing a draft. Your generated PDF stays downloadable.')).toBeVisible();
+  await expect(page.getByText('You are editing a draft. Your generated PDF stays downloadable.')).toBeVisible();
   await page.getByRole('button', { name: 'View original' }).click();
   await expect(page.getByText('Viewing the generated PDF. This version is read-only.')).toBeVisible();
 });

@@ -152,14 +152,14 @@ test('AUTH-03 guests can open the editor and protected account routes require si
   }
 
   await page.goto('/resume?template=mid-level-ember');
-  await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
-  await page.getByText('Use Existing Resume').click();
+  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
+  await page.getByText('Import a resume', { exact: true }).click();
   await expect(page).toHaveURL(/\/auth\/sign-in\?callbackURL=/);
   expect(decodeURIComponent(new URL(page.url()).searchParams.get('callbackURL') ?? '')).toContain('/resume');
 
   await page.goto('/resume?template=mid-level-ember');
-  await page.getByText('Fill Manually').click();
-  await expect(page.getByLabel('Resume label')).toBeVisible();
+  await page.getByText('Fill it in yourself', { exact: true }).click();
+  await expect(page.getByRole('button', { name: /^Rename resume:/ })).toBeVisible();
 });
 
 test('AUTH-04 sign-out blocks protected routes and the next user does not see the previous profile', async ({ page }) => {

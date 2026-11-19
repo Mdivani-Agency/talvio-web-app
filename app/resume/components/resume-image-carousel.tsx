@@ -1,23 +1,24 @@
 import { Icon } from '@components/icons';
 import { ImageCarousel } from '@components/ui';
+import { cn } from '@lib/utils';
 
 interface ResumeImageCarouselProps {
   images?: string[];
   isLoading: boolean;
   currentIndex: number;
+  className?: string;
 }
 
-export function ResumeImageCarousel({ isLoading, images = [], currentIndex }: ResumeImageCarouselProps) {
-
+/** The preview pages at A4 ratio, sized to the stage's height, with a spinner while a new render loads. */
+export function ResumeImageCarousel({ isLoading, images = [], currentIndex, className }: ResumeImageCarouselProps) {
   return (
-    <div className={'relative w-full h-full'}>
+    <div className={cn('relative aspect-[210/297]', className)}>
       {isLoading && (
-        <div className={'hidden absolute top-0 left-0 z-10 w-full h-full flex items-center justify-center md:flex'}>
-          <div className={'absolute top-0 left-0 w-full h-full opacity-50'} />
-          <Icon type={'Spinner'} className={'size-8 text-primary-500 animate-spin'} />
+        <div className="absolute top-0 left-0 z-10 flex h-full w-full items-center justify-center">
+          <Icon type="Spinner" className="size-8 animate-spin text-primary-500" />
         </div>
       )}
-      {images.length > 0 && <ImageCarousel currentIndex={currentIndex} images={images} />}
+      {images.length > 0 && <ImageCarousel className="block" currentIndex={currentIndex} images={images} />}
     </div>
   );
 }

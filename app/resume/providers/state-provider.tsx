@@ -51,6 +51,8 @@ type ContextState = {
   seedIfFetching: (resume: PreviewDto) => void;
   selectImport: () => void;
   selectManual: () => void;
+  /** Back from Import your resume to Start a new resume. */
+  selectOptions: () => void;
   applyImportedResume: (resume: PreviewDto) => void;
   changeResume: (resume: PreviewDto) => void;
 };
@@ -278,6 +280,7 @@ function ResumeMachine({
         },
         selectImport: () => updateFlow({ ...flow, step: 'importResume' }),
         selectManual: () => updateFlow({ ...flow, step: 'resumePreview' }),
+        selectOptions: () => updateFlow({ ...flow, step: 'options' }),
         applyImportedResume: (resume) => updateFlow({ step: 'resumePreview', resume }),
         changeResume: (resume) => updateFlow({ ...flow, resume }),
       }}

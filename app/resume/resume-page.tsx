@@ -194,6 +194,8 @@ export function ResumePreviewPage() {
       document={resume}
       formKey="new"
       issues={issues}
+      guest={!session}
+      signInHref={signInReturn()}
       downloadPending={downloadPending}
       saveStatus={saveStatus}
       saveMessage={saveMessage}

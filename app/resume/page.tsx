@@ -13,6 +13,7 @@ import { RESUME_COLORS_MAP } from '@lib/utils';
 import OptionsView from './views/options-view';
 import ImportResumePage from './views/import-page';
 import { normalizeResumeTemplate } from '@lib/drafts';
+import { WithResumeHeader } from './views/resume-public-header';
 
 function previewSeed(account: AccountDto | null, template: TemplateKey): PreviewDto {
   if (!account) {
@@ -86,15 +87,27 @@ function ResumeFlow() {
   });
 
   if (isAuthenticating || (isLoading && step === 'fetchingResume')) {
-    return <Loading message="Preparing resume..." />;
+    return (
+      <WithResumeHeader>
+        <Loading message="Preparing resume..." />
+      </WithResumeHeader>
+    );
   }
 
   if (step === 'options') {
-    return <OptionsView />;
+    return (
+      <WithResumeHeader>
+        <OptionsView />
+      </WithResumeHeader>
+    );
   }
 
   if (step === 'importResume') {
-    return <ImportResumePage />;
+    return (
+      <WithResumeHeader>
+        <ImportResumePage />
+      </WithResumeHeader>
+    );
   }
 
   return <ResumePreviewPage />;
