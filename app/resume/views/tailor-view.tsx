@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import { AnswerReview, ProposalReview, ResumeQuestions } from '@components/ai-improve';
 import { Badge, Button, Card, CardContent, Checkbox, Input, Label, Textarea } from '@components/ui';
+import { PageContainer } from '@components/views';
 import { AI_CAP_TITLE } from '@lib/ai-cap';
 import { JOB_DESCRIPTION_MAX, tailoredResumeName } from '@lib/llm/tailor';
 import type { RequirementView } from '@lib/llm/tailor';
@@ -181,7 +182,7 @@ export function TailorView({ tailor, sources, onCreate }: TailorViewProps) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pb-12 pt-20">
+    <PageContainer as="main" className="flex flex-col gap-6 pt-24 pb-12">
       {tailor.step === 'intake' ? <Intake sources={sources} onStart={tailor.start} /> : null}
       {tailor.step === 'loadingQuestions' ? <Pending message="Comparing your resume with the job..." /> : null}
       {tailor.step === 'loadingProposal' ? <Pending message="Tailoring your resume..." /> : null}
@@ -278,6 +279,6 @@ export function TailorView({ tailor, sources, onCreate }: TailorViewProps) {
           </div>
         </section>
       ) : null}
-    </div>
+    </PageContainer>
   );
 }

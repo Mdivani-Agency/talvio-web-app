@@ -9,7 +9,7 @@ import { applyLlmProposal } from '@app/resume/query/use-apply-llm-proposal';
 import { fetchResume } from '@app/resume/query/use-resume';
 import { fetchAllResumes } from '@app/resume/query/use-resumes';
 import { Button } from '@components/ui';
-import { Loading } from '@components/views';
+import { Loading, PageContainer } from '@components/views';
 import { isGeneratedResume, isOpenDraft } from '@lib/adapters/resume.adapter';
 import { signInHref } from '@lib/auth/sign-in-href';
 import { DEFAULT_RESUME_TEMPLATE } from '@lib/drafts';
@@ -98,7 +98,7 @@ function TailorPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 pt-20">
+      <PageContainer as="main" className="flex flex-col gap-3 pt-24 pb-12">
         <h1 className="text-xl font-semibold">Tailor a resume to a job</h1>
         <p className="text-sm text-muted-foreground">Sign in to tailor a resume from your profile or a saved resume.</p>
         <div>
@@ -106,13 +106,13 @@ function TailorPage() {
             <Link href={signInHref('/resume/tailor')}>Sign in</Link>
           </Button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   if (!sources.length && tailor.step === 'intake') {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 pt-20">
+      <PageContainer as="main" className="flex flex-col gap-3 pt-24 pb-12">
         <h1 className="text-xl font-semibold">Tailor a resume to a job</h1>
         <p className="text-sm text-muted-foreground">
           {profile.isError || resumes.isError
@@ -124,7 +124,7 @@ function TailorPage() {
             <Link href="/resume">Create a resume</Link>
           </Button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
