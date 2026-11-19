@@ -61,9 +61,15 @@ export const DRAFT_BANNER = {
   discard: 'Discard draft',
 } as const;
 
-/** The Design tab until MDI-604 restyles it. */
+/** The Design tab: template, accent colour and text size. */
 export const DESIGN_PANEL = {
   template: 'Template',
+  levelsLabel: 'Experience level',
+  levels: [
+    { value: 'entry', name: 'Entry level' },
+    { value: 'mid', name: 'Mid level' },
+    { value: 'senior', name: 'Senior level' },
+  ],
   accent: 'Accent colour',
   textSize: 'Text size',
   sizes: [
@@ -71,6 +77,36 @@ export const DESIGN_PANEL = {
     { value: 'md', name: 'Medium' },
     { value: 'lg', name: 'Large' },
   ],
+} as const;
+
+/** "Use the Modern template, senior level". */
+export const templateButtonLabel = (name: string, levelName: string) =>
+  `Use the ${name} template, ${levelName.toLowerCase()}`;
+
+/** The resume accent colours by `RESUME_COLORS_MAP` key, in the order the Design tab shows them. */
+export const ACCENT_COLOURS = [
+  { key: 'black', name: 'Black' },
+  { key: 'talvio', name: 'Talvio blue' },
+  { key: 'mint', name: 'Mint' },
+  { key: 'ember', name: 'Ember' },
+  { key: 'grayLight', name: 'Grey' },
+  { key: 'brown', name: 'Brown' },
+  { key: 'red', name: 'Rust' },
+  { key: 'yellow', name: 'Gold' },
+] as const;
+
+/** The Generate your PDF dialog. The allowance lines stay in `lib/allowance-copy.ts`. */
+export const GENERATE_DIALOG = {
+  title: 'Generate your PDF',
+  fileName: 'File name',
+  fileNamePlaceholder: 'Enter a file name',
+  label: 'Label (optional)',
+  labelHint: 'Only you see it, in your documents list.',
+  redownloadsFree: 'Re-downloads of a generated PDF are always free.',
+  cancel: 'Cancel',
+  generate: 'Generate and download',
+  download: 'Download',
+  improve: 'Improve with AI first',
 } as const;
 
 /** The Content tab's accordion, in order. `prefixes` are the form paths each section owns. */

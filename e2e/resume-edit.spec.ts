@@ -49,7 +49,7 @@ test('RES-04 edits a draft once and keeps rapid acknowledged saves', async ({ pa
   await waitForRole(draft.userId, 'Rapid Three');
   await expect(page.getByText('Saved to your account')).toBeVisible();
 
-  await chooseTemplate(page, 'Mid Level', 'mid Talvio');
+  await chooseTemplate(page, 'Mid level', 'Talvio');
   await expect.poll(async () => (await listResumes(draft.userId))[0]?.templateKey).toBe('mid-level-talvio');
   await chooseColor(page, '#005BA2');
   await expect.poll(async () => (await listResumes(draft.userId))[0]?.color).toBe('#005BA2');
@@ -269,7 +269,7 @@ test('RES-09 renders long Unicode content across preview pages and style changes
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 
-  await chooseTemplate(page, 'Senior Level', 'senior Mint');
+  await chooseTemplate(page, 'Senior level', 'Mint');
   await waitForPreview(page);
   await chooseFontSize(page, 'L');
   await waitForPreview(page);
