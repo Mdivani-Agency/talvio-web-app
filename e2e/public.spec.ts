@@ -292,7 +292,7 @@ test('PUB-05 the first template is above the fold on a phone', async ({ page }) 
 test('PUB-05b every template preview PNG loads for each experience level', async ({ page }) => {
   await page.goto('/templates');
   const main = page.getByRole('main');
-  for (const level of ['Entry Level', 'Mid Level', 'Senior Level']) {
+  for (const level of ['Entry level', 'Mid level', 'Senior level']) {
     await main.getByRole('button', { name: level, exact: true }).click();
     const previews = main.getByRole('img');
     await expect(previews).toHaveCount(4);

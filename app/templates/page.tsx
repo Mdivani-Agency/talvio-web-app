@@ -1,12 +1,14 @@
 'use client';
 import { redirect } from 'next/navigation';
-import Templates from '../resume/views/templates';
-import { useTemplates } from '@hooks/use-templates';
-import { TEMPLATES_PAGE_HEADING, TEMPLATES_PAGE_INTRO } from '@/lib/templates-page-copy';
 import { useState } from 'react';
 
+import { useTemplates } from '@hooks/use-templates';
+import { TEMPLATES_DEFAULT_LEVEL, type TemplatesPageLevel } from '@/lib/templates-page-copy';
+
+import { TemplatesHeader } from './views/templates-header';
+
 export default function TemplatesPage() {
-  const [level, setLevel] = useState<'entry' | 'mid' | 'senior'>('senior');
+  const [level, setLevel] = useState<TemplatesPageLevel>(TEMPLATES_DEFAULT_LEVEL);
 
   const templates = useTemplates({
     level,
@@ -14,18 +16,9 @@ export default function TemplatesPage() {
   });
 
   return (
-    <main className="w-full">
-      <Templates
-        className="h-auto overflow-visible pt-24 pb-12"
-        headingClassName="text-2xl lg:text-3xl 2xl:text-3xl"
-        templatesContainerClassName='grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-        heading={TEMPLATES_PAGE_HEADING}
-        intro={TEMPLATES_PAGE_INTRO}
-        level={level}
-        onChangeLevel={setLevel}
-      >
-        {templates}
-      </Templates>
+    <main className="mx-auto w-full max-w-[120rem] px-4 pt-10 pb-14 lg:px-10 lg:pt-[7.2rem] lg:pb-24">
+      <TemplatesHeader level={level} onChangeLevel={setLevel} />
+      <div className="mt-7 grid w-full grid-cols-1 gap-2 px-2 md:grid-cols-2 lg:mt-12 lg:grid-cols-4">{templates}</div>
     </main>
   );
 }
