@@ -17,8 +17,12 @@ export const TERMS_LAST_UPDATED = 'October 2026';
 export const PRIVACY_LAST_UPDATED = 'November 2026';
 
 /** Sitemap dates (ISO). Change them with the text and the "Last updated" lines above. */
-export const TERMS_LAST_MODIFIED = '2026-10-07';
-export const PRIVACY_LAST_MODIFIED = '2026-11-16';
+export const TERMS_LAST_MODIFIED = '2026-11-19';
+export const PRIVACY_LAST_MODIFIED = '2026-11-19';
+
+/** Page labels around the documents. They are not part of the legal text. */
+export const LEGAL_ON_THIS_PAGE = 'On this page';
+export const LEGAL_BACK_TO_TOP = 'Back to top';
 
 export const OPERATOR_NAME = 'MDIO';
 export const OPERATOR_HREF = 'https://mdivani.agency';
@@ -29,6 +33,12 @@ export const contactLink = (): LegalInline => ({ text: CONTACT_EMAIL, href: `mai
 export const strong = (text: string): LegalInline => ({ strong: text });
 export const p = (...content: LegalInline[]): LegalBlock => ({ type: 'p', content });
 export const ul = (...items: LegalInline[][]): LegalBlock => ({ type: 'ul', items });
+
+/** Stable anchor for a section, from the number its heading starts with: "5. Free use…" → `section-5`. */
+export function legalSectionId(heading: string, index: number): string {
+  const number = /^(\d+)\./.exec(heading.trim())?.[1];
+  return `section-${number ?? index + 1}`;
+}
 
 /** Plain text of one inline run, used by tests and for checking the copy. */
 export function inlineText(inline: LegalInline): string {
