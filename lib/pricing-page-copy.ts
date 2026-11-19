@@ -27,13 +27,19 @@ export const DAILY_RESET_UTC_HOUR = 0;
 /** The reset time before the browser can show it in local time, and for visitors without JavaScript. */
 export const DAILY_RESET_UTC_LABEL = '00:00 UTC';
 
+/** The next daily reset after `now`. */
+export function nextDailyReset(now: Date = new Date()): Date {
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), DAILY_RESET_UTC_HOUR);
+  return new Date(today > now.getTime() ? today : today + 24 * 60 * 60 * 1000);
+}
+
 /**
- * The daily reset in the visitor's local time, such as "4:00 AM" in UTC+4.
- * `locale` and `timeZone` default to the browser's; tests pass them.
+ * The next daily reset in the visitor's local time, such as "4:00 AM" in UTC+4. It formats the coming reset, not a
+ * fixed date, so a zone on daylight saving time shows this season's offset (New York: 7:00 PM in winter, 8:00 PM in
+ * summer). `locale`, `timeZone` and `now` default to the browser's; tests pass them.
  */
-export function formatDailyResetTime(locale?: string, timeZone?: string): string {
-  const reset = new Date(Date.UTC(2026, 0, 1, DAILY_RESET_UTC_HOUR, 0));
-  return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone }).format(reset);
+export function formatDailyResetTime(locale?: string, timeZone?: string, now: Date = new Date()): string {
+  return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone }).format(nextDailyReset(now));
 }
 
 /** "4:00 AM your time" once the local time is known. */

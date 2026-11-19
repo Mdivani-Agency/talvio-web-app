@@ -12,6 +12,7 @@ import {
   PRICING_PLANS,
   formatDailyResetTime,
   localResetLabel,
+  nextDailyReset,
   pricingPageText,
 } from './pricing-page-copy';
 
@@ -60,10 +61,18 @@ describe('pricing page copy', () => {
   it('resets the daily count at 00:00 UTC and shows it in the local time', () => {
     expect(DAILY_RESET_UTC_HOUR).toBe(0);
     expect(DAILY_RESET_UTC_LABEL).toBe('00:00 UTC');
-    expect(formatDailyResetTime('en-US', 'Asia/Tbilisi')).toBe('4:00 AM');
-    expect(formatDailyResetTime('en-US', 'America/New_York')).toBe('7:00 PM');
-    expect(formatDailyResetTime('en-GB', 'UTC')).toBe('0:00');
+    const winter = new Date('2026-01-15T12:00:00Z');
+    const summer = new Date('2026-07-15T12:00:00Z');
+    expect(formatDailyResetTime('en-US', 'Asia/Tbilisi', winter)).toBe('4:00 AM');
+    expect(formatDailyResetTime('en-GB', 'UTC', winter)).toBe('0:00');
+    // Daylight saving time: the offset is the coming reset's, not a fixed winter date's.
+    expect(formatDailyResetTime('en-US', 'America/New_York', winter)).toBe('7:00 PM');
+    expect(formatDailyResetTime('en-US', 'America/New_York', summer)).toBe('8:00 PM');
+    expect(formatDailyResetTime('en-GB', 'Europe/London', summer)).toBe('1:00');
     expect(localResetLabel('4:00 AM')).toBe('4:00 AM your time');
+    expect(nextDailyReset(new Date('2026-07-15T12:00:00Z')).toISOString()).toBe('2026-07-16T00:00:00.000Z');
+    expect(nextDailyReset(new Date('2026-07-15T00:00:00Z')).toISOString()).toBe('2026-07-16T00:00:00.000Z');
+    expect(nextDailyReset(new Date('2026-12-31T23:59:00Z')).toISOString()).toBe('2027-01-01T00:00:00.000Z');
     expect(pricingPageText()).toContain('Daily count resets at 00:00 UTC');
   });
 });
