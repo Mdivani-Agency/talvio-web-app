@@ -28,3 +28,15 @@ export const ERROR_RETRY_LABEL = 'Try again';
 export const GLOBAL_ERROR_TITLE = 'Talvio hit a problem';
 export const GLOBAL_ERROR_BODY = 'Reload the page. Your saved work is safe.';
 export const GLOBAL_ERROR_RELOAD_LABEL = 'Reload the page';
+
+export const NEW_RESUME_LABEL = 'Start a new resume';
+export const NEW_RESUME_HREF = '/resume';
+
+export const RESUME_SIGN_IN_TITLE = 'Sign in to open this resume';
+export const RESUME_SIGN_IN_BODY = 'Saved resumes live in your account. Sign in and we bring you straight back here.';
+export const RESUME_SIGN_IN_LABEL = 'Sign in';
+
+export const RESUME_NOT_FOUND_TITLE = "We can't find this resume";
+export const RESUME_NOT_FOUND_BODY = 'It may have been deleted, or it belongs to another account.';
+export const RESUME_NOT_FOUND_DOCUMENTS_LABEL = 'Go to documents';
+export const RESUME_NOT_FOUND_DOCUMENTS_HREF = '/account/documents';

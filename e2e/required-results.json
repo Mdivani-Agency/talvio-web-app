@@ -22,6 +22,7 @@
     "SEC-01 another user and an anonymous client cannot read or change a resume",
     "SEC-02 pdf and presign routes reject bad auth and ignore forged ownership",
     "SEC-03 provider routes return defined errors without leaking secrets",
+    "SEC-04 a guest on a saved resume link is asked to sign in and lands back on the resume",
     "PROF-01 manual profile saves from the form without AI and survives reload",
     "PROF-02 rejects invalid profile input and keeps optional sections empty",
     "PROF-02 edit remove and reorder survive a reload",

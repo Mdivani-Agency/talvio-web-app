@@ -10,6 +10,9 @@ import {
   NOT_FOUND_CODE,
   NOT_FOUND_LINKS,
   NOT_FOUND_TITLE,
+  RESUME_NOT_FOUND_TITLE,
+  RESUME_SIGN_IN_BODY,
+  RESUME_SIGN_IN_TITLE,
   SUPPORT_EMAIL,
 } from './status-copy';
 
@@ -22,6 +25,9 @@ describe('status copy', () => {
     expect(ERROR_BODY).toContain('Your saved work is safe.');
     expect(GLOBAL_ERROR_TITLE).toBe('Talvio hit a problem');
     expect(GLOBAL_ERROR_BODY).toBe('Reload the page. Your saved work is safe.');
+    expect(RESUME_SIGN_IN_TITLE).toBe('Sign in to open this resume');
+    expect(RESUME_SIGN_IN_BODY).toContain('bring you straight back here');
+    expect(RESUME_NOT_FOUND_TITLE).toBe("We can't find this resume");
   });
 
   it('points at the one support address and at real routes', () => {
@@ -30,7 +36,7 @@ describe('status copy', () => {
   });
 
   it('keeps headings in sentence case', () => {
-    for (const title of [NOT_FOUND_TITLE, ERROR_TITLE, GLOBAL_ERROR_TITLE]) {
+    for (const title of [NOT_FOUND_TITLE, ERROR_TITLE, GLOBAL_ERROR_TITLE, RESUME_SIGN_IN_TITLE, RESUME_NOT_FOUND_TITLE]) {
       const [, ...rest] = title.split(' ');
       for (const word of rest) {
         if (word !== 'Talvio') expect(word).toBe(word.toLowerCase());
