@@ -3,6 +3,11 @@ import { cn } from '@lib/utils';
 
 import type { SectionStatus } from './profile-sections';
 
+/** What a screen reader hears for a section link: "Contact information, has errors, Fix 1". */
+export function sectionLinkLabel(section: SectionStatus): string {
+  return [section.title, SECTION_STATUS_TEXT[section.state], section.note].filter(Boolean).join(', ');
+}
+
 /** The side list of profile sections: each links to its card and shows a done or a fix mark. */
 export function SectionNav({ sections, className }: { sections: SectionStatus[]; className?: string }) {
   return (
@@ -12,6 +17,7 @@ export function SectionNav({ sections, className }: { sections: SectionStatus[];
           <li key={section.id}>
             <a
               href={`#${section.id}`}
+              aria-label={sectionLinkLabel(section)}
               className="flex min-h-[4rem] items-center gap-2.5 rounded-md px-2 text-sm text-foreground hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               <span
@@ -25,10 +31,7 @@ export function SectionNav({ sections, className }: { sections: SectionStatus[];
               >
                 {section.state === 'done' ? '✓' : section.state === 'error' ? '!' : null}
               </span>
-              <span className="flex-1">
-                {section.title}
-                <span className="sr-only">, {SECTION_STATUS_TEXT[section.state]}</span>
-              </span>
+              <span className="flex-1">{section.title}</span>
               {section.note ? (
                 <span
                   data-allow-small-text
