@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ACCOUNT_NAV_LINKS,
+  DOCUMENT_PREVIEW_LOADING,
+  DOCUMENT_PREVIEW_UNAVAILABLE,
+  documentPreviewAlt,
   DOCUMENTS_EMPTY_BODY,
   DOCUMENTS_EMPTY_TITLE,
   DOCUMENTS_ERROR_BODY,
@@ -131,5 +134,11 @@ describe('account copy', () => {
     expect(documentFileName('Notes', '')).toBe('Notes');
     expect(openDocumentLabel('Short')).toBe('Open Short');
     expect(downloadDocumentLabel('Library resume')).toBe('Download Library resume');
+  });
+
+  it('names the preview states and image', () => {
+    expect(DOCUMENT_PREVIEW_LOADING).toBe('Loading preview');
+    expect(DOCUMENT_PREVIEW_UNAVAILABLE).toBe('Preview not available');
+    expect(documentPreviewAlt('Library resume')).toBe('First page of Library resume');
   });
 });
