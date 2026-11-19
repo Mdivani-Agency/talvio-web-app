@@ -53,3 +53,25 @@ export function ErrorSummary({ errors, onSelect, ref }: ErrorSummaryProps) {
     </div>
   );
 }
+
+/**
+ * Move focus to the control an error belongs to. A list item (a skill, a saved experience) has no control of its own,
+ * so this falls back to the control the error's label names, then to the section card itself rather than an
+ * unrelated field.
+ */
+export function focusFieldError(root: HTMLElement | null, error: FormFieldError) {
+  const section = root?.querySelector<HTMLElement>(`#${error.section}`);
+  if (!section) return;
+  section.scrollIntoView?.({ block: 'start' });
+  const byLabel = [...section.querySelectorAll('label')].find((label) => label.textContent?.trim() === error.label);
+  const target =
+    section.querySelector<HTMLElement>(`[name="${CSS.escape(error.path)}"]`) ??
+    (byLabel?.control as HTMLElement | null | undefined) ??
+    section.querySelector<HTMLElement>('[aria-invalid="true"]');
+  if (target) {
+    target.focus();
+    return;
+  }
+  section.tabIndex = -1;
+  section.focus();
+}

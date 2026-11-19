@@ -16,7 +16,7 @@ import { useStore } from '@tanstack/react-form';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { DRAFT_NOTE, PROFILE_SECTIONS } from '@/lib/onboarding-copy';
 
-import { ErrorSummary } from './error-summary';
+import { ErrorSummary, focusFieldError } from './error-summary';
 import { SectionHeading } from './forms/section-heading';
 import { SectionNav } from './section-nav';
 import { collectFieldErrors, sectionStatuses, type FormFieldError, type ProfileSectionId } from './profile-sections';
@@ -94,16 +94,7 @@ export const AccountForm = ({
     }
   };
 
-  const focusField = (error: FormFieldError) => {
-    const root = formRef.current;
-    const section = root?.querySelector<HTMLElement>(`#${error.section}`);
-    const target =
-      root?.querySelector<HTMLElement>(`[name="${CSS.escape(error.path)}"]`) ??
-      section?.querySelector<HTMLElement>('[aria-invalid="true"]') ??
-      section?.querySelector<HTMLElement>('input, textarea, button, [tabindex]');
-    section?.scrollIntoView({ block: 'start' });
-    target?.focus();
-  };
+  const focusField = (error: FormFieldError) => focusFieldError(formRef.current, error);
 
   const saveButton = (className: string) => (
     <Button className={className} onClick={() => void handleSubmit()} type="button" loading={submitting}>
