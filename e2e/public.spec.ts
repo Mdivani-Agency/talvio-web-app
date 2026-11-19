@@ -618,6 +618,41 @@ harness('PUB-01 a signed-in visit to the root opens the account', async ({ page,
   await expect(page.getByRole('heading', { level: 1, name: 'Ada Owner' })).toBeVisible();
 });
 
+test('PUB-09 public pages fill the width with the shared gutter, lined up with the header', async ({ page }) => {
+  // PageContainer: no maximum width, 16px gutter on phones, 40px from lg; the header uses the same gutter.
+  const contentBox = () =>
+    page.evaluate(() => {
+      const inner = (element: Element | null) => {
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          left: Math.round(rect.left + parseFloat(style.paddingLeft)),
+          right: Math.round(rect.right - parseFloat(style.paddingRight)),
+        };
+      };
+      return {
+        main: inner(document.querySelector('main')),
+        header: inner(document.querySelector('header')),
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+
+  for (const [width, gutter] of [
+    [1920, 40],
+    [390, 16],
+  ] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const path of ['/', '/templates', '/blog', '/terms', '/pricing']) {
+      await page.goto(path);
+      const box = await contentBox();
+      expect(box.scrollWidth, `${path} at ${width}px`).toBeLessThanOrEqual(width);
+      expect(box.main, `${path} at ${width}px`).toEqual({ left: gutter, right: width - gutter });
+      expect(box.header, `${path} header at ${width}px`).toEqual({ left: gutter, right: width - gutter });
+    }
+  }
+});
+
 test('PUB-08 retired pricing and purchase pages redirect and no public page links to them', async ({ page, request }) => {
   const pricing = await request.get('/pricing', { maxRedirects: 0 });
   expect(pricing.status()).toBe(307);
