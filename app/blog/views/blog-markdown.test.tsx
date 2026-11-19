@@ -85,6 +85,16 @@ describe('BlogMarkdown with rich content', () => {
     expect(container.querySelector('s')?.textContent).toBe('strike');
   });
 
+  it('styles quotes as cards and keeps tables inside a bordered, focusable region', () => {
+    const quote = container.querySelector('blockquote');
+    expect(quote?.className).toContain('bg-card');
+    expect(quote?.className).not.toContain('border-l-4');
+    const region = container.querySelector('[role="region"][aria-label="Table"]');
+    expect(region?.getAttribute('tabindex')).toBe('0');
+    expect(region?.className).toContain('border-input');
+    expect(region?.querySelector('thead')?.className).toContain('bg-card');
+  });
+
   it('keeps Talvio links internal and marks other links external', () => {
     const talvio = container.querySelector('a[href="/templates"]');
     expect(talvio?.getAttribute('rel')).toBeNull();

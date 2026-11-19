@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { BLOG_UNAVAILABLE_TITLE } from '../lib/blog-copy';
+import { BLOG_GO_HOME_LABEL, BLOG_RETRY_LABEL, BLOG_UNAVAILABLE_TITLE } from '../lib/blog-copy';
 
 import { BLOG_E2E_TOKEN } from './services/blog-api.mjs';
 
@@ -54,6 +54,9 @@ test('BLOG-02 an upstream failure answers with an error status, not a 404 or an 
 
   await page.goto('/blog/detail-outage');
   await expect(page.getByRole('heading', { name: BLOG_UNAVAILABLE_TITLE })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: BLOG_RETRY_LABEL })).toBeVisible();
+  await expect(page.getByRole('link', { name: BLOG_GO_HOME_LABEL })).toHaveAttribute('href', '/');
 });
 
 test('BLOG-03 hostile Markdown cannot run script or load images from other hosts', async ({ page }) => {

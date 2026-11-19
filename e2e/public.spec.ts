@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { BLOG_READ_ARTICLE_LABEL } from '../lib/blog-copy';
 import { INDEXABLE_PUBLIC_PATHS } from '../lib/public-metadata';
 
 import { signInWithLocalMagicLink } from './fixtures/auth';
@@ -223,6 +224,57 @@ test('PUB-05e the FAQ opens its first answer and toggles by keyboard; the closin
   for (const tile of tiles) {
     expect(tile.inside).toBe(true);
     expect(tile.right).toBeLessThanOrEqual(390);
+  }
+});
+
+test('PUB-05f the blog index leads with the newest post and lists every other post once in the grid', async ({ page }) => {
+  // Posts come from the e2e blog API simulator, which always has posts; the empty state is covered in `app/blog/page.test.tsx`.
+  await page.goto('/blog');
+  const main = page.getByRole('main');
+  const lead = main.locator('[data-slot=card]').first();
+  await expect(lead.getByRole('link')).toHaveAccessibleName('E2E talvio guide');
+  // Read article is decoration beside the title link, so the card stays one link named by its title.
+  await expect(lead.getByText(BLOG_READ_ARTICLE_LABEL)).toHaveAttribute('aria-hidden', 'true');
+  await expect(main.getByRole('listitem').getByRole('link', { name: 'E2E talvio guide' })).toHaveCount(0);
+
+  const hrefs = await main.getByRole('link').evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+  const posts = hrefs.filter((href) => href?.startsWith('/blog/'));
+  expect(posts[0]).toBe('/blog/talvio-guide');
+  expect(new Set(posts).size).toBe(posts.length);
+  await expect(main.getByRole('listitem')).toHaveCount(posts.length - 1);
+
+  // Clicking anywhere on a card opens its post.
+  const box = (await lead.boundingBox())!;
+  await page.mouse.click(box.x + 20, box.y + box.height - 12);
+  await expect(page).toHaveURL(/\/blog\/talvio-guide$/);
+});
+
+test('PUB-05g a blog article reads in a 720px column with a 1.75 line height and ends with the bordered panel', async ({ page }) => {
+  for (const viewport of [
+    { width: 1280, height: 900, fontSize: 17 },
+    { width: 390, height: 844, fontSize: 16 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/blog/talvio-guide');
+    const article = page.getByRole('main').locator('article');
+    const body = await article.locator('p').filter({ hasText: 'Readable paragraph text' }).first().evaluate((paragraph) => {
+      const style = getComputedStyle(paragraph);
+      return { fontSize: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight) };
+    });
+    expect(body.fontSize, `${viewport.width}px`).toBe(viewport.fontSize);
+    expect(body.lineHeight / body.fontSize, `${viewport.width}px`).toBeCloseTo(1.75, 2);
+    expect((await article.boundingBox())!.width).toBeLessThanOrEqual(720);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    const panel = page.getByRole('heading', { name: 'Start your first resume', level: 2 }).locator('xpath=..');
+    const panelStyle = await panel.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { background: style.backgroundColor, border: parseFloat(style.borderTopWidth) };
+    });
+    expect(panelStyle.background).toBe('rgba(0, 0, 0, 0)');
+    expect(panelStyle.border).toBe(1);
+    await expect(panel.getByRole('link', { name: 'Start free', exact: true })).toHaveAttribute('href', '/auth/sign-in');
+    await expect(panel.getByRole('link', { name: 'See templates', exact: true })).toHaveAttribute('href', '/templates');
   }
 });
 
