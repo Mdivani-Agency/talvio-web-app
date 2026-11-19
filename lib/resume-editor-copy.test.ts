@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DRAFT_BANNER,
+  IMPORT_SCREEN,
+  START_SCREEN,
   RESUME_SECTIONS,
   SECTION_SUMMARY,
   downloadErrorSummaryTitle,
@@ -54,5 +56,14 @@ describe('resume editor copy', () => {
     expect(SECTION_SUMMARY.fix(['Email', 'City'])).toBe('Fix 2 fields: email, city');
     expect(downloadErrorSummaryTitle(1)).toBe('Fix 1 field to download your PDF');
     expect(downloadErrorSummaryTitle(3)).toBe('Fix 3 fields to download your PDF');
+  });
+
+  it('uses the approved start and import copy, without AI claims', () => {
+    expect(START_SCREEN.title).toBe('Start a new resume');
+    expect(START_SCREEN.import.title).toBe('Import a resume');
+    expect(START_SCREEN.manual.title).toBe('Fill it in yourself');
+    expect(IMPORT_SCREEN.title).toBe('Import your resume');
+    const text = JSON.stringify({ START_SCREEN, IMPORT_SCREEN });
+    expect(text).not.toMatch(/\bAI\b|tailored questions/i);
   });
 });

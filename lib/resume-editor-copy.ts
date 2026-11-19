@@ -165,3 +165,32 @@ export const SECTION_SUMMARY = {
 /** The error summary's heading after a download finds issues. */
 export const downloadErrorSummaryTitle = (count: number) =>
   `Fix ${count} ${count === 1 ? 'field' : 'fields'} to download your PDF`;
+
+/** Start a new resume: how to fill it in. A guest has no profile, so the second card says so. */
+export const START_SCREEN = {
+  title: 'Start a new resume',
+  intro: 'Choose how to fill it in. You can change anything later in the editor.',
+  import: {
+    title: 'Import a resume',
+    body: 'Upload a PDF of your current resume. We fill in the editor for you to check.',
+    action: 'Upload a PDF',
+  },
+  manual: {
+    title: 'Fill it in yourself',
+    body: 'Start from your profile and edit it section by section.',
+    guestBody: 'Start from a blank resume and edit it section by section.',
+    action: 'Open the editor',
+  },
+} as const;
+
+/** Import your resume: one PDF, parsed into the editor. */
+export const IMPORT_SCREEN = {
+  back: 'Choose another way',
+  title: 'Import your resume',
+  intro: 'Upload a PDF. We read it and fill in the editor. Check every section before you download.',
+  drop: 'Drag your resume PDF here',
+  dropPhone: 'Choose your resume PDF',
+  pdfOnly: 'PDF files only',
+  choose: 'Choose a PDF',
+  invalid: 'Invalid file type. Please upload a PDF file.',
+} as const;
