@@ -25,3 +25,24 @@ export const TEMPLATES_LEVELS: ReadonlyArray<{ id: TemplatesPageLevel; label: st
 ];
 
 export const TEMPLATES_DEFAULT_LEVEL: TemplatesPageLevel = 'senior';
+
+/** The template card's call to action: on hover or focus from md, always beside the name on phone. */
+export const TEMPLATES_USE_LABEL = 'Use template';
+
+/** Accessible name of a template card, e.g. "Use the Modern template, senior level". */
+export function templateCardLabel(name: string, levelLabel: string): string {
+  return `Use the ${name} template, ${levelLabel.toLowerCase()}`;
+}
+
+/** The phone carousel: its label, its slides and its controls. */
+export function templatesCarouselLabel(levelLabel: string): string {
+  return `${levelLabel} templates`;
+}
+export function templatesSlideLabel(position: number, total: number): string {
+  return `${position} of ${total}`;
+}
+export function templatesDotLabel(name: string): string {
+  return `Show ${name}`;
+}
+export const TEMPLATES_PREVIOUS_LABEL = 'Previous template';
+export const TEMPLATES_NEXT_LABEL = 'Next template';

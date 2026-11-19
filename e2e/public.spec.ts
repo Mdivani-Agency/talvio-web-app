@@ -278,6 +278,59 @@ test('PUB-05g a blog article reads in a 720px column with a 1.75 line height and
   }
 });
 
+test('PUB-05h on a phone the templates swipe in a carousel with arrows and dots, and reset on a level change', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/templates');
+  const carousel = page.getByRole('region', { name: 'Senior level templates' });
+  const track = carousel.getByRole('list');
+  const current = () => carousel.locator('[aria-current="true"]');
+  await expect(carousel.getByRole('listitem')).toHaveCount(4);
+  await expect(current()).toHaveAccessibleName('Show Modern');
+  await expect(carousel.getByRole('button', { name: 'Previous template' })).toBeDisabled();
+
+  await carousel.getByRole('button', { name: 'Next template' }).click();
+  await expect(current()).toHaveAccessibleName('Show Ember');
+  await expect.poll(() => track.evaluate((list) => list.scrollLeft)).toBeGreaterThan(0);
+
+  await carousel.getByRole('button', { name: 'Show Talvio' }).click();
+  await expect(current()).toHaveAccessibleName('Show Talvio');
+  await expect(carousel.getByRole('button', { name: 'Next template' })).toBeDisabled();
+
+  // A swipe is a scroll of the row; the dots follow it.
+  await track.evaluate((list) => list.scrollTo({ left: 0 }));
+  await expect(current()).toHaveAccessibleName('Show Modern');
+
+  // Only the row scrolls sideways, never the page.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await page.getByRole('button', { name: 'Entry level', exact: true }).click();
+  const entry = page.getByRole('region', { name: 'Entry level templates' });
+  await expect(entry.locator('[aria-current="true"]')).toHaveAccessibleName('Show Modern');
+  await expect.poll(() => entry.getByRole('list').evaluate((list) => list.scrollLeft)).toBe(0);
+  await entry.getByRole('button', { name: 'Use the Modern template, entry level' }).click();
+  await expect(page).toHaveURL(/\/resume\?template=entry-level-modern$/);
+});
+
+test('PUB-05i every template in the phone carousel has its own position, including on wide phones', async ({ page }) => {
+  for (const width of [390, 700]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/templates');
+    const carousel = page.getByRole('region', { name: 'Senior level templates' });
+    const track = carousel.getByRole('list');
+    const positions: number[] = [];
+    for (const name of ['Modern', 'Ember', 'Mint', 'Talvio']) {
+      await carousel.getByRole('button', { name: `Show ${name}`, exact: true }).click();
+      // The dot stays on the card that was asked for once the row stops scrolling.
+      await expect(carousel.locator('[aria-current="true"]'), `${width}px ${name}`).toHaveAccessibleName(`Show ${name}`);
+      await expect.poll(async () => track.evaluate((list) => list.scrollLeft)).not.toBe(positions.at(-1));
+      positions.push(await track.evaluate((list) => list.scrollLeft));
+    }
+    expect(new Set(positions).size, `${width}px`).toBe(4);
+    await expect(carousel.getByRole('button', { name: 'Next template' })).toBeDisabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
+});
+
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/templates');
