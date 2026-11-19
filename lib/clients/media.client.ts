@@ -17,18 +17,29 @@ export type PresignedUpload = {
   key: string;
 };
 
-export const getDocuments = async (userId: string) => {
-  const response = await authedFetch(`${MEDIA_API_URL}/${userId}/records`, {
+/** Records per request. The media service accepts 50, 100 or 200 (`limit`), and 50 is its default. */
+export const DOCUMENTS_PAGE_SIZE = 50;
+
+export type DocumentsPage = { items: MediaItem[]; nextToken?: string };
+
+/**
+ * One page of a user's generated PDFs. Pass the `nextToken` from the previous page to get the next one; a page
+ * without a `nextToken` is the last.
+ */
+export const getDocuments = async (userId: string, nextToken?: string): Promise<DocumentsPage> => {
+  const params = new URLSearchParams({ limit: String(DOCUMENTS_PAGE_SIZE) });
+  if (nextToken) params.set('nextToken', nextToken);
+  const response = await authedFetch(`${MEDIA_API_URL}/${userId}/records?${params}`, {
     method: 'GET',
   });
   if (!response.ok) {
     throw new Error('Could not load documents');
   }
-  const data = (await response.json()) as { items?: MediaItem[]; nextToken?: string };
+  const data = (await response.json()) as { items?: MediaItem[]; nextToken?: string | null };
   if (!Array.isArray(data.items)) {
     throw new Error('Could not load documents');
   }
-  return { items: data.items, nextToken: data.nextToken };
+  return { items: data.items, nextToken: data.nextToken || undefined };
 };
 
 export const fetchPdfFile = async (publicUrl: string) => {

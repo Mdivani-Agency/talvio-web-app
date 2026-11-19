@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ACCOUNT_NAV_LINKS,
+  DOCUMENTS_MORE_ERROR,
   DOCUMENT_PREVIEW_LOADING,
   DOCUMENT_PREVIEW_UNAVAILABLE,
   documentPreviewAlt,
@@ -123,6 +124,7 @@ describe('account copy', () => {
     // e2e/documents.spec.ts checks the failed-list texts.
     expect(DOCUMENTS_ERROR_TITLE).toBe('Could not load your resumes');
     expect(DOCUMENTS_ERROR_BODY).toContain('This is not an empty library.');
+    expect(DOCUMENTS_MORE_ERROR).toBe('Could not load more resumes. Check your connection and try again.');
   });
 
   it('describes each document file', () => {

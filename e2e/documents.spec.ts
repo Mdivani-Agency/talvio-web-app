@@ -92,3 +92,36 @@ test('DOC-02 a preview that cannot load says so, and Download still works', asyn
   await expect(card.getByRole('link', { name: 'Open Blocked preview' })).toBeHidden();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test('DOC-03 Load more pages through every PDF, and a failed page keeps the loaded ones', async ({ page, personas }) => {
+  const owner = persona(personas, 'complete');
+  // The paged scenarios shrink media-service pages to 2 records, so three files span two pages.
+  await setScenario('records_paged');
+  for (const name of ['Paged one', 'Paged two', 'Paged three']) {
+    await uploadDocument(owner.userId, name);
+  }
+  await openSignedIn(page, owner, '/account/documents');
+  const cards = page.getByTestId('document-card');
+  const loadMore = page.getByRole('button', { name: 'Load more' });
+  await expect(cards).toHaveCount(2);
+  await loadMore.click();
+  await expect(cards).toHaveCount(3);
+  await expect(page.getByRole('link', { name: 'Download Paged three' })).toBeVisible();
+  await expect(loadMore).toHaveCount(0);
+
+  // The next page fails: an error with Try again under the two loaded files, never an empty library.
+  await setScenario('records_paged_next_error');
+  await page.reload();
+  await expect(cards).toHaveCount(2);
+  await loadMore.click();
+  const failed = page.getByRole('alert').filter({ hasText: 'Could not load more resumes.' });
+  await expect(failed).toBeVisible();
+  await expect(cards).toHaveCount(2);
+  await expect(page.getByRole('heading', { name: 'No resume PDFs yet' })).toHaveCount(0);
+
+  await setScenario('records_paged');
+  await failed.getByRole('button', { name: 'Try again' }).click();
+  await expect(cards).toHaveCount(3);
+  await expect(failed).toHaveCount(0);
+  await expect(loadMore).toHaveCount(0);
+});
