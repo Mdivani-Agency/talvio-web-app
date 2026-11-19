@@ -10,6 +10,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 0 : 0,
   workers: 1,
+  // CI stops after 3 failures: one broken flow fails several tests in a row, and each failure waits out its timeout.
+  // Locally every test runs, so one run shows every failure.
+  maxFailures: process.env.CI ? 3 : 0,
+  // Every test fits the 60s default; the slowest green CI runs take under 30s. Do not raise it per test or per file.
   timeout: 60_000,
   expect: { timeout: 15_000 },
   reporter: [

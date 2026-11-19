@@ -82,7 +82,7 @@ export async function chooseManual(page: Page) {
 }
 
 export async function waitForPreview(page: Page) {
-  await expect(page.getByText(/Page \d+ of [1-9]/)).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByText(/Page \d+ of [1-9]/)).toBeVisible({ timeout: 30_000 });
 }
 
 export async function chooseTemplate(page: Page, level: string, imageName: string) {
@@ -162,7 +162,7 @@ export async function generateFromModal(page: Page, filename: string, label?: st
   }
   const download = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'Generate and Download Resume' }).click();
-  await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 30_000 });
   await download;
   return recordedDownloads(page);
 }

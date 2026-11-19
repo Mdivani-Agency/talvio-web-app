@@ -4,7 +4,6 @@ import { expect, test } from './fixtures/test';
 import { openSignedIn, persona, resetAndGuard, resumeRow } from './fixtures/resume-ui';
 import { listResumes, seedProfile, seedResume } from './fixtures/resumes';
 
-test.describe.configure({ timeout: 180_000 });
 
 test.beforeEach(async ({ page }) => {
   await resetAndGuard(page);

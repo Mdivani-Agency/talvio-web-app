@@ -491,7 +491,6 @@ for (const viewport of [
   { width: 1440, height: 900 },
 ]) {
   test(`PUB-07 public pages pass WCAG AA, keep 16px text and fit ${viewport.width}px`, async ({ page }) => {
-    test.setTimeout(120_000);
     await page.setViewportSize(viewport);
     for (const path of PUBLIC_PAGES) {
       await page.goto(path);
@@ -524,7 +523,6 @@ for (const viewport of [
 }
 
 test('PUB-07 public pages pass WCAG AA contrast in dark mode', async ({ page }) => {
-  test.setTimeout(120_000);
   await page.emulateMedia({ colorScheme: 'dark' });
   for (const path of PUBLIC_PAGES) {
     await page.goto(path);
