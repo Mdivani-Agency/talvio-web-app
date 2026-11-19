@@ -1,4 +1,4 @@
-import { TabNavigation } from '@components/views/tabs';
+import { Check, ChevronDown, CircleAlert } from 'lucide-react';
 import { ProfileForm } from '@app/account/create/views/forms/profile.form';
 import { HighlightsForm } from '@app/account/create/views/forms/highlights.form';
 import { ExperienceView } from '@app/account/create/views/experience';
@@ -10,7 +10,17 @@ import { hasFieldError } from '@lib/forms/errors';
 import { normalizeResumeDocument, type ResumeFieldIssue } from '@lib/models/resume-document';
 import { resumeDraftSchema } from '@lib/schema/resume.schema';
 import type { ResumeForm } from '@lib/types';
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { cn } from '@lib/utils';
+import { downloadErrorSummaryTitle, type ResumeSectionId } from '@/lib/resume-editor-copy';
+
+import {
+  resumeFieldLabel,
+  resumeSectionOf,
+  resumeSectionStates,
+  resumeSectionTitle,
+  type ResumeSectionState,
+} from './resume-sections';
 import { useStore } from '@tanstack/react-form';
 
 type ResumeDocumentFormProps = {
@@ -18,12 +28,6 @@ type ResumeDocumentFormProps = {
   issues?: ResumeFieldIssue[];
   onSubmit: (data: ResumeForm) => void;
 };
-
-function issueOn(issues: ResumeFieldIssue[] | undefined, prefixes: string[]) {
-  return (issues ?? []).some((issue) =>
-    prefixes.some((prefix) => issue.path === prefix || issue.path.startsWith(`${prefix}.`)),
-  );
-}
 
 function documentDefaults(values: ResumeForm): ResumeForm {
   return {
@@ -73,109 +77,203 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
   }, [onSubmit, values]);
 
   const errorMap = useStore(form.store, (state) => state.errorMap);
-  const profileHasError = (Boolean(errorMap) && hasFieldError(form, 'profile')) || issueOn(issues, ['profile']);
-  const contactsHasError = hasFieldError(form, 'contacts') || hasFieldError(form, 'location') || issueOn(issues, ['contacts', 'location']);
-  const skillsHasError = hasFieldError(form, 'skills')
-    || hasFieldError(form, 'languages')
-    || hasFieldError(form, 'links')
-    || hasFieldError(form, 'tools')
-    || issueOn(issues, ['skills', 'languages', 'links', 'tools']);
-  const experienceHasError = hasFieldError(form, 'experience') || issueOn(issues, ['experience']);
-  const educationHasError = hasFieldError(form, 'education') || issueOn(issues, ['education']);
-  const projectsHasError = hasFieldError(form, 'projects') || issueOn(issues, ['projects']);
+  const formErrors = new Set<ResumeSectionId>();
+  if (Boolean(errorMap) && hasFieldError(form, 'profile')) formErrors.add('about');
+  if (hasFieldError(form, 'contacts') || hasFieldError(form, 'location')) formErrors.add('contact');
+  if (['skills', 'languages', 'links', 'tools'].some((key) => hasFieldError(form, key))) formErrors.add('highlights');
+  if (hasFieldError(form, 'experience')) formErrors.add('experience');
+  if (hasFieldError(form, 'education')) formErrors.add('education');
+  if (hasFieldError(form, 'projects')) formErrors.add('projects');
+  const sections = resumeSectionStates(values, issues, formErrors);
+
+  // One section is open at a time, About you first. A download that finds issues opens the first one with an issue.
+  const [open, setOpen] = useState<ResumeSectionId | null>(() =>
+    issues?.length ? resumeSectionOf(issues[0]!.path) : 'about',
+  );
+  const [seenIssues, setSeenIssues] = useState(issues);
+  if (issues !== seenIssues) {
+    setSeenIssues(issues);
+    if (issues?.length) {
+      setOpen(resumeSectionOf(issues[0]!.path));
+    }
+  }
+  const rootRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (issues?.length) {
+      summaryRef.current?.focus();
+    }
+  }, [issues]);
+
+  const focusIssue = (issue: ResumeFieldIssue) => {
+    const id = resumeSectionOf(issue.path);
+    setOpen(id);
+    requestAnimationFrame(() => {
+      const panel = rootRef.current?.querySelector<HTMLElement>(`#${panelId(id)}`);
+      if (!panel) return;
+      panel.scrollIntoView?.({ block: 'nearest' });
+      const direct = panel.querySelector<HTMLElement>(`[name="${CSS.escape(issue.path)}"]`);
+      if (direct) {
+        direct.focus();
+        return;
+      }
+      const label = resumeFieldLabel(issue.path).split(', ').pop() ?? '';
+      // An issue inside a list entry (experience.0.startDate) needs that entry's editor open: its fields only mount on Edit.
+      const index = entryIndexOf(issue.path);
+      const row = index === null ? null : panel.querySelectorAll<HTMLElement>('[draggable]')[index];
+      const edit = row?.querySelector<HTMLButtonElement>('button[aria-label^="Edit "]');
+      if (edit) {
+        edit.click();
+        requestAnimationFrame(() => focusByLabel(panel, label));
+        return;
+      }
+      focusByLabel(panel, label);
+    });
+  };
+
+  const body: Record<ResumeSectionId, React.ReactNode> = {
+    about: <ProfileForm form={form} />,
+    contact: <ContactsForm form={form} fields={RESUME_CONTACT_FIELDS} heading={false} />,
+    highlights: <HighlightsForm form={form} heading={false} />,
+    experience: <ExperienceView form={form} documentMode heading={false} />,
+    education: <EducationView form={form} documentMode heading={false} />,
+    projects: <ProjectsView form={form} documentMode heading={false} />,
+  };
 
   return (
-    <div className="flex h-full w-full flex-col">
-      {issues?.length ? (
-        <ul className="mb-4 space-y-1 px-4 text-sm text-destructive" aria-label="Resume issues">
-          {issues.map((issue) => (
-            <li key={`${issue.path}:${issue.message}`}>
-              {issue.path}: {issue.message}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    <TabNavigation className={'w-full h-full'} withActionButtons={true}>
-      <TabNavigation.TabContent
-        title={'Personal Details'}
-        icon={'User'}
-        validate={async () => {
-          const errors = await Promise.resolve(form.validateField('profile', 'submit'));
-          return errors.length === 0;
-        }}
-        hasError={profileHasError}
-      >
-        <section className="mt-8">
-          <ProfileForm form={form} />
-        </section>
-      </TabNavigation.TabContent>
-      <TabNavigation.TabContent
-        title={'Contact Information'}
-        icon={'Mail'}
-        validate={async () => {
-          const contactErrors = await Promise.resolve(form.validateField('contacts', 'submit'));
-          const locationErrors = await Promise.resolve(form.validateField('location', 'submit'));
-          return contactErrors.length === 0 && locationErrors.length === 0;
-        }}
-        hasError={contactsHasError}
-      >
-        <section className="mt-8">
-          <ContactsForm form={form} fields={RESUME_CONTACT_FIELDS} />
-        </section>
-      </TabNavigation.TabContent>
-      <TabNavigation.TabContent
-        title={'Highlights'}
-        icon={'Text'}
-        validate={async () => {
-          const errors = await Promise.resolve(form.validateField('skills', 'submit'));
-          return errors.length === 0;
-        }}
-        hasError={skillsHasError}
-      >
-        <section className="mt-8 w-full">
-          <HighlightsForm form={form} />
-        </section>
-      </TabNavigation.TabContent>
-      <TabNavigation.TabContent
-        title={'Experience'}
-        icon={'SuitCase'}
-        validate={async () => {
-          const errors = await Promise.resolve(form.validateField('experience', 'submit'));
-          return errors.length === 0;
-        }}
-        hasError={experienceHasError}
-      >
-        <section className="mt-8 w-full">
-          <ExperienceView form={form} documentMode />
-        </section>
-      </TabNavigation.TabContent>
-      <TabNavigation.TabContent
-        title={'Education'}
-        icon={'Graduate'}
-        validate={async () => {
-          const errors = await Promise.resolve(form.validateField('education', 'submit'));
-          return errors.length === 0;
-        }}
-        hasError={educationHasError}
-      >
-        <section className="mt-8 w-full">
-          <EducationView form={form} documentMode />
-        </section>
-      </TabNavigation.TabContent>
-      <TabNavigation.TabContent
-        title={'Personal Projects'}
-        icon={'Project'}
-        validate={async () => {
-          const errors = await Promise.resolve(form.validateField('projects', 'submit'));
-          return errors.length === 0;
-        }}
-        hasError={projectsHasError}
-      >
-        <section className="mt-8 w-full">
-          <ProjectsView form={form} documentMode />
-        </section>
-      </TabNavigation.TabContent>
-    </TabNavigation>
+    <div ref={rootRef} className="flex h-full w-full flex-col gap-3 overflow-y-auto px-4 pt-1 pb-6 md:px-6">
+      {issues?.length ? <IssueSummary ref={summaryRef} issues={issues} onSelect={focusIssue} /> : null}
+      {sections.map((section) => {
+        const expanded = open === section.id;
+        return (
+          <section key={section.id} id={`resume-section-${section.id}`} className="flex-none rounded-[1.2rem] bg-card">
+            <h2>
+              <button
+                type="button"
+                id={buttonId(section.id)}
+                aria-expanded={expanded}
+                aria-controls={panelId(section.id)}
+                aria-describedby={summaryId(section.id)}
+                onClick={() => setOpen(expanded ? null : section.id)}
+                className="flex w-full items-center gap-3 rounded-[1.2rem] p-4 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none md:px-5"
+              >
+                <SectionMark state={section.state} />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-md font-semibold text-primary">{section.title}</span>
+                  <span
+                    id={summaryId(section.id)}
+                    aria-hidden="true"
+                    data-allow-small-text
+                    className="truncate text-[1.3rem] text-muted-foreground"
+                  >
+                    {section.summary}
+                  </span>
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className={cn('size-4 shrink-0 text-muted-foreground transition-transform', expanded && 'rotate-180')}
+                />
+              </button>
+            </h2>
+            <div
+              id={panelId(section.id)}
+              role="region"
+              aria-labelledby={buttonId(section.id)}
+              hidden={!expanded}
+              className="px-4 pb-5 md:px-5"
+            >
+              {body[section.id]}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 };
+
+/** "Contact information, Email: …", or "Experience 1, End date: …" where the field already names its section. */
+function issueLinkText(issue: ResumeFieldIssue): string {
+  const section = resumeSectionTitle(resumeSectionOf(issue.path));
+  const field = resumeFieldLabel(issue.path);
+  return `${field.startsWith(section) ? field : `${section}, ${field}`}: ${issue.message}`;
+}
+
+/** The entry index in a list path such as `experience.0.startDate`, or null for a field outside a list. */
+function entryIndexOf(path: string): number | null {
+  const [head, index] = path.split('.');
+  if (!['experience', 'education', 'projects'].includes(head ?? '') || !/^\d+$/.test(index ?? '')) return null;
+  return Number(index);
+}
+
+/** Focus the control a visible label names inside `scope`, else its first field. */
+function focusByLabel(scope: HTMLElement, label: string) {
+  const byLabel = [...scope.querySelectorAll('label')].find((node) => node.textContent?.trim().startsWith(label));
+  const target =
+    (byLabel?.control as HTMLElement | null | undefined)
+    ?? scope.querySelector<HTMLElement>('input:not([disabled]), textarea:not([disabled]), [role="combobox"]');
+  target?.focus();
+}
+
+const buttonId = (id: ResumeSectionId) => `resume-section-${id}-button`;
+const panelId = (id: ResumeSectionId) => `resume-section-${id}-panel`;
+const summaryId = (id: ResumeSectionId) => `resume-section-${id}-summary`;
+
+function SectionMark({ state }: { state: ResumeSectionState['state'] }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+        state === 'done' && 'bg-secondary text-secondary-foreground',
+        state === 'error' && 'bg-destructive text-white',
+        state === 'todo' && 'border border-muted-foreground/50',
+      )}
+    >
+      {state === 'done' ? <Check className="size-3.5" strokeWidth={3} /> : state === 'error' ? '!' : null}
+    </span>
+  );
+}
+
+/** After a download finds issues: the count, then each issue in words, linking to its field. It takes focus. */
+function IssueSummary({
+  issues,
+  onSelect,
+  ref,
+}: {
+  issues: ResumeFieldIssue[];
+  onSelect: (issue: ResumeFieldIssue) => void;
+  ref: React.Ref<HTMLDivElement>;
+}) {
+  return (
+    <div
+      ref={ref}
+      tabIndex={-1}
+      role="group"
+      aria-labelledby="resume-issues-title"
+      className="flex flex-none gap-3 rounded-[1.2rem] border border-destructive bg-background p-4 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      <CircleAlert aria-hidden="true" className="mt-0.5 size-[1.8rem] shrink-0 text-destructive" />
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <p id="resume-issues-title" className="text-md font-semibold text-primary">
+          {downloadErrorSummaryTitle(issues.length)}
+        </p>
+        <ul className="flex list-disc flex-col gap-1 pl-[1.8rem] text-sm">
+          {issues.map((issue) => (
+            <li key={`${issue.path}:${issue.message}`}>
+              <a
+                href={`#${panelId(resumeSectionOf(issue.path))}`}
+                className="font-medium text-secondary underline-offset-2 hover:underline dark:text-secondary-hover"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onSelect(issue);
+                }}
+              >
+                {issueLinkText(issue)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}

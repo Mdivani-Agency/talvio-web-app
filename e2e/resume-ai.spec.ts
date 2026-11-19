@@ -113,7 +113,7 @@ test('RES-10 improves from the download dialog, and Reject leaves the resume as 
   // so the next new resume does not reopen it.
   const sessionKey = `${SESSION_PREFIX}${key}:ai-improve`;
   await page.evaluate((stored) => window.localStorage.setItem(stored, '{"v":1}'), sessionKey);
-  await openResumeSection(page, 'Contact Information', 'Email');
+  await openResumeSection(page, 'Contact information', 'Email');
   await page.getByLabel('Email', { exact: true }).fill('dialog.owner@talvio.test');
   await generateFromModal(page, 'Dialog Owner');
   expect(await page.evaluate((stored) => window.localStorage.getItem(stored), sessionKey)).toBeNull();

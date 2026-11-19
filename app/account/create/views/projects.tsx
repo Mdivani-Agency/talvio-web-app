@@ -16,9 +16,11 @@ type ProjectsViewProps = {
   form: AppForm;
   /** Convert account-shaped dialogs into resume document items. */
   documentMode?: boolean;
+  /** Off where a parent already names the section, as the resume editor's accordion does. */
+  heading?: boolean;
 };
 
-export const ProjectsView = ({ className, form, documentMode = false }: ProjectsViewProps) => {
+export const ProjectsView = ({ className, form, documentMode = false, heading = true }: ProjectsViewProps) => {
   const { fields, append, remove, update, replace } = useFormArray<Project>(form, 'projects');
 
   const handleAdd = useCallback(
@@ -37,9 +39,11 @@ export const ProjectsView = ({ className, form, documentMode = false }: Projects
 
   return (
     <section className={className}>
-      <div className="mb-6">
-        <SectionHeading copy={PROFILE_SECTIONS.projects} />
-      </div>
+      {heading ? (
+        <div className="mb-6">
+          <SectionHeading copy={PROFILE_SECTIONS.projects} />
+        </div>
+      ) : null}
       <EntryList
         items={fields}
         copy={ENTRY_LISTS.projects}

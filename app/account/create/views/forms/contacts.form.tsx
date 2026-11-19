@@ -32,15 +32,17 @@ type ContactFields = {
 };
 
 type ContactsFormProps = {
+  /** Off where a parent already names the section, as the resume editor's accordion does. */
+  heading?: boolean;
   className?: string;
   form: AppForm;
   fields?: ContactFields;
 };
 
-export const ContactsForm = ({ className, form, fields = ACCOUNT_CONTACT_FIELDS }: ContactsFormProps) => {
+export const ContactsForm = ({ className, form, fields = ACCOUNT_CONTACT_FIELDS, heading = true }: ContactsFormProps) => {
   return (
     <Form className={cn('space-y-4', className)}>
-      <SectionHeading copy={PROFILE_SECTIONS.contact} />
+      {heading ? <SectionHeading copy={PROFILE_SECTIONS.contact} /> : null}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <TextFormField form={form} name={fields.email} copy={CONTACT_FIELDS.email} type="email" autoComplete="email" />
         <TextFormField form={form} name={fields.phone} copy={CONTACT_FIELDS.phone} type="tel" autoComplete="tel" />
