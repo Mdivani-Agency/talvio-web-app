@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DRAFT_BANNER,
+  RESUME_SECTIONS,
+  SECTION_SUMMARY,
+  downloadErrorSummaryTitle,
   EDITOR_BACK,
   pageCountText,
   pageOfText,
@@ -36,5 +39,20 @@ describe('resume editor copy', () => {
     expect(DRAFT_BANNER.original).toBe('Viewing the generated PDF. This version is read-only.');
     expect(EDITOR_BACK.signedIn).toEqual({ text: 'Documents', label: 'Back to documents', href: '/account/documents' });
     expect(EDITOR_BACK.guest.href).toBe('/');
+  });
+
+  it('names the Content sections in sentence case and counts fixes', () => {
+    expect(RESUME_SECTIONS.map((section) => section.title)).toEqual([
+      'About you',
+      'Contact information',
+      'Highlights',
+      'Experience',
+      'Education',
+      'Projects',
+    ]);
+    expect(SECTION_SUMMARY.fix(['First name'])).toBe('Fix 1 field: first name');
+    expect(SECTION_SUMMARY.fix(['Email', 'City'])).toBe('Fix 2 fields: email, city');
+    expect(downloadErrorSummaryTitle(1)).toBe('Fix 1 field to download your PDF');
+    expect(downloadErrorSummaryTitle(3)).toBe('Fix 3 fields to download your PDF');
   });
 });

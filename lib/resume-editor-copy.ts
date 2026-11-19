@@ -72,3 +72,60 @@ export const DESIGN_PANEL = {
     { value: 'lg', name: 'Large' },
   ],
 } as const;
+
+/** The Content tab's accordion, in order. `prefixes` are the form paths each section owns. */
+export const RESUME_SECTIONS = [
+  { id: 'about', title: 'About you', prefixes: ['profile'] },
+  { id: 'contact', title: 'Contact information', prefixes: ['contacts', 'location'] },
+  { id: 'highlights', title: 'Highlights', prefixes: ['skills', 'tools', 'languages', 'links'] },
+  { id: 'experience', title: 'Experience', prefixes: ['experience'] },
+  { id: 'education', title: 'Education', prefixes: ['education'] },
+  { id: 'projects', title: 'Projects', prefixes: ['projects'] },
+] as const;
+
+export type ResumeSectionId = (typeof RESUME_SECTIONS)[number]['id'];
+
+/** Field names in words, by the last part of a form path, for the error summary and the fix line. */
+export const RESUME_FIELD_LABELS: Record<string, string> = {
+  firstName: 'First name',
+  lastName: 'Last name',
+  role: 'Role',
+  tagline: 'Summary',
+  email: 'Email',
+  phone: 'Phone',
+  url: 'Website',
+  city: 'City',
+  country: 'Country',
+  skills: 'Skills',
+  tools: 'Tools',
+  languages: 'Languages',
+  language: 'Language',
+  proficiency: 'Proficiency',
+  links: 'Other links',
+  company: 'Company',
+  jobTitle: 'Job title',
+  startDate: 'Start date',
+  endDate: 'End date',
+  employmentType: 'Employment type',
+  locationType: 'Location type',
+  degreeType: 'Degree type',
+  additionalDetails: 'Description',
+};
+
+export const SECTION_SUMMARY = {
+  notStarted: 'Not started yet',
+  optionalEmpty: 'Optional · none yet',
+  roles: (count: number) => `${count} ${count === 1 ? 'role' : 'roles'}`,
+  entries: (count: number) => `${count} ${count === 1 ? 'entry' : 'entries'}`,
+  projects: (count: number) => `${count} ${count === 1 ? 'project' : 'projects'}`,
+  skills: (count: number) => `${count} ${count === 1 ? 'skill' : 'skills'}`,
+  tools: (count: number) => `${count} ${count === 1 ? 'tool' : 'tools'}`,
+  languages: (count: number) => `${count} ${count === 1 ? 'language' : 'languages'}`,
+  /** "Fix 1 field: first name". */
+  fix: (labels: string[]) =>
+    `Fix ${labels.length} ${labels.length === 1 ? 'field' : 'fields'}: ${labels.map((label) => label.toLowerCase()).join(', ')}`,
+} as const;
+
+/** The error summary's heading after a download finds issues. */
+export const downloadErrorSummaryTitle = (count: number) =>
+  `Fix ${count} ${count === 1 ? 'field' : 'fields'} to download your PDF`;

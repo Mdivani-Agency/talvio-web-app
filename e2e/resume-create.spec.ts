@@ -33,9 +33,9 @@ test('RES-01 creates a resume without a profile and keeps it after reload', asyn
   await page.getByLabel('First name', { exact: true }).fill('Nia');
   await page.getByLabel('Last name', { exact: true }).fill('Manual');
   await page.getByLabel('Role', { exact: true }).fill('Staff Engineer');
-  await openResumeSection(page, 'Contact Information', 'Email');
+  await openResumeSection(page, 'Contact information', 'Email');
   await page.getByLabel('Email', { exact: true }).fill('nia.manual@talvio.test');
-  await openResumeSection(page, 'Personal Details', 'First name');
+  await openResumeSection(page, 'About you', 'First name');
   await page.getByRole('tab', { name: /^Design/ }).click();
   await page.getByRole('img', { name: 'senior Ember', exact: true }).click();
   await page.getByRole('tab', { name: /^Content/ }).click();

@@ -16,9 +16,11 @@ type EducationViewProps = {
   form: AppForm;
   /** Convert account-shaped dialogs into resume document items. */
   documentMode?: boolean;
+  /** Off where a parent already names the section, as the resume editor's accordion does. */
+  heading?: boolean;
 };
 
-export const EducationView = ({ className, form, documentMode = false }: EducationViewProps) => {
+export const EducationView = ({ className, form, documentMode = false, heading = true }: EducationViewProps) => {
   const { fields, append, remove, update, replace } = useFormArray<Education>(form, 'education');
 
   const handleAdd = useCallback(
@@ -37,9 +39,11 @@ export const EducationView = ({ className, form, documentMode = false }: Educati
 
   return (
     <section className={className}>
-      <div className="mb-6">
-        <SectionHeading copy={PROFILE_SECTIONS.education} />
-      </div>
+      {heading ? (
+        <div className="mb-6">
+          <SectionHeading copy={PROFILE_SECTIONS.education} />
+        </div>
+      ) : null}
       <EntryList
         items={fields}
         copy={ENTRY_LISTS.education}
