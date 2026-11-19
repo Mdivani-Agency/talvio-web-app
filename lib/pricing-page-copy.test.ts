@@ -15,7 +15,7 @@ import {
   pricingPageText,
 } from './pricing-page-copy';
 
-const unsupported = /ATS|ATS-safe|parser|application track|GDPR|career success|\/ats-friendly-resume|refund if I cancel a subscription|guaranteed refund/i;
+const unsupported = /ATS|ATS-safe|parser|application track|GDPR|career success|refund if I cancel a subscription|guaranteed refund/i;
 
 describe('pricing page copy', () => {
   it('uses the shared catalog, a fixed PDF price, and the sign-in path', () => {

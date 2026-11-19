@@ -2,7 +2,6 @@ import type { Metadata, MetadataRoute } from 'next';
 
 import { featureFlags, type FeatureFlags } from './flags';
 import { allowPublicIndexing, siteOrigin } from './site';
-import { ATS_LAST_MODIFIED, ATS_PAGE_DESCRIPTION, ATS_PAGE_TITLE } from './ats-page-copy';
 import { BLOG_LAST_MODIFIED } from './blog-copy';
 import { BENEFITS_TITLE, HERO_TITLE, HOME_LAST_MODIFIED } from './homepage-copy';
 import { PRIVACY_LAST_MODIFIED, TERMS_LAST_MODIFIED } from './legal-copy';
@@ -15,9 +14,6 @@ export const HOME_DESCRIPTION =
 
 export const TEMPLATES_TITLE = TEMPLATES_PAGE_TITLE;
 export const TEMPLATES_DESCRIPTION = TEMPLATES_PAGE_DESCRIPTION;
-
-export const ATS_TITLE = ATS_PAGE_TITLE;
-export const ATS_DESCRIPTION = ATS_PAGE_DESCRIPTION;
 
 /** `/pricing` is served only while the `plansPage` flag is on (MDI-398). */
 export const PRICING_TITLE = PRICING_PAGE_TITLE;
@@ -50,7 +46,7 @@ export const SHARE_TWITTER = { card: 'summary_large_image', images: [SHARE_IMAGE
  * Every public page that can be indexed. Anonymous `/home` redirects to `/`.
  * Blog articles are not listed here: `app/sitemap.ts` adds the Talvio-primary ones from the blog API.
  */
-export const PUBLIC_PAGE_PATHS = ['/', '/templates', '/pricing', '/ats-friendly-resume', '/blog', '/privacy-policy', '/terms'] as const;
+export const PUBLIC_PAGE_PATHS = ['/', '/templates', '/pricing', '/blog', '/privacy-policy', '/terms'] as const;
 
 export type IndexablePublicPath = (typeof PUBLIC_PAGE_PATHS)[number];
 
@@ -70,7 +66,6 @@ export const PUBLIC_PAGE_LAST_MODIFIED: Record<IndexablePublicPath, string> = {
   '/': HOME_LAST_MODIFIED,
   '/templates': TEMPLATES_LAST_MODIFIED,
   '/pricing': PRICING_LAST_MODIFIED,
-  '/ats-friendly-resume': ATS_LAST_MODIFIED,
   '/blog': BLOG_LAST_MODIFIED,
   '/privacy-policy': PRIVACY_LAST_MODIFIED,
   '/terms': TERMS_LAST_MODIFIED,
