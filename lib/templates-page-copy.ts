@@ -1,5 +1,5 @@
 /** Sitemap date (ISO). Change it with the copy in this file. */
-export const TEMPLATES_LAST_MODIFIED = '2026-10-04';
+export const TEMPLATES_LAST_MODIFIED = '2026-11-19';
 
 export const TEMPLATES_PAGE_TITLE = 'Free resume templates by experience level | Talvio';
 
@@ -11,3 +11,17 @@ export const TEMPLATES_PAGE_HEADING = 'Free resume templates';
 
 // As written in the messaging brief.
 export const TEMPLATES_PAGE_INTRO = 'Pick a template for your experience level. Preview is free.';
+
+export type TemplatesPageLevel = 'entry' | 'mid' | 'senior';
+
+/** Names the level switch for assistive technology. */
+export const TEMPLATES_LEVEL_GROUP_LABEL = 'Experience level';
+
+/** The level switch, in display order. Senior is the default. */
+export const TEMPLATES_LEVELS: ReadonlyArray<{ id: TemplatesPageLevel; label: string }> = [
+  { id: 'entry', label: 'Entry level' },
+  { id: 'mid', label: 'Mid level' },
+  { id: 'senior', label: 'Senior level' },
+];
+
+export const TEMPLATES_DEFAULT_LEVEL: TemplatesPageLevel = 'senior';
