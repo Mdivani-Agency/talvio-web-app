@@ -19,11 +19,16 @@ export type PendingSignIn = z.infer<typeof pendingSignInSchema>;
 
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem'>;
 
-export function savePendingSignIn(storage: Storage, pending: PendingSignIn) {
+/**
+ * Stores the pending sign-in. Storage is looked up inside the guard: with storage blocked by privacy settings, even
+ * reading `window.sessionStorage` throws, and a failed save must never stop the caller from moving on. The page then
+ * falls back to its generic text.
+ */
+export function savePendingSignIn(pending: PendingSignIn, getStorage: () => Storage = () => window.sessionStorage) {
   try {
-    storage.setItem(PENDING_SIGN_IN_KEY, JSON.stringify(pending));
+    getStorage().setItem(PENDING_SIGN_IN_KEY, JSON.stringify(pending));
   } catch {
-    // Storage can be full or blocked; the page then falls back to its generic text.
+    // Blocked, full or unavailable storage.
   }
 }
 

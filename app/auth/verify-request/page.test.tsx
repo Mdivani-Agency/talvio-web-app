@@ -81,4 +81,15 @@ describe('/auth/verify-request', () => {
     expect(screen.queryByRole('button', { name: /Resend/ })).toBeNull();
     expect(screen.getByRole('link', { name: 'Use a different email' })).toBeTruthy();
   });
+
+  it('falls back to the generic text when storage is blocked', () => {
+    const blocked = vi.spyOn(window, 'sessionStorage', 'get').mockImplementation(() => {
+      throw new DOMException('The operation is insecure.', 'SecurityError');
+    });
+    render(<VerifyRequestPage />);
+
+    expect(screen.getByText(VERIFY_SENT_GENERIC)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Resend/ })).toBeNull();
+    blocked.mockRestore();
+  });
 });

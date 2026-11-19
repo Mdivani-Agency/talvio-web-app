@@ -67,7 +67,7 @@ export default function VerifyRequestPage() {
       setAlert(signInErrorMessage(error));
       return;
     }
-    savePendingSignIn(window.sessionStorage, { ...pending, sentAt: Date.now() });
+    savePendingSignIn({ ...pending, sentAt: Date.now() });
     setResent(true);
   };
 

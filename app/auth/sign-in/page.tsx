@@ -52,7 +52,7 @@ function SignInPageContent() {
       return;
     }
     // The address goes to sessionStorage, not the URL, so it stays out of logs and history.
-    savePendingSignIn(window.sessionStorage, { email, next, sentAt: Date.now() });
+    savePendingSignIn({ email, next, sentAt: Date.now() });
     router.push('/auth/verify-request');
   };
 

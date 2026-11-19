@@ -19,7 +19,7 @@ function memoryStorage() {
 describe('pending sign-in', () => {
   it('round-trips through storage under one key', () => {
     const storage = memoryStorage();
-    savePendingSignIn(storage, { email: 'ada@example.com', next: '/account/documents', sentAt: 1000 });
+    savePendingSignIn({ email: 'ada@example.com', next: '/account/documents', sentAt: 1000 }, () => storage);
     expect(parsePendingSignIn(storage.getItem(PENDING_SIGN_IN_KEY))).toEqual({
       email: 'ada@example.com',
       next: '/account/documents',
@@ -39,14 +39,21 @@ describe('pending sign-in', () => {
     expect(pending?.next).not.toContain('evil.test');
   });
 
-  it('survives storage that refuses writes', () => {
-    const storage = {
+  it('survives storage that refuses writes or cannot even be reached', () => {
+    const pending = { email: 'ada@example.com', next: '/', sentAt: 0 };
+    const full = {
       getItem: () => null,
       setItem: () => {
         throw new Error('QuotaExceededError');
       },
     };
-    expect(() => savePendingSignIn(storage, { email: 'ada@example.com', next: '/', sentAt: 0 })).not.toThrow();
+    expect(() => savePendingSignIn(pending, () => full)).not.toThrow();
+    // With storage blocked by privacy settings, reading window.sessionStorage itself throws a SecurityError.
+    expect(() =>
+      savePendingSignIn(pending, () => {
+        throw new DOMException('The operation is insecure.', 'SecurityError');
+      }),
+    ).not.toThrow();
   });
 
   it('counts the resend cooldown down from the last send', () => {
