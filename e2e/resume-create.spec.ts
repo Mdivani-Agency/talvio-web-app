@@ -1,4 +1,5 @@
-import { expandEntries } from './fixtures/profile-ui';
+import { entryRow, entrySection } from './fixtures/profile-ui';
+import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures/test';
 import { fetchPdfText } from './fixtures/pdf-text';
 import {
@@ -11,6 +12,8 @@ import {
   waitForPreview,
 } from './fixtures/resume-ui';
 import { contentProfile, creditBalance, listResumes, seedProfile } from './fixtures/resumes';
+
+const addExperienceButton = (page: Page) => page.getByRole('button', { name: 'Add experience', exact: true });
 
 const PDF = 'e2e/assets/resume-import.pdf';
 
@@ -138,15 +141,14 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
 
   await page.getByLabel('First name', { exact: true }).fill('Nia');
   await page.getByLabel('Role', { exact: true }).fill('Edited Engineer');
-  await openResumeSection(page, 'Experience', 'Company');
-  const experience = page.locator('section').filter({ has: page.getByLabel('Company', { exact: true }) }).last();
-  await expandEntries(experience, 1);
-  await expect(page.getByRole('heading', { name: 'Imported Labs' })).toBeVisible();
-  await page.getByRole('button', { name: 'Edit entry' }).click();
-  await expect(page.getByRole('heading', { name: 'Edit Imported Labs' })).toBeVisible();
-  await page.getByLabel('Company', { exact: true }).last().fill('Edited Labs');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Edited Labs' })).toBeVisible();
+  await openResumeSection(page, 'Experience', addExperienceButton);
+  const experience = entrySection(page, 'Experience');
+  await expect(entryRow(experience, 'Imported Labs')).toBeVisible();
+  await experience.getByRole('button', { name: /^Edit .*Imported Labs$/ }).click();
+  await expect(experience.getByRole('heading', { level: 3, name: /^Edit / })).toBeVisible();
+  await experience.getByLabel('Company', { exact: true }).fill('Edited Labs');
+  await experience.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(entryRow(experience, 'Edited Labs')).toBeVisible();
 
   const downloads = await generateFromModal(page, 'Nia Owner', 'Imported edit');
   expect(downloads.at(-1)?.download).toBe('Nia Owner.pdf');
@@ -167,10 +169,8 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
 
   await page.goto(`/resume/${rows[0]?.id}`);
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Nia');
-  await openResumeSection(page, 'Experience', 'Company');
-  const savedExperience = page.locator('section').filter({ has: page.getByLabel('Company', { exact: true }) }).last();
-  await expandEntries(savedExperience, 1);
-  await expect(page.getByRole('heading', { name: 'Edited Labs' })).toBeVisible();
+  await openResumeSection(page, 'Experience', addExperienceButton);
+  await expect(entryRow(entrySection(page, 'Experience'), 'Edited Labs')).toBeVisible();
 });
 
 test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', async ({ page, personas }) => {
@@ -209,8 +209,7 @@ test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', 
 
   await input.setInputFiles(PDF);
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada', { timeout: 30_000 });
-  await openResumeSection(page, 'Experience', 'Company');
-  await expandEntries(page.locator('section').filter({ has: page.getByLabel('Company', { exact: true }) }).last(), 1);
-  await expect(page.getByRole('heading', { name: 'Imported Labs' })).toBeVisible();
+  await openResumeSection(page, 'Experience', addExperienceButton);
+  await expect(entryRow(entrySection(page, 'Experience'), 'Imported Labs')).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(0);
 });

@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 import { signInWithLocalMagicLink } from './auth';
 import { type Persona } from './data';
@@ -167,9 +167,10 @@ export async function generateFromModal(page: Page, filename: string, label?: st
   return recordedDownloads(page);
 }
 
-export async function openResumeSection(page: Page, title: string, fieldLabel: string) {
+/** Open an editor section and wait for a field (by label) or another control in it to show. */
+export async function openResumeSection(page: Page, title: string, target: string | ((page: Page) => Locator)) {
   const tab = page.getByRole('button', { name: title, exact: true });
-  const field = page.getByLabel(fieldLabel, { exact: true });
+  const field = typeof target === 'string' ? page.getByLabel(target, { exact: true }) : target(page);
   // Global smooth scrolling keeps moving the tab during Playwright's click,
   // so WebKit focuses the button and drops the click. Jump, then retry.
   await page.evaluate(() => {
