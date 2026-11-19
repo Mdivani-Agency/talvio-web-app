@@ -6,6 +6,7 @@ import { ClipboardPasteIcon, UploadIcon } from 'lucide-react';
 
 import { Button } from '@components/ui';
 import { ConfirmModal, PasteResumeModal, UploadModal } from '@components/modals';
+import { PageContainer } from '@components/views';
 import { useResumeParser } from '@hooks/use-resume-parser';
 import { toastImportReview } from '@components/import/import-review';
 
@@ -40,7 +41,7 @@ export default function AccountFormPage() {
   };
 
   return (
-    <section className="container flex flex-col gap-4 mx-auto">
+    <PageContainer as="section" className="flex flex-col gap-4 pb-10">
       <h1 className="text-2xl font-bold mt-8">Let&apos;s Build Your Profile!</h1>
       <p className="text-sm font-medium text-muted-foreground">
         Please fill out your details as thoroughly as possible. The more information you provide, the more tailored
@@ -84,6 +85,6 @@ export default function AccountFormPage() {
         onClose={cancelImport}
         onConfirm={applyImport}
       />
-    </section>
+    </PageContainer>
   );
 }

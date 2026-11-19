@@ -1,7 +1,7 @@
 'use client';
 import { Icon } from "@components/icons";
 import { Button, Card, CardContent, CardFooter, Label } from "@components/ui";
-import { ErrorView, Loading } from "@components/views";
+import { ErrorView, Loading, PageContainer } from "@components/views";
 import { getDocuments } from "@lib/clients/media.client";
 import { useUserSession } from "@lib/providers";
 import { useQuery } from "@tanstack/react-query";
@@ -43,7 +43,7 @@ export default function DocumentsPage() {
   const documents = documentsQuery.data ?? [];
 
   return (
-    <section className="flex flex-col gap-8 p-4">
+    <PageContainer as="section" className="flex flex-col gap-8 py-6 md:py-10">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold">Your Resumes</h1>
         <Button asChild variant="secondary">
@@ -89,6 +89,6 @@ export default function DocumentsPage() {
         ))
       }
       </div>
-    </section>
+    </PageContainer>
   );
 };
