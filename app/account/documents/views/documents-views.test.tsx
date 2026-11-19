@@ -25,6 +25,10 @@ describe('documents views', () => {
     render(<DocumentGrid documents={DOCUMENTS} />);
     const cards = screen.getAllByTestId('document-card');
     expect(cards).toHaveLength(2);
+    // Each list item renders the shared Card (AGENTS.md: list items use Card from @components/ui).
+    for (const card of cards) {
+      expect(card.querySelector('[data-slot="card"]')).not.toBeNull();
+    }
 
     const first = within(cards[0]);
     expect(first.getByRole('link', { name: 'Open Library resume' }).getAttribute('href')).toBe(DOCUMENTS[0].publicUrl);
