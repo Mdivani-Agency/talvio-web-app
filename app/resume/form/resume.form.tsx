@@ -110,14 +110,24 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
     setOpen(id);
     requestAnimationFrame(() => {
       const panel = rootRef.current?.querySelector<HTMLElement>(`#${panelId(id)}`);
-      const label = resumeFieldLabel(issue.path).split(', ').pop();
-      const byLabel = [...(panel?.querySelectorAll('label') ?? [])].find((node) => node.textContent?.trim().startsWith(label ?? ''));
-      const target =
-        panel?.querySelector<HTMLElement>(`[name="${CSS.escape(issue.path)}"]`)
-        ?? (byLabel?.control as HTMLElement | null | undefined)
-        ?? panel?.querySelector<HTMLElement>('input, textarea, button');
-      panel?.scrollIntoView?.({ block: 'nearest' });
-      target?.focus();
+      if (!panel) return;
+      panel.scrollIntoView?.({ block: 'nearest' });
+      const direct = panel.querySelector<HTMLElement>(`[name="${CSS.escape(issue.path)}"]`);
+      if (direct) {
+        direct.focus();
+        return;
+      }
+      const label = resumeFieldLabel(issue.path).split(', ').pop() ?? '';
+      // An issue inside a list entry (experience.0.startDate) needs that entry's editor open: its fields only mount on Edit.
+      const index = entryIndexOf(issue.path);
+      const row = index === null ? null : panel.querySelectorAll<HTMLElement>('[draggable]')[index];
+      const edit = row?.querySelector<HTMLButtonElement>('button[aria-label^="Edit "]');
+      if (edit) {
+        edit.click();
+        requestAnimationFrame(() => focusByLabel(panel, label));
+        return;
+      }
+      focusByLabel(panel, label);
     });
   };
 
@@ -186,6 +196,22 @@ function issueLinkText(issue: ResumeFieldIssue): string {
   const section = resumeSectionTitle(resumeSectionOf(issue.path));
   const field = resumeFieldLabel(issue.path);
   return `${field.startsWith(section) ? field : `${section}, ${field}`}: ${issue.message}`;
+}
+
+/** The entry index in a list path such as `experience.0.startDate`, or null for a field outside a list. */
+function entryIndexOf(path: string): number | null {
+  const [head, index] = path.split('.');
+  if (!['experience', 'education', 'projects'].includes(head ?? '') || !/^\d+$/.test(index ?? '')) return null;
+  return Number(index);
+}
+
+/** Focus the control a visible label names inside `scope`, else its first field. */
+function focusByLabel(scope: HTMLElement, label: string) {
+  const byLabel = [...scope.querySelectorAll('label')].find((node) => node.textContent?.trim().startsWith(label));
+  const target =
+    (byLabel?.control as HTMLElement | null | undefined)
+    ?? scope.querySelector<HTMLElement>('input:not([disabled]), textarea:not([disabled]), [role="combobox"]');
+  target?.focus();
 }
 
 const buttonId = (id: ResumeSectionId) => `resume-section-${id}-button`;

@@ -62,4 +62,27 @@ describe('ResumeDocumentForm', () => {
     expect(screen.getByRole('button', { name: 'Contact information' }).getAttribute('aria-expanded')).toBe('true');
     expect(document.activeElement?.getAttribute('name')).toBe('contacts.email');
   });
+
+  it('opens the list entry an issue belongs to and focuses its field', async () => {
+    const values = {
+      ...EMPTY_RESUME_DOCUMENT,
+      experience: [{ id: 'e1', company: 'Northwind Health', jobTitle: 'Engineer', startDate: '2024-01-15T00:00:00.000Z', isPresent: true }],
+    } as typeof EMPTY_RESUME_DOCUMENT;
+    render(
+      <TooltipProvider>
+        <ResumeDocumentForm
+          defaultValues={values}
+          issues={[{ path: 'experience.0.company', message: 'Enter the company' }]}
+          onSubmit={vi.fn()}
+        />
+      </TooltipProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('link', { name: 'Experience 1, Company: Enter the company' }));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    });
+    expect(screen.getByRole('heading', { name: /^Edit / })).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByLabelText('Company'));
+  });
 });
