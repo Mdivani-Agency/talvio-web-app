@@ -56,8 +56,15 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page.getByText(/^Last updated: [A-Z][a-z]+ \d{4}$/)).toBeVisible();
   await expect(page.getByRole('heading', { name: '5. Free use and the monthly limit', exact: true })).toBeVisible();
   await expect(page.getByText('This free allowance is permanent.')).toBeVisible();
-  await expect(page.getByRole('main').getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('href', '/privacy-policy');
-  await expect(page.getByRole('main').getByRole('link', { name: 'MDIO', exact: true })).toHaveAttribute('href', 'https://mdivani.agency');
+  await expect(page.getByRole('article').getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('href', '/privacy-policy');
+  await expect(page.getByRole('article').getByRole('link', { name: 'MDIO', exact: true })).toHaveAttribute('href', 'https://mdivani.agency');
+  // The Terms / Privacy switch marks the open document and moves to the other one.
+  const legalSwitch = page.getByRole('navigation', { name: 'Legal documents' });
+  await expect(legalSwitch.getByRole('link', { name: 'Terms of Service', exact: true })).toHaveAttribute('aria-current', 'page');
+  await legalSwitch.getByRole('link', { name: 'Privacy Policy', exact: true }).click();
+  await expect(page).toHaveURL(/\/privacy-policy$/);
+  await expect(legalSwitch.getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(legalSwitch.getByRole('link', { name: 'Terms of Service', exact: true })).not.toHaveAttribute('aria-current', 'page');
   await page.goto('/privacy-policy');
   await expect(page.getByRole('heading', { name: 'Privacy Policy', exact: true })).toBeVisible();
   await expect(page.getByText(/^Last updated: [A-Z][a-z]+ \d{4}$/)).toBeVisible();
