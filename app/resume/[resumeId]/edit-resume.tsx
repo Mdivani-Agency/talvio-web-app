@@ -40,6 +40,7 @@ import type { PreviewDto, Resume } from '@lib/types';
 
 import { ResumeEditorShell } from '../views/resume-editor-shell';
 import { ResumeUnavailable } from '../views/resume-unavailable';
+import { WithResumeHeader } from '../views/resume-public-header';
 
 interface EditResumePageProps {
   resumeId: string;
@@ -307,32 +308,50 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
 
   // Wait for the session too: a signed-in visitor must never see the guest view flash by.
   if (sessionPending || isLoadingResume) {
-    return <Loading message="Loading resume..." />;
+    return (
+      <WithResumeHeader>
+        <Loading message="Loading resume..." />
+      </WithResumeHeader>
+    );
   }
 
   // Saved resumes are read with the visitor's session, so a guest is asked to sign in and comes back here.
   if (!userId) {
-    return <ResumeUnavailable reason="signed-out" resumeId={resumeId} />;
+    return (
+      <WithResumeHeader>
+        <ResumeUnavailable reason="signed-out" resumeId={resumeId} />
+      </WithResumeHeader>
+    );
   }
 
   if (resumeFailed && !(resumeError instanceof Error && resumeError.message === 'Resume not found')) {
     return (
-      <ErrorView
-        title="Could not load this resume"
-        body="The resume lookup failed. This is not a missing resume. Check your connection and try again."
-        reset={() => {
-          void refetchResume();
-        }}
-      />
+      <WithResumeHeader>
+        <ErrorView
+          title="Could not load this resume"
+          body="The resume lookup failed. This is not a missing resume. Check your connection and try again."
+          reset={() => {
+            void refetchResume();
+          }}
+        />
+      </WithResumeHeader>
     );
   }
 
   if (!displayed) {
-    return <ResumeUnavailable reason="not-found" resumeId={resumeId} />;
+    return (
+      <WithResumeHeader>
+        <ResumeUnavailable reason="not-found" resumeId={resumeId} />
+      </WithResumeHeader>
+    );
   }
 
   if (!editorDocument) {
-    return <Loading message="Loading resume..." />;
+    return (
+      <WithResumeHeader>
+        <Loading message="Loading resume..." />
+      </WithResumeHeader>
+    );
   }
 
   return (

@@ -1,138 +1,64 @@
 'use client';
-import { SparklesIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 
-import { Icon } from '@components/icons';
-import {
-  Button,
-  ColorPaletteSelector,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@components/ui';
+import { Button } from '@components/ui';
 import { cn } from '@lib/utils/tailwind';
+import { FULL_SIZE_LABEL, NEXT_PAGE, PREVIOUS_PAGE, pageOfText } from '@/lib/resume-editor-copy';
 
-type ResumeActionBarProps = {
-  color: string;
+type PreviewToolbarProps = {
   imageCount: number;
   currentIndex: number;
-  fontSize: 'sm' | 'md' | 'lg';
   className?: string;
-  onFontSizeChange: (fontSize: 'sm' | 'md' | 'lg') => void;
-  setColor: (color: string) => void;
   goToPrevious: () => void;
   goToNext: () => void;
-  handleDownload: () => void;
   handlePreviewOpen: () => void;
-  action?: React.ReactNode;
-  disabled?: boolean;
-  /** Shows Improve with AI before Download (MDI-426). */
-  onImprove?: () => void;
-  improveDisabled?: boolean;
 };
 
-export const ResumeActionBar = ({
-  color,
+/** Under the preview: Previous page, "Page x of y", Next page and Full size. */
+export const PreviewToolbar = ({
   imageCount,
   currentIndex,
   className,
-  fontSize,
-  action,
-  onFontSizeChange,
-  setColor,
   goToPrevious,
   goToNext,
-  handleDownload,
   handlePreviewOpen,
-  disabled = false,
-  onImprove,
-  improveDisabled = false,
-}: ResumeActionBarProps) => {
+}: PreviewToolbarProps) => {
+  const empty = imageCount === 0;
   return (
     <div
       className={cn(
-        'flex w-full max-w-full flex-wrap items-center justify-center gap-2 bg-popover shadow-md rounded-sm p-2 px-4 mx-auto transition md:w-4/5 md:flex-nowrap md:justify-between',
+        'flex flex-none items-center gap-1 rounded-[1.2rem] bg-background p-1 shadow-[0_2px_8px_rgba(13,13,13,0.12)]',
         className,
       )}
     >
-      <div className="flex items-center gap-2">
-        {action}
-        <Select
-          value={fontSize}
-          onValueChange={onFontSizeChange}
-          disabled={disabled}
-        >
-          <SelectTrigger aria-label="Font size" className="flex justify-center items-center gap-1 max-h-8 p-1 hover:cursor-pointer">
-            <Icon type="FontSize" className="size-4" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="sm">S</SelectItem>
-            <SelectItem value="md">M</SelectItem>
-            <SelectItem value="lg">L</SelectItem>
-          </SelectContent>
-        </Select>
-        <ColorPaletteSelector
-          value={color}
-          onSelect={setColor}
-          disabled={disabled}
-        />
-      </div>
-      <div className="flex justify-center items-center">
-        <button type="button" aria-label="Previous page" onClick={goToPrevious}>
-          <Icon type="ChevronLeft" className="size-4 text-muted-foreground" />
-        </button>
-        <span className="block my-2 text-center text-sm text-muted-foreground">
-          Page {currentIndex + 1} of {imageCount}
-        </span>
-        <button type="button" aria-label="Next page" onClick={goToNext}>
-          <Icon type="ChevronRight" className="size-4 text-muted-foreground" />
-        </button>
-      </div>
-
-      <div className="flex gap-2">
-        {onImprove ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                className="h-8 gap-1 px-2 text-muted-foreground"
-                type="button"
-                variant="ghost"
-                aria-label="Improve with AI"
-                onClick={onImprove}
-                disabled={improveDisabled || imageCount === 0}
-              >
-                <SparklesIcon className="size-4" />
-                <span className="hidden md:inline">Improve with AI</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Answer a few questions and get suggested edits</TooltipContent>
-          </Tooltip>
-        ) : null}
-        <Button
-          className="shadow-sm"
-          type="button"
-          size="icon"
-          variant="ghost"
-          aria-label="Download resume"
-          onClick={handleDownload}
-          disabled={imageCount === 0}
-        >
-          <Icon type="Download" className="size-4 text-muted-foreground" />
-        </Button>
-        <Button
-          className="size-8 text-neutral-800 hover:cursor-pointer"
-          type="button"
-          variant="ghost"
-          aria-label="Full size preview"
-          disabled={imageCount === 0}
-          onClick={handlePreviewOpen}
-        >
-          <Icon type="Zoom" className="size-4 text-muted-foreground" />
-        </Button>
-      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        className="size-[4.4rem] p-0"
+        aria-label={PREVIOUS_PAGE}
+        onClick={goToPrevious}
+        disabled={empty}
+      >
+        <ChevronLeft aria-hidden="true" className="size-4" />
+      </Button>
+      <span aria-live="polite" className="min-w-[9.6rem] text-center text-sm font-medium">
+        {pageOfText(empty ? 0 : currentIndex + 1, imageCount)}
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        className="size-[4.4rem] p-0"
+        aria-label={NEXT_PAGE}
+        onClick={goToNext}
+        disabled={empty}
+      >
+        <ChevronRight aria-hidden="true" className="size-4" />
+      </Button>
+      <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
+      <Button type="button" variant="ghost" className="h-[4.4rem] px-3" disabled={empty} onClick={handlePreviewOpen}>
+        <Maximize2 aria-hidden="true" className="size-4" />
+        {FULL_SIZE_LABEL}
+      </Button>
     </div>
   );
 };

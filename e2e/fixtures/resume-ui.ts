@@ -85,23 +85,39 @@ export async function waitForPreview(page: Page) {
   await expect(page.getByText(/Page \d+ of [1-9]/)).toBeVisible({ timeout: 30_000 });
 }
 
+/** Open the editor's Design or Content tab. */
+export async function openEditorTab(page: Page, tab: 'Content' | 'Design') {
+  await page.getByRole('tab', { name: new RegExp(`^${tab}`) }).click();
+}
+
 export async function chooseTemplate(page: Page, level: string, imageName: string) {
-  await page.getByRole('button', { name: 'Switch Template' }).click();
+  await openEditorTab(page, 'Design');
   await expect(page.getByRole('heading', { name: 'Choose Your Resume Template' })).toBeVisible();
   await page.getByRole('button', { name: level, exact: true }).click();
   await page.getByRole('img', { name: imageName, exact: true }).click();
-  await page.getByRole('button', { name: 'Edit Resume' }).click();
+  await openEditorTab(page, 'Content');
   await expect(page.getByLabel('First name', { exact: true })).toBeVisible();
 }
 
 export async function chooseColor(page: Page, color: string) {
+  await openEditorTab(page, 'Design');
   await page.getByRole('combobox', { name: 'Resume color' }).click();
   await page.getByRole('button', { name: `Select ${color}`, exact: true }).click();
+  await openEditorTab(page, 'Content');
 }
 
 export async function chooseFontSize(page: Page, size: 'S' | 'M' | 'L') {
-  await page.getByRole('combobox', { name: 'Font size' }).click();
-  await page.getByRole('option', { name: size, exact: true }).click();
+  await openEditorTab(page, 'Design');
+  const name = { S: 'Small', M: 'Medium', L: 'Large' }[size];
+  await page.getByRole('radiogroup', { name: 'Text size' }).getByRole('radio', { name, exact: true }).click();
+  await openEditorTab(page, 'Content');
+}
+
+/** Rename the resume from the editor's title. */
+export async function renameResume(page: Page, label: string) {
+  await page.getByRole('button', { name: /^Rename resume:/ }).click();
+  await page.getByLabel('Resume label', { exact: true }).fill(label);
+  await page.getByLabel('Resume label', { exact: true }).blur();
 }
 
 export async function rememberDownloads(page: Page) {
@@ -133,10 +149,10 @@ export async function recordedDownloads(page: Page) {
 }
 
 export async function openFinalReview(page: Page) {
-  const button = page.getByRole('button', { name: 'Download resume' });
+  const button = page.getByRole('button', { name: 'Download PDF' });
   const dialog = page.getByRole('dialog', { name: 'Final Review' });
   const toast = page.locator('[data-sonner-toast]');
-  // A leaving toast covers the action bar. WebKit then focuses Download resume and drops the click.
+  // A leaving toast can cover the top bar. WebKit then focuses Download PDF and drops the click.
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await toast.waitFor({ state: 'hidden', timeout: 8_000 }).catch(() => undefined);
     await button.click();
@@ -162,7 +178,7 @@ export async function generateFromModal(page: Page, filename: string, label?: st
   }
   const download = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'Generate and Download Resume' }).click();
-  await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('Saved to your account')).toBeVisible({ timeout: 30_000 });
   await download;
   return recordedDownloads(page);
 }

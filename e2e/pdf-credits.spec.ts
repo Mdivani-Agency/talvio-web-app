@@ -190,7 +190,7 @@ test('PDF-03 re-downloads the stored file without a new charge or upload', async
   await page.reload();
   await rememberDownloads(page);
   const editorDownload = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download resume' }).click();
+  await page.getByRole('button', { name: 'Download PDF' }).click();
   await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(0);
   await editorDownload;
   expect(generates).toHaveLength(0);
@@ -364,9 +364,9 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   });
   await page.goto(`/resume/${lostId}`);
   await rememberDownloads(page);
-  await page.getByRole('button', { name: 'Download resume' }).click();
+  await page.getByRole('button', { name: 'Download PDF' }).click();
   await page.getByRole('dialog', { name: 'Final Review' }).getByRole('button', { name: 'Generate and Download Resume' }).click();
-  await expect(page.getByText('Saved to account')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('Saved to your account')).toBeVisible({ timeout: 30_000 });
   const lost = (await listResumes(owner.userId)).find((row) => row.id === lostId);
   expect(lost?.pdfUrl).toBeTruthy();
   expect(await creditBalance(owner.userId)).toBe(60);

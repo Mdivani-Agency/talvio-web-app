@@ -1,53 +1,37 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { TooltipProvider } from '@components/ui';
+import { PreviewToolbar } from './resume-actions';
 
-// The SVG icon set is a file import that jsdom cannot render.
-vi.mock('@components/icons', () => ({ Icon: () => null }));
+afterEach(cleanup);
 
-import { ResumeActionBar } from './resume-actions';
-
-function renderBar(props: Partial<Parameters<typeof ResumeActionBar>[0]> = {}) {
-  return render(
-    <TooltipProvider>
-      <ResumeActionBar
-        color="#000000"
-        imageCount={1}
-        currentIndex={0}
-        fontSize="md"
-        onFontSizeChange={vi.fn()}
-        setColor={vi.fn()}
-        goToPrevious={vi.fn()}
-        goToNext={vi.fn()}
-        handleDownload={vi.fn()}
-        handlePreviewOpen={vi.fn()}
-        {...props}
-      />
-    </TooltipProvider>,
-  );
-}
-
-describe('ResumeActionBar', () => {
-  afterEach(() => cleanup());
-
-  it('has no Improve with AI button without onImprove (flag off)', () => {
-    renderBar();
-    expect(screen.queryByRole('button', { name: 'Improve with AI' })).toBeNull();
+describe('PreviewToolbar', () => {
+  it('pages through the preview and opens the full size view', () => {
+    const goToPrevious = vi.fn();
+    const goToNext = vi.fn();
+    const handlePreviewOpen = vi.fn();
+    render(
+      <PreviewToolbar
+        imageCount={3}
+        currentIndex={1}
+        goToPrevious={goToPrevious}
+        goToNext={goToNext}
+        handlePreviewOpen={handlePreviewOpen}
+      />,
+    );
+    expect(screen.getByText('Page 2 of 3')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Previous page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Full size' }));
+    expect([goToPrevious, goToNext, handlePreviewOpen].map((fn) => fn.mock.calls.length)).toEqual([1, 1, 1]);
   });
 
-  it('starts Improve with AI and disables it while a session is open or there is no preview', () => {
-    const onImprove = vi.fn();
-    renderBar({ onImprove });
-    fireEvent.click(screen.getByRole('button', { name: 'Improve with AI' }));
-    expect(onImprove).toHaveBeenCalledTimes(1);
-    cleanup();
-
-    renderBar({ onImprove, improveDisabled: true });
-    expect(screen.getByRole('button', { name: 'Improve with AI' }).hasAttribute('disabled')).toBe(true);
-    cleanup();
-
-    renderBar({ onImprove, imageCount: 0 });
-    expect(screen.getByRole('button', { name: 'Improve with AI' }).hasAttribute('disabled')).toBe(true);
+  it('disables every control until the preview has a page', () => {
+    render(
+      <PreviewToolbar imageCount={0} currentIndex={0} goToPrevious={vi.fn()} goToNext={vi.fn()} handlePreviewOpen={vi.fn()} />,
+    );
+    for (const name of ['Previous page', 'Next page', 'Full size']) {
+      expect(screen.getByRole('button', { name }).hasAttribute('disabled')).toBe(true);
+    }
   });
 });

@@ -20,7 +20,7 @@ export default function TemplatesView({ selectedTemplate, initialLevel, template
   }
 
   return (
-    <TemplatesSelector level={currentLevel} templatesContainerClassName="grid-cols-1 md:grid-cols-2 lg:grid-cols-4" onChangeLevel={setCurrentLevel}>
+    <TemplatesSelector level={currentLevel} templatesContainerClassName="grid-cols-2" onChangeLevel={setCurrentLevel}>
       {templates[currentLevel].map(({ template, name, imageUrl, key }) => (
         <button
           type="button"

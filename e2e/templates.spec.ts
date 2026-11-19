@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { openSignedIn, persona, waitForPreview } from './fixtures/resume-ui';
 import { test as harnessTest } from './fixtures/test';
 
-// The `/templates` level switch. The editor's Switch Template view keeps its own title-case labels.
+// The `/templates` level switch. The editor's Design tab keeps the gallery's own title-case labels until MDI-604.
 const LEVELS = [
   { id: 'entry', label: 'Entry level' },
   { id: 'mid', label: 'Mid level' },
@@ -47,7 +47,7 @@ test.describe('templates', () => {
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
     await page.getByRole('button', { name: /Fill Manually/ }).click();
     await waitForPreview(page);
-    await page.getByRole('button', { name: 'Switch Template' }).click();
+    await page.getByRole('tab', { name: 'Design', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Entry Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: 'entry Modern', exact: true })).toHaveAttribute('aria-pressed', 'true');
   });
@@ -59,7 +59,7 @@ test.describe('templates', () => {
       await expect(page.getByText('Preparing resume...')).toHaveCount(0);
       await page.getByRole('button', { name: /Fill Manually/ }).click();
       await waitForPreview(page);
-      await page.getByRole('button', { name: 'Switch Template' }).click();
+      await page.getByRole('tab', { name: 'Design', exact: true }).click();
       await expect(page.getByRole('button', { name: 'Senior Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
       await expect(page.getByRole('button', { name: 'senior Modern', exact: true })).toHaveAttribute('aria-pressed', 'true');
       await page.evaluate(() => window.localStorage.clear());
@@ -79,7 +79,7 @@ test.describe('restored editor template', () => {
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
     await waitForPreview(page);
     await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Switch Template' }).click();
+    await page.getByRole('tab', { name: 'Design', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Entry Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: 'entry Modern', exact: true })).toHaveAttribute('aria-pressed', 'true');
 

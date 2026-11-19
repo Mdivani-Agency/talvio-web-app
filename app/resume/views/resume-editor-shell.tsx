@@ -3,24 +3,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { Icon } from '@components/icons';
 import { useAllowance } from '@app/account/hooks/use-allowance';
 import { AiImproveOverlay } from '@components/ai-improve';
 import { DownloadResumeModal } from '@components/modals';
-import { AnimatedTransition, Button, Input, Tooltip, TooltipContent, TooltipTrigger } from '@components/ui';
 import { normalizeResumeLabel } from '@lib/adapters/resume.adapter';
 import { featureFlags } from '@lib/flags';
 import type { ResumeFieldIssue } from '@lib/models/resume-document';
 import { resolveAvailableTemplate, templateLevelFromKey, type TemplateLevel } from '@lib/resume/resolve-editor';
-import { SAVE_STATUS_LABEL, type SaveStatus } from '@lib/resume/save-queue';
+import type { SaveStatus } from '@lib/resume/save-queue';
 import { listResumeTemplates } from '@lib/templates';
 import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
 
+import { DraftBanner } from '../components/draft-banner';
+import { EditorTabs, type EditorView } from '../components/editor-tabs';
+import { EditorTopBar } from '../components/editor-top-bar';
 import { ResumePreview } from '../components/resume-preview';
 import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../hooks/use-service-improve';
+import { DesignPanel } from './design-panel';
 import { EditResumeView } from './edit-resume-view';
-import TemplatesView from './templates-view';
 
 export type ResumeFamilyControls = {
   viewingOriginal: boolean;
@@ -61,6 +62,10 @@ type ResumeEditorShellProps = {
   onChange: (patch: Partial<PreviewDto>) => void;
   onDownload: (filename: string, label?: string) => boolean | void | Promise<boolean | void>;
   improve?: ResumeImproveControls | null;
+  /** A visitor without a session: the top bar links home and offers Sign in. */
+  guest?: boolean;
+  /** Where Sign in goes for a guest, with the way back to this resume. */
+  signInHref?: string;
 };
 
 export function ResumeEditorShell({
@@ -78,8 +83,11 @@ export function ResumeEditorShell({
   onChange,
   onDownload,
   improve,
+  guest = false,
+  signInHref,
 }: ResumeEditorShellProps) {
-  const [panel, setPanel] = useState<'templates' | 'form'>('form');
+  // Phones show one of Content, Design and Preview; from `md` the panel shows Content or Design beside the preview.
+  const [view, setView] = useState<EditorView>('content');
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloadName, setDownloadName] = useState(document.name);
   const [downloadLabel, setDownloadLabel] = useState(document.label ?? '');
@@ -143,114 +151,91 @@ export function ResumeEditorShell({
     setDownloadOpen(true);
   };
 
+  const hasIssues = Boolean(issues && issues.length > 0);
+  const title = document.label?.trim() || document.name;
+
   return (
-    <section className="grid h-dvh min-h-0 min-w-0 grid-cols-1 grid-rows-2 overflow-hidden md:h-auto md:grid-cols-5 md:grid-rows-1 md:overflow-visible">
-      <div className="relative flex min-h-0 min-w-0 flex-col overflow-hidden md:col-span-2">
-        {improveEnabled ? <AiImproveOverlay session={ai} /> : null}
-        <div className="flex flex-col gap-3 border-b border-input px-4 py-3 pt-16">
-          {family ? (
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">
-                {family.viewingOriginal
-                  ? 'Viewing the generated PDF. This version is read-only.'
-                  : 'Editing a draft. Your generated PDF stays downloadable.'}
-              </p>
-              <div className="flex shrink-0 items-center gap-2">
-                {family.viewingOriginal ? (
-                  <Button type="button" variant="link" size="sm" className="px-0" onClick={family.onViewDraft}>
-                    View draft
-                  </Button>
-                ) : (
-                  <>
-                    <Button type="button" variant="link" size="sm" className="px-0" onClick={family.onViewOriginal}>
-                      View original
-                    </Button>
-                    <Button type="button" variant="link" size="sm" className="px-0 text-destructive" onClick={family.onDiscard}>
-                      Discard draft
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : null}
-          <Input
-            key={`${formKey}:label`}
-            defaultValue={document.label ?? ''}
-            placeholder="Label (optional)"
-            aria-label="Resume label"
-            onBlur={(event) => {
-              const next = event.target.value;
-              if (normalizeResumeLabel(next) === normalizeResumeLabel(document.label)) {
-                return;
-              }
-              onChange({ label: next });
-            }}
-          />
-          {saveStatus ? (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{SAVE_STATUS_LABEL[saveStatus]}</span>
-              {saveMessage ? <span>{saveMessage}</span> : null}
-              {onRetrySave && (saveStatus === 'failed' || saveStatus === 'conflict') ? (
-                <Button type="button" variant="link" size="sm" className="h-auto px-0" onClick={onRetrySave}>
-                  Retry
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-        <AnimatedTransition
-          direction="left"
-          className={cn('flex-1 border-r border-input', readOnly && 'pointer-events-none opacity-60')}
-          current={panel === 'templates' ? 0 : 1}
-        >
-          {panel === 'templates' ? (
-            <TemplatesView
-              templates={templates}
-              initialLevel={galleryLevel}
-              selectedTemplate={document.template}
-              onChange={(_, key) => onChange({ template: key })}
-            />
-          ) : (
-            <EditResumeView
-              key={`${formKey}:ai${aiRevision}`}
-              className="h-full min-h-0 pt-4 md:h-screen"
-              issues={issues}
-              defaultValues={document.resume}
-              onSubmit={(resume) => onChange({ resume })}
-            />
-          )}
-        </AnimatedTransition>
-      </div>
-      <ResumePreview
-        className="min-h-0 min-w-0 md:col-span-3 md:pt-16"
-        templateKey={document.template}
-        resume={document.resume}
-        fontSize={document.fontSize}
-        color={document.color}
+    <section className="flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-background">
+      <EditorTopBar
+        title={title}
+        label={document.label ?? ''}
+        guest={guest}
+        draft={Boolean(family)}
         readOnly={readOnly}
-        handleChange={(key, value) => onChange({ [key]: value })}
+        signInHref={signInHref}
+        saveStatus={saveStatus}
+        saveMessage={saveMessage}
+        onRetrySave={onRetrySave}
+        onRename={(next) => {
+          if (normalizeResumeLabel(next) !== normalizeResumeLabel(document.label)) {
+            onChange({ label: next });
+          }
+        }}
         onDownload={requestDownload}
         onImprove={improveEnabled ? requestImprove : undefined}
         improveDisabled={ai.active}
-        action={(
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                className="text-muted-foreground font-medium size-8 hover:cursor-pointer"
-                title={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-                aria-label={panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-                onClick={() => setPanel(panel === 'templates' ? 'form' : 'templates')}
-              >
-                <Icon type={panel === 'templates' ? 'Edit' : 'Switch'} className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {panel === 'templates' ? 'Edit Resume' : 'Switch Template'}
-            </TooltipContent>
-          </Tooltip>
-        )}
       />
+      {family ? <DraftBanner family={family} /> : null}
+      <EditorTabs view={view} onView={setView} hasIssues={hasIssues} variant="phone" className="px-4 pt-3 pb-2 md:hidden" />
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,40rem)_minmax(0,1fr)] lg:grid-cols-[48rem_minmax(0,1fr)]">
+        <div
+          className={cn(
+            'relative min-h-0 flex-col md:flex md:border-r md:border-border',
+            view === 'preview' ? 'hidden' : 'flex',
+          )}
+        >
+          {improveEnabled ? <AiImproveOverlay session={ai} /> : null}
+          <EditorTabs
+            view={view}
+            onView={setView}
+            hasIssues={hasIssues}
+            variant="panel"
+            className="hidden flex-none px-6 pt-4 pb-3 md:block"
+          />
+          <div
+            role="tabpanel"
+            aria-label={view === 'design' ? 'Design' : 'Content'}
+            className={cn(
+              'min-h-0 flex-1',
+              view === 'design' ? 'overflow-y-auto px-4 pb-6 md:px-6' : 'flex flex-col',
+              readOnly && 'pointer-events-none opacity-60',
+            )}
+          >
+            {view === 'design' ? (
+              <DesignPanel
+                templates={templates}
+                level={galleryLevel}
+                template={document.template}
+                color={document.color}
+                fontSize={document.fontSize}
+                disabled={readOnly}
+                onTemplate={(key) => onChange({ template: key })}
+                onColor={(color) => onChange({ color })}
+                onFontSize={(fontSize) => onChange({ fontSize })}
+              />
+            ) : (
+              <EditResumeView
+                key={`${formKey}:ai${aiRevision}`}
+                className="h-full min-h-0"
+                issues={issues}
+                defaultValues={document.resume}
+                onSubmit={(resume) => onChange({ resume })}
+              />
+            )}
+          </div>
+        </div>
+        <ResumePreview
+          className={cn('min-h-0 md:flex', view === 'preview' ? 'flex' : 'hidden')}
+          templateKey={document.template}
+          templateName={templateItem.name}
+          resume={document.resume}
+          fontSize={document.fontSize}
+          color={document.color}
+          readOnly={readOnly}
+          handleChange={(key, value) => onChange({ [key]: value })}
+          onDownload={requestDownload}
+        />
+      </div>
       <DownloadResumeModal
         isOpen={downloadOpen}
         filename={downloadName}
