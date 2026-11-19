@@ -1,86 +1,103 @@
 'use client';
 
-import { Icon } from '@components/icons';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@components/ui';
-import { createSupabaseBrowserClient } from '@lib/supabase/client';
-import { Loading } from '@components/views';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
-import { toast } from 'sonner';
+import { Suspense, useState } from 'react';
 
+import { Icon } from '@components/icons';
+import { Button } from '@components/ui';
+import { Loading } from '@components/views';
+import { createSupabaseBrowserClient } from '@lib/supabase/client';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect-path';
+import { signInErrorMessage } from '@/lib/auth/sign-in-error';
 import { signInSearchParams } from '@/lib/auth/sign-in-href';
-
-import { SignInForm } from './sign-in.form';
 import {
+  SIGN_IN_AGREEMENT,
   SIGN_IN_DIVIDER,
   SIGN_IN_GOOGLE_LABEL,
   SIGN_IN_HEADING,
   SIGN_IN_INTRO,
+  SIGN_IN_LINKEDIN_NOTE,
 } from '@/lib/sign-in-copy';
+
+import { AuthAlert } from '../views/auth-alert';
+import { AuthCard, AuthPage } from '../views/auth-card';
+import { SignInForm } from './sign-in.form';
 
 function authRedirectTo(next: string) {
   return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 }
 
+const legalLinkClassName = 'text-secondary underline underline-offset-[0.3rem] dark:text-secondary-hover';
+
 function SignInPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = safeRedirectPath(signInSearchParams(searchParams));
+  const [alert, setAlert] = useState<string>();
 
   const handleEmailSignIn = async ({ email }: { email: string }) => {
+    setAlert(undefined);
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: authRedirectTo(next) },
     });
     if (error) {
-      toast.error(error.message);
+      setAlert(signInErrorMessage(error));
       return;
     }
     router.push('/auth/verify-request');
   };
 
   const handleGoogleSignIn = async () => {
+    setAlert(undefined);
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: authRedirectTo(next) },
     });
     if (error) {
-      toast.error(error.message);
+      setAlert(signInErrorMessage(error));
     }
   };
 
   return (
-    <section className="flex min-h-screen flex-col items-center justify-center px-4 py-24">
-      <Card className="w-full max-w-96">
-        <CardHeader>
-          <CardTitle className="text-primary text-xl font-semibold text-center">
-            <h1>{SIGN_IN_HEADING}</h1>
-          </CardTitle>
-          <CardDescription className="text-md text-center">{SIGN_IN_INTRO}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Button
-            className="bg-[#FEFEFF] text-[#0d0d0d] dark:bg-[#FEFEFF] dark:hover:bg-[#F6F6FE] dark:hover:text-[#0d0d0d] flex items-center gap-2"
-            onClick={() => void handleGoogleSignIn()}
-            variant={'outline'}
-          >
-            <Icon type="Google" className="size-4" /> {SIGN_IN_GOOGLE_LABEL}
-          </Button>
-          <div className="flex items-center gap-2">
-            <Separator className="flex-1" />
-            <span className="text-md text-muted-foreground px-2">{SIGN_IN_DIVIDER}</span>
-            <Separator className="flex-1" />
-          </div>
-          <SignInForm onSubmit={handleEmailSignIn} />
-          <p className="text-center text-md text-muted-foreground">
-            Used LinkedIn before? Request an email link for that same address.
-          </p>
-        </CardContent>
-      </Card>
-    </section>
+    <AuthPage>
+      <AuthCard>
+        <div className="flex flex-col gap-2 text-center">
+          <h1 className="text-xl leading-[1.333] font-semibold text-primary">{SIGN_IN_HEADING}</h1>
+          <p className="text-md text-muted-foreground">{SIGN_IN_INTRO}</p>
+        </div>
+        {alert ? <AuthAlert>{alert}</AuthAlert> : null}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void handleGoogleSignIn()}
+          className="h-12 w-full gap-2.5 border-input bg-background text-md text-foreground dark:bg-background"
+        >
+          <Icon type="Google" className="size-[1.8rem]" /> {SIGN_IN_GOOGLE_LABEL}
+        </Button>
+        <div aria-hidden="true" className="flex items-center gap-3 text-md text-muted-foreground">
+          <span className="h-px flex-1 bg-input" />
+          {SIGN_IN_DIVIDER}
+          <span className="h-px flex-1 bg-input" />
+        </div>
+        <SignInForm onSubmit={handleEmailSignIn} onValuesChange={() => setAlert(undefined)} />
+        <p className="text-center text-md leading-[1.4] text-muted-foreground">{SIGN_IN_LINKEDIN_NOTE}</p>
+      </AuthCard>
+      <p className="mt-5 max-w-[44rem] text-center text-md leading-[1.4] text-muted-foreground">
+        {SIGN_IN_AGREEMENT.before}
+        <Link href={SIGN_IN_AGREEMENT.terms.href} className={legalLinkClassName}>
+          {SIGN_IN_AGREEMENT.terms.label}
+        </Link>
+        {SIGN_IN_AGREEMENT.between}
+        <Link href={SIGN_IN_AGREEMENT.privacy.href} className={legalLinkClassName}>
+          {SIGN_IN_AGREEMENT.privacy.label}
+        </Link>
+        {SIGN_IN_AGREEMENT.after}
+      </p>
+    </AuthPage>
   );
 }
 
