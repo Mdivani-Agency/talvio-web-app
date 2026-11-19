@@ -1,4 +1,7 @@
-export type NavLink = { name: string; href: string };
+import { featureFlags, type FeatureFlags } from './flags';
+
+/** `current` marks the page the visitor is on (`aria-current="page"`). */
+export type NavLink = { name: string; href: string; current?: boolean };
 
 export const SIGN_IN_HREF = '/auth/sign-in';
 export const SIGN_IN_LABEL = 'Sign in';
@@ -6,11 +9,24 @@ export const SIGN_IN_LABEL = 'Sign in';
 /** Tag beside the logo in the header while beta mode is on (`featureFlags().betaMode`). */
 export const BETA_TAG = 'Beta';
 
-/** Links to other public pages. Shown in the header on every public page. */
-export const PUBLIC_PAGE_LINKS: NavLink[] = [
-  { name: 'Templates', href: '/templates' },
-  { name: 'Blog', href: '/blog' },
-];
+export const PRICING_LINK: NavLink = { name: 'Pricing', href: '/pricing' };
+
+/** Links to the other public pages. Pricing is listed only while the `plansPage` flag serves it. */
+export function publicPageLinks(flags: Pick<FeatureFlags, 'plansPage'> = featureFlags()): NavLink[] {
+  return [
+    { name: 'Templates', href: '/templates' },
+    ...(flags.plansPage ? [PRICING_LINK] : []),
+    { name: 'Blog', href: '/blog' },
+  ];
+}
+
+/** Shown in the header on every public page, and in the footer. */
+export const PUBLIC_PAGE_LINKS: NavLink[] = publicPageLinks();
+
+/** The same links with `href` marked as the current page. */
+export function withCurrentPage(links: NavLink[], href: string): NavLink[] {
+  return links.map((link) => (link.href === href ? { ...link, current: true } : link));
+}
 
 /** In-page anchors, shown before the page links on the homepage only. */
 export const HOME_SECTION_LINKS: NavLink[] = [

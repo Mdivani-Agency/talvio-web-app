@@ -2,11 +2,18 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { BLOG_READ_ARTICLE_LABEL } from '../lib/blog-copy';
+import { featureFlags } from '../lib/flags';
 import { INDEXABLE_PUBLIC_PATHS } from '../lib/public-metadata';
 
 import { signInWithLocalMagicLink } from './fixtures/auth';
 import { persona } from './fixtures/resume-ui';
 import { test as harness } from './fixtures/test';
+
+/**
+ * The same flags the app was built with: `scripts/e2e-local.mjs` builds and runs Playwright with one environment.
+ * CI runs with `plansPage` off. Run `NEXT_PUBLIC_FLAG_PLANS_PAGE=true yarn test:e2e:local` for the flag-on path.
+ */
+const FLAGS = featureFlags();
 
 function watchPageErrors(page: import('@playwright/test').Page) {
   const errors: string[] = [];
@@ -37,8 +44,13 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   await expect(page).toHaveURL(/\/$/);
 
   await page.goto('/pricing');
-  await expect(page).toHaveURL(/\/#whats-free$/);
-  await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
+  if (FLAGS.plansPage) {
+    await expect(page).toHaveURL(/\/pricing$/);
+    await expect(page.getByRole('heading', { name: 'Start free. Upgrade when you apply more.', level: 1 })).toBeVisible();
+  } else {
+    await expect(page).toHaveURL(/\/#whats-free$/);
+    await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
+  }
 
   // The ATS guide was removed with no redirect (MDI-578): the path answers with the normal 404.
   const atsResponse = await page.goto('/ats-friendly-resume');
@@ -676,10 +688,13 @@ test('PUB-10 phone controls are at least 44px tall (the spacing scale has no 11,
 });
 
 test('PUB-08 retired pricing and purchase pages redirect and no public page links to them', async ({ page, request }) => {
-  const pricing = await request.get('/pricing', { maxRedirects: 0 });
-  expect(pricing.status()).toBe(307);
-  expect(new URL(pricing.headers().location, 'http://localhost').pathname).toBe('/');
-  expect(pricing.headers().location).toMatch(/\/#whats-free$/);
+  // With `plansPage` on, `/pricing` is served and linked; PUB-11 covers it. The purchase pages stay retired.
+  if (!FLAGS.plansPage) {
+    const pricing = await request.get('/pricing', { maxRedirects: 0 });
+    expect(pricing.status()).toBe(307);
+    expect(new URL(pricing.headers().location, 'http://localhost').pathname).toBe('/');
+    expect(pricing.headers().location).toMatch(/\/#whats-free$/);
+  }
 
   for (const path of ['/account/credits', '/account/upgrade']) {
     const retired = await request.get(path, { maxRedirects: 0 });
@@ -688,11 +703,64 @@ test('PUB-08 retired pricing and purchase pages redirect and no public page link
   }
 
   const sitemap = await (await request.get('/sitemap.xml')).text();
-  expect(sitemap).not.toContain('/pricing');
+  if (FLAGS.plansPage) {
+    expect(sitemap).toContain('/pricing');
+  } else {
+    expect(sitemap).not.toContain('/pricing');
+  }
 
+  const retiredLinks = FLAGS.plansPage
+    ? 'a[href^="/account/credits"], a[href^="/account/upgrade"]'
+    : 'a[href^="/pricing"], a[href^="/account/credits"], a[href^="/account/upgrade"]';
   for (const path of PUBLIC_PAGES) {
     await page.goto(path);
-    await expect(page.locator('a[href^="/pricing"], a[href^="/account/credits"], a[href^="/account/upgrade"]'), path).toHaveCount(0);
+    await expect(page.locator(retiredLinks), path).toHaveCount(0);
     await expect(page.getByText(/buy credits|buy more/i), path).toHaveCount(0);
   }
+});
+
+test('PUB-11 /pricing follows the plansPage flag: off it redirects, on it lists the plans with nothing to buy', async ({ browser, request }) => {
+  if (!FLAGS.plansPage) {
+    const pricing = await request.get('/pricing', { maxRedirects: 0 });
+    expect(pricing.status()).toBe(307);
+    expect(pricing.headers().location).toMatch(/\/#whats-free$/);
+    return;
+  }
+
+  // UTC+4, so the 00:00 UTC reset reads 4:00 AM.
+  const context = await browser.newContext({ timezoneId: 'Asia/Tbilisi', locale: 'en-US', viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const response = await page.goto('/pricing');
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole('heading', { level: 1, name: 'Start free. Upgrade when you apply more.' })).toBeVisible();
+
+  // The header lists Pricing, marked as this page.
+  await expect(page.locator('header').first().getByRole('link', { name: 'Pricing' }).first()).toHaveAttribute('aria-current', 'page');
+
+  const plans = page.getByRole('region', { name: 'Plans' });
+  for (const name of ['Free', 'Pro', 'Max', 'Ultra']) {
+    await expect(plans.getByRole('heading', { level: 3, name })).toBeVisible();
+  }
+  await expect(plans.getByRole('link')).toHaveCount(1);
+  await expect(plans.getByRole('link', { name: 'Start free' })).toHaveAttribute('href', '/auth/sign-in');
+  await expect(plans.getByRole('button')).toHaveCount(0);
+  await expect(plans.locator('[aria-disabled="true"]', { hasText: 'Coming soon' })).toHaveCount(3);
+  await expect(plans.getByText('Daily count resets at 4:00 AM your time')).toHaveCount(3);
+  await expect(page.getByText('Subscriptions are not available yet. Nothing on this page starts a payment.')).toBeVisible();
+  await expect(page.getByRole('main')).not.toContainText(/credit/i);
+
+  // Tab never stops on Coming soon: the Free card's Start free is the only stop in the plans.
+  await plans.getByRole('link', { name: 'Start free' }).focus();
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => Boolean(document.activeElement?.closest('[aria-labelledby="plans-heading"]')))).toBe(false);
+
+  // The questions open by keyboard, and the daily reset answer is in local time.
+  const question = page.locator('summary', { hasText: 'When does the daily count reset?' });
+  await question.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Every day at 4:00 AM your time. Unused PDFs do not carry over to the next day.')).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  await context.close();
 });

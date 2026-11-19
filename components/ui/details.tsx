@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { Icon } from '../icons';
 
 interface DetailsListProps {
   qa: readonly {
     question: string;
-    answer: string;
+    /** Usually text; a page can pass links or a client-rendered time. */
+    answer: ReactNode;
   }[];
   /** Opens the first answer on load. Each row stays a native `<details>` toggle. */
   openFirst?: boolean;
