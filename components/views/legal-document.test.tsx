@@ -27,4 +27,27 @@ describe('LegalDocument', () => {
     expect(html).toContain('<ul');
     expect(html.match(/<li/g)?.length).toBeGreaterThan(10);
   });
+
+  it('switches between the two documents and marks the current one', () => {
+    const terms = renderToStaticMarkup(<LegalDocument doc={TERMS} />);
+    const nav = terms.match(/<nav aria-label="Legal documents"[\s\S]*?<\/nav>/)?.[0] ?? '';
+    expect(nav.match(/<a /g)).toHaveLength(2);
+    const link = (html: string, name: string) => html.match(new RegExp(`<a [^>]*>${name}<`))?.[0] ?? '';
+    expect(link(nav, 'Terms of Service')).toContain('href="/terms"');
+    expect(link(nav, 'Terms of Service')).toContain('aria-current="page"');
+    expect(link(nav, 'Privacy Policy')).toContain('href="/privacy-policy"');
+    expect(link(nav, 'Privacy Policy')).not.toContain('aria-current');
+
+    const privacy = renderToStaticMarkup(<LegalDocument doc={PRIVACY} />);
+    expect(link(privacy, 'Privacy Policy')).toContain('aria-current="page"');
+    expect(link(privacy, 'Terms of Service')).not.toContain('aria-current');
+  });
+
+  it('keeps the document text in an article, apart from the switch', () => {
+    const html = renderToStaticMarkup(<LegalDocument doc={TERMS} />);
+    const article = html.match(/<article[\s\S]*<\/article>/)?.[0] ?? '';
+    expect(article.match(/<h2/g)).toHaveLength(TERMS.sections.length);
+    expect(article.match(/href="\/privacy-policy"/g)).toHaveLength(1);
+    expect(article).not.toContain('Legal documents');
+  });
 });
