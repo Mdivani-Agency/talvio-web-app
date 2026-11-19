@@ -91,7 +91,7 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
   const submit = page.getByRole('button', { name: 'Continue with email' });
   await submit.click();
   await expect(page).toHaveURL(/\/auth\/sign-in/);
-  await expect(page.getByRole('heading', { name: 'Check Your Email!' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toHaveCount(0);
   // The message sits under the field and is read with it.
   await expect(email).toHaveAttribute('aria-invalid', 'true');
   await expect(email).toHaveAccessibleDescription('Enter your email address.');
@@ -119,7 +119,14 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
 
   const retryEmail = emailFor('retry');
   await submitEmailSignIn(page, retryEmail);
-  await expect(page.getByRole('heading', { name: 'Check Your Email!' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  // The page names the address, holds Resend for Supabase's minute, and never puts the address in the URL.
+  await expect(page.getByRole('main').getByText(retryEmail, { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Resend in (1:00|0:5\d)$/ })).toBeDisabled();
+  expect(page.url()).not.toContain(encodeURIComponent(retryEmail));
+  expect(page.url()).not.toContain(retryEmail);
+  await page.getByRole('link', { name: 'Use a different email' }).click();
+  await expect(page.getByLabel('Email', { exact: true })).toHaveValue(retryEmail);
 
   await page.goto('/auth/callback');
   await expect(page.getByRole('heading', { name: 'Authentication Error' })).toBeVisible();

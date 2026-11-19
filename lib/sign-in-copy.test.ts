@@ -11,6 +11,9 @@ import {
   SIGN_IN_INTRO,
   SIGN_IN_RATE_LIMIT,
   SIGN_IN_SUBMIT_LABEL,
+  RESEND_COOLDOWN_SECONDS,
+  resendCountdownLabel,
+  VERIFY_HEADING,
 } from './sign-in-copy';
 
 describe('sign-in copy', () => {
@@ -34,5 +37,13 @@ describe('sign-in copy', () => {
     expect(SIGN_IN_AGREEMENT.privacy.href).toBe('/privacy-policy');
     const line = `${SIGN_IN_AGREEMENT.before}${SIGN_IN_AGREEMENT.terms.label}${SIGN_IN_AGREEMENT.between}${SIGN_IN_AGREEMENT.privacy.label}${SIGN_IN_AGREEMENT.after}`;
     expect(line).toBe('By continuing, you agree to the Terms of Service and Privacy Policy.');
+  });
+
+  it('formats the resend countdown in minutes and seconds', () => {
+    expect(VERIFY_HEADING).toBe('Check your email');
+    expect(RESEND_COOLDOWN_SECONDS).toBe(60);
+    expect(resendCountdownLabel(60)).toBe('Resend in 1:00');
+    expect(resendCountdownLabel(59)).toBe('Resend in 0:59');
+    expect(resendCountdownLabel(5)).toBe('Resend in 0:05');
   });
 });

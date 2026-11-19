@@ -8,6 +8,7 @@ import { Icon } from '@components/icons';
 import { Button } from '@components/ui';
 import { Loading } from '@components/views';
 import { createSupabaseBrowserClient } from '@lib/supabase/client';
+import { authCallbackUrl, savePendingSignIn } from '@/lib/auth/pending-sign-in';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect-path';
 import { signInErrorMessage } from '@/lib/auth/sign-in-error';
 import { signInSearchParams } from '@/lib/auth/sign-in-href';
@@ -20,12 +21,13 @@ import {
   SIGN_IN_LINKEDIN_NOTE,
 } from '@/lib/sign-in-copy';
 
+import { usePendingSignIn } from '../hooks/use-pending-sign-in';
 import { AuthAlert } from '../views/auth-alert';
 import { AuthCard, AuthPage } from '../views/auth-card';
 import { SignInForm } from './sign-in.form';
 
 function authRedirectTo(next: string) {
-  return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  return authCallbackUrl(window.location.origin, next);
 }
 
 const legalLinkClassName = 'text-secondary underline underline-offset-[0.3rem] dark:text-secondary-hover';
@@ -35,6 +37,8 @@ function SignInPageContent() {
   const searchParams = useSearchParams();
   const next = safeRedirectPath(signInSearchParams(searchParams));
   const [alert, setAlert] = useState<string>();
+  // "Use a different email" comes back here; the address from the last attempt is filled in.
+  const pending = usePendingSignIn();
 
   const handleEmailSignIn = async ({ email }: { email: string }) => {
     setAlert(undefined);
@@ -47,6 +51,8 @@ function SignInPageContent() {
       setAlert(signInErrorMessage(error));
       return;
     }
+    // The address goes to sessionStorage, not the URL, so it stays out of logs and history.
+    savePendingSignIn({ email, next, sentAt: Date.now() });
     router.push('/auth/verify-request');
   };
 
@@ -83,7 +89,11 @@ function SignInPageContent() {
           {SIGN_IN_DIVIDER}
           <span className="h-px flex-1 bg-input" />
         </div>
-        <SignInForm onSubmit={handleEmailSignIn} onValuesChange={() => setAlert(undefined)} />
+        <SignInForm
+          initialEmail={pending?.email}
+          onSubmit={handleEmailSignIn}
+          onValuesChange={() => setAlert(undefined)}
+        />
         <p className="text-center text-md leading-[1.4] text-muted-foreground">{SIGN_IN_LINKEDIN_NOTE}</p>
       </AuthCard>
       <p className="mt-5 max-w-[44rem] text-center text-md leading-[1.4] text-muted-foreground">

@@ -11,7 +11,7 @@ export async function submitEmailSignIn(page: Page, email: string, next = '/acco
 
 export async function signInThroughLocalMail(page: Page, email: string, next = '/account') {
   await submitEmailSignIn(page, email, next);
-  await expect(page.getByRole('heading', { name: 'Check Your Email!' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
   const link = await latestMagicLink(email);
   await page.goto(link);
   await page.waitForURL(/localhost:3002\//);

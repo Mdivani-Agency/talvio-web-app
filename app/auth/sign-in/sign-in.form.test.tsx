@@ -56,4 +56,15 @@ describe('SignInForm', () => {
     await act(async () => finish());
     expect(await screen.findByRole('button', { name: SIGN_IN_SUBMIT_LABEL })).toBeTruthy();
   });
+
+  it('fills in the address from the last attempt once, without overwriting what was typed', async () => {
+    const { rerender } = render(<SignInForm onSubmit={vi.fn()} />);
+    fireEvent.change(email(), { target: { value: 'typed@example.com' } });
+    rerender(<SignInForm initialEmail="ada@example.com" onSubmit={vi.fn()} />);
+    expect(email().value).toBe('typed@example.com');
+
+    cleanup();
+    render(<SignInForm initialEmail="ada@example.com" onSubmit={vi.fn()} />);
+    await waitFor(() => expect(email().value).toBe('ada@example.com'));
+  });
 });
