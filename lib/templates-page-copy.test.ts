@@ -11,6 +11,11 @@ import {
   TEMPLATES_PAGE_HEADING,
   TEMPLATES_PAGE_INTRO,
   TEMPLATES_PAGE_TITLE,
+  TEMPLATES_USE_LABEL,
+  templateCardLabel,
+  templatesCarouselLabel,
+  templatesDotLabel,
+  templatesSlideLabel,
 } from './templates-page-copy';
 
 describe('templates page copy', () => {
@@ -38,5 +43,13 @@ describe('templates page copy', () => {
 
   it('dates the copy', () => {
     expect(TEMPLATES_LAST_MODIFIED).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('names the cards and the carousel parts', () => {
+    expect(TEMPLATES_USE_LABEL).toBe('Use template');
+    expect(templateCardLabel('Modern', 'Senior level')).toBe('Use the Modern template, senior level');
+    expect(templatesCarouselLabel('Entry level')).toBe('Entry level templates');
+    expect(templatesSlideLabel(1, 4)).toBe('1 of 4');
+    expect(templatesDotLabel('Mint')).toBe('Show Mint');
   });
 });
