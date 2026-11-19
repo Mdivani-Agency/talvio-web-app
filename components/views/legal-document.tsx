@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { LegalDocument as LegalDocumentCopy, LegalInline } from '@/lib/legal-copy';
+import { PageContainer } from './page-container';
 
 const linkClassName = 'underline hover:text-secondary';
 
@@ -42,7 +43,7 @@ function InlineRun({ content }: { content: LegalInline[] }) {
 /** Renders a legal text from `lib/*-copy.ts`: one `h1`, "Last updated", then numbered sections. */
 export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
   return (
-    <main className="mx-auto w-full max-w-container-3xl px-4 pb-12 pt-24 text-primary lg:px-6">
+    <PageContainer as="main" className="pb-12 pt-24 text-primary">
       <header className="mb-8 flex flex-col gap-2">
         <h1 className="text-2xl font-semibold lg:text-3xl">{doc.title}</h1>
         <p className="text-md text-muted-foreground">Last updated: {doc.lastUpdated}</p>
@@ -69,6 +70,6 @@ export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
           </section>
         ))}
       </div>
-    </main>
+    </PageContainer>
   );
 }

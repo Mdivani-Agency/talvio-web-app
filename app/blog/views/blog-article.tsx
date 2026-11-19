@@ -23,6 +23,7 @@ import {
 } from "@/lib/homepage-copy";
 
 import { BlogMarkdown } from "./blog-markdown";
+import { PageContainer } from '@components/views';
 
 const BREADCRUMB_LINK_CLASS =
   "underline underline-offset-[0.3rem] hover:text-foreground";
@@ -38,8 +39,8 @@ type BlogArticleProps = {
 export function BlogArticle({ post, origins, coverUrl }: BlogArticleProps) {
   const updatedAt = blogUpdatedDate(post);
   return (
-    <main className="w-full pt-8 pb-12 text-primary lg:pt-14 lg:pb-24">
-      <div className="mx-auto flex w-full max-w-[72rem] flex-col gap-8 px-4 lg:px-0">
+    <PageContainer as="main" className="pt-8 pb-12 text-primary lg:pt-14 lg:pb-24">
+      <div className="mx-auto flex w-full max-w-[72rem] flex-col gap-8">
         <nav
           aria-label={BLOG_BREADCRUMB_LABEL}
           className="text-md text-muted-foreground"
@@ -107,7 +108,7 @@ export function BlogArticle({ post, origins, coverUrl }: BlogArticleProps) {
       </div>
 
       {/* The same closing panel as the homepage: a bordered panel with no fill. */}
-      <section className="mx-auto mt-12 w-full max-w-[120rem] px-4 lg:mt-24 lg:px-10">
+      <section className="mt-12 lg:mt-24">
         <div className="flex flex-col items-start gap-4 rounded-xl border border-input px-6 py-8 lg:px-14 lg:py-12">
           <h2 className="text-[2.4rem] leading-[1.333] font-semibold text-primary lg:text-[2.8rem]">
             {CTA_TITLE}
@@ -130,6 +131,6 @@ export function BlogArticle({ post, origins, coverUrl }: BlogArticleProps) {
           </div>
         </div>
       </section>
-    </main>
+    </PageContainer>
   );
 }

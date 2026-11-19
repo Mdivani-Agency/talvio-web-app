@@ -29,10 +29,11 @@ import {
   pricingPackPdfLine,
 } from '@/lib/pricing-page-copy';
 import Link from 'next/link';
+import { PageContainer } from '@components/views';
 
 export default function PricingPage() {
   return (
-    <main className="mx-auto flex w-full max-w-container-3xl flex-col gap-12 px-4 pb-12 pt-24 text-primary lg:px-6">
+    <PageContainer as="main" className="flex flex-col gap-12 pb-12 pt-24 text-primary">
       <header className="flex max-w-3xl flex-col gap-4">
         <h1 className="text-2xl font-semibold">{PRICING_PAGE_HEADING}</h1>
         <p className="text-lg text-muted-foreground">{PRICING_PAGE_INTRO}</p>
@@ -114,6 +115,6 @@ export default function PricingPage() {
           </Button>
         </div>
       </section>
-    </main>
+    </PageContainer>
   );
 }
