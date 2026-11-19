@@ -133,8 +133,11 @@ describe('public metadata', () => {
     expect(allowPublicIndexing()).toBe(true);
   });
 
-  it('dates the privacy policy by its last change', () => {
-    const privacy = publicSitemap({ plansPage: false }).find((entry) => entry.url.endsWith('/privacy-policy'))?.lastModified;
-    expect(privacy).toBe('2026-11-16');
+  it('dates the legal pages by their last visible change', () => {
+    const sitemap = publicSitemap({ plansPage: false });
+    const lastModified = (path: string) => sitemap.find((entry) => entry.url.endsWith(path))?.lastModified;
+    // The contents list and Back to top changed both pages; the legal text and its "Last updated" dates did not.
+    expect(lastModified('/privacy-policy')).toBe('2026-11-19');
+    expect(lastModified('/terms')).toBe('2026-11-19');
   });
 });
