@@ -88,6 +88,8 @@ export function ResumeEditorShell({
 }: ResumeEditorShellProps) {
   // Phones show one of Content, Design and Preview; from `md` the panel shows Content or Design beside the preview.
   const [view, setView] = useState<EditorView>('content');
+  // The AI overlay sits in the panel, so a session started from the phone's Preview tab brings the panel back.
+  const showPanel = () => setView((current) => (current === 'preview' ? 'content' : current));
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloadName, setDownloadName] = useState(document.name);
   const [downloadLabel, setDownloadLabel] = useState(document.label ?? '');
@@ -126,6 +128,8 @@ export function ResumeEditorShell({
   }, [improveEnabled, startSession, startToken]);
 
   const requestImprove = () => {
+    // Also covers a fork confirmed first: that session starts from this request, with the panel already shown.
+    showPanel();
     if (improve?.onRequest && improve.onRequest() === false) {
       return;
     }
