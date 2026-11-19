@@ -27,15 +27,35 @@ export const PRIVACY_TITLE = 'Privacy Policy | Talvio';
 export const PRIVACY_DESCRIPTION =
   'What personal data Talvio stores, why it is used, who processes it and for how long, and how to ask for a copy, a correction or deletion.';
 
-/**
- * Placeholder share image (1200x630) for every public page: the logo, the homepage headline and the supporting line.
- * Social networks cache images by URL, so a new image gets a new file name (`share-image-v2.png`) and this URL changes with it.
+export type ShareImage = { url: string; width: number; height: number; alt: string };
+
+/*
+ * Link preview images, 1200x630 PNG. Social networks cache images by URL, so a changed image gets a new file name
+ * (`-v2`, `-v3`) and its URL changes with it.
  */
-export const SHARE_IMAGE = {
-  url: '/share-image-v1.png',
+
+/** The homepage, and every page without its own image: the headline beside three sample resumes. */
+export const SHARE_IMAGE: ShareImage = {
+  url: '/share-image-v2.png',
   width: 1200,
   height: 630,
-  alt: `Talvio. ${HERO_TITLE}. ${BENEFITS_TITLE}`,
+  alt: `Talvio. ${HERO_TITLE}, free forever with no card needed. ${BENEFITS_TITLE} Three sample resumes beside the text.`,
+};
+
+/** `/templates`: four sample resumes in different templates. */
+export const SHARE_IMAGE_TEMPLATES: ShareImage = {
+  url: '/share-templates-v1.png',
+  width: 1200,
+  height: 630,
+  alt: 'Talvio resume templates: 12 templates for 3 experience levels. Pick a layout for your career stage and preview it before you download. Four sample resumes beside the text.',
+};
+
+/** `/blog`, and blog posts without a cover image. */
+export const SHARE_IMAGE_BLOG: ShareImage = {
+  url: '/share-blog-v1.png',
+  width: 1200,
+  height: 630,
+  alt: 'Talvio blog: resume and job search articles. Practical guides for your next application.',
 };
 
 /** Open Graph and Twitter fields shared by every page. A segment that sets `openGraph` replaces the parent's, so pages spread these. */
@@ -83,14 +103,20 @@ export const PRIVATE_ROBOTS_PREFIXES = ['/account', '/auth', '/resume', '/api'] 
 
 export const PRIVATE_ROBOTS: Metadata['robots'] = { index: false, follow: false };
 
-export function publicPageMetadata(path: string, title: string, description: string): Metadata {
+/** A public page's title, description, canonical, robots and link preview. `image` defaults to `SHARE_IMAGE`. */
+export function publicPageMetadata(
+  path: string,
+  title: string,
+  description: string,
+  image: ShareImage = SHARE_IMAGE,
+): Metadata {
   return {
     title: { absolute: title },
     description,
     alternates: { canonical: path === '/' ? `${siteOrigin()}/` : path },
     robots: allowPublicIndexing() ? { index: true, follow: true } : PRIVATE_ROBOTS,
-    openGraph: { ...SHARE_OPEN_GRAPH, title, description, url: path },
-    twitter: { ...SHARE_TWITTER, title, description },
+    openGraph: { ...SHARE_OPEN_GRAPH, title, description, url: path, images: [image] },
+    twitter: { ...SHARE_TWITTER, title, description, images: [image] },
   };
 }
 

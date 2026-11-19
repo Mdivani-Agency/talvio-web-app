@@ -169,7 +169,7 @@ test('BLOG-06 article metadata and structured data agree, for browsers and crawl
     expect(special).not.toContain('<script>window.__pwned');
     const [specialGraph] = jsonLd(special);
     expect(specialGraph['@graph']?.[0].headline).toBe('Résumé "tips" & </script><script>window.__pwned=1</script>');
-    expect(metaContent(special, 'property', 'og:image')).toEqual(['https://www.talvio.co/share-image-v1.png']);
+    expect(metaContent(special, 'property', 'og:image')).toEqual(['https://www.talvio.co/share-blog-v1.png']);
 
     for (const path of ['/blog/no-such-post', '/blog/agency-only-leak']) {
       const missing = await (await request.get(path, { headers })).text();
@@ -190,7 +190,7 @@ test('BLOG-06 article metadata and structured data agree, for browsers and crawl
   }
 
   // The fallback social image is a real asset.
-  const share = await request.get('/share-image-v1.png');
+  const share = await request.get('/share-blog-v1.png');
   expect(share.status()).toBe(200);
   expect(share.headers()['content-type']).toBe('image/png');
 });

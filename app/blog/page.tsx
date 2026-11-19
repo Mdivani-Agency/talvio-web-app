@@ -5,7 +5,7 @@ import { Button } from '@components/ui';
 import { BLOG_EMPTY_BODY, BLOG_EMPTY_HEADING, BLOG_PAGE_DESCRIPTION, BLOG_PAGE_TITLE, BLOG_PATH } from '@/lib/blog-copy';
 import { blogAssetUrl, getBlogPosts } from '@/lib/blog/reader';
 import { PRIMARY_CTA_HREF, PRIMARY_CTA_LABEL, SECONDARY_CTA_HREF, SECONDARY_CTA_LABEL } from '@/lib/homepage-copy';
-import { publicPageMetadata } from '@/lib/public-metadata';
+import { publicPageMetadata, SHARE_IMAGE_BLOG } from '@/lib/public-metadata';
 
 import { BlogUnavailableError } from './blog-unavailable';
 import { BLOG_INDEX_CLASS, BlogIndexHeader } from './views/blog-index-header';
@@ -16,7 +16,7 @@ import { PageContainer } from '@components/views';
 // Rendered per request through the cached reader: no ISR, so no rendered HTML outlives the 300 s freshness budget.
 export const dynamic = 'force-dynamic';
 
-export const metadata = publicPageMetadata(BLOG_PATH, BLOG_PAGE_TITLE, BLOG_PAGE_DESCRIPTION);
+export const metadata = publicPageMetadata(BLOG_PATH, BLOG_PAGE_TITLE, BLOG_PAGE_DESCRIPTION, SHARE_IMAGE_BLOG);
 
 export default async function BlogPage() {
   const result = await getBlogPosts();
