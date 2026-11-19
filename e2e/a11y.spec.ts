@@ -80,11 +80,11 @@ test('UX-01 named controls, keyboard entry, and dialog escape', async ({ page, p
 
   const download = page.getByRole('button', { name: 'Download PDF' });
   await download.click();
-  await expect(page.getByRole('dialog', { name: 'Final Review' })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Resume name' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: /Generate your PDF/ })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'File name' })).toBeVisible();
   await expectNamedControls(page);
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: 'Final Review' })).toBeHidden();
+  await expect(page.getByRole('dialog', { name: /Generate your PDF/ })).toBeHidden();
   await expect(download).toBeFocused();
 
   await page.getByRole('button', { name: 'Full size', exact: true }).click();
@@ -127,9 +127,9 @@ test.describe('mobile', () => {
     await waitForPreview(page);
     await expectNoHorizontalOverflow(page);
     await page.getByRole('button', { name: 'Download PDF' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Final Review' });
+    const dialog = page.getByRole('dialog', { name: /Generate your PDF/ });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Generate and Download Resume' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Generate and download', exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await page.keyboard.press('Escape');
 

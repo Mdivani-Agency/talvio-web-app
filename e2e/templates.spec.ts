@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { openSignedIn, persona, waitForPreview } from './fixtures/resume-ui';
 import { test as harnessTest } from './fixtures/test';
 
-// The `/templates` level switch. The editor's Design tab keeps the gallery's own title-case labels until MDI-604.
+// The `/templates` level switch. The editor's Design tab has its own level switch and template buttons.
 const LEVELS = [
   { id: 'entry', label: 'Entry level' },
   { id: 'mid', label: 'Mid level' },
@@ -48,8 +48,8 @@ test.describe('templates', () => {
     await page.getByRole('button', { name: /Fill Manually/ }).click();
     await waitForPreview(page);
     await page.getByRole('tab', { name: 'Design', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Entry Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('button', { name: 'entry Modern', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Use the Modern template, entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('TPL-02 a missing or invalid template falls back without getting stuck', async ({ page }) => {
@@ -60,8 +60,8 @@ test.describe('templates', () => {
       await page.getByRole('button', { name: /Fill Manually/ }).click();
       await waitForPreview(page);
       await page.getByRole('tab', { name: 'Design', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'Senior Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
-      await expect(page.getByRole('button', { name: 'senior Modern', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByRole('button', { name: 'Senior level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByRole('button', { name: 'Use the Modern template, senior level', exact: true })).toHaveAttribute('aria-pressed', 'true');
       await page.evaluate(() => window.localStorage.clear());
     }
   });
@@ -80,13 +80,13 @@ test.describe('restored editor template', () => {
     await waitForPreview(page);
     await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toHaveCount(0);
     await page.getByRole('tab', { name: 'Design', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Entry Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('button', { name: 'entry Modern', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Use the Modern template, entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
 
-    await page.getByRole('button', { name: 'Mid Level', exact: true }).click();
-    await page.getByRole('img', { name: 'mid Ember', exact: true }).click();
+    await page.getByRole('button', { name: 'Mid level', exact: true }).click();
+    await page.getByRole('button', { name: 'Use the Ember template, mid level', exact: true }).click();
     await expect(page).toHaveURL(/template=entry-level-modern/);
-    await expect(page.getByRole('button', { name: 'mid Ember', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Use the Ember template, mid level', exact: true })).toHaveAttribute('aria-pressed', 'true');
   });
 });
 

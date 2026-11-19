@@ -90,19 +90,31 @@ export async function openEditorTab(page: Page, tab: 'Content' | 'Design') {
   await page.getByRole('tab', { name: new RegExp(`^${tab}`) }).click();
 }
 
-export async function chooseTemplate(page: Page, level: string, imageName: string) {
+/** Pick a template in the Design tab, such as `chooseTemplate(page, 'Mid level', 'Talvio')`. */
+export async function chooseTemplate(page: Page, level: 'Entry level' | 'Mid level' | 'Senior level', template: string) {
   await openEditorTab(page, 'Design');
-  await expect(page.getByRole('heading', { name: 'Choose Your Resume Template' })).toBeVisible();
   await page.getByRole('button', { name: level, exact: true }).click();
-  await page.getByRole('img', { name: imageName, exact: true }).click();
+  await page.getByRole('button', { name: `Use the ${template} template, ${level.toLowerCase()}`, exact: true }).click();
   await openEditorTab(page, 'Content');
   await expect(page.getByLabel('First name', { exact: true })).toBeVisible();
 }
 
+const ACCENT_NAMES: Record<string, string> = {
+  '#1B1B1B': 'Black',
+  '#005BA2': 'Talvio blue',
+  '#015408': 'Mint',
+  '#670000': 'Ember',
+  '#7A7A7A': 'Grey',
+  '#763900': 'Brown',
+  '#983805': 'Rust',
+  '#BA8E23': 'Gold',
+};
+
+/** Pick an accent colour in the Design tab by its hex value. */
 export async function chooseColor(page: Page, color: string) {
   await openEditorTab(page, 'Design');
-  await page.getByRole('combobox', { name: 'Resume color' }).click();
-  await page.getByRole('button', { name: `Select ${color}`, exact: true }).click();
+  const name = ACCENT_NAMES[color.toUpperCase()] ?? color;
+  await page.getByRole('radiogroup', { name: 'Accent colour' }).getByRole('radio', { name, exact: true }).click();
   await openEditorTab(page, 'Content');
 }
 
@@ -150,7 +162,7 @@ export async function recordedDownloads(page: Page) {
 
 export async function openFinalReview(page: Page) {
   const button = page.getByRole('button', { name: 'Download PDF' });
-  const dialog = page.getByRole('dialog', { name: 'Final Review' });
+  const dialog = page.getByRole('dialog', { name: /Generate your PDF/ });
   const toast = page.locator('[data-sonner-toast]');
   // A leaving toast can cover the top bar. WebKit then focuses Download PDF and drops the click.
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -172,12 +184,12 @@ export async function generateFromModal(page: Page, filename: string, label?: st
   await rememberDownloads(page);
   await waitForPreview(page);
   const dialog = await openFinalReview(page);
-  await dialog.getByPlaceholder('Enter a resume name').fill(filename);
+  await dialog.getByLabel('File name', { exact: true }).fill(filename);
   if (label != null) {
-    await dialog.getByPlaceholder('Label (optional)').fill(label);
+    await dialog.getByLabel('Label (optional)', { exact: true }).fill(label);
   }
   const download = page.waitForEvent('download');
-  await dialog.getByRole('button', { name: 'Generate and Download Resume' }).click();
+  await dialog.getByRole('button', { name: 'Generate and download', exact: true }).click();
   await expect(page.getByText('Saved to your account')).toBeVisible({ timeout: 30_000 });
   await download;
   return recordedDownloads(page);
