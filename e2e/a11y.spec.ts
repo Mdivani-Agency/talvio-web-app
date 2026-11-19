@@ -63,9 +63,14 @@ test('UX-01 named controls, keyboard entry, and dialog escape', async ({ page, p
 
   await page.goto('/templates');
   await expectNamedControls(page);
-  await page.getByRole('button', { name: 'Entry Level', exact: true }).focus();
+  await page.getByRole('button', { name: 'Entry level', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'Entry Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Mid level', exact: true })).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('button', { name: 'Mid level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'false');
 
   const owner = persona(personas, 'complete');
   const resumeId = await seedResume({ userId: owner.userId, name: 'Keyboard resume' });

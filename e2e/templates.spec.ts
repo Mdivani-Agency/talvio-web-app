@@ -3,10 +3,11 @@ import { expect, test } from '@playwright/test';
 import { openSignedIn, persona, waitForPreview } from './fixtures/resume-ui';
 import { test as harnessTest } from './fixtures/test';
 
+// The `/templates` level switch. The editor's Switch Template view keeps its own title-case labels.
 const LEVELS = [
-  { id: 'entry', label: 'Entry Level' },
-  { id: 'mid', label: 'Mid Level' },
-  { id: 'senior', label: 'Senior Level' },
+  { id: 'entry', label: 'Entry level' },
+  { id: 'mid', label: 'Mid level' },
+  { id: 'senior', label: 'Senior level' },
 ] as const;
 
 const STYLES = [
@@ -25,7 +26,8 @@ test.describe('templates', () => {
 
   test('TPL-01 level tabs and every template open the matching resume preview', async ({ page }) => {
     await page.goto('/templates');
-    await expect(page.getByRole('button', { name: 'Senior Level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('group', { name: 'Experience level' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Senior level', exact: true })).toHaveAttribute('aria-pressed', 'true');
 
     for (const level of LEVELS) {
       await page.getByRole('button', { name: level.label, exact: true }).click();
@@ -42,7 +44,7 @@ test.describe('templates', () => {
       }
     }
 
-    await page.getByRole('button', { name: 'Entry Level', exact: true }).click();
+    await page.getByRole('button', { name: 'Entry level', exact: true }).click();
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
     await page.getByRole('button', { name: /Fill Manually/ }).click();
     await waitForPreview(page);
@@ -75,7 +77,7 @@ test.describe('restored editor template', () => {
     await waitForPreview(page);
 
     await page.goto('/templates');
-    await page.getByRole('button', { name: 'Entry Level', exact: true }).click();
+    await page.getByRole('button', { name: 'Entry level', exact: true }).click();
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
     await waitForPreview(page);
     await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toHaveCount(0);
@@ -100,7 +102,7 @@ harnessTest.describe('restored import template', () => {
     await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
 
     await page.goto('/templates');
-    await page.getByRole('button', { name: 'Entry Level', exact: true }).click();
+    await page.getByRole('button', { name: 'Entry level', exact: true }).click();
     await page.getByRole('img', { name: 'entry Modern', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
     await expect.poll(async () => page.evaluate(() => {
