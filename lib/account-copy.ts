@@ -102,3 +102,45 @@ export function sentenceCase(value: string | null | undefined): string {
 export function jobMetaLine(company: string | null | undefined, employmentType?: string | null, locationType?: string | null): string {
   return [company?.trim(), sentenceCase(employmentType), sentenceCase(locationType)].filter(Boolean).join(' · ');
 }
+
+// Documents page (`/account/documents`).
+export const DOCUMENTS_TITLE = 'Your resumes';
+export const DOCUMENTS_INTRO = 'Every resume PDF you have generated. Downloads are always free.';
+export const DOCUMENTS_LOADING = 'Loading your resumes...';
+export const DOCUMENTS_EMPTY_TITLE = 'No resume PDFs yet';
+export const DOCUMENTS_EMPTY_BODY = 'Generate a PDF from one of your resumes and it appears here.';
+/** The failed-list texts stay as before: `e2e/documents.spec.ts` checks them. */
+export const DOCUMENTS_ERROR_TITLE = 'Could not load your resumes';
+export const DOCUMENTS_ERROR_BODY = 'This is not an empty library. Check your connection and try again.';
+export const DOCUMENTS_RETRY_LABEL = 'Try again';
+export const DOCUMENTS_TAILOR_LABEL = 'Tailor to a job';
+export const DOCUMENTS_TAILOR_HREF = '/resume/tailor';
+/** Shown under a file name when the media service returns no `createdAt`. */
+export const DOCUMENT_FALLBACK_META = 'PDF';
+
+/** "Added Nov 6, 2026". */
+export function addedLine(date: Date): string {
+  return `Added ${updatedDate.format(date)}`;
+}
+
+/** The line under a file name: when it was added, or "PDF" when the date is missing or unreadable. */
+export function documentMetaLine(createdAt: string | null | undefined): string {
+  if (!createdAt) return DOCUMENT_FALLBACK_META;
+  const date = new Date(createdAt);
+  return Number.isNaN(date.getTime()) ? DOCUMENT_FALLBACK_META : addedLine(date);
+}
+
+export function openDocumentLabel(name: string): string {
+  return `Open ${name}`;
+}
+
+export function downloadDocumentLabel(name: string): string {
+  return `Download ${name}`;
+}
+
+/** The file name shown on a card: the stored name plus the extension from its MIME type ("Resume.pdf"). */
+export function documentFileName(name: string, type: string): string {
+  const extension = type.split('/')[1];
+  if (!extension || name.toLowerCase().endsWith(`.${extension.toLowerCase()}`)) return name;
+  return `${name}.${extension}`;
+}

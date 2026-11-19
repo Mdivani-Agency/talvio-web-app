@@ -1,13 +1,22 @@
 'use client';
-import { Icon } from "@components/icons";
-import { Button, Card, CardContent, CardFooter, Label } from "@components/ui";
-import { ErrorView, Loading, PageContainer } from "@components/views";
-import { getDocuments } from "@lib/clients/media.client";
-import { useUserSession } from "@lib/providers";
-import { useQuery } from "@tanstack/react-query";
-import { PlusIcon } from "lucide-react";
-import Link from "next/link";
-import { ResumeImage } from "./resume-image";
+
+import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+
+import { Button } from '@components/ui';
+import { Loading, PageContainer } from '@components/views';
+import { getDocuments } from '@lib/clients/media.client';
+import { useUserSession } from '@lib/providers';
+import {
+  DOCUMENTS_INTRO,
+  DOCUMENTS_LOADING,
+  DOCUMENTS_TAILOR_HREF,
+  DOCUMENTS_TAILOR_LABEL,
+  DOCUMENTS_TITLE,
+} from '@/lib/account-copy';
+
+import { DocumentGrid } from './views/document-grid';
+import { DocumentsPanel } from './views/documents-panel';
 
 export default function DocumentsPage() {
   const { session } = useUserSession();
@@ -24,71 +33,29 @@ export default function DocumentsPage() {
   });
 
   if (!userId || documentsQuery.isLoading) {
-    return <Loading message="Loading your resumes..." />;
-  }
-
-  if (documentsQuery.isError) {
-    return (
-      <ErrorView
-        title="Could not load your resumes"
-        error="The document list failed."
-        errorDescription="This is not an empty library. Check your connection and try again."
-        reset={() => {
-          void documentsQuery.refetch();
-        }}
-      />
-    );
+    return <Loading message={DOCUMENTS_LOADING} />;
   }
 
   const documents = documentsQuery.data ?? [];
 
   return (
     <PageContainer as="section" className="flex flex-col gap-8 py-6 md:py-10">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold">Your Resumes</h1>
-        <Button asChild variant="secondary">
-          <Link href="/resume/tailor">Tailor to a job</Link>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl leading-[1.333] font-semibold text-primary md:text-[2.8rem]">{DOCUMENTS_TITLE}</h1>
+          <p className="text-sm text-muted-foreground">{DOCUMENTS_INTRO}</p>
+        </div>
+        <Button asChild variant="outline" className="h-10 border-input bg-background text-sm dark:bg-background">
+          <Link href={DOCUMENTS_TAILOR_HREF}>{DOCUMENTS_TAILOR_LABEL}</Link>
         </Button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {
-        documents.length === 0 && (
-          <Card className="w-56 px-4">
-            <CardContent className="h-48 bg-background flex justify-center items-center rounded-md">
-              <Button asChild className="rounded-full size-10">
-                <Link href="/resume" aria-label="Create resume">
-                  <PlusIcon className="w-4 h-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            </CardContent>
-            <CardFooter className="px-0">
-              <Label variant="muted" size="sm">
-                Create resume
-              </Label>
-            </CardFooter>
-          </Card>
-        )
-      }
-      {
-        documents.map((document) => (
-          <Card className="w-56 px-4" key={document.key}>
-            <CardContent className="h-48 bg-background flex flex-col gap-2 justify-center items-center rounded-md">
-              <ResumeImage pdfUrl={document.publicUrl} className="w-full h-full" />
-            </CardContent>
-            <CardFooter className="flex justify-center justify-between px-0">
-              <Label variant="muted" size="sm" asChild>
-                <a className="text-primary p-2" href={document.publicUrl} target="_blank" rel="noopener noreferrer">
-                  {document.name}.{document.type.split('/')[1]}
-                </a>
-              </Label>
-              <Link target="_blank" href={document.publicUrl} aria-label={`Download ${document.name}`}>
-                <Icon type={'Download'} className="size-4" />
-              </Link>
-            </CardFooter>
-          </Card>
-        ))
-      }
-      </div>
+      </header>
+      {documentsQuery.isError ? (
+        <DocumentsPanel kind="error" onRetry={() => void documentsQuery.refetch()} />
+      ) : documents.length === 0 ? (
+        <DocumentsPanel kind="empty" />
+      ) : (
+        <DocumentGrid documents={documents} />
+      )}
     </PageContainer>
   );
-};
+}

@@ -46,7 +46,9 @@ test('DOC-01 documents show an empty library, a failed list, and a downloadable 
 
   await setScenario('success');
   await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(page.getByRole('heading', { name: 'Your Resumes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Could not load your resumes' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Your resumes', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No resume PDFs yet' })).toBeVisible();
   await page.getByRole('main').getByRole('link', { name: 'Create resume' }).click();
   await expect(page).toHaveURL(/\/resume$/);
   await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
@@ -56,6 +58,9 @@ test('DOC-01 documents show an empty library, a failed list, and a downloadable 
   const download = page.getByRole('link', { name: 'Download Library resume' });
   await expect(download).toBeVisible();
   await expect(download).toHaveAttribute('href', publicUrl);
+  const card = page.getByTestId('document-card').filter({ has: download });
+  await expect(card.getByRole('link', { name: 'Open Library resume' })).toHaveAttribute('href', publicUrl);
+  await expect(card.getByText('Library resume.pdf')).toBeVisible();
   await expect(page.getByRole('img', { name: 'Resume Render' })).toBeVisible({ timeout: 30_000 });
   const file = await page.request.get(publicUrl);
   expect(file.ok()).toBe(true);
