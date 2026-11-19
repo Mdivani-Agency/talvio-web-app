@@ -646,6 +646,27 @@ test('PUB-09 public pages fill the width with the shared gutter, lined up with t
   }
 });
 
+test('PUB-10 phone controls are at least 44px tall (the spacing scale has no 11, so h-11 would be 27.5px)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const atLeast44 = async (locator: import('@playwright/test').Locator, label: string) => {
+    const box = await locator.boundingBox();
+    expect(box?.height ?? 0, label).toBeGreaterThanOrEqual(44);
+  };
+
+  await page.goto('/templates');
+  await atLeast44(page.getByRole('button', { name: 'Previous template' }), 'Previous template');
+  await atLeast44(page.getByRole('button', { name: 'Next template' }), 'Next template');
+  const dots = page.getByRole('button', { name: /^Show / });
+  for (let index = 0; index < (await dots.count()); index += 1) {
+    await atLeast44(dots.nth(index), `carousel dot ${index + 1}`);
+  }
+
+  await page.goto('/terms');
+  await page.getByRole('button', { name: 'On this page' }).click();
+  await atLeast44(page.getByRole('navigation', { name: 'On this page' }).getByRole('link').first(), 'On this page row');
+  await atLeast44(page.getByRole('link', { name: 'Back to top', exact: true }), 'Back to top');
+});
+
 test('PUB-08 retired pricing and purchase pages redirect and no public page links to them', async ({ page, request }) => {
   const pricing = await request.get('/pricing', { maxRedirects: 0 });
   expect(pricing.status()).toBe(307);

@@ -125,7 +125,7 @@ export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
           ))}
           <a
             href="#top"
-            className="mt-8 inline-flex min-h-11 items-center gap-2 self-start text-md font-medium text-secondary hover:text-secondary-hover dark:text-secondary-hover dark:hover:text-secondary"
+            className="mt-8 inline-flex min-h-[4.4rem] items-center gap-2 self-start text-md font-medium text-secondary hover:text-secondary-hover dark:text-secondary-hover dark:hover:text-secondary"
           >
             <ChevronUp aria-hidden="true" className="size-4" />
             {LEGAL_BACK_TO_TOP}

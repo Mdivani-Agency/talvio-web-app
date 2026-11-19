@@ -116,7 +116,7 @@ export default function VerifyRequestPage() {
           </p>
           <Link
             href={signInHref(next)}
-            className="inline-flex min-h-11 items-center self-center text-md font-medium text-secondary underline underline-offset-[0.3rem] dark:text-secondary-hover"
+            className="inline-flex min-h-[4.4rem] items-center self-center text-md font-medium text-secondary underline underline-offset-[0.3rem] dark:text-secondary-hover"
           >
             {VERIFY_DIFFERENT_EMAIL}
           </Link>
