@@ -87,13 +87,19 @@ test('AUTH-01 new and returning users finish magic-link sign-in in this browser'
 
 test('AUTH-02 invalid email, auth failures, and callback errors can restart', async ({ page }) => {
   await page.goto('/auth/sign-in');
-  await page.getByRole('button', { name: 'With Email' }).click();
+  const email = page.getByLabel('Email', { exact: true });
+  const submit = page.getByRole('button', { name: 'Continue with email' });
+  await submit.click();
   await expect(page).toHaveURL(/\/auth\/sign-in/);
-  await expect(page.getByRole('heading', { name: 'Check Your Email!' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toHaveCount(0);
+  // The message sits under the field and is read with it.
+  await expect(email).toHaveAttribute('aria-invalid', 'true');
+  await expect(email).toHaveAccessibleDescription('Enter your email address.');
 
-  await page.getByPlaceholder('Email').fill('not-an-email');
-  await page.getByRole('button', { name: 'With Email' }).click();
+  await email.fill('not-an-email');
+  await submit.click();
   await expect(page).toHaveURL(/\/auth\/sign-in/);
+  await expect(email).toHaveAccessibleDescription('Enter a valid email address, like name@example.com.');
 
   await page.route('**/auth/v1/otp**', (route) => route.fulfill({
     status: 429,
@@ -103,24 +109,35 @@ test('AUTH-02 invalid email, auth failures, and callback errors can restart', as
       error_code: 'over_email_send_rate_limit',
     }),
   }));
-  await page.getByPlaceholder('Email').fill(emailFor('limited'));
-  await page.getByRole('button', { name: 'With Email' }).click();
-  await expect(page.getByText('Email rate limit exceeded')).toBeVisible();
+  await email.fill(emailFor('limited'));
+  await submit.click();
+  await expect(page.getByRole('main').getByRole('alert')).toHaveText('Too many sign-in emails. Wait a minute, then try again.');
+  // Editing the address clears the alert.
+  await email.fill(emailFor('limited-edit'));
+  await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
   await page.unroute('**/auth/v1/otp**');
 
   const retryEmail = emailFor('retry');
   await submitEmailSignIn(page, retryEmail);
-  await expect(page.getByRole('heading', { name: 'Check Your Email!' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  // The page names the address, holds Resend for Supabase's minute, and never puts the address in the URL.
+  await expect(page.getByRole('main').getByText(retryEmail, { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Resend in (1:00|0:5\d)$/ })).toBeDisabled();
+  expect(page.url()).not.toContain(encodeURIComponent(retryEmail));
+  expect(page.url()).not.toContain(retryEmail);
+  await page.getByRole('link', { name: 'Use a different email' }).click();
+  await expect(page.getByLabel('Email', { exact: true })).toHaveValue(retryEmail);
 
   await page.goto('/auth/callback');
-  await expect(page.getByRole('heading', { name: 'Authentication Error' })).toBeVisible();
-  await expect(page.getByText('Could not complete sign-in. Try again.')).toBeVisible();
-  await page.getByRole('link', { name: 'Go Home' }).click();
+  await expect(page.getByRole('heading', { name: "This sign-in link didn't work" })).toBeVisible();
+  await expect(page.getByText('Error code: auth_callback_failed')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to sign in' })).toHaveAttribute('href', '/auth/sign-in');
+  await page.getByRole('link', { name: 'Go home' }).click();
   await expect(page).toHaveURL(/localhost:3002\/$/);
   await expect(page.getByRole('heading', { name: 'Free PDF resume generator', level: 1 })).toBeVisible();
   await page.goto('/auth/sign-in');
-  await expect(page.getByPlaceholder('Email')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'With Email' })).toBeVisible();
+  await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue with email' })).toBeVisible();
 
   await page.goto('/auth/callback?code=not-a-real-code');
   await expect(page.getByText('auth_callback_failed')).toBeVisible();
@@ -280,8 +297,9 @@ test('AUTH-06 unsafe callback targets stay on this origin and OAuth stops at the
   });
   await expect(page).toHaveURL(/localhost:3002\/auth\/sign-in/);
   await page.goto('/auth/callback?error=access_denied&error_description=User%20cancelled&next=https://evil.example');
-  await expect(page.getByRole('heading', { name: 'Authentication Error' })).toBeVisible();
-  await expect(page.getByText('access_denied')).toBeVisible();
+  await expect(page.getByRole('heading', { name: "This sign-in link didn't work" })).toBeVisible();
+  await expect(page.getByText('Error code: access_denied')).toBeVisible();
+  await expect(page.getByText('User cancelled')).toHaveCount(0);
   expect(page.url()).not.toContain('evil.example');
 
   await page.route('**/auth/v1/authorize**', (route) => route.fulfill({

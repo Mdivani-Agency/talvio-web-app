@@ -53,7 +53,6 @@ import CreditCard from './svg/credit-card.svg';
 
 import Google from './colored/google.svg';
 import Logo from './colored/logo.svg';
-import VerifyEmail from './colored/verify-email.svg';
 import Rocket from './colored/rocket.svg';
 
 import { cn } from '@utils/tailwind';
@@ -100,7 +99,6 @@ const IconMap = {
   DarkMode,
   Settings,
   Logout,
-  VerifyEmail,
   Paint,
   Zoom,
   Upload,
