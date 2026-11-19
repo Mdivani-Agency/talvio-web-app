@@ -127,11 +127,25 @@ function handlePresign(url, request, response, body, userId) {
   send(response, 200, { uploadUrl, publicUrl, key });
 }
 
-function recordsFor(userId) {
-  const items = [...state.records.values()]
+/** The media service accepts these page sizes (`limit`); 50 is its default. */
+const RECORD_PAGE_SIZES = new Set(['50', '100', '200']);
+
+/**
+ * One page of a user's uploaded records, as the media service returns it: `{ items, nextToken }`, with `nextToken`
+ * null on the last page. The `records_paged` scenarios shrink pages to 2 records so e2e can cross a page boundary.
+ */
+function recordsFor(userId, limit, nextToken) {
+  const all = [...state.records.values()]
     .filter((item) => item.userId === userId && item.status === 'uploaded')
     .map(({ status, ...item }) => item);
-  return { items, nextToken: null };
+  const pageSize = state.scenario.startsWith('records_paged') ? 2 : Number(limit);
+  const start = nextToken ? Number(Buffer.from(nextToken, 'base64url').toString('utf8')) : 0;
+  if (!Number.isInteger(start) || start < 0) return null;
+  const end = start + pageSize;
+  return {
+    items: all.slice(start, end),
+    nextToken: end < all.length ? Buffer.from(String(end), 'utf8').toString('base64url') : null,
+  };
 }
 
 export function createSimulator() {
@@ -239,7 +253,22 @@ export function createSimulator() {
           send(response, 500, { error: 'simulated records failure' });
           return;
         }
-        send(response, 200, recordsFor(decodeURIComponent(records[1])));
+        const limit = url.searchParams.get('limit') ?? '50';
+        const nextToken = url.searchParams.get('nextToken') ?? undefined;
+        if (!RECORD_PAGE_SIZES.has(limit)) {
+          send(response, 400, { error: 'limit must be 50, 100 or 200' });
+          return;
+        }
+        if (nextToken && state.scenario === 'records_paged_next_error') {
+          send(response, 500, { error: 'simulated next page failure' });
+          return;
+        }
+        const page = recordsFor(decodeURIComponent(records[1]), limit, nextToken);
+        if (!page) {
+          send(response, 400, { error: 'invalid nextToken' });
+          return;
+        }
+        send(response, 200, page);
         return;
       }
 

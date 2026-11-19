@@ -153,3 +153,6 @@ export const DOCUMENT_PREVIEW_UNAVAILABLE = 'Preview not available';
 export function documentPreviewAlt(name: string): string {
   return `First page of ${name}`;
 }
+
+/** Shown under the loaded documents when the next page fails; the loaded ones stay. */
+export const DOCUMENTS_MORE_ERROR = 'Could not load more resumes. Check your connection and try again.';
