@@ -39,6 +39,7 @@ import { useUserSession } from '@lib/providers';
 import type { PreviewDto, Resume } from '@lib/types';
 
 import { ResumeEditorShell } from '../views/resume-editor-shell';
+import { ResumeUnavailable } from '../views/resume-unavailable';
 
 interface EditResumePageProps {
   resumeId: string;
@@ -47,7 +48,7 @@ interface EditResumePageProps {
 export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session } = useUserSession();
+  const { session, isPending: sessionPending } = useUserSession();
   const userId = session?.user.id;
   const storage = useMemo(() => browserStorage(), []);
   const [forkOpen, setForkOpen] = useState(false);
@@ -304,16 +305,21 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
       },
     });
 
-  if (isLoadingResume) {
+  // Wait for the session too: a signed-in visitor must never see the guest view flash by.
+  if (sessionPending || isLoadingResume) {
     return <Loading message="Loading resume..." />;
+  }
+
+  // Saved resumes are read with the visitor's session, so a guest is asked to sign in and comes back here.
+  if (!userId) {
+    return <ResumeUnavailable reason="signed-out" resumeId={resumeId} />;
   }
 
   if (resumeFailed && !(resumeError instanceof Error && resumeError.message === 'Resume not found')) {
     return (
       <ErrorView
         title="Could not load this resume"
-        error="The resume lookup failed."
-        errorDescription="This is not a missing resume. Check your connection and try again."
+        body="The resume lookup failed. This is not a missing resume. Check your connection and try again."
         reset={() => {
           void refetchResume();
         }}
@@ -322,11 +328,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   }
 
   if (!displayed) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <h1 className="text-2xl font-bold">Resume not found</h1>
-      </div>
-    );
+    return <ResumeUnavailable reason="not-found" resumeId={resumeId} />;
   }
 
   if (!editorDocument) {

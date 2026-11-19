@@ -1,5 +1,7 @@
 import { CREDIT_BOUNDARIES, readOwnedRows, type Persona } from './fixtures/data';
 import { signInWithLocalMagicLink } from './fixtures/auth';
+import { latestMagicLink } from './fixtures/mail';
+import { seedResume } from './fixtures/resumes';
 import { expect, test } from './fixtures/test';
 
 function persona(personas: Persona[], kind: Persona['kind']) {
@@ -57,6 +59,10 @@ test('SEC-01 another user and an anonymous client cannot read or change a resume
   expect(owner.resumeId).toBeTruthy();
 
   await signInWithLocalMagicLink(page, intruder);
+  // In the browser, someone else's resume reads as missing, with no hint that it exists.
+  await page.goto(`/resume/${owner.resumeId}`);
+  await expect(page.getByRole('heading', { level: 1, name: "We can't find this resume" })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'Go to documents' })).toHaveAttribute('href', '/account/documents');
   const token = await sessionToken(page);
   const read = await graphql(token, resumeById, { id: owner.resumeId });
   expect(read.body.data?.resumesCollection?.edges ?? []).toEqual([]);
@@ -91,6 +97,27 @@ test('SEC-01 another user and an anonymous client cannot read or change a resume
   expect((await readOwnedRows(owner)).resumes).toEqual(ownerBefore.resumes);
   expect((await readOwnedRows(intruder)).balance).toBe(intruderBefore.balance);
   expect(intruderBefore.balance).toBe(CREDIT_BOUNDARIES.ample);
+});
+
+test('SEC-04 a guest on a saved resume link is asked to sign in and lands back on the resume', async ({ page, personas }) => {
+  const owner = persona(personas, 'complete');
+  const resumeId = await seedResume({ userId: owner.userId, name: 'Linked resume' });
+
+  await page.goto(`/resume/${resumeId}`);
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { level: 1, name: 'Sign in to open this resume' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "We can't find this resume" })).toHaveCount(0);
+  await expect(main.getByRole('link', { name: 'Start a new resume' })).toHaveAttribute('href', '/resume');
+
+  await main.getByRole('link', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(`/auth/sign-in?callbackURL=${encodeURIComponent(`/resume/${resumeId}`)}`);
+  await page.getByLabel('Email', { exact: true }).fill(owner.email);
+  await page.getByRole('button', { name: 'Continue with email' }).click();
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  await page.goto(await latestMagicLink(owner.email));
+
+  await expect(page).toHaveURL(new RegExp(`/resume/${resumeId}$`));
+  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
 });
 
 test('SEC-02 pdf and presign routes reject bad auth and ignore forged ownership', async ({ page, personas }) => {

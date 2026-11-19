@@ -109,7 +109,7 @@ test('RES-08 cancel keeps a resume and confirm removes each family', async ({ pa
   await page.reload();
   await expect(page.getByRole('link', { name: 'Draft resume', exact: true })).toHaveCount(0);
   await page.goto(`/resume/${soloDraft}`);
-  await expect(page.getByRole('heading', { name: 'Resume not found' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "We can't find this resume" })).toBeVisible();
 
   await page.goto('/account');
   const familyDialog = page.getByRole('button', { name: 'Delete Family label' });
@@ -120,9 +120,9 @@ test('RES-08 cancel keeps a resume and confirm removes each family', async ({ pa
   await page.reload();
   await expect(page.getByRole('link', { name: 'Family label', exact: true })).toHaveCount(0);
   await page.goto(`/resume/${originalId}`);
-  await expect(page.getByRole('heading', { name: 'Resume not found' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "We can't find this resume" })).toBeVisible();
   await page.goto(`/resume/${draftId}`);
-  await expect(page.getByRole('heading', { name: 'Resume not found' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "We can't find this resume" })).toBeVisible();
 
   await page.goto('/account');
   await deleteResume(page, 'Solo pdf', true);
@@ -131,7 +131,7 @@ test('RES-08 cancel keeps a resume and confirm removes each family', async ({ pa
   await expect(page.getByRole('main').getByRole('link', { name: 'Create resume' })).toBeVisible();
   expect(await listResumes(owner.userId)).toHaveLength(0);
   await page.goto(`/resume/${generatedId}`);
-  await expect(page.getByRole('heading', { name: 'Resume not found' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "We can't find this resume" })).toBeVisible();
 });
 
 test('RES-08 a failed delete does not report success', async ({ page, personas }) => {
