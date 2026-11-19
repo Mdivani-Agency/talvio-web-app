@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ACCOUNT_NAV_LINKS,
+  DOCUMENTS_EMPTY_BODY,
+  DOCUMENTS_EMPTY_TITLE,
+  DOCUMENTS_ERROR_BODY,
+  DOCUMENTS_ERROR_TITLE,
+  DOCUMENTS_INTRO,
+  DOCUMENTS_TITLE,
+  documentFileName,
+  documentMetaLine,
+  downloadDocumentLabel,
+  openDocumentLabel,
   CREATE_RESUME_HREF,
   CREATE_RESUME_LABEL,
   DARK_THEME_LABEL,
@@ -100,5 +110,26 @@ describe('account copy', () => {
       'Projects',
       'Recommendations',
     ]);
+  });
+
+  it('uses the approved documents page copy', () => {
+    expect(DOCUMENTS_TITLE).toBe('Your resumes');
+    expect(DOCUMENTS_INTRO).toBe('Every resume PDF you have generated. Downloads are always free.');
+    expect(DOCUMENTS_EMPTY_TITLE).toBe('No resume PDFs yet');
+    expect(DOCUMENTS_EMPTY_BODY).toBe('Generate a PDF from one of your resumes and it appears here.');
+    // e2e/documents.spec.ts checks the failed-list texts.
+    expect(DOCUMENTS_ERROR_TITLE).toBe('Could not load your resumes');
+    expect(DOCUMENTS_ERROR_BODY).toContain('This is not an empty library.');
+  });
+
+  it('describes each document file', () => {
+    expect(documentMetaLine('2026-11-06T10:00:00.000Z')).toBe('Added Nov 6, 2026');
+    expect(documentMetaLine(undefined)).toBe('PDF');
+    expect(documentMetaLine('not a date')).toBe('PDF');
+    expect(documentFileName('Library resume', 'application/pdf')).toBe('Library resume.pdf');
+    expect(documentFileName('Short.pdf', 'application/pdf')).toBe('Short.pdf');
+    expect(documentFileName('Notes', '')).toBe('Notes');
+    expect(openDocumentLabel('Short')).toBe('Open Short');
+    expect(downloadDocumentLabel('Library resume')).toBe('Download Library resume');
   });
 });

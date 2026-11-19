@@ -71,9 +71,9 @@ function emailFor(label: string) {
 test('AUTH-01 new and returning users finish magic-link sign-in in this browser', async ({ page }) => {
   const createdEmail = emailFor('new');
   await signInThroughLocalMail(page, createdEmail, '/account/documents');
-  await expect(page.getByRole('heading', { name: 'Your Resumes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your resumes' })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Your Resumes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your resumes' })).toBeVisible();
 
   const returningEmail = emailFor('returning');
   const returningId = await createConfirmedUser(returningEmail);
