@@ -45,3 +45,15 @@ export function resendCountdownLabel(secondsLeft: number): string {
   const seconds = String(secondsLeft % 60).padStart(2, '0');
   return `Resend in ${minutes}:${seconds}`;
 }
+
+// Link error page (`/auth/error`), shown when a sign-in link or provider sign-in fails.
+export const LINK_ERROR_HEADING = "This sign-in link didn't work";
+export const LINK_ERROR_BODY =
+  'It may have expired, been used already, or been opened in a different browser. Request a new link to sign in.';
+export const LINK_ERROR_BACK_LABEL = 'Back to sign in';
+export const LINK_ERROR_HOME_LABEL = 'Go home';
+
+/** "Error code: auth_callback_failed", for support requests. */
+export function linkErrorCodeLabel(code: string): string {
+  return `Error code: ${code}`;
+}
