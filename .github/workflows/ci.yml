@@ -1,8 +1,8 @@
 name: CI
 
-# PRs and pushes: quality, local database tests, Playwright, then a release gate.
+# PRs and pushes: quality, local database tests and Playwright run in parallel, then a release gate.
 # Push to main / development: release gate → db push → Vercel CLI deploy.
-# The gate fails unless quality and local-e2e both succeed, including when one is skipped.
+# The gate fails unless quality, db-tests and local-e2e all succeed, including when one is skipped.
 # Push runs stay queued. Each hosted mutation refuses a checkout that is no longer the branch tip.
 # Vercel Git deployments are off for every branch (see vercel.json). CLI deploys use a pinned CLI.
 #
@@ -73,8 +73,30 @@ jobs:
       - name: Build
         run: yarn build
 
+  db-tests:
+    name: Local database tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # The launcher uses only Node built-ins, so this job needs no Yarn install.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Supabase CLI
+        uses: ./.github/actions/setup-supabase-cli
+
+      - name: Database tests
+        env:
+          E2E_SUPABASE_CLI: supabase
+        run: node scripts/e2e-local.mjs --db
+
   local-e2e:
-    name: Local database and Playwright
+    name: Local Playwright
     # Playwright 1.55 cannot install Chromium on ubuntu-latest (26.04); pin the image it supports.
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -123,10 +145,11 @@ jobs:
             nextjs-${{ runner.os }}-${{ hashFiles('yarn.lock') }}-
             nextjs-${{ runner.os }}-
 
-      - name: Local database tests and Playwright
+      # The database tests run in the db-tests job; this one resets the stack and runs only Playwright.
+      - name: Playwright
         env:
           E2E_SUPABASE_CLI: supabase
-        run: yarn test:e2e:local
+        run: node scripts/e2e-local.mjs --e2e
 
       # A failed Playwright run does not invalidate the build cache, so keep it unless the job was cancelled.
       - name: Save Next.js build cache
@@ -149,7 +172,7 @@ jobs:
 
   release-gate:
     name: Release gate
-    needs: [quality, local-e2e]
+    needs: [quality, db-tests, local-e2e]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -157,9 +180,10 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Require quality and local end-to-end
+      - name: Require quality, database tests and local end-to-end
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
+          DB_TESTS_RESULT: ${{ needs['db-tests'].result }}
           LOCAL_E2E_RESULT: ${{ needs.local-e2e.result }}
         run: node scripts/release-gate.mjs
 
