@@ -131,7 +131,7 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
           aria-label={TEMPLATES_PREVIOUS_LABEL}
           disabled={slide === 0}
           onClick={() => goTo(slide - 1)}
-          className="size-11 border-input p-0"
+          className="size-[4.4rem] border-input p-0"
         >
           <ChevronLeft aria-hidden="true" className="size-[1.8rem]" />
         </Button>
@@ -143,7 +143,7 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
               aria-label={templatesDotLabel(name)}
               aria-current={slide === index ? 'true' : undefined}
               onClick={() => goTo(index)}
-              className="flex h-11 w-6 items-center justify-center rounded-md outline-none hover:cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-[4.4rem] w-6 items-center justify-center rounded-md outline-none hover:cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span
                 className={cn('block h-2 rounded-full transition-all', slide === index ? 'w-5 bg-secondary' : 'w-2 bg-input')}
@@ -157,7 +157,7 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
           aria-label={TEMPLATES_NEXT_LABEL}
           disabled={slide === last}
           onClick={() => goTo(slide + 1)}
-          className="size-11 border-input p-0"
+          className="size-[4.4rem] border-input p-0"
         >
           <ChevronRight aria-hidden="true" className="size-[1.8rem]" />
         </Button>
