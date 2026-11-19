@@ -73,10 +73,12 @@ export function convertToResumeData(data: ResumeForm): ResumeData {
 
 export class ResumeService {
   private readonly $resume: ResumePDFService;
+  /** Loads the fonts and the watermark. `generate` waits for it, so a render never starts before the fonts are in. */
+  private readonly $ready: Promise<void>;
 
   constructor() {
     this.$resume = new ResumePDFService();
-    this.$resume.create({
+    this.$ready = this.$resume.create({
       color: '#000',
       fontSize: 'md',
       leading: 'md',
@@ -90,6 +92,7 @@ export class ResumeService {
   }
 
   async generate(data: ResumeForm, template: Template, options: Partial<Config> = {}) {
+    await this.$ready;
     const resumeData = convertToResumeData(data);
     return this.$resume.generate({ data: resumeData, template, options });
   }
@@ -98,8 +101,8 @@ export class ResumeService {
 let instance: ResumeService | undefined;
 
 /**
- * The shared service, built on first use. Building it starts loading the fonts without waiting for them, so doing it
- * at import made every importer (tests included) start a font fetch whose failure nothing caught.
+ * The shared service, built on first use. Building it starts loading the fonts, so doing it at import made every
+ * importer (tests included) start a font fetch whose failure nothing caught. `generate` waits for that load.
  */
 export const resumeService = {
   generate(...args: Parameters<ResumeService['generate']>) {
