@@ -31,7 +31,7 @@ export default function OptionsView() {
         <h1 className="text-[2.8rem] leading-[1.333] font-semibold text-primary">{START_SCREEN.title}</h1>
         <p className="text-md text-muted-foreground">{START_SCREEN.intro}</p>
       </div>
-      <div className="mx-auto grid w-full max-w-[80rem] grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
         {cards.map(({ title, body, action, Icon, onClick }) => (
           <button key={title} type="button" className={CARD} onClick={onClick}>
             <span className="flex size-12 items-center justify-center rounded-[1.2rem] bg-accent text-secondary dark:text-secondary-hover">

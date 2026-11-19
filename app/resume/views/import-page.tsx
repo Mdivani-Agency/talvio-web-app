@@ -48,7 +48,7 @@ export default function ImportResumePage() {
 
   return (
     <PageContainer as="main" className="flex min-h-dvh flex-col justify-center pt-24 pb-12">
-      <div className="mx-auto flex w-full max-w-[72rem] flex-col gap-6">
+      <div className="flex w-full flex-col gap-6">
         <button
           type="button"
           onClick={selectOptions}
