@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import {
   CONTACT_FIELDS,
@@ -50,5 +51,10 @@ describe('onboarding copy', () => {
     ]);
     expect(PROFILE_SECTIONS.experience.hint).toBe('Most recent first. Drag to reorder.');
     expect(PROFILE_SECTIONS.projects.hint).toBe('Optional. Add work you want on your resumes.');
+  });
+
+  it('gives the project link an example the form accepts', () => {
+    // The project form validates the link with z.url(), so the example must be an absolute URL.
+    expect(z.url().safeParse(PROJECT_FIELDS.url.example).success).toBe(true);
   });
 });

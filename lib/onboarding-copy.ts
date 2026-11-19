@@ -47,7 +47,7 @@ export const EDUCATION_FIELDS = {
 
 export const PROJECT_FIELDS = {
   name: { label: 'Project name', example: 'What you built' },
-  url: { label: 'Project link (optional)', example: 'github.com/you/project' },
+  url: { label: 'Project link (optional)', example: 'https://github.com/you/project' },
   additionalDetails: { label: 'Description', example: 'What it does and your part in it, in 150 characters or more' },
 } as const satisfies Record<string, FieldCopy>;
 
