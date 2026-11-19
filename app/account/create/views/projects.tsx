@@ -3,7 +3,9 @@ import { useCallback, useState } from 'react';
 import { Project } from '@lib/types';
 import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
-import { Label } from '@components/ui';
+import { PROFILE_SECTIONS } from '@/lib/onboarding-copy';
+
+import { SectionHeading } from './forms/section-heading';
 import { ProjectForm } from './forms/project.form';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
@@ -44,9 +46,9 @@ export const ProjectsView = ({ className, form, documentMode = false }: Projects
 
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">
-        Projects
-      </Label>
+      <div className="mb-6">
+        <SectionHeading copy={PROFILE_SECTIONS.projects} />
+      </div>
       <ProjectForm action="add" onSubmit={handleAddProject} />
       <OrderedList fields={fields} label="Projects">
         {({ items, onReorder }) => (

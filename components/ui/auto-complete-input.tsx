@@ -26,6 +26,9 @@ export function AutocompleteInput<T extends string>({
   onSelect,
   onChange,
   onBlur,
+  id,
+  'aria-describedby': ariaDescribedBy,
+  'aria-invalid': ariaInvalid,
 }: AutoCompleteInputProps<T> & Omit<InputProps, 'onSelect' | 'onChange'>) {
   const [query, setQuery] = useState('');
   const [dropdownPosition, setDropdownPosition] = useState<'top' | 'bottom'>('bottom');
@@ -75,15 +78,19 @@ export function AutocompleteInput<T extends string>({
       <Combobox value={selected || ''} onChange={(value) => value != null && onSelect?.(value as T)}>
         <div className="relative">
           <div className="group relative">
+            {/* `id` and the aria attributes come from FormControl, so a FormLabel names this input. */}
             <ComboboxInput
               as={Input}
+              id={id}
+              aria-describedby={ariaDescribedBy}
+              aria-invalid={ariaInvalid}
               error={error}
               onChange={(event) => handleTextChange(event.target.value)}
               placeholder={placeholder}
               onBlur={onBlur}
             />
             {!error && (
-              <ComboboxButton className="group absolute inset-y-0 right-0 flex items-center pr-2">
+              <ComboboxButton aria-label="Show options" className="group absolute inset-y-0 right-0 flex items-center pr-2">
                 <Icon
                   type="ChevronDown"
                   className={cn(

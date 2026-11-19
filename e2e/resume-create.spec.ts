@@ -24,15 +24,15 @@ test('RES-01 creates a resume without a profile and keeps it after reload', asyn
   await openSignedIn(page, empty, '/resume');
   await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
   await chooseManual(page);
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('');
-  await expect(page.getByPlaceholder('Last Name')).toHaveValue('');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('');
 
-  await page.getByPlaceholder('First Name').fill('Nia');
-  await page.getByPlaceholder('Last Name').fill('Manual');
-  await page.getByPlaceholder('Role').fill('Staff Engineer');
+  await page.getByLabel('First name', { exact: true }).fill('Nia');
+  await page.getByLabel('Last name', { exact: true }).fill('Manual');
+  await page.getByLabel('Role', { exact: true }).fill('Staff Engineer');
   await openResumeSection(page, 'Contact Information', 'Email');
-  await page.getByPlaceholder('Email').fill('nia.manual@talvio.test');
-  await openResumeSection(page, 'Personal Details', 'First Name');
+  await page.getByLabel('Email', { exact: true }).fill('nia.manual@talvio.test');
+  await openResumeSection(page, 'Personal Details', 'First name');
   await page.getByRole('button', { name: 'Switch Template' }).click();
   await page.getByRole('img', { name: 'senior Ember', exact: true }).click();
   await page.getByRole('button', { name: 'Edit Resume' }).click();
@@ -60,8 +60,8 @@ test('RES-01 creates a resume without a profile and keeps it after reload', asyn
   await page.reload();
   await expect(page.getByRole('link', { name: 'First resume', exact: true })).toBeVisible();
   await page.goto(`/resume/${rows[0]?.id}`);
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Nia');
-  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Manual');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Nia');
+  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Manual');
   await expect(page.getByText('Saved to account')).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(1);
 });
@@ -70,10 +70,10 @@ test('RES-01 prefills a resume from the profile and saves the edited draft', asy
   const complete = persona(personas, 'complete');
   await openSignedIn(page, complete, '/resume');
   await chooseManual(page);
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
-  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Owner');
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
-  await page.getByPlaceholder('Role').fill('Principal Engineer');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
+  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Owner');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
+  await page.getByLabel('Role', { exact: true }).fill('Principal Engineer');
 
   const downloads = await generateFromModal(page, 'Ada Owner');
   expect(downloads.at(-1)?.download).toBe('Ada Owner.pdf');
@@ -89,7 +89,7 @@ test('RES-01 prefills a resume from the profile and saves the edited draft', asy
   await page.goto('/account');
   await expect(page.getByRole('link', { name: 'Ada Owner', exact: true })).toBeVisible();
   await page.goto(`/resume/${rows[0]?.id}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Principal Engineer');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Principal Engineer');
 });
 
 test('RES-01 guest download returns to the resume and can keep the draft', async ({ page, personas }) => {
@@ -97,9 +97,9 @@ test('RES-01 guest download returns to the resume and can keep the draft', async
   await page.goto('/resume');
   await expect(page.getByRole('heading', { name: 'How would you like to fill your resume?' })).toBeVisible();
   await chooseManual(page);
-  await page.getByPlaceholder('First Name').fill('Guestkeep');
-  await page.getByPlaceholder('Last Name').fill('Draft');
-  await page.getByPlaceholder('Role').fill('Guest');
+  await page.getByLabel('First name', { exact: true }).fill('Guestkeep');
+  await page.getByLabel('Last name', { exact: true }).fill('Draft');
+  await page.getByLabel('Role', { exact: true }).fill('Guest');
   await page.waitForFunction(() => Object.values(localStorage).some((value) => value?.includes('Guestkeep')));
   await waitForPreview(page);
   await page.getByRole('button', { name: 'Download resume' }).click();
@@ -111,15 +111,15 @@ test('RES-01 guest download returns to the resume and can keep the draft', async
   await openSignedIn(page, empty, '/resume');
   await expect(page.getByText('A guest resume draft is on this browser. Keep it in this account?')).toBeVisible();
   await page.getByRole('button', { name: 'Keep draft' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Guestkeep');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Guestkeep');
   await page.reload();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Guestkeep');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Guestkeep');
 });
 
 test('RES-01 guest download keeps a template return path', async ({ page }) => {
   await page.goto('/resume?template=senior-level-ember');
   await chooseManual(page);
-  await page.getByPlaceholder('First Name').fill('Templated');
+  await page.getByLabel('First name', { exact: true }).fill('Templated');
   await waitForPreview(page);
   await page.getByRole('button', { name: 'Download resume' }).click();
   await page.getByRole('dialog', { name: 'Final Review' }).getByRole('button', { name: 'Generate and Download Resume' }).click();
@@ -133,18 +133,18 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
   await page.getByText('Use Existing Resume', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Upload your resume' })).toBeVisible();
   await page.getByTestId('file-input').setInputFiles(PDF);
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada', { timeout: 30_000 });
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Engineer');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada', { timeout: 30_000 });
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Engineer');
 
-  await page.getByPlaceholder('First Name').fill('Nia');
-  await page.getByPlaceholder('Role').fill('Edited Engineer');
+  await page.getByLabel('First name', { exact: true }).fill('Nia');
+  await page.getByLabel('Role', { exact: true }).fill('Edited Engineer');
   await openResumeSection(page, 'Experience', 'Company');
-  const experience = page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last();
+  const experience = page.locator('section').filter({ has: page.getByLabel('Company', { exact: true }) }).last();
   await expandEntries(experience, 1);
   await expect(page.getByRole('heading', { name: 'Imported Labs' })).toBeVisible();
   await page.getByRole('button', { name: 'Edit entry' }).click();
   await expect(page.getByRole('heading', { name: 'Edit Imported Labs' })).toBeVisible();
-  await page.getByPlaceholder('Company').last().fill('Edited Labs');
+  await page.getByLabel('Company', { exact: true }).last().fill('Edited Labs');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Edited Labs' })).toBeVisible();
 
@@ -166,9 +166,9 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
   expect(pdf.text).not.toContain('Imported Labs');
 
   await page.goto(`/resume/${rows[0]?.id}`);
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Nia');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Nia');
   await openResumeSection(page, 'Experience', 'Company');
-  const savedExperience = page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last();
+  const savedExperience = page.locator('section').filter({ has: page.getByLabel('Company', { exact: true }) }).last();
   await expandEntries(savedExperience, 1);
   await expect(page.getByRole('heading', { name: 'Edited Labs' })).toBeVisible();
 });
@@ -208,9 +208,9 @@ test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', 
   expect(await listResumes(empty.userId)).toHaveLength(0);
 
   await input.setInputFiles(PDF);
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada', { timeout: 30_000 });
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada', { timeout: 30_000 });
   await openResumeSection(page, 'Experience', 'Company');
-  await expandEntries(page.locator('section').filter({ has: page.getByPlaceholder('Company') }).last(), 1);
+  await expandEntries(page.locator('section').filter({ has: page.getByLabel('Company', { exact: true }) }).last(), 1);
   await expect(page.getByRole('heading', { name: 'Imported Labs' })).toBeVisible();
   expect(await listResumes(empty.userId)).toHaveLength(0);
 });

@@ -4,7 +4,9 @@ import { ExperienceForm } from './forms/experience.form';
 import { Experience } from '@lib/types';
 import { OrderedList } from './ordered-list';
 import { ConfirmModal } from '@components/modals';
-import { Label } from '@components/ui';
+import { PROFILE_SECTIONS } from '@/lib/onboarding-copy';
+
+import { SectionHeading } from './forms/section-heading';
 import { FormList } from './form-list';
 import type { AppForm } from '@lib/forms/use-form';
 import { useFormArray } from '@lib/forms/use-form-array';
@@ -44,9 +46,9 @@ export const ExperienceView = ({ className, form, documentMode = false }: Experi
 
   return (
     <section className={className}>
-      <Label size="lg" className="mb-6">
-        Experience
-      </Label>
+      <div className="mb-6">
+        <SectionHeading copy={PROFILE_SECTIONS.experience} />
+      </div>
       <ExperienceForm action="add" onSubmit={handleAddExperience} />
       <OrderedList fields={fields} label="Experience">
         {({ items, onReorder }) => (

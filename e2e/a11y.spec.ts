@@ -160,7 +160,7 @@ test('UX-03 failed profile, resume, and document reads recover, and a pending ge
   await expect(page.getByRole('heading', { name: "We can't find this resume" })).toHaveCount(0);
   resumeFailure.stop();
   await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Ada');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
 
   let releaseGenerate: () => void = () => undefined;
   const gate = new Promise<void>((resolve) => {

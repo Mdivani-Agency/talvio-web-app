@@ -1,6 +1,7 @@
 'use client';
-import { memo, useState } from 'react';
-import { Button, MultiInput } from '@components/ui';
+import { CircleAlert } from 'lucide-react';
+import { memo, useId, useState } from 'react';
+import { Button, Label, MultiInput } from '@components/ui';
 import { SortModal } from '@components/modals';
 import { cn } from '@lib/utils';
 import { Icon } from '@components/icons';
@@ -8,6 +9,8 @@ import { Icon } from '@components/icons';
 export type SortableItem = { name: string; id: string };
 
 type ManageSortableItemsProps = {
+  /** The visible label above the input; it also names the input for screen readers. */
+  label: string;
   items?: Array<SortableItem>;
   errorsMessage?: string;
   currentOption: string;
@@ -20,6 +23,7 @@ type ManageSortableItemsProps = {
 };
 
 export const ManageSortableItems = memo(function ManageSortableItems({
+  label,
   items = [],
   errorsMessage,
   modalLabel = 'Reorder your skills and select up to 6 to display on your resume',
@@ -31,20 +35,33 @@ export const ManageSortableItems = memo(function ManageSortableItems({
   handleSave,
 }: ManageSortableItemsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const inputId = useId();
+  const messageId = `${inputId}-message`;
 
   return (
-    <>
+    <div className="grid min-w-0 content-start gap-1.5">
+      <Label htmlFor={inputId} size="sm" className="leading-[1.4286] font-medium text-foreground">
+        {label}
+      </Label>
       <MultiInput
+        id={inputId}
+        describedBy={errorsMessage ? messageId : undefined}
+        invalid={Boolean(errorsMessage)}
         options={items}
         currentOption={currentOption}
         setCurrentOption={setCurrentOption}
         onAdd={addItem}
         onRemove={removeItem}
-        errorMessage={errorsMessage}
         placeholder={placeholder}
         showAddButton={false}
         handleManage={() => setIsOpen(true)}
       />
+      {errorsMessage ? (
+        <p id={messageId} className="flex items-start gap-1.5 text-sm leading-[1.4286] text-foreground">
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-destructive" strokeWidth={2} />
+          <span>{errorsMessage}</span>
+        </p>
+      ) : null}
       <SortModal
         fields={items}
         title={modalLabel}
@@ -55,7 +72,7 @@ export const ManageSortableItems = memo(function ManageSortableItems({
         )}
         onSave={handleSave}
       />
-    </>
+    </div>
   );
 });
 

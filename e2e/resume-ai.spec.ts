@@ -53,7 +53,7 @@ async function acceptProposal(page: Page) {
   await expect(panel.getByText(POLISHED)).toBeVisible();
   await panel.getByRole('button', { name: 'Accept' }).click();
   await expect(overlay(page)).toHaveCount(0);
-  await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue(POLISHED);
+  await expect(page.getByLabel('Summary', { exact: true })).toHaveValue(POLISHED);
 }
 
 async function seededTagline(userId: string, id: string) {
@@ -64,9 +64,9 @@ async function seededTagline(userId: string, id: string) {
 
 async function startNewResume(page: Page, firstName: string) {
   await chooseManual(page);
-  await page.getByPlaceholder('First Name').fill(firstName);
-  await page.getByPlaceholder('Last Name').fill('Owner');
-  await page.getByPlaceholder('Role').fill('Engineer');
+  await page.getByLabel('First name', { exact: true }).fill(firstName);
+  await page.getByLabel('Last name', { exact: true }).fill('Owner');
+  await page.getByLabel('Role', { exact: true }).fill('Engineer');
 }
 
 test('RES-10 improves a saved resume from the action bar and the autosaved row takes the edit', async ({ page, personas }) => {
@@ -74,7 +74,7 @@ test('RES-10 improves a saved resume from the action bar and the autosaved row t
   const resumeId = await seedResume({ userId: owner.userId, name: 'Improve me', content: SEEDED_RESUME_CONTENT });
 
   await openSignedIn(page, owner, `/resume/${resumeId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
   await improveFromActionBar(page);
   await answerQuestions(page);
   await acceptProposal(page);
@@ -97,7 +97,7 @@ test('RES-10 improves from the download dialog, and Reject leaves the resume as 
   await expect(overlay(page).getByText(POLISHED)).toBeVisible({ timeout: 30_000 });
   await overlay(page).getByRole('button', { name: 'Reject' }).click();
   await expect(overlay(page)).toHaveCount(0);
-  await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('');
+  await expect(page.getByLabel('Summary', { exact: true })).toHaveValue('');
 
   const again = await openFinalReview(page);
   await again.getByRole('button', { name: 'Improve with AI first' }).click();
@@ -114,7 +114,7 @@ test('RES-10 improves from the download dialog, and Reject leaves the resume as 
   const sessionKey = `${SESSION_PREFIX}${key}:ai-improve`;
   await page.evaluate((stored) => window.localStorage.setItem(stored, '{"v":1}'), sessionKey);
   await openResumeSection(page, 'Contact Information', 'Email');
-  await page.getByPlaceholder('Email').fill('dialog.owner@talvio.test');
+  await page.getByLabel('Email', { exact: true }).fill('dialog.owner@talvio.test');
   await generateFromModal(page, 'Dialog Owner');
   expect(await page.evaluate((stored) => window.localStorage.getItem(stored), sessionKey)).toBeNull();
 });
@@ -134,7 +134,7 @@ test('RES-11 provider failures and the daily cap leave the resume unchanged and 
   await setScenario('tailor_error');
   await overlay(page).getByRole('button', { name: 'Improve with AI', exact: true }).click();
   await expect(overlay(page).getByRole('heading', { name: 'Could not write suggestions' })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('');
+  await expect(page.getByLabel('Summary', { exact: true })).toHaveValue('');
   await overlay(page).getByRole('button', { name: 'Cancel' }).click();
   await expect(overlay(page)).toHaveCount(0);
   expect(await seededTagline(owner.userId, resumeId)).toBeNull();
@@ -145,7 +145,7 @@ test('RES-11 provider failures and the daily cap leave the resume unchanged and 
   await expect(overlay(page).getByRole('heading', { name: 'Daily AI limit reached' })).toBeVisible({ timeout: 30_000 });
   await overlay(page).getByRole('button', { name: 'Close', exact: true }).click();
   await expect(overlay(page)).toHaveCount(0);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
   expect(await seededTagline(owner.userId, resumeId)).toBeNull();
 });
 
@@ -164,7 +164,7 @@ test('RES-12 a guest is sent to sign-in and gets the draft back', async ({ page,
 
   await openSignedIn(page, empty, '/resume');
   await page.getByRole('button', { name: 'Keep draft' }).click();
-  await expect(page.getByPlaceholder('First Name')).toHaveValue('Guestai');
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Guestai');
   await improveFromActionBar(page);
   await answerQuestions(page);
 });
@@ -222,13 +222,13 @@ test('RES-14 reload keeps the session, and an edit made since drops the suggesti
     window.localStorage.setItem(draftKey, JSON.stringify(draft));
   }, key);
   await page.goto('/resume');
-  await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('Edited Elsewhere');
+  await expect(page.getByLabel('Summary', { exact: true })).toHaveValue('Edited Elsewhere');
   await expect(overlay(page).getByRole('heading', { name: 'Suggested edits' })).toBeVisible({ timeout: 30_000 });
   await expect(overlay(page).getByText(/One suggestion was left out/)).toBeVisible();
   await expect(overlay(page).getByText(POLISHED)).toHaveCount(0);
   await overlay(page).getByRole('button', { name: 'Accept' }).click();
   await expect(overlay(page)).toHaveCount(0);
-  await expect(page.getByPlaceholder('Write a brief summary')).toHaveValue('Edited Elsewhere');
+  await expect(page.getByLabel('Summary', { exact: true })).toHaveValue('Edited Elsewhere');
   expect(await page.evaluate((stored) => window.localStorage.getItem(stored), `${SESSION_PREFIX}${key}:ai-improve`)).toBeNull();
   expect((await mediaStats()).ai).toMatchObject({ questions: 1, tailor: 1 });
 });

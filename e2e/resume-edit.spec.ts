@@ -37,14 +37,14 @@ test('RES-04 edits a draft once and keeps rapid acknowledged saves', async ({ pa
     throw new Error('Draft persona has no resume');
   }
   await openSignedIn(page, draft, `/resume/${draft.resumeId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
 
-  await page.getByPlaceholder('Role').fill('Rapid One');
+  await page.getByLabel('Role', { exact: true }).fill('Rapid One');
   await waitForRole(draft.userId, 'Rapid One');
   await expect(page.getByText('Saved to account')).toBeVisible();
 
-  await page.getByPlaceholder('Role').fill('Rapid Two');
-  await page.getByPlaceholder('Role').fill('Rapid Three');
+  await page.getByLabel('Role', { exact: true }).fill('Rapid Two');
+  await page.getByLabel('Role', { exact: true }).fill('Rapid Three');
   await waitForRole(draft.userId, 'Rapid Three');
   await expect(page.getByText('Saved to account')).toBeVisible();
 
@@ -60,9 +60,9 @@ test('RES-04 edits a draft once and keeps rapid acknowledged saves', async ({ pa
   await page.goto('/account');
   await expect(page.getByRole('link', { name: 'Draft resume', exact: true })).toBeVisible();
   await page.goto(`/resume/${draft.resumeId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Rapid Three');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Rapid Three');
   await page.reload();
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Rapid Three');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Rapid Three');
 
   const rows = await listResumes(draft.userId);
   expect(rows).toHaveLength(1);
@@ -85,14 +85,14 @@ test('RES-05 forks one draft from a generated resume and can discard it', async 
   const originalUrl = before[0]?.pdfUrl;
 
   await openSignedIn(page, owner, `/resume/${originalId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
-  await page.getByPlaceholder('Role').fill('Draft Role');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
+  await page.getByLabel('Role', { exact: true }).fill('Draft Role');
   await expect(page.getByRole('dialog', { name: 'Create a draft' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByText('Draft created')).toBeVisible();
   await expect(page.getByText('Editing a draft. Your generated PDF stays downloadable.')).toBeVisible();
 
-  await page.getByPlaceholder('Role').fill('Draft Role Two');
+  await page.getByLabel('Role', { exact: true }).fill('Draft Role Two');
   await expect(page.getByRole('dialog', { name: 'Create a draft' })).toHaveCount(0);
   await expect.poll(async () => {
     const rows = await listResumes(owner.userId);
@@ -108,9 +108,9 @@ test('RES-05 forks one draft from a generated resume and can discard it', async 
 
   await page.getByRole('button', { name: 'View original' }).click();
   await expect(page.getByText('Viewing the generated PDF. This version is read-only.')).toBeVisible();
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
   await page.getByRole('button', { name: 'View draft' }).click();
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Draft Role Two');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Draft Role Two');
 
   await page.getByRole('button', { name: 'Discard draft' }).click();
   await expect(page.getByRole('dialog', { name: 'Discard draft' })).toBeVisible();
@@ -137,11 +137,11 @@ test('RES-05 concurrent draft creation keeps a single open draft', async ({ page
   await openSignedIn(page, owner, `/resume/${originalId}`);
   const other = await page.context().newPage();
   await other.goto(`/resume/${originalId}`);
-  await expect(page.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
-  await expect(other.getByPlaceholder('Role')).toHaveValue('Staff Engineer');
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
+  await expect(other.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
 
-  await page.getByPlaceholder('Role').fill('Left edit');
-  await other.getByPlaceholder('Role').fill('Right edit');
+  await page.getByLabel('Role', { exact: true }).fill('Left edit');
+  await other.getByLabel('Role', { exact: true }).fill('Right edit');
   await expect(page.getByRole('dialog', { name: 'Create a draft' })).toBeVisible();
   await expect(other.getByRole('dialog', { name: 'Create a draft' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirm' }).click();
@@ -238,7 +238,7 @@ test('RES-09 renders long Unicode content across preview pages and style changes
     content: longResume(),
   });
   await openSignedIn(page, owner, `/resume/${resumeId}`);
-  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Naïve');
+  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Naïve');
   await waitForPreview(page);
 
   const pageCount = async () => {

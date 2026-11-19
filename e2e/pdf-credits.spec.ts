@@ -285,7 +285,7 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   expect((await mediaStats()).presigns).toBe(0);
 
   await page.goto(`/resume/${unreadableId}`);
-  await page.getByPlaceholder('Role').fill('Engineer');
+  await page.getByLabel('Role', { exact: true }).fill('Engineer');
   await expect.poll(async () => {
     const row = (await listResumes(owner.userId)).find((item) => item.id === unreadableId);
     return contentProfile(row?.content ?? {}).role;
@@ -385,7 +385,7 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   const originalUrl = (await listResumes(owner.userId)).find((row) => row.id === originalId)?.pdfUrl;
 
   await openSignedIn(page, owner, `/resume/${originalId}`);
-  await page.getByPlaceholder('Role').fill('Edited Family');
+  await page.getByLabel('Role', { exact: true }).fill('Edited Family');
   await page.getByRole('dialog', { name: 'Create a draft' }).getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByText('Draft created')).toBeVisible();
   await expect.poll(async () => {

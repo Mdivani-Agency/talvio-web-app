@@ -15,12 +15,13 @@ export async function setScenario(mode: string) {
   }
 }
 
-export function section(page: Page, placeholder: string) {
-  return page.locator('section').filter({ has: page.getByPlaceholder(placeholder) }).last();
+/** The profile section that holds the field with this visible label. */
+export function section(page: Page, label: string) {
+  return page.locator('section').filter({ has: page.getByLabel(label, { exact: true }) }).last();
 }
 
-async function fillAutocomplete(page: Page, placeholder: string, value: string) {
-  const input = page.getByPlaceholder(placeholder);
+async function fillAutocomplete(page: Page, label: string, value: string) {
+  const input = page.getByLabel(label, { exact: true });
   await input.click();
   await page.keyboard.insertText(value);
   await page.keyboard.press('Escape');
@@ -38,18 +39,18 @@ export async function fillIdentity(page: Page, values: {
   city?: string;
   country?: string;
 }) {
-  await page.getByPlaceholder('First Name').fill(values.firstName);
-  await page.getByPlaceholder('Last Name').fill(values.lastName);
-  await page.getByPlaceholder('Role').fill(values.role);
-  await page.getByPlaceholder('Email').fill(values.email);
+  await page.getByLabel('First name', { exact: true }).fill(values.firstName);
+  await page.getByLabel('Last name', { exact: true }).fill(values.lastName);
+  await page.getByLabel('Role', { exact: true }).fill(values.role);
+  await page.getByLabel('Email', { exact: true }).fill(values.email);
   if (values.tagline != null) {
-    await page.getByPlaceholder('Write a brief summary').fill(values.tagline);
+    await page.getByLabel('Summary', { exact: true }).fill(values.tagline);
   }
   if (values.phone != null) {
-    await page.getByPlaceholder('Phone').fill(values.phone);
+    await page.getByLabel('Phone', { exact: true }).fill(values.phone);
   }
   if (values.website != null) {
-    await page.getByPlaceholder('Personal Website (optional)').fill(values.website);
+    await page.getByLabel('Website (optional)', { exact: true }).fill(values.website);
   }
   if (values.city != null) {
     await fillAutocomplete(page, 'City', values.city);
@@ -91,8 +92,8 @@ export async function chooseOption(page: Page, scope: Locator, index: number, op
   await page.getByRole('option', { name: option, exact: true }).click();
 }
 
-export async function addTag(page: Page, placeholder: string, value: string) {
-  const input = page.getByPlaceholder(placeholder);
+export async function addTag(page: Page, label: string, value: string) {
+  const input = page.getByLabel(label, { exact: true });
   await input.fill(value);
   await input.press('Enter');
 }
