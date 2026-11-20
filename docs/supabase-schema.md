@@ -220,11 +220,13 @@ onto the new chain; nothing was migrated in place.
 | `20261117000100_access_token_hook.sql` | Supabase Auth custom access-token hook `custom_access_token_hook(jsonb)` (adds `account_status` from `auth.users.banned_until` and `plan` to every access token; on error returns the claims unchanged) and private `account_plan(uuid)` (`'free'` until MDI-321); `EXECUTE` for `supabase_auth_admin` only. Enabled in `config.toml` locally and by Terraform per environment after the migration is applied ([MDI-440](https://linear.app/mdivani/issue/MDI-440)) |
 | `20261118000100_drop_ai_daily_caps.sql` | Drops the AI daily cap from `20261008000500` (MDI-224): cron job `ai-daily-usage-prune`, `consume_ai_request()`, `consume_ai_request_for()`, `prune_ai_daily_usage()`, `ai_daily_request_cap()` and `ai_daily_usage`. The LLM service enforces the daily AI quota |
 | `20261120000100_profile_ai_improvement.sql` | `profile_ai_improvements` (the once-per-account free profile improvement flag, [MDI-644](https://linear.app/mdivani/issue/MDI-644); owner SELECT only); public `claim_profile_improvement(text)`, `confirm_profile_improvement(text, uuid)`, `release_profile_improvement(text)`, `mark_profile_improvement_used(uuid)`; `llm_proposal_applications.operation` also allows `improve_profile`; `llm_apply_receipt()` returns a `profile` target; `apply_llm_proposal(jsonb)` also applies `improve_profile` (through `save_profile`, last-write-wins, only once the improvement is used) |
+| `20261120000200_template_optional_fields.sql` | Optional fields for the new resume templates ([MDI-664](https://linear.app/mdivani/issue/MDI-664)): `profiles.group_skills`, `skills.group_name` (1–40 characters), `experiences.stack` (up to 8 tags of 1–30 characters, trigger `experiences_validate_stack`), and the owner-CRUD table `headline_achievements` (at most 3 per user, trigger `headline_achievements_enforce_limit`). Replaces `save_profile` to read and write them; payloads without them keep the stored values |
 
 Constraint / RLS smokes: `supabase/tests/schema_constraints.sql`,
 `supabase/tests/rls.test.sql`, `supabase/tests/monthly_allowance.test.sql`,
-`supabase/tests/llm_apply.test.sql` and
-`supabase/tests/access_token_hook.test.sql`
+`supabase/tests/llm_apply.test.sql`,
+`supabase/tests/access_token_hook.test.sql` and
+`supabase/tests/template_optional_fields.test.sql`
 (`yarn db:test` after `yarn db:reset`).
 
 ## Related docs

@@ -19,6 +19,7 @@ export type ResumeEditorSource = {
   selected?: PreviewDto | null;
 };
 
+/** The level of an older key (`mid-level-mint`), for reading saved keys only: the gallery no longer has levels. */
 export function templateLevelFromKey(key: TemplateKey): TemplateLevel {
   if (key.startsWith('entry-')) {
     return 'entry';
@@ -33,7 +34,7 @@ export function resolveAvailableTemplate(template: unknown): TemplateItem {
   const key = normalizeResumeTemplate(template);
   return findTemplate(key)
     ?? findTemplate(DEFAULT_RESUME_TEMPLATE)
-    ?? listResumeTemplates().senior[0];
+    ?? listResumeTemplates()[0]!;
 }
 
 export function resolveResumeEditorDocument(source: ResumeEditorSource): PreviewDto {

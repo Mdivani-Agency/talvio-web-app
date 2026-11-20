@@ -1,11 +1,15 @@
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker, MultiListInput, ErrorBadge, InfoBadge } from '@components/ui';
+import { useId, useState } from 'react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, ExperienceRangePicker, MultiListInput, ErrorBadge, InfoBadge, Label, TagField } from '@components/ui';
 import { cn } from '@lib/utils';
 import { employmentTypeEnum, locationTypeEnum } from '@lib/schema/enums';
 import { z } from 'zod';
 import { useStore } from '@tanstack/react-form';
 import type { AppForm } from '@lib/forms/use-form';
 import { fieldErrorMessage } from '@lib/forms/errors';
-import { EXPERIENCE_FIELDS } from '@/lib/onboarding-copy';
+import { EXPERIENCE_FIELDS, STACK_COPY } from '@/lib/onboarding-copy';
+import { STACK_MAX, stackItemSchema, stackSchema } from '@lib/schema/account.schema';
+import { optionalFieldUse } from '@lib/template-fields';
+import { useCurrentTemplate } from './template-context';
 
 import { TextFormField } from './text-form-field';
 
@@ -22,6 +26,7 @@ export const experienceFormValuesSchema = z.object({
   achievements: z.array(z.string()),
   responsibilities: z.array(z.string()),
   keyContributions: z.array(z.string()),
+  stack: stackSchema,
 });
 
 export type ExperienceFormValues = z.input<typeof experienceFormValuesSchema>;
@@ -138,7 +143,59 @@ export const ExperienceFields = ({ className, form }: ExperienceFieldsProps) => 
         }}
       />
 
+      <StackField form={form} />
+
       <TextFormField form={form} name="additionalDetails" copy={EXPERIENCE_FIELDS.additionalDetails} multiline />
     </Form>
   );
 };
+
+/** The main technologies of the role, as tags. Shown under each role in the Technical template. */
+function StackField({ form }: { form: AppForm }) {
+  const stack = useStore(form.store, (state) => (state.values.stack as string[] | undefined) ?? []);
+  const fieldError = useStore(form.store, (state) => fieldErrorMessage(state.fieldMeta.stack?.errors ?? []));
+  const template = useCurrentTemplate();
+  const inputId = useId();
+  const hintId = useId();
+  const errorId = useId();
+  const [addError, setAddError] = useState<string | undefined>(undefined);
+  const error = addError ?? fieldError;
+
+  return (
+    <div className="grid min-w-0 content-start gap-1.5">
+      <Label htmlFor={inputId} size="sm" className="leading-[1.4286] font-medium text-foreground">
+        {STACK_COPY.label}
+      </Label>
+      <TagField
+        id={inputId}
+        items={stack}
+        placeholder={STACK_COPY.example}
+        removeLabel={STACK_COPY.remove}
+        full={stack.length >= STACK_MAX}
+        invalid={Boolean(error)}
+        describedBy={error ? `${hintId} ${errorId}` : hintId}
+        onAdd={(value) => {
+          const parsed = stackItemSchema.safeParse(value);
+          if (!parsed.success) {
+            setAddError(parsed.error.issues[0]?.message);
+            return;
+          }
+          setAddError(undefined);
+          if (!stack.some((item) => item.toLowerCase() === parsed.data.toLowerCase())) {
+            form.setFieldValue('stack', [...stack, parsed.data]);
+          }
+        }}
+        onRemove={(index) => form.setFieldValue('stack', stack.filter((_, i) => i !== index))}
+      />
+      <p id={hintId} data-allow-small-text className="text-[1.3rem] text-muted-foreground">
+        {STACK_COPY.hint(STACK_MAX)} {optionalFieldUse('stack', template)}
+      </p>
+      {error ? (
+        <p id={errorId} className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+

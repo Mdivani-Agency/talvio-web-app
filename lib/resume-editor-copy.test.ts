@@ -51,6 +51,7 @@ describe('resume editor copy', () => {
       'Experience',
       'Education',
       'Projects',
+      'Recommendations',
     ]);
     expect(SECTION_SUMMARY.fix(['First name'])).toBe('Fix 1 field: first name');
     expect(SECTION_SUMMARY.fix(['Email', 'City'])).toBe('Fix 2 fields: email, city');

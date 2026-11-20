@@ -28,6 +28,7 @@ export type ProfileRow = {
   seniority?: string | null;
   city?: string | null;
   country?: string | null;
+  group_skills?: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -53,6 +54,7 @@ export type ExperienceRow = {
   achievements?: (string | null)[] | null;
   responsibilities?: (string | null)[] | null;
   key_contributions?: (string | null)[] | null;
+  stack?: (string | null)[] | null;
   additional_details?: string | null;
 };
 
@@ -73,6 +75,18 @@ export type NamedRow = {
   additional_details?: string | null;
 };
 
+export type SkillRow = {
+  id?: string;
+  name: string;
+  group_name?: string | null;
+};
+
+export type HeadlineAchievementRow = {
+  id?: string;
+  value: string;
+  label: string;
+};
+
 export type LinkRow = {
   id?: string;
   type: string;
@@ -91,10 +105,11 @@ export type ProfileCollections = {
   educations?: EducationRow[];
   projects?: NamedRow[];
   recommendations?: NamedRow[];
-  skills?: Array<{ id?: string; name: string }>;
+  skills?: SkillRow[];
   tools?: Array<{ id?: string; name: string }>;
   links?: LinkRow[];
   languages?: LanguageRow[];
+  headlineAchievements?: HeadlineAchievementRow[];
 };
 
 export function toIsoDateTime(value?: string | null): string | undefined {
@@ -180,6 +195,7 @@ function experienceFromRow(row: ExperienceRow): Experience {
     achievements: textList(row.achievements),
     responsibilities: textList(row.responsibilities),
     keyContributions: textList(row.key_contributions),
+    stack: textList(row.stack),
   };
 }
 
@@ -212,10 +228,16 @@ export function accountFromProfile(profile: ProfileRow, collections: ProfileColl
       seniority: (profile.seniority as AccountDto['profile']['seniority']) ?? 'entry',
       city: profile.city ?? undefined,
       country: profile.country ?? undefined,
+      groupSkills: profile.group_skills ?? false,
       email: primaryContact(collections.contacts, 'email') ?? '',
       phone: primaryContact(collections.contacts, 'phone'),
       website: primaryContact(collections.contacts, 'url'),
     },
+    headlineAchievements: (collections.headlineAchievements ?? []).map((row) => ({
+      id: persistedRowId(row.id),
+      value: row.value,
+      label: row.label,
+    })),
     experience: (collections.experiences ?? []).map(experienceFromRow),
     education: (collections.educations ?? []).map(educationFromRow),
     projects: (collections.projects ?? []).map((row) => ({
@@ -233,6 +255,7 @@ export function accountFromProfile(profile: ProfileRow, collections: ProfileColl
     skills: (collections.skills ?? []).map((row) => ({
       id: persistedRowId(row.id),
       name: row.name,
+      ...(row.group_name ? { group: row.group_name } : {}),
     })),
     tools: (collections.tools ?? []).map((row) => ({
       id: persistedRowId(row.id),
@@ -264,7 +287,20 @@ export function accountDtoToSavePayload(account: AccountDto) {
       email: account.profile.email,
       phone: account.profile.phone,
       website: account.profile.website,
+      // Left out when unknown, so save_profile keeps the stored switch.
+      ...(account.profile.groupSkills === undefined ? {} : { groupSkills: account.profile.groupSkills }),
     },
+    // The form sends the whole set and save_profile replaces it, so the key is sent only when the caller has the list.
+    ...(account.headlineAchievements === undefined
+      ? {}
+      : {
+        headlineAchievements: account.headlineAchievements.map((row, index) => ({
+          id: persistedRowId(row.id),
+          value: row.value.trim(),
+          label: row.label.trim(),
+          sortOrder: index,
+        })),
+      }),
     experience: (account.experience ?? []).map((row, index) => ({
       id: persistedRowId(row.id),
       company: row.company,
@@ -278,6 +314,7 @@ export function accountDtoToSavePayload(account: AccountDto) {
       achievements: row.achievements ?? [],
       responsibilities: row.responsibilities ?? [],
       keyContributions: row.keyContributions ?? [],
+      ...(row.stack === undefined ? {} : { stack: row.stack }),
       sortOrder: index,
     })),
     education: (account.education ?? []).map((row, index) => ({
@@ -307,6 +344,7 @@ export function accountDtoToSavePayload(account: AccountDto) {
     skills: (account.skills ?? []).map((row, index) => ({
       id: persistedRowId(row.id),
       name: row.name,
+      groupName: row.group?.trim() || null,
       sortOrder: index,
     })),
     tools: (account.tools ?? []).map((row, index) => ({

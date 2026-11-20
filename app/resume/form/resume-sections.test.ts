@@ -29,6 +29,19 @@ describe('resume sections', () => {
     expect(resumeFieldLabel('skills')).toBe('Skills');
   });
 
+  it('counts headline achievements and skill groups in the summaries', () => {
+    const states = resumeSectionStates({
+      ...values,
+      profile: { ...values.profile, groupSkills: true },
+      headlineAchievements: [{ value: '40%', label: 'faster' }],
+      skills: [{ name: 'TypeScript', group: 'Languages' }, { name: 'React', group: 'Frameworks' }, { name: 'Git' }],
+    });
+    expect(states[0]?.summary).toBe('Maya Lindqvist · Staff Software Engineer · 1 achievement');
+    expect(states[2]?.summary).toBe('3 skills in 2 groups · 1 tool');
+    expect(resumeSectionOf('headlineAchievements.0.value')).toBe('about');
+    expect(resumeFieldLabel('experience.0.stack')).toBe('Experience 1, Stack');
+  });
+
   it('summarises each section and marks the filled ones done', () => {
     expect(resumeSectionStates(values)).toEqual([
       { id: 'about', title: 'About you', state: 'done', summary: 'Maya Lindqvist · Staff Software Engineer' },
@@ -37,6 +50,7 @@ describe('resume sections', () => {
       { id: 'experience', title: 'Experience', state: 'done', summary: '2 roles' },
       { id: 'education', title: 'Education', state: 'done', summary: '1 entry' },
       { id: 'projects', title: 'Projects', state: 'todo', summary: 'Optional · none yet' },
+      { id: 'recommendations', title: 'Recommendations', state: 'todo', summary: 'Optional · none yet' },
     ]);
   });
 
@@ -63,6 +77,7 @@ describe('resume sections', () => {
       ['todo', 'Not started yet'],
       ['todo', 'Not started yet'],
       ['todo', 'Not started yet'],
+      ['todo', 'Optional · none yet'],
       ['todo', 'Optional · none yet'],
     ]);
   });

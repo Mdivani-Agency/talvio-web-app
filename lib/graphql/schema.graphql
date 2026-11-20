@@ -236,6 +236,17 @@ type Mutation {
     """Restricts the mutation's impact to records matching the criteria"""
     filter: experiencesFilter
   ): experiencesDeleteResponse!
+  """
+  Deletes zero or more records from the `headline_achievements` collection
+  """
+  deleteFromheadline_achievementsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: headline_achievementsFilter
+  ): headline_achievementsDeleteResponse!
   """Deletes zero or more records from the `languages` collection"""
   deleteFromlanguagesCollection(
     """
@@ -316,6 +327,8 @@ type Mutation {
   insertIntoeducationsCollection(objects: [educationsInsertInput!]!): educationsInsertResponse
   """Adds one or more `experiences` records to the collection"""
   insertIntoexperiencesCollection(objects: [experiencesInsertInput!]!): experiencesInsertResponse
+  """Adds one or more `headline_achievements` records to the collection"""
+  insertIntoheadline_achievementsCollection(objects: [headline_achievementsInsertInput!]!): headline_achievementsInsertResponse
   """Adds one or more `languages` records to the collection"""
   insertIntolanguagesCollection(objects: [languagesInsertInput!]!): languagesInsertResponse
   """Adds one or more `links` records to the collection"""
@@ -375,6 +388,19 @@ type Mutation {
     """
     set: experiencesUpdateInput!
   ): experiencesUpdateResponse!
+  """Updates zero or more records in the `headline_achievements` collection"""
+  updateheadline_achievementsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: headline_achievementsFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: headline_achievementsUpdateInput!
+  ): headline_achievementsUpdateResponse!
   """Updates zero or more records in the `languages` collection"""
   updatelanguagesCollection(
     """
@@ -590,6 +616,30 @@ type Query {
     """Sort order to apply to the collection"""
     orderBy: [experiencesOrderBy!]
   ): experiencesConnection!
+  """Retrieve a record of type `headline_achievements` by its primary key"""
+  headline_achievementsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): headline_achievements
+  """A pagable collection of type `headline_achievements`"""
+  headline_achievementsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: headline_achievementsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [headline_achievementsOrderBy!]
+  ): headline_achievementsConnection!
   """Retrieve a record of type `languages` by its primary key"""
   languagesByPk(
     """The record's `id` value"""
@@ -1218,6 +1268,7 @@ type experiences implements Node {
   profiles: profiles
   responsibilities: [String]!
   sort_order: Int!
+  stack: [String]!
   start_date: Date!
   updated_at: Datetime!
   user_id: UUID!
@@ -1265,6 +1316,7 @@ input experiencesFilter {
   or: [experiencesFilter!]
   responsibilities: StringListFilter
   sort_order: IntFilter
+  stack: StringListFilter
   start_date: DateFilter
   updated_at: DatetimeFilter
   user_id: UUIDFilter
@@ -1285,6 +1337,7 @@ input experiencesInsertInput {
   location_type: location_type
   responsibilities: [String]
   sort_order: Int
+  stack: [String]
   start_date: Date
   updated_at: Datetime
   user_id: UUID
@@ -1328,6 +1381,7 @@ input experiencesUpdateInput {
   location_type: location_type
   responsibilities: [String]
   sort_order: Int
+  stack: [String]
   start_date: Date
   updated_at: Datetime
   user_id: UUID
@@ -1338,6 +1392,96 @@ type experiencesUpdateResponse {
   affectedCount: Int!
   """Array of records impacted by the mutation"""
   records: [experiences!]!
+}
+
+type headline_achievements implements Node {
+  created_at: Datetime!
+  id: UUID!
+  label: String!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  profiles: profiles
+  sort_order: Int!
+  user_id: UUID!
+  value: String!
+}
+
+type headline_achievementsConnection {
+  edges: [headline_achievementsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type headline_achievementsDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [headline_achievements!]!
+}
+
+type headline_achievementsEdge {
+  cursor: String!
+  node: headline_achievements!
+}
+
+input headline_achievementsFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [headline_achievementsFilter!]
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  label: StringFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: headline_achievementsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [headline_achievementsFilter!]
+  sort_order: IntFilter
+  user_id: UUIDFilter
+  value: StringFilter
+}
+
+input headline_achievementsInsertInput {
+  created_at: Datetime
+  id: UUID
+  label: String
+  sort_order: Int
+  user_id: UUID
+  value: String
+}
+
+type headline_achievementsInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [headline_achievements!]!
+}
+
+input headline_achievementsOrderBy {
+  created_at: OrderByDirection
+  id: OrderByDirection
+  label: OrderByDirection
+  sort_order: OrderByDirection
+  user_id: OrderByDirection
+  value: OrderByDirection
+}
+
+input headline_achievementsUpdateInput {
+  created_at: Datetime
+  id: UUID
+  label: String
+  sort_order: Int
+  user_id: UUID
+  value: String
+}
+
+type headline_achievementsUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [headline_achievements!]!
 }
 
 enum language_proficiency {
@@ -1739,6 +1883,25 @@ type profiles implements Node {
     orderBy: [experiencesOrderBy!]
   ): experiencesConnection
   first_name: String!
+  group_skills: Boolean!
+  headline_achievementsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: headline_achievementsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [headline_achievementsOrderBy!]
+  ): headline_achievementsConnection
   languagesCollection(
     """Query values in the collection after the provided cursor"""
     after: Cursor
@@ -1849,6 +2012,7 @@ input profilesFilter {
   country: StringFilter
   created_at: DatetimeFilter
   first_name: StringFilter
+  group_skills: BooleanFilter
   last_name: StringFilter
   nodeId: IDFilter
   """Negates a filter"""
@@ -1869,6 +2033,7 @@ input profilesInsertInput {
   country: String
   created_at: Datetime
   first_name: String
+  group_skills: Boolean
   last_name: String
   role: String
   seniority: seniority_level
@@ -1889,6 +2054,7 @@ input profilesOrderBy {
   country: OrderByDirection
   created_at: OrderByDirection
   first_name: OrderByDirection
+  group_skills: OrderByDirection
   last_name: OrderByDirection
   role: OrderByDirection
   seniority: OrderByDirection
@@ -1902,6 +2068,7 @@ input profilesUpdateInput {
   country: String
   created_at: Datetime
   first_name: String
+  group_skills: Boolean
   last_name: String
   role: String
   seniority: seniority_level
@@ -2337,6 +2504,7 @@ input seniority_levelFilter {
 
 type skills implements Node {
   created_at: Datetime!
+  group_name: String
   id: UUID!
   name: String!
   """Globally Unique Record Identifier"""
@@ -2369,6 +2537,7 @@ input skillsFilter {
   """
   and: [skillsFilter!]
   created_at: DatetimeFilter
+  group_name: StringFilter
   id: UUIDFilter
   name: StringFilter
   nodeId: IDFilter
@@ -2384,6 +2553,7 @@ input skillsFilter {
 
 input skillsInsertInput {
   created_at: Datetime
+  group_name: String
   id: UUID
   name: String
   sort_order: Int
@@ -2399,6 +2569,7 @@ type skillsInsertResponse {
 
 input skillsOrderBy {
   created_at: OrderByDirection
+  group_name: OrderByDirection
   id: OrderByDirection
   name: OrderByDirection
   sort_order: OrderByDirection
@@ -2407,6 +2578,7 @@ input skillsOrderBy {
 
 input skillsUpdateInput {
   created_at: Datetime
+  group_name: String
   id: UUID
   name: String
   sort_order: Int

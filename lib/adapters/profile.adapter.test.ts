@@ -210,3 +210,81 @@ describe('accountDtoToSavePayload', () => {
     expect(payload.experience[0].id).toBeUndefined();
   });
 });
+
+describe('optional template fields', () => {
+  const profileRow = {
+    user_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    first_name: 'Ann',
+    last_name: 'Owner',
+    role: 'Engineer',
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-02T00:00:00.000Z',
+  };
+
+  it('reads them from the rows, with defaults for rows saved before them', () => {
+    const empty = accountFromProfile(profileRow, {
+      skills: [{ name: 'Go' }],
+      experiences: [
+        { company: 'Talvio', job_title: 'Engineer', start_date: '2020-01-15', is_present: true },
+      ],
+    });
+    expect(empty.profile.groupSkills).toBe(false);
+    expect(empty.headlineAchievements).toEqual([]);
+    expect(empty.skills).toEqual([{ id: undefined, name: 'Go' }]);
+    expect(empty.experience?.[0]?.stack).toEqual([]);
+
+    const filled = accountFromProfile(
+      { ...profileRow, group_skills: true },
+      {
+        skills: [{ id: '33333333-3333-4333-8333-333333333333', name: 'Go', group_name: 'Backend' }],
+        experiences: [
+          {
+            company: 'Talvio',
+            job_title: 'Engineer',
+            start_date: '2020-01-15',
+            is_present: true,
+            stack: ['Go', null, 'Kafka'],
+          },
+        ],
+        headlineAchievements: [
+          { id: '44444444-4444-4444-8444-444444444444', value: '40%', label: 'faster releases' },
+        ],
+      },
+    );
+    expect(filled.profile.groupSkills).toBe(true);
+    expect(filled.skills?.[0]?.group).toBe('Backend');
+    expect(filled.experience?.[0]?.stack).toEqual(['Go', 'Kafka']);
+    expect(filled.headlineAchievements).toEqual([
+      { id: '44444444-4444-4444-8444-444444444444', value: '40%', label: 'faster releases' },
+    ]);
+  });
+
+  it('sends them to save_profile when the form has them', () => {
+    const payload = accountDtoToSavePayload({
+      profile: { firstName: 'Ann', lastName: 'Owner', role: 'Engineer', email: 'ann@talvio.test', groupSkills: false },
+      headlineAchievements: [{ value: ' 40% ', label: 'faster releases ' }],
+      skills: [{ name: 'Go', group: 'Backend' }, { name: 'CSS' }],
+      experience: [
+        { company: 'Talvio', jobTitle: 'Engineer', startDate: '2020-01-15T00:00:00.000Z', stack: ['Go'] },
+      ],
+    });
+
+    expect(payload.profile.groupSkills).toBe(false);
+    expect(payload.headlineAchievements).toEqual([
+      { id: undefined, value: '40%', label: 'faster releases', sortOrder: 0 },
+    ]);
+    expect(payload.skills.map((row) => row.groupName)).toEqual(['Backend', null]);
+    expect(payload.experience[0]?.stack).toEqual(['Go']);
+  });
+
+  it('leaves unknown fields out, so save_profile keeps what is stored', () => {
+    const payload = accountDtoToSavePayload({
+      profile: { firstName: 'Ann', lastName: 'Owner', role: 'Engineer', email: 'ann@talvio.test' },
+      experience: [{ company: 'Talvio', jobTitle: 'Engineer', startDate: '2020-01-15T00:00:00.000Z' }],
+    });
+
+    expect(payload.profile).not.toHaveProperty('groupSkills');
+    expect(payload).not.toHaveProperty('headlineAchievements');
+    expect(payload.experience[0]).not.toHaveProperty('stack');
+  });
+});

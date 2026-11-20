@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { listResumeTemplates } from '@lib/templates';
+import { filterTemplates, listResumeTemplates } from '@lib/templates';
 
 import { TemplateGallery } from './template-gallery';
 
@@ -14,15 +14,32 @@ describe('TemplateGallery', () => {
   // Vitest runs without globals here, so Testing Library cannot clean up between tests on its own.
   afterEach(cleanup);
 
-  it('renders one named card per template with the style name, description and preview', () => {
-    render(<TemplateGallery level="senior" onSelect={() => {}} />);
+  it('renders one named card per template with its name, description, best-for line and preview', () => {
+    const templates = listResumeTemplates();
+    render(<TemplateGallery templates={templates} onSelect={() => {}} />);
 
-    const templates = listResumeTemplates().senior;
-    expect(screen.getByRole('region', { name: 'Senior level templates' }).getAttribute('aria-roledescription')).toBe('carousel');
+    expect(screen.getByRole('region', { name: 'Templates' }).getAttribute('aria-roledescription')).toBe('carousel');
+    expect(templates.map((template) => template.name)).toEqual([
+      'Classic',
+      'Modern',
+      'Ember',
+      'Mint',
+      'Talvio',
+      'Compact',
+      'Minimal',
+      'Executive',
+      'Skills first',
+      'Graduate',
+      'Technical',
+      'Sidebar',
+      'Timeline',
+      'Banner',
+    ]);
     for (const [index, template] of templates.entries()) {
-      const card = screen.getByRole('button', { name: `Use the ${template.name} template, senior level` });
+      const card = screen.getByRole('button', { name: `Use the ${template.name} template` });
       expect(card.textContent).toContain(template.description);
-      expect(card.querySelector('img')?.getAttribute('alt')).toBe(`senior ${template.name}`);
+      expect(card.textContent).toContain(`Best for: ${template.bestFor}`);
+      expect(card.querySelector('img')?.getAttribute('src')).toBe(template.imageUrl);
       expect(card.closest('li')?.getAttribute('aria-label')).toBe(`${index + 1} of ${templates.length}`);
     }
     // Use template is decoration: the card's accessible name already says it.
@@ -31,28 +48,26 @@ describe('TemplateGallery', () => {
     }
   });
 
-  it('opens the chosen template', () => {
+  it('opens the chosen template by its key', () => {
     const onSelect = vi.fn();
-    render(<TemplateGallery level="entry" onSelect={onSelect} />);
+    render(<TemplateGallery templates={listResumeTemplates()} onSelect={onSelect} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Use the Mint template, entry level' }));
-    expect(onSelect).toHaveBeenCalledWith('entry-level-mint');
+    fireEvent.click(screen.getByRole('button', { name: 'Use the Technical template' }));
+    expect(onSelect).toHaveBeenCalledWith('technical');
+    fireEvent.click(screen.getByRole('button', { name: 'Use the Mint template' }));
+    expect(onSelect).toHaveBeenLastCalledWith('senior-level-mint');
   });
 
-  it('moves the current dot with the arrows and dots, and disables the arrows at either end', () => {
-    render(<TemplateGallery level="mid" onSelect={() => {}} />);
+  it('counts slides in place of dots, and disables the arrows at either end', () => {
+    render(<TemplateGallery templates={filterTemplates(listResumeTemplates(), 'creative')} onSelect={() => {}} />);
     const previous = screen.getByRole('button', { name: 'Previous template' }) as HTMLButtonElement;
     const next = screen.getByRole('button', { name: 'Next template' }) as HTMLButtonElement;
-    const current = () => screen.getAllByRole('button', { name: /^Show / }).find((dot) => dot.getAttribute('aria-current'))?.getAttribute('aria-label');
 
-    expect(current()).toBe('Show Modern');
+    expect(screen.getByText('1 of 3')).toBeTruthy();
     expect(previous.disabled).toBe(true);
     fireEvent.click(next);
-    expect(current()).toBe('Show Ember');
-    fireEvent.click(screen.getByRole('button', { name: 'Show Talvio' }));
-    expect(current()).toBe('Show Talvio');
+    fireEvent.click(next);
+    expect(screen.getByText('3 of 3')).toBeTruthy();
     expect(next.disabled).toBe(true);
-    fireEvent.click(previous);
-    expect(current()).toBe('Show Mint');
   });
 });

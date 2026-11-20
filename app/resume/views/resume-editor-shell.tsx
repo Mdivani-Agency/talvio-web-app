@@ -9,9 +9,12 @@ import { DownloadResumeModal } from '@components/modals';
 import { normalizeResumeLabel } from '@lib/adapters/resume.adapter';
 import { featureFlags } from '@lib/flags';
 import type { ResumeFieldIssue } from '@lib/models/resume-document';
-import { resolveAvailableTemplate, templateLevelFromKey, type TemplateLevel } from '@lib/resume/resolve-editor';
+import { resolveAvailableTemplate } from '@lib/resume/resolve-editor';
+import type { OptionalTemplateField } from '@lib/template-fields';
+import type { ResumeSectionId } from '@/lib/resume-editor-copy';
 import type { SaveStatus } from '@lib/resume/save-queue';
 import { listResumeTemplates } from '@lib/templates';
+import { CurrentTemplateProvider } from '@app/account/create/views/forms/template-context';
 import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
 
@@ -50,7 +53,6 @@ export type ResumeImproveControls = {
 type ResumeEditorShellProps = {
   document: PreviewDto;
   formKey: string;
-  level?: TemplateLevel;
   issues?: ResumeFieldIssue[];
   readOnly?: boolean;
   family?: ResumeFamilyControls | null;
@@ -71,7 +73,6 @@ type ResumeEditorShellProps = {
 export function ResumeEditorShell({
   document,
   formKey,
-  level,
   issues,
   readOnly = false,
   family,
@@ -143,7 +144,15 @@ export function ResumeEditorShell({
   });
 
   const templateItem = resolveAvailableTemplate(document.template);
-  const galleryLevel = level ?? templateLevelFromKey(templateItem.key);
+  // Fill them in: the Content tab opens on the section that holds the field.
+  const [openSection, setOpenSection] = useState<ResumeSectionId | undefined>(undefined);
+  const fillOptionalField = (field: OptionalTemplateField) => {
+    if (field === 'skillGroups' && !document.resume.profile.groupSkills) {
+      onChange({ resume: { ...document.resume, profile: { ...document.resume.profile, groupSkills: true } } });
+    }
+    setOpenSection(field === 'headlineAchievements' ? 'about' : field === 'skillGroups' ? 'highlights' : 'experience');
+    setView('content');
+  };
 
   const requestDownload = () => {
     if (isGenerated) {
@@ -208,7 +217,8 @@ export function ResumeEditorShell({
             {view === 'design' ? (
               <DesignPanel
                 templates={templates}
-                level={galleryLevel}
+                sectionOrder={document.resume.sectionOrder}
+                onFillOptionalField={readOnly ? undefined : fillOptionalField}
                 template={document.template}
                 color={document.color}
                 fontSize={document.fontSize}
@@ -218,13 +228,16 @@ export function ResumeEditorShell({
                 onFontSize={(fontSize) => onChange({ fontSize })}
               />
             ) : (
-              <EditResumeView
-                key={`${formKey}:ai${aiRevision}`}
-                className="h-full min-h-0"
-                issues={issues}
-                defaultValues={document.resume}
-                onSubmit={(resume) => onChange({ resume })}
-              />
+              <CurrentTemplateProvider template={{ key: templateItem.key, name: templateItem.name }}>
+                <EditResumeView
+                  key={`${formKey}:ai${aiRevision}`}
+                  className="h-full min-h-0"
+                  issues={issues}
+                  openSection={openSection}
+                  defaultValues={document.resume}
+                  onSubmit={(resume) => onChange({ resume })}
+                />
+              </CurrentTemplateProvider>
             )}
           </div>
         </div>
