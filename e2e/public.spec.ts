@@ -82,6 +82,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   expect(privacyText).toContain('sent to Anthropic');
   expect(privacyText).toContain('uploaded files within 24 hours');
   expect(privacyText).toContain('a record that your account has used it');
+  expect(privacyText).toContain('we store your message with your account and the resume it is about');
   expect(privacyText).not.toContain('OpenAI');
 
   const missing = await page.goto('/this-page-does-not-exist');

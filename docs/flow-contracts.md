@@ -159,6 +159,16 @@ Preserved from MDI-174. Do not rebuild them.
 
 `app/account/documents` download of an existing media URL is unchanged. The empty `onDownload` noted in the pre-MDI-174 review is fixed in `edit-resume.tsx`.
 
+## Review prompt after a new PDF (MDI-652)
+
+Behind `NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT` (`featureFlags().feedbackPrompt`, default off; local E2E builds turn it on). Epic [MDI-650](https://linear.app/mdivani/issue/MDI-650); the database side is MDI-651 (`user_feedback`, `feedback_prompt_state`).
+
+- **Trigger:** only a newly generated PDF. `/api/resume/generate-pdf` returns `generated: true` only when `finalize_pdf` ran. A stored URL, a free re-download and a file recovered after a lost response return `generated: false`. `useGenerateResumePdf(userId, { onNewPdf })` calls `onNewPdf` after the browser download has started. The new-resume page (`resume-page.tsx`) and the saved-resume editor (`edit-resume.tsx`) pass it. The dashboard's Generate PDF does not.
+- **Order:** `FeedbackPromptProvider` (in `app/resume/layout.tsx`, so it survives the editor moving to a new resume id) calls `feedback_prompt_due`. When the answer is `due`, it waits for the Generate dialog to close (`ResumeEditorShell` reports it), calls `record_feedback_prompt`, and opens the prompt only when that returns `recorded`. The prompt is counted when it opens, so Close, Escape, "Not now" and sending a message all count.
+- **Never in the way:** the download has already started before the check. A failed check or record call shows nothing.
+- **One prompt for everyone** (`components/modals/feedback.modal.tsx`, copy in `lib/feedback-copy.ts`). It offers "Write a review on Trustpilot" (`TRUSTPILOT_REVIEW_URL`, new tab, then `record_trustpilot_click`), "Tell us what went wrong" (a form in place: `submit_feedback` through `submitWrapper`, with the resume id) and "Not now". It has no rating, and nothing changes who sees the Trustpilot button. After a message is sent, the prompt thanks the user and still offers the Trustpilot link.
+- **Cap:** at most 3 prompts and at most one every 30 days, and never after a Trustpilot click. The database enforces it; `lib/feedback.ts` mirrors the numbers.
+
 ## Confirmed gaps vs already fixed
 
 ### Already fixed — do not treat as open work

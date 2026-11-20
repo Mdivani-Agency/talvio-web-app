@@ -57,6 +57,14 @@ describe('privacy policy copy', () => {
     expect(text).toContain('masks the text you type');
   });
 
+  it('says feedback messages are stored with the account and Trustpilot is a separate site (MDI-652)', () => {
+    const collected = section('2. What we collect');
+    expect(collected).toContain('we store your message with your account and the resume it is about');
+    expect(collected).toContain('whether you followed the link to Trustpilot');
+    expect(collected).toContain('Trustpilot is a separate website that you choose to open');
+    expect(section('8. How long we keep your data')).toContain('feedback messages for as long as you have an account');
+  });
+
   it('says an imported PDF is read in the browser and only its text is sent', () => {
     expect(text).toContain('its text is read in your browser and sent to our servers');
   });

@@ -2695,6 +2695,25 @@ export type Apply_Llm_ProposalMutationVariables = Exact<{
 
 export type Apply_Llm_ProposalMutation = { apply_llm_proposal: string | null };
 
+export type Feedback_Prompt_DueMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Feedback_Prompt_DueMutation = { feedback_prompt_due: string | null };
+
+export type Record_Feedback_PromptMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Record_Feedback_PromptMutation = { record_feedback_prompt: string | null };
+
+export type Submit_FeedbackMutationVariables = Exact<{
+  p_comment: string;
+  p_resume_id?: string | null | undefined;
+}>;
+
+export type Submit_FeedbackMutation = { submit_feedback: string | null };
+
+export type Record_Trustpilot_ClickMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Record_Trustpilot_ClickMutation = { record_trustpilot_click: unknown };
+
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type HealthQuery = { __typename: 'Query' };
@@ -3059,6 +3078,26 @@ export const Apply_Llm_ProposalDocument = gql`
   apply_llm_proposal(p_request: $p_request)
 }
     `;
+export const Feedback_Prompt_DueDocument = gql`
+    mutation Feedback_Prompt_Due {
+  feedback_prompt_due
+}
+    `;
+export const Record_Feedback_PromptDocument = gql`
+    mutation Record_Feedback_Prompt {
+  record_feedback_prompt
+}
+    `;
+export const Submit_FeedbackDocument = gql`
+    mutation Submit_Feedback($p_comment: String!, $p_resume_id: UUID) {
+  submit_feedback(p_comment: $p_comment, p_resume_id: $p_resume_id)
+}
+    `;
+export const Record_Trustpilot_ClickDocument = gql`
+    mutation Record_Trustpilot_Click {
+  record_trustpilot_click
+}
+    `;
 export const HealthDocument = gql`
     query Health {
   __typename
@@ -3145,6 +3184,18 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Apply_Llm_Proposal(variables: Apply_Llm_ProposalMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Apply_Llm_ProposalMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Apply_Llm_ProposalMutation>({ document: Apply_Llm_ProposalDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Apply_Llm_Proposal', 'mutation', variables);
+    },
+    Feedback_Prompt_Due(variables?: Feedback_Prompt_DueMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Feedback_Prompt_DueMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Feedback_Prompt_DueMutation>({ document: Feedback_Prompt_DueDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Feedback_Prompt_Due', 'mutation', variables);
+    },
+    Record_Feedback_Prompt(variables?: Record_Feedback_PromptMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Record_Feedback_PromptMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Record_Feedback_PromptMutation>({ document: Record_Feedback_PromptDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Record_Feedback_Prompt', 'mutation', variables);
+    },
+    Submit_Feedback(variables: Submit_FeedbackMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Submit_FeedbackMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Submit_FeedbackMutation>({ document: Submit_FeedbackDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Submit_Feedback', 'mutation', variables);
+    },
+    Record_Trustpilot_Click(variables?: Record_Trustpilot_ClickMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Record_Trustpilot_ClickMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Record_Trustpilot_ClickMutation>({ document: Record_Trustpilot_ClickDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Record_Trustpilot_Click', 'mutation', variables);
     },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);
