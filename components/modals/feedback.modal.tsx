@@ -286,15 +286,18 @@ export function FeedbackModal({ open, onClose, onTrustpilot, onSubmit }: Feedbac
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[92vh] overflow-y-auto rounded-t-[1.6rem] p-6">
+        <DrawerContent className="max-h-[92vh] overflow-y-auto rounded-t-[1.6rem] px-6 pb-6">
           {open ? (
-            <FeedbackBody
-              Title={DrawerTitle}
-              Description={DrawerDescription}
-              onClose={onClose}
-              onTrustpilot={onTrustpilot}
-              onSubmit={onSubmit}
-            />
+            // Clear of the drawer's drag handle.
+            <div className="pt-6">
+              <FeedbackBody
+                Title={DrawerTitle}
+                Description={DrawerDescription}
+                onClose={onClose}
+                onTrustpilot={onTrustpilot}
+                onSubmit={onSubmit}
+              />
+            </div>
           ) : null}
         </DrawerContent>
       </Drawer>
