@@ -39,6 +39,8 @@ export function AddApplicationDialog({ open, userId, onOpenChange, onCreate }: A
           <AddApplicationForm
             resumes={resumesQuery.data ?? []}
             resumesLoading={resumesQuery.isLoading}
+            resumesFailed={resumesQuery.isError}
+            onRetryResumes={() => void resumesQuery.refetch()}
             onCreate={onCreate}
             onDone={() => onOpenChange(false)}
             onCancel={() => onOpenChange(false)}

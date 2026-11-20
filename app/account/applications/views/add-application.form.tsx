@@ -25,13 +25,23 @@ export const ADD_APPLICATION_DEFAULTS: AddApplicationFormValues = {
 type AddApplicationFormProps = {
   resumes: Resume[];
   resumesLoading: boolean;
+  resumesFailed?: boolean;
+  onRetryResumes?: () => void;
   /** Saves the card; resolves with its id for `submitWrapper`. */
   onCreate: (values: AddApplicationFormValues, stage: ApplicationStage) => Promise<{ id: string }>;
   onDone: () => void;
   onCancel: () => void;
 };
 
-export function AddApplicationForm({ resumes, resumesLoading, onCreate, onDone, onCancel }: AddApplicationFormProps) {
+export function AddApplicationForm({
+  resumes,
+  resumesLoading,
+  resumesFailed,
+  onRetryResumes,
+  onCreate,
+  onDone,
+  onCancel,
+}: AddApplicationFormProps) {
   const form = useAppForm<AddApplicationFormValues>({
     defaultValues: ADD_APPLICATION_DEFAULTS,
     schema: addApplicationFormSchema,
@@ -60,7 +70,13 @@ export function AddApplicationForm({ resumes, resumesLoading, onCreate, onDone, 
 
   return (
     <div className="flex flex-col gap-4">
-      <AddApplicationFields form={form} resumes={resumes} resumesLoading={resumesLoading} />
+      <AddApplicationFields
+        form={form}
+        resumes={resumes}
+        resumesLoading={resumesLoading}
+        resumesFailed={resumesFailed}
+        onRetryResumes={onRetryResumes}
+      />
       <div className="mt-1 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" className="h-[4.4rem] text-sm" onClick={onCancel}>
           {ADD_CANCEL_LABEL}

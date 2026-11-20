@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Button,
   Form,
   FormControl,
   FormField,
@@ -14,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@components/ui';
-import { ADD_FIELDS, STAGE_NAMES } from '@/lib/applications-copy';
+import { ADD_FIELDS, RESUMES_LOAD_ERROR, RESUMES_RETRY_LABEL, STAGE_NAMES } from '@/lib/applications-copy';
 import { resumeDisplayTitle } from '@/lib/adapters/resume.adapter';
 import type { AppForm } from '@lib/forms/use-form';
 import { APPLICATION_STAGES } from '@lib/schema/application.schema';
@@ -62,9 +63,18 @@ type AddApplicationFieldsProps = {
   form: AppForm;
   resumes: Resume[];
   resumesLoading: boolean;
+  /** The resume list failed: the picker says so and offers a retry instead of showing only "No resume". */
+  resumesFailed?: boolean;
+  onRetryResumes?: () => void;
 };
 
-export function AddApplicationFields({ form, resumes, resumesLoading }: AddApplicationFieldsProps) {
+export function AddApplicationFields({
+  form,
+  resumes,
+  resumesLoading,
+  resumesFailed = false,
+  onRetryResumes,
+}: AddApplicationFieldsProps) {
   return (
     <Form className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -104,7 +114,7 @@ export function AddApplicationFields({ form, resumes, resumesLoading }: AddAppli
             <Select
               value={String(field.state.value || NO_RESUME)}
               onValueChange={(value) => field.handleChange(value === NO_RESUME ? '' : value)}
-              disabled={resumesLoading}
+              disabled={resumesLoading || resumesFailed}
             >
               <FormControl>
                 <SelectTrigger className="h-[4.4rem] text-sm md:text-md">
@@ -120,6 +130,19 @@ export function AddApplicationFields({ form, resumes, resumesLoading }: AddAppli
                 ))}
               </SelectContent>
             </Select>
+            {resumesFailed ? (
+              <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+                {RESUMES_LOAD_ERROR}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-[3.6rem] px-2 text-sm font-semibold text-secondary dark:text-secondary-hover"
+                  onClick={onRetryResumes}
+                >
+                  {RESUMES_RETRY_LABEL}
+                </Button>
+              </div>
+            ) : null}
             <FormMessage />
           </FormItem>
         )}

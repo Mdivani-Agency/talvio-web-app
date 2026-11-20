@@ -60,9 +60,25 @@ async function moveWithMenu(page: Page, position: string, company: string, stage
 }
 
 /** dnd-kit's pointer sensor needs real pointer moves: press, travel past the 6px threshold, then release. */
-async function drag(page: Page, source: Locator, target: Locator) {
-  const from = (await source.boundingBox())!;
-  const to = (await target.boundingBox())!;
+async function drag(page: Page, source: Locator, target: Locator, where: 'center' | 'bottom' = 'center') {
+  // The previous drop animates a copy of the card for a moment; wait until only the card itself is left.
+  await expect(source).toHaveCount(1);
+  // A card that just moved slides into place; measure it once it has stopped.
+  let from = (await source.boundingBox())!;
+  await expect
+    .poll(
+      async () => {
+        const next = (await source.boundingBox())!;
+        const settled = next.x === from.x && next.y === from.y;
+        from = next;
+        return settled;
+      },
+      { intervals: [400] },
+    )
+    .toBe(true);
+  const box = (await target.boundingBox())!;
+  // 'bottom' aims at the column's own space below its last card.
+  const to = where === 'bottom' ? { ...box, y: box.y + box.height - 6, height: 0 } : box;
   await page.mouse.move(from.x + from.width / 3, from.y + 12);
   await page.mouse.down();
   await page.mouse.move(from.x + from.width / 3 + 12, from.y + 24, { steps: 4 });
@@ -192,24 +208,36 @@ test('APP-03 dragging moves a card between columns, asks for the outcome on Clos
   await openSignedIn(page, owner, '/account/applications');
   await expect(card(column(page, 'saved'), 'Drag me')).toBeVisible();
 
-  await drag(page, card(page, 'Drag me'), column(page, 'applied').getByRole('heading', { name: /Applied/ }));
-  await expect(card(column(page, 'applied'), 'Drag me')).toBeVisible();
-  await expect(column(page, 'applied').getByTestId('application-card').first()).toContainText('Drag me');
-  await expect
-    .poll(async () => (await ownedCards(owner.userId)).find((row) => row.position === 'Drag me'))
-    .toMatchObject({ stage: 'applied', applied_on: expect.any(String) });
-
   await drag(page, card(page, 'First applied'), column(page, 'closed'));
   const outcome = page.getByRole('dialog', { name: 'How did it end?' });
   await outcome.getByRole('button', { name: 'Withdrawn' }).click();
   await expect(card(column(page, 'closed'), 'First applied').getByText('Withdrawn', { exact: true })).toBeVisible();
-
-  await page.reload();
-  await expect(card(column(page, 'applied'), 'Drag me')).toBeVisible();
-  await expect(card(column(page, 'closed'), 'First applied')).toBeVisible();
   await expect
     .poll(async () => (await ownedCards(owner.userId)).find((row) => row.position === 'First applied')?.stage)
     .toBe('withdrawn');
+
+  await drag(page, card(page, 'Drag me'), column(page, 'applied').getByRole('heading', { name: /Applied/ }));
+  await expect(card(column(page, 'applied'), 'Drag me')).toBeVisible();
+  await expect
+    .poll(async () => (await ownedCards(owner.userId)).find((row) => row.position === 'Drag me'))
+    .toMatchObject({ stage: 'applied', applied_on: expect.any(String) });
+
+  await drag(page, card(page, 'Drag me'), column(page, 'closed'));
+  await outcome.getByRole('button', { name: 'Rejected' }).click();
+  // Dropped onto the first card, it takes the first place.
+  await expect(column(page, 'closed').getByTestId('application-card')).toHaveText([/Drag me/, /First applied/]);
+  // Released on its own column below the last card, a card goes to the end of that column.
+  await drag(page, card(page, 'Drag me'), column(page, 'closed'), 'bottom');
+  await expect(column(page, 'closed').getByTestId('application-card')).toHaveText([/First applied/, /Drag me/]);
+
+  await page.reload();
+  await expect(column(page, 'closed').getByTestId('application-card')).toHaveText([/First applied/, /Drag me/]);
+  await expect
+    .poll(async () => (await ownedCards(owner.userId)).map((row) => [row.position, row.stage]))
+    .toEqual([
+      ['First applied', 'withdrawn'],
+      ['Drag me', 'rejected'],
+    ]);
 });
 
 test('APP-04 on a phone, stages are tabs and cards move with the menu', async ({ page, personas }) => {
