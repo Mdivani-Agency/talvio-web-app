@@ -12602,6 +12602,7 @@ __metadata:
     markdown-it: "npm:14.1.0"
     next: "npm:16.3.5"
     next-themes: "npm:0.4.6"
+    pdf-lib: "npm:1.17.1"
     pdfjs-dist: "npm:4.10.38"
     react: "npm:19.3.0"
     react-colorful: "npm:5.8.1"

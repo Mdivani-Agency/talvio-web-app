@@ -169,7 +169,7 @@ export class ResumeService {
   constructor() {
     this.$resume = new ResumePDFService();
     this.$resume.create({
-      color: '#000',
+      color: '#000000',
       fontSize: 'md',
       leading: 'md',
       isPreview: true,

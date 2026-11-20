@@ -1,11 +1,11 @@
 import { PDFPage } from 'pdf-lib';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { profileToResumeDocument } from '@lib/models/resume-document';
 import { TEMPLATE_LIST } from '@lib/templates';
 
 import { fullAccountDto } from '../../test/fixtures/flow';
-import { generateResumePdfBytes } from './resume-pdf.server';
+import { generateResumePdfBytes, UnsupportedCharactersError, unsupportedStandardCharacters } from './resume-pdf.server';
 
 const drawText = PDFPage.prototype.drawText;
 
@@ -57,4 +57,32 @@ describe('generateResumePdfBytes', () => {
       expect(reordered.indexOf(movedText)).toBeLessThan(reordered.indexOf(company));
     },
   );
+
+  it('refuses a final PDF on the standard font when it cannot show the resume text', async () => {
+    // No network for Inter: the render falls back to Helvetica, which would print "文" as "?".
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const resume = { ...profileToResumeDocument(fullAccountDto) };
+      resume.profile = { ...resume.profile, role: '文' };
+      await expect(generateResumePdfBytes(resume, TEMPLATE_LIST.senior[0]!.template)).rejects.toBeInstanceOf(
+        UnsupportedCharactersError,
+      );
+
+      // Western European text still renders on the standard font.
+      const latin = { ...resume, profile: { ...resume.profile, role: 'Ingénieure' } };
+      await expect(generateResumePdfBytes(latin, TEMPLATE_LIST.senior[0]!.template)).resolves.toBeInstanceOf(Uint8Array);
+    } finally {
+      fetchSpy.mockRestore();
+      warn.mockRestore();
+    }
+  });
+});
+
+describe('unsupportedStandardCharacters', () => {
+  it('lists the characters Helvetica cannot encode, ignoring whitespace', async () => {
+    expect(
+      await unsupportedStandardCharacters({ name: 'Zoë Ödegaard', role: 'Engineer 文\u00a0' }),
+    ).toEqual(['文']);
+  });
 });
