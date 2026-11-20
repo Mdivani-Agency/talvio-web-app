@@ -97,6 +97,26 @@ export async function unsupportedStandardCharacters(data: ResumeData): Promise<s
   return unsupportedCharacters(data, await standardFontCharset());
 }
 
+/**
+ * The resume data without the optional template fields (MDI-664) that this template never prints, so a headline
+ * achievement or stack the user keeps for other templates cannot block this one's PDF. A field counts as printed when
+ * the template config names it anywhere (a field, a list, or a `when`/`unless` condition).
+ */
+export function printedData(data: ResumeData, template: Template): ResumeData {
+  const config = JSON.stringify(template);
+  const uses = (field: string) => config.includes(`"${field}"`);
+  const { headlineAchievements, skillGroups, ...rest } = data;
+  return {
+    ...rest,
+    ...(uses('headlineAchievements') && headlineAchievements ? { headlineAchievements } : {}),
+    ...(uses('skillGroups') && skillGroups ? { skillGroups } : {}),
+    ...(rest.experience && !uses('stack')
+      ? // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        { experience: rest.experience.map(({ stack: _stack, ...entry }) => entry) }
+      : {}),
+  };
+}
+
 /** Where the server fetches the app's own font files (`public/fonts`): this deployment, else the public site. */
 function appOrigin(): string {
   return (process.env.NEXT_PUBLIC_BASE_URL?.trim() || siteOrigin()).replace(/\/$/, '');
@@ -130,7 +150,7 @@ export async function generateResumePdfBytes(
   // A paid PDF must show the resume's own text. 0.4.0 draws what a font lacks as "?" (standard font) or an empty box
   // (custom font) instead of failing as 0.2.3 did, so check the fonts the render used and fail before upload and charge.
   const charset = await renderCharset(template, font.fallback, fonts);
-  const missing = unsupportedCharacters(resumeData, charset);
+  const missing = unsupportedCharacters(printedData(resumeData, template), charset);
   if (missing.length > 0) {
     throw new UnsupportedCharactersError(missing);
   }

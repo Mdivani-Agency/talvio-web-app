@@ -12,6 +12,7 @@ import { resumeFonts } from '@lib/pdf-templates/fonts';
 
 import {
   generateResumePdfBytes,
+  printedData,
   renderCharset,
   unsupportedCharacters,
   UnsupportedCharactersError,
@@ -94,6 +95,29 @@ describe('unsupportedCharacters', () => {
   it('checks against the character set of the font the render used', () => {
     const latinAndCyrillic = new Set([...'AdaИван'].map((char) => char.codePointAt(0)!));
     expect(unsupportedCharacters({ name: 'Ada Иван', role: '文' }, latinAndCyrillic)).toEqual(['文']);
+  });
+});
+
+describe('printedData', () => {
+  const data = {
+    name: 'Ada',
+    headlineAchievements: [{ value: '3', label: '增长' }],
+    skillGroups: [{ name: 'Languages', skills: ['TypeScript'] }],
+    experience: [{ company: 'Northwind', stack: ['Go'], kind: 'experience' }],
+  };
+
+  it('leaves out the optional fields a template never prints', async () => {
+    const { classic, executive, technical } = await import('@lib/pdf-templates');
+    const forClassic = printedData(data as never, classic);
+    expect(forClassic).not.toHaveProperty('headlineAchievements');
+    expect(forClassic.experience?.[0]).not.toHaveProperty('stack');
+    expect(forClassic.experience?.[0]).toHaveProperty('company', 'Northwind');
+    expect(unsupportedCharacters(forClassic, new Set([...'AdaLanguagesTypeScriptNorthwindexperience'].map((c) => c.codePointAt(0)!)))).toEqual([]);
+
+    expect(printedData(data as never, executive)).toHaveProperty('headlineAchievements');
+    const forTechnical = printedData(data as never, technical);
+    expect(forTechnical).toHaveProperty('skillGroups');
+    expect(forTechnical.experience?.[0]).toHaveProperty('stack', ['Go']);
   });
 });
 
