@@ -142,6 +142,29 @@ yarn codegen:from-supabase   # introspect local /graphql/v1 (needs yarn db:start
 `codegen:from-supabase` uses `SUPABASE_SECRET_KEY` (or `CODEGEN_AUTH_TOKEN`) so
 introspection sees granted collections. Never ship the service key.
 
+With the current local image (pg_graphql 1.6.1), two more things are needed:
+
+- **Introspection is off unless the schema comment enables it.** Turn it on in
+  the local database only, run the codegen, then restore the comment. Do not
+  put it in a migration: that would enable introspection on the hosted project.
+
+  ```sql
+  comment on schema public is e'@graphql({"max_rows": 100, "introspection": true})';
+  -- after codegen:
+  comment on schema public is e'@graphql({"max_rows": 100})';
+  ```
+
+- **Introspect as an `authenticated` user.** The RPCs (`save_profile`,
+  `apply_llm_proposal`, the profile improvement functions) grant `EXECUTE` to
+  `authenticated` only, so a service-role token sees no mutations. Set
+  `CODEGEN_AUTH_TOKEN` to a local `authenticated` JWT, signed with the local
+  stack's `JWT_SECRET` from `supabase status`.
+
+Then run `yarn codegen` (from the snapshot, as CI does) and commit
+`schema.graphql` and `generated.ts`. In cloud sessions, local Supabase starts
+with `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io`, because the default image
+registry's download host is not reachable there.
+
 List queries should still pass `first` explicitly (schema `max_rows` is 100).
 
 CI runs `yarn codegen && git diff --exit-code lib/graphql/generated.ts` — it
