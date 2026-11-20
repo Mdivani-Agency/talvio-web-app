@@ -22,7 +22,7 @@ Apart from the deployed responses and launch inventory above, nothing in this no
 | -- | -- | -- |
 | `BLOG_API_BASE_URL` | `https://www.mdivani.agency` | Origin only. Not the apex: it redirects, and the client treats a redirect as `unavailable`. `readBlogApiConfig` rejects a path, query, credentials, or `http` on anything but a local host |
 | `BLOG_API_TOKEN` | The backend's `BLOG_READ_TOKEN_TALVIO` | At least 32 bytes. Never `BLOG_WRITE_TOKEN`: the read API rejects it with `401`, and the backend fails closed if the two are equal |
-| Content asset origin | `https://www.mdivani.agency` | `cover_image_url` is a same-origin path on the backend. The schema rejects anything else (an absolute URL, `//`, `..`, `?`, `#`) as malformed. The domain type calls it `coverImagePath`; the renderer (MDI-277) resolves it |
+| Content asset origin | `https://www.mdivani.agency` | `cover_image_url` is a same-origin path on the backend, or an absolute `https://media.talvio.co/...` URL. The schema rejects anything else (another host, `//`, `..`, `?`, `#`) as malformed. The domain type calls it `coverImagePath`; the renderer (MDI-277) resolves it |
 | Talvio canonical origin | `https://www.talvio.co` | `siteOrigin()` in `lib/site.ts` |
 
 Both `BLOG_API_*` variables are server-only and listed in `.env.example`.
@@ -65,7 +65,7 @@ The backstop is symmetric: a shared post tagged only `talvio` is hidden on the a
 | `title` | string | 3–160 chars (write API) |
 | `description` | string | 10–320 chars (write API) |
 | `content` | string | At least 20 chars (write API) |
-| `cover_image_url` | string or null | Same-origin path: starts with `/`, no `//`, `://`, `\`, `..`, `?` or `#` |
+| `cover_image_url` | string or null | Same-origin path (starts with `/`, no `//`, `://`, `\`, `..`, `?` or `#`), or a canonical `https://media.talvio.co/` URL with no port, credentials, query, fragment or `..` |
 | `tags` | string[] | Free text, case preserved |
 | `sites` | `('agency' \| 'talvio')[]` | Non-empty when published |
 | `status` | `'draft' \| 'published'` | Always `published` from this API |
@@ -164,7 +164,7 @@ Unknown slugs cost 0 requests. **Risk:** a simultaneous cold start on 3 or more 
 | `/blog` | `getBlogPosts()` | `ok` lists every eligible post (newest first, `slug` tie-break), `ok` with no posts shows the empty state, `unavailable` throws `BlogUnavailableError` and the response is `500` | MDI-276 |
 | `/blog/[slug]` | `getBlogPost(slug)` (list-gated) | An invalid slug is a `404` without a read. `not_found` (missing, draft, agency-only, future or withheld) is a `404` with no article content. `unavailable` throws `BlogUnavailableError` and the response is `500`. `ok` renders the article | MDI-277 |
 
-Both routes are `force-dynamic`, so no rendered HTML outlives the freshness budget. No `loading.tsx` or Suspense boundary sits above them, so the status is set before any byte is sent. `e2e/blog.spec.ts` asserts `200`, `404` and `500` against a production build. The agency site's `featured` flag is not used on Talvio, so no post is listed twice. Covers resolve against the API origin and load directly in the browser (no image optimiser), with an empty `alt`, because the API has no alt text and the title says what the post is.
+Both routes are `force-dynamic`, so no rendered HTML outlives the freshness budget. No `loading.tsx` or Suspense boundary sits above them, so the status is set before any byte is sent. `e2e/blog.spec.ts` asserts `200`, `404` and `500` against a production build. The agency site's `featured` flag is not used on Talvio, so no post is listed twice. Cover paths resolve against the API origin, media.talvio.co covers are used as they are, and both load directly in the browser (no image optimiser), with an empty `alt`, because the API has no alt text and the title says what the post is.
 
 **Outage status.** An outage returns `500`, not `503`. An App Router page can only choose its status through `notFound()` (404), `redirect()` or a thrown error (500), and cannot set `Retry-After`. A `503` with `Retry-After` would need `proxy.ts` to read the blog before the page renders, which duplicates the reader for a marginal gain. Crawlers treat any `5xx` as a temporary server error, so a short outage does not drop articles from the index.
 
@@ -176,7 +176,7 @@ Both routes are `force-dynamic`, so no rendered HTML outlives the freshness budg
 
 **Metadata and structured data** (`lib/blog/seo.ts`, MDI-278). Each page sets its own metadata. The `/blog` layout sets none, so articles and 404s never inherit the index's canonical.
 - **Canonical.** Built from the slug, so query strings and tracking parameters (`?utm_source=…`) get the clean URL. A Talvio-primary post uses `siteOrigin()/blog/{slug}`. An agency-primary post (`isAgencyPrimary` in `eligibility.ts`, the agency's side of the tag backstop) uses `https://www.mdivani.agency/blog/{slug}`. `isListedInTalvioSitemap` gives MDI-279 the same rule. There is no list pagination, so no page URLs to keep apart.
-- **Article metadata.** Title `{title} | Talvio`, the post description, the canonical, `index` except on preview deployments (`allowPublicIndexing()`), and Open Graph `article` with `url`, `publishedTime` and `modifiedTime`. Twitter uses `summary_large_image`. The image is the cover (absolute, on the API origin), or the blog's `share-blog-v1.png` when there is none. The blog index uses the same image.
+- **Article metadata.** Title `{title} | Talvio`, the post description, the canonical, `index` except on preview deployments (`allowPublicIndexing()`), and Open Graph `article` with `url`, `publishedTime` and `modifiedTime`. Twitter uses `summary_large_image`. The image is the cover (absolute, on the API origin or media.talvio.co), or the blog's `share-blog-v1.png` when there is none. The blog index uses the same image.
 - **Missing, ineligible or failed slugs.** No canonical, no Open Graph or Twitter fields of their own, `noindex`, and no JSON-LD. Only the root layout's site-wide share card remains. Next adds its own `noindex` to a 404.
 - **JSON-LD.** One `<script type="application/ld+json">` with a `@graph` of `BlogPosting` and `BreadcrumbList` (Home, Blog, title).
   - The posting has `headline`, `description`, `url` and `mainEntityOfPage` (the canonical), `datePublished`, `dateModified`, `inLanguage`, and `image` only when there is a cover.
@@ -198,7 +198,7 @@ Both routes are `force-dynamic`, so no rendered HTML outlives the freshness budg
 
 1. **`published_at` survives unpublishing.** Eligibility checks `status`, not just a date.
 2. **No build-time prerendering.** Blog routes render per request through `reader.ts` (see Caching and freshness). Prerendering every article at build would bypass the freshness budget and spend one request per article.
-3. **Cover paths are relative to the backend.** They resolve against the API origin and load directly in the browser, so `images.remotePatterns` is unchanged (MDI-277).
+3. **Cover paths are relative to the backend.** They resolve against the API origin. Covers on media.talvio.co are absolute and used as they are. Both load directly in the browser, so `images.remotePatterns` is unchanged (MDI-277).
 4. **Markdown images are unrestricted on the backend.** Body content can reference any host. Talvio loads only allowed origins and turns the rest into links (MDI-277).
 
 ## Launch decisions
@@ -213,7 +213,7 @@ Rows marked **Decided** follow from shipped code. The rest are **proposals** unt
 | Completeness | Walk pages until `total`; anything short is `unavailable` | The API now returns `total` | Decided (MDI-274) |
 | Shared-article canonical | A post the agency site shows (`sites` has `agency` and its tags do not withhold it) is **agency-primary**. Talvio may render it, sets `canonical` to `https://www.mdivani.agency/blog/{slug}` and leaves it out of the Talvio sitemap. Every other eligible post is **Talvio-primary** and self-canonicalises | The agency site already self-canonicalises every post it shows. Authors who want a shared post owned by Talvio tag it `talvio` | Decided (MDI-278). Before launch, check the agency site's rendered canonical for each shared post |
 | Authorship | No author in metadata or JSON-LD. Publisher is Talvio only for Talvio-primary posts | The API has no author field | Decided (MDI-278) |
-| Cover image host | The API origin only. Covers load directly in the browser, without the image optimiser, so `images.remotePatterns` is not widened | The write API allows only same-origin cover paths, and Talvio's server never fetches content URLs | Decided (MDI-277) |
+| Cover image host | The API origin, or media.talvio.co. Covers load directly in the browser, without the image optimiser, so `images.remotePatterns` is not widened | The write API allows only same-origin cover paths and media.talvio.co URLs, and Talvio's server never fetches content URLs | Decided (MDI-277) |
 | Markdown links and images | No raw HTML. Links keep `http`, `https` and `mailto`, plus fragments and `/blog` paths. Images only from the content origin and the Talvio origin; others render as links. See Routes | Same defaults as the backend, plus a host allowlist so no other host is contacted | Decided (MDI-277) |
 | Freshness and removal budget | 300 seconds end to end, enforced by `lib/blog/cache.ts`. No stale serving past that: after expiry an upstream failure returns `500` | The backend sends no invalidation | Implemented (MDI-275); value awaits owner sign-off |
 | Launch traffic envelope | Steady state: one list read per instance every 240 s plus one read per edit. Cold start: up to instances × (1 + posts) | Simulated in `cache.test.ts`. Unknown slugs cost nothing | Simulated; not measured against the deployed API |
