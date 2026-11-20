@@ -1,4 +1,4 @@
-import type { LabelItem, Template } from "@pdf-tlv/resume";
+import type { Field, ItemStyle, LabelItem, Template } from "@pdf-tlv/resume";
 
 import {
   description,
@@ -28,6 +28,24 @@ const heading = (value: string): LabelItem => ({
 });
 
 const onAccent = { color: "onSecondary" as const };
+
+/** A top-level list (`skills`, `tools`) as rounded chips. */
+const chips = (name: string): Field<ItemStyle> => ({
+  name,
+  source: "root",
+  join: {
+    type: "join",
+    output: "row",
+    width: 0,
+    gap: "sm",
+    chip: {
+      background: { color: "secondaryTint", radius: 9 },
+      padding: { x: "md", y: "sm" },
+    },
+    item: { fontSize: "sm", font: "regular", color: "primary" },
+  },
+  items: [],
+});
 const muted = { color: "neutral" as const };
 
 export const banner: Template = {
@@ -77,25 +95,10 @@ export const banner: Template = {
           description(),
         ]),
       ]),
-      section("skills", heading("Skills"), [
-        {
-          name: "skills",
-          source: "root",
-          join: {
-            type: "join",
-            keys: ["skills", "tools"],
-            output: "row",
-            width: 0,
-            gap: "sm",
-            chip: {
-              background: { color: "secondaryTint", radius: 9 },
-              padding: { x: "md", y: "sm" },
-            },
-            item: { fontSize: "sm", font: "regular", color: "primary" },
-          },
-          items: [],
-        },
-      ]),
+      // Skills, then tools, as one run of chips: the board mixes both.
+      section("skills", heading("Skills"), [chips("skills"), chips("tools")], {
+        gap: "sm",
+      }),
       section("education", heading("Education"), [
         entries("education", [
           row(

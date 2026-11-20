@@ -31,6 +31,15 @@ const heading = (value: string): LabelItem => ({
 
 const muted = { color: "neutral" as const };
 
+/** "Tools" before a joined list, in a narrow column of its own. */
+const inline = (value: string): LabelItem => ({
+  text: value,
+  fontSize: "md",
+  font: "semibold",
+  color: "primary",
+  column: 64,
+});
+
 export const executive: Template = {
   defaultSectionOrder: [
     "summary",
@@ -124,9 +133,16 @@ export const executive: Template = {
             ],
             { width: "1/2" },
           ),
-          section("skills", heading("Core strengths"), [joined("skills")], {
-            width: "1/2",
-          }),
+          section(
+            "skills",
+            heading("Core strengths"),
+            [
+              joined("skills"),
+              joined("tools", {}, { label: inline("Tools") }),
+              joined("languages", {}, { label: inline("Languages") }),
+            ],
+            { width: "1/2", gap: "sm" },
+          ),
         ],
       },
       section("projects", heading("Projects"), [
