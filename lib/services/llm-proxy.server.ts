@@ -215,8 +215,8 @@ function relay(upstream: Response, bytes: ArrayBuffer | null): Response {
  * - before the call, claim the flag for this Idempotency-Key: `used` and `busy` never reach the
  *   service, `claimed` and `replay` (a repeated request) go ahead, and so does a repeat of the
  *   request that used it, which the service answers with its original job;
- * - a 202 (new or replayed job) confirms it with the job id; if that write fails, the client's
- *   repeat of the same key replays the job and confirms again;
+ * - a 202 (new or replayed job) confirms it with the job id; if that write fails, the answer is
+ *   a retryable 503, so the client repeats the same key, gets the same job and confirms again;
  * - the service's own once-only refusal (`operation_limit_reached`) marks it used;
  * - any other 4xx releases the claim, so a refused request does not use the improvement up;
  * - a 5xx, a timeout or a lost connection keep the claim: the job may exist, and the repeat of
@@ -241,12 +241,14 @@ async function forwardProfileImprovement({
     return llmErrorResponse(503, 'dependency_unavailable', UNAVAILABLE, true);
   }
   if (claim === 'used') {
-    // A repeat of the request that used it (its answer was lost) still gets its job back.
-    let usedBy: string | null = null;
+    // A repeat of the request that used it (its answer was lost) still gets its job back. When
+    // that cannot be told, the answer is retryable, so the client keeps its key and asks again.
+    let usedBy: string | null;
     try {
       usedBy = await flag.usedBy(token);
     } catch {
       console.error('profile improvement lookup failed');
+      return llmErrorResponse(503, 'dependency_unavailable', UNAVAILABLE, true);
     }
     if (usedBy !== idempotencyKey) {
       return llmErrorResponse(403, 'profile_improvement_used', IMPROVEMENT_USED);
@@ -269,7 +271,15 @@ async function forwardProfileImprovement({
   if (upstream.status === 202) {
     const jobId = jobIdOf(bytes);
     if (jobId) {
-      await settle('confirm', () => flag.confirm(token, idempotencyKey, jobId));
+      try {
+        await flag.confirm(token, idempotencyKey, jobId);
+      } catch {
+        // The job exists but the flag is not set, and a profile proposal cannot be applied until it
+        // is. A retryable answer makes the client send the same key again: the claim replays, the
+        // service returns the same job and the confirm runs again.
+        console.error('profile improvement confirm failed');
+        return llmErrorResponse(503, 'dependency_unavailable', UNAVAILABLE, true);
+      }
     }
   } else if (upstream.status >= 400 && upstream.status < 500) {
     if (errorCode(bytes) === 'operation_limit_reached') {

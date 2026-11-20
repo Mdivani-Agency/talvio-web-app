@@ -178,13 +178,32 @@ describe('LLM adapter: the once-per-account profile improvement', () => {
     expect(improvement.release).not.toHaveBeenCalled();
   });
 
-  it('still returns the job when confirming fails', async () => {
+  it('asks the client to repeat the key when confirming fails, and confirms on the repeat', async () => {
     const improvement = flag('claimed');
     improvement.confirm.mockRejectedValueOnce(new Error('network'));
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const response = await post(improveBody, improvement, accepted());
-    expect(response.status).toBe(202);
+    const first = await post(improveBody, improvement, accepted());
+    expect(first.status).toBe(503);
+    expect((await first.json()).error).toMatchObject({ code: 'dependency_unavailable', retryable: true });
     expect(error).toHaveBeenCalledWith('profile improvement confirm failed');
+    expect(improvement.release).not.toHaveBeenCalled();
+
+    improvement.claim.mockResolvedValueOnce('replay');
+    const repeat = await post(improveBody, improvement, accepted());
+    expect(repeat.status).toBe(202);
+    expect(improvement.confirm).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
+
+  it('answers a retryable 503 when it cannot tell who used the improvement', async () => {
+    const improvement = flag('used');
+    improvement.usedBy.mockRejectedValueOnce(new Error('graphql down'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetcher = vi.fn();
+    const response = await post(improveBody, improvement, fetcher);
+    expect(response.status).toBe(503);
+    expect((await response.json()).error).toMatchObject({ code: 'dependency_unavailable', retryable: true });
+    expect(fetcher).not.toHaveBeenCalled();
     error.mockRestore();
   });
 
