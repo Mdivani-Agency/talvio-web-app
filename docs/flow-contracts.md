@@ -169,6 +169,13 @@ Preserved from MDI-174. Do not rebuild them.
 - Drag and drop (`@dnd-kit`, pointer only) works on the md+ board. Every card also has a **Move to…** menu with all seven stages: the keyboard and phone route. Dropping a card on Closed asks for the outcome. Below md the board is one stage at a time, as tabs.
 - **Add application** inserts a card at the end of its column. A job post link is saved as a link named "Job post".
 - Stage history and `stage_changed_at` are written by the database (MDI-655), never by the client.
+- **Card detail** (MDI-657): a card's title opens a dialog panel on the right (480px; full screen on phone). The open card is in the URL (`?card=<id>`); an id that is not on the board is ignored. The panel traps focus, closes on Escape and gives focus back to the card's title.
+  - `ApplicationById` loads the card with its notes and stage history (newest first, up to 100 of each). Note mutations invalidate `['application', id]`; card edits go through `useUpdateApplication`, which also invalidates it.
+  - Fields save as you go: text on blur, dates and selects on change, only when valid and changed; a failed save keeps the typed value and offers Retry. Stage from the panel moves the card to the end of its new column, like the Move to… menu.
+  - Resume sent shows the linked resume with Open and, for a generated one, Download PDF (the free re-download path). Links open in a new tab with `rel="noopener noreferrer"`. Labels and links are capped at 10.
+  - Notes use a minimal TipTap editor (paragraphs, bulleted and numbered lists) and store its HTML (at most 5,000 characters). `NoteContent` (`lib/rich-text/note-content.tsx`) renders that HTML by rebuilding only paragraphs, lists and line breaks as React elements, with no attributes; it never uses `dangerouslySetInnerHTML`.
+  - Delete removes the card, its notes and its history (cascade); the linked resume is kept.
+
 ## Review prompt after a new PDF (MDI-652)
 
 Behind `NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT` (`featureFlags().feedbackPrompt`, default off; local E2E builds turn it on). Epic [MDI-650](https://linear.app/mdivani/issue/MDI-650); the database side is MDI-651 (`user_feedback`, `feedback_prompt_state`).

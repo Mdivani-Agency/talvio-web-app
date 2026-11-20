@@ -64,3 +64,69 @@ mutation DeleteApplication($id: UUID!, $atMost: Int!) {
     }
   }
 }
+
+fragment ApplicationNote on job_application_notes {
+  id
+  content
+  created_at
+  updated_at
+}
+
+fragment ApplicationEvent on job_application_events {
+  id
+  from_stage
+  to_stage
+  created_at
+}
+
+# One card with its notes and stage history, newest first. A card holds far fewer than 100 of either.
+query ApplicationById($id: UUID!) {
+  job_applicationsCollection(filter: { id: { eq: $id } }, first: 1) {
+    edges {
+      node {
+        ...ListApplication
+        job_application_notesCollection(first: 100, orderBy: [{ created_at: DescNullsLast }, { id: DescNullsLast }]) {
+          edges {
+            node {
+              ...ApplicationNote
+            }
+          }
+        }
+        job_application_eventsCollection(first: 100, orderBy: [{ created_at: DescNullsLast }, { id: DescNullsLast }]) {
+          edges {
+            node {
+              ...ApplicationEvent
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+mutation InsertApplicationNote($objects: [job_application_notesInsertInput!]!) {
+  insertIntojob_application_notesCollection(objects: $objects) {
+    affectedCount
+    records {
+      ...ApplicationNote
+    }
+  }
+}
+
+mutation UpdateApplicationNote($id: UUID!, $content: String!, $atMost: Int!) {
+  updatejob_application_notesCollection(set: { content: $content }, filter: { id: { eq: $id } }, atMost: $atMost) {
+    affectedCount
+    records {
+      ...ApplicationNote
+    }
+  }
+}
+
+mutation DeleteApplicationNote($id: UUID!, $atMost: Int!) {
+  deleteFromjob_application_notesCollection(filter: { id: { eq: $id } }, atMost: $atMost) {
+    affectedCount
+    records {
+      id
+    }
+  }
+}

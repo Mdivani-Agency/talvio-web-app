@@ -16,7 +16,8 @@ export function useDeleteApplication(userId?: string) {
 
   return useMutation({
     mutationFn: deleteApplication,
-    onSuccess: async () => {
+    onSuccess: async (_result, id) => {
+      queryClient.removeQueries({ queryKey: ['application', id] });
       await queryClient.invalidateQueries({ queryKey: ['applications', userId] });
     },
   });

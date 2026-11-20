@@ -3213,6 +3213,37 @@ export type DeleteApplicationMutationVariables = Exact<{
 
 export type DeleteApplicationMutation = { deleteFromjob_applicationsCollection: { affectedCount: number, records: Array<{ id: string }> } };
 
+export type ApplicationNoteFragment = { id: string, content: string, created_at: string, updated_at: string };
+
+export type ApplicationEventFragment = { id: string, from_stage: string | null, to_stage: string, created_at: string };
+
+export type ApplicationByIdQueryVariables = Exact<{
+  id: string;
+}>;
+
+export type ApplicationByIdQuery = { job_applicationsCollection: { edges: Array<{ node: { id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string, job_application_notesCollection: { edges: Array<{ node: { id: string, content: string, created_at: string, updated_at: string } }> } | null, job_application_eventsCollection: { edges: Array<{ node: { id: string, from_stage: string | null, to_stage: string, created_at: string } }> } | null } }> } };
+
+export type InsertApplicationNoteMutationVariables = Exact<{
+  objects: Array<Job_Application_NotesInsertInput> | Job_Application_NotesInsertInput;
+}>;
+
+export type InsertApplicationNoteMutation = { insertIntojob_application_notesCollection: { affectedCount: number, records: Array<{ id: string, content: string, created_at: string, updated_at: string }> } | null };
+
+export type UpdateApplicationNoteMutationVariables = Exact<{
+  id: string;
+  content: string;
+  atMost: number;
+}>;
+
+export type UpdateApplicationNoteMutation = { updatejob_application_notesCollection: { affectedCount: number, records: Array<{ id: string, content: string, created_at: string, updated_at: string }> } };
+
+export type DeleteApplicationNoteMutationVariables = Exact<{
+  id: string;
+  atMost: number;
+}>;
+
+export type DeleteApplicationNoteMutation = { deleteFromjob_application_notesCollection: { affectedCount: number, records: Array<{ id: string }> } };
+
 export type CreditsQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
@@ -3381,6 +3412,22 @@ export const ListApplicationFragmentDoc = gql`
   updated_at
 }
     `;
+export const ApplicationNoteFragmentDoc = gql`
+    fragment ApplicationNote on job_application_notes {
+  id
+  content
+  created_at
+  updated_at
+}
+    `;
+export const ApplicationEventFragmentDoc = gql`
+    fragment ApplicationEvent on job_application_events {
+  id
+  from_stage
+  to_stage
+  created_at
+}
+    `;
 export const ProfileFieldsFragmentDoc = gql`
     fragment ProfileFields on profiles {
   user_id
@@ -3461,6 +3508,76 @@ export const UpdateApplicationDocument = gql`
 export const DeleteApplicationDocument = gql`
     mutation DeleteApplication($id: UUID!, $atMost: Int!) {
   deleteFromjob_applicationsCollection(filter: {id: {eq: $id}}, atMost: $atMost) {
+    affectedCount
+    records {
+      id
+    }
+  }
+}
+    `;
+export const ApplicationByIdDocument = gql`
+    query ApplicationById($id: UUID!) {
+  job_applicationsCollection(filter: {id: {eq: $id}}, first: 1) {
+    edges {
+      node {
+        ...ListApplication
+        job_application_notesCollection(
+          first: 100
+          orderBy: [{created_at: DescNullsLast}, {id: DescNullsLast}]
+        ) {
+          edges {
+            node {
+              ...ApplicationNote
+            }
+          }
+        }
+        job_application_eventsCollection(
+          first: 100
+          orderBy: [{created_at: DescNullsLast}, {id: DescNullsLast}]
+        ) {
+          edges {
+            node {
+              ...ApplicationEvent
+            }
+          }
+        }
+      }
+    }
+  }
+}
+    ${ListApplicationFragmentDoc}
+${ApplicationNoteFragmentDoc}
+${ApplicationEventFragmentDoc}`;
+export const InsertApplicationNoteDocument = gql`
+    mutation InsertApplicationNote($objects: [job_application_notesInsertInput!]!) {
+  insertIntojob_application_notesCollection(objects: $objects) {
+    affectedCount
+    records {
+      ...ApplicationNote
+    }
+  }
+}
+    ${ApplicationNoteFragmentDoc}`;
+export const UpdateApplicationNoteDocument = gql`
+    mutation UpdateApplicationNote($id: UUID!, $content: String!, $atMost: Int!) {
+  updatejob_application_notesCollection(
+    set: {content: $content}
+    filter: {id: {eq: $id}}
+    atMost: $atMost
+  ) {
+    affectedCount
+    records {
+      ...ApplicationNote
+    }
+  }
+}
+    ${ApplicationNoteFragmentDoc}`;
+export const DeleteApplicationNoteDocument = gql`
+    mutation DeleteApplicationNote($id: UUID!, $atMost: Int!) {
+  deleteFromjob_application_notesCollection(
+    filter: {id: {eq: $id}}
+    atMost: $atMost
+  ) {
     affectedCount
     records {
       id
@@ -3864,6 +3981,18 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     DeleteApplication(variables: DeleteApplicationMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteApplicationMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<DeleteApplicationMutation>({ document: DeleteApplicationDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteApplication', 'mutation', variables);
+    },
+    ApplicationById(variables: ApplicationByIdQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ApplicationByIdQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ApplicationByIdQuery>({ document: ApplicationByIdDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ApplicationById', 'query', variables);
+    },
+    InsertApplicationNote(variables: InsertApplicationNoteMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<InsertApplicationNoteMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<InsertApplicationNoteMutation>({ document: InsertApplicationNoteDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'InsertApplicationNote', 'mutation', variables);
+    },
+    UpdateApplicationNote(variables: UpdateApplicationNoteMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<UpdateApplicationNoteMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<UpdateApplicationNoteMutation>({ document: UpdateApplicationNoteDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'UpdateApplicationNote', 'mutation', variables);
+    },
+    DeleteApplicationNote(variables: DeleteApplicationNoteMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteApplicationNoteMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<DeleteApplicationNoteMutation>({ document: DeleteApplicationNoteDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteApplicationNote', 'mutation', variables);
     },
     Credits(variables?: CreditsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<CreditsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<CreditsQuery>({ document: CreditsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Credits', 'query', variables);
