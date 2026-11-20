@@ -65,7 +65,9 @@ test('FB-01 a new PDF asks for a Trustpilot review, and a click stops every late
   await expect(review).toHaveAttribute('rel', 'noopener noreferrer');
   const popup = page.waitForEvent('popup');
   await review.click();
-  expect((await popup).url()).toBe(TRUSTPILOT_REVIEW_URL);
+  const tab = await popup;
+  await expect(tab).toHaveURL(TRUSTPILOT_REVIEW_URL);
+  await tab.close();
   await expect(dialog).toBeHidden();
   await expect.poll(async () => (await readFeedbackState(owner.userId)).state?.trustpilot_clicked_at).toBeTruthy();
   expect((await readFeedbackState(owner.userId)).state?.prompts_shown).toBe(1);
