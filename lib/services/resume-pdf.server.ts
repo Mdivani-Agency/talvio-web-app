@@ -1,9 +1,12 @@
-import { Config, ResumePDFService, Template, templateFamilies, type ResumeData } from '@pdf-tlv/resume';
+import { Config, ResumePDFService, Template, templateFamilies, type FontFiles, type ResumeData } from '@pdf-tlv/resume';
+
+import { resumeFonts, type FontFallback } from '@lib/pdf-templates/fonts';
+import { siteOrigin } from '@lib/site';
 import fontkit from '@pdf-lib/fontkit';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 import { pdfSectionOrder } from '@lib/resume/section-order';
-import { convertToResumeData, generateWithFontFallback, RESUME_PDF_FONT } from '@/lib/services/resume.service';
+import { convertToResumeData, generateWithFontFallback, type FontState } from '@/lib/services/resume.service';
 import type { ResumeForm } from '@lib/types';
 
 /** Raised before upload and charge when the final PDF could not show the resume's own text. */
@@ -15,7 +18,7 @@ export class UnsupportedCharactersError extends Error {
 }
 
 let standardCharset: Promise<Set<number>> | undefined;
-let interCharset: Promise<Set<number>> | undefined;
+const fontCharsets = new Map<string, Promise<Set<number>>>();
 
 /** The characters the standard PDF font (Helvetica, WinAnsi) can encode. */
 function standardFontCharset() {
@@ -25,20 +28,45 @@ function standardFontCharset() {
   return standardCharset;
 }
 
-/** The characters Inter has glyphs for. Fetched once per server; a failed fetch is retried on the next PDF. */
-function interFontCharset() {
-  interCharset ??= (async () => {
-    const response = await fetch(RESUME_PDF_FONT.fonts.regular);
-    if (!response.ok) throw new Error(`Inter: HTTP ${response.status}`);
-    const doc = await PDFDocument.create();
-    doc.registerFontkit(fontkit);
-    const font = await doc.embedFont(await response.arrayBuffer());
-    return new Set(font.getCharacterSet());
-  })().catch((error) => {
-    interCharset = undefined;
-    throw error;
-  });
-  return interCharset;
+/** The characters a font file has glyphs for. Fetched once per server; a failed fetch is retried on the next PDF. */
+function fontCharset(url: string) {
+  let charset = fontCharsets.get(url);
+  if (!charset) {
+    charset = (async () => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+      const doc = await PDFDocument.create();
+      doc.registerFontkit(fontkit);
+      const font = await doc.embedFont(await response.arrayBuffer());
+      return new Set(font.getCharacterSet());
+    })().catch((error) => {
+      fontCharsets.delete(url);
+      throw error;
+    });
+    fontCharsets.set(url, charset);
+  }
+  return charset;
+}
+
+/**
+ * The characters every font a render drew with can show. With the font files, that is what each family the template
+ * uses has in common: IBM Plex Mono has no Greek, and Source Serif 4 lacks a few Latin letters Inter has. When any
+ * family the template uses fell back to a standard font, the engine limits all text to the standard fonts' set. A
+ * font file that cannot be read for the check counts as the standard set, so the check never lets more through.
+ */
+export async function renderCharset(template: Template, fallback: FontFallback, fonts: FontFiles): Promise<Set<number>> {
+  const families = templateFamilies(template);
+  if (fallback === 'none' || (fallback === 'body' && families.some((family) => family !== 'body'))) {
+    return standardFontCharset();
+  }
+  const sets = await Promise.all(
+    families.map((family) => {
+      const url = fonts[family]?.fonts.regular;
+      return url ? fontCharset(url).catch(() => standardFontCharset()) : standardFontCharset();
+    }),
+  );
+  const [first = new Set<number>(), ...rest] = sets;
+  return new Set([...first].filter((code) => rest.every((set) => set.has(code))));
 }
 
 function collectStrings(value: unknown, out: string[]) {
@@ -69,6 +97,11 @@ export async function unsupportedStandardCharacters(data: ResumeData): Promise<s
   return unsupportedCharacters(data, await standardFontCharset());
 }
 
+/** Where the server fetches the app's own font files (`public/fonts`): this deployment, else the public site. */
+function appOrigin(): string {
+  return (process.env.NEXT_PUBLIC_BASE_URL?.trim() || siteOrigin()).replace(/\/$/, '');
+}
+
 export async function generateResumePdfBytes(
   data: ResumeForm,
   template: Template,
@@ -82,7 +115,8 @@ export async function generateResumePdfBytes(
     isPreview: false,
   });
   const resumeData = convertToResumeData(data);
-  const font = { fontUnavailable: false };
+  const font: FontState = { fallback: 'all' };
+  const fonts = resumeFonts(appOrigin());
   const bytes = await generateWithFontFallback(service, {
     data: resumeData,
     template,
@@ -92,15 +126,10 @@ export async function generateResumePdfBytes(
       ...(options.colors ? { colors: options.colors } : {}),
     },
     sectionOrder: pdfSectionOrder(data.sectionOrder),
-  }, font);
-  // A paid PDF must show the resume's own text. 0.4.0 draws what the font lacks as "?" (standard font) or an empty box
-  // (Inter) instead of failing as 0.2.3 did, so check the font the render used and fail before upload and charge.
-  // Only body text gets a font file (Inter). A template that also uses the serif or mono role is drawn entirely in
-  // the standard fonts' character set, as the engine limits all text when any role it uses has no files.
-  const standardOnly = font.fontUnavailable || templateFamilies(template).some((family) => family !== 'body');
-  const charset = standardOnly
-    ? await standardFontCharset()
-    : await interFontCharset().catch(() => standardFontCharset());
+  }, font, fonts);
+  // A paid PDF must show the resume's own text. 0.4.0 draws what a font lacks as "?" (standard font) or an empty box
+  // (custom font) instead of failing as 0.2.3 did, so check the fonts the render used and fail before upload and charge.
+  const charset = await renderCharset(template, font.fallback, fonts);
   const missing = unsupportedCharacters(resumeData, charset);
   if (missing.length > 0) {
     throw new UnsupportedCharactersError(missing);

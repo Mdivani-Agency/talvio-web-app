@@ -36,6 +36,8 @@ import { useStore } from '@tanstack/react-form';
 type ResumeDocumentFormProps = {
   defaultValues: ResumeForm;
   issues?: ResumeFieldIssue[];
+  /** The section to open first when there are no issues. About you by default. */
+  openSection?: ResumeSectionId;
   onSubmit: (data: ResumeForm) => void;
 };
 
@@ -75,7 +77,7 @@ const EDITOR_SECTION: Record<MovableSection, ResumeSectionId> = {
 /** Templates with a side column, where a section keeps its column whatever the order. */
 const COLUMN_TEMPLATES = ['talvio', 'sidebar'];
 
-export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDocumentFormProps) => {
+export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues, openSection }: ResumeDocumentFormProps) => {
   const form = useAppForm<ResumeForm>({
     defaultValues: documentDefaults(defaultValues),
     schema: resumeDraftSchema,
@@ -130,7 +132,7 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
 
   // One section is open at a time, About you first. A download that finds issues opens the first one with an issue.
   const [open, setOpen] = useState<ResumeSectionId | null>(() =>
-    issues?.length ? resumeSectionOf(issues[0]!.path) : 'about',
+    issues?.length ? resumeSectionOf(issues[0]!.path) : (openSection ?? 'about'),
   );
   const [seenIssues, setSeenIssues] = useState(issues);
   if (issues !== seenIssues) {

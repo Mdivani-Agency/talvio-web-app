@@ -12,9 +12,20 @@ import {
   templateSampleWithoutOptionalFields,
 } from "../../test/fixtures/template-samples";
 
-import { banner, executive, sidebar, technical, timeline } from "./index";
+import {
+  banner,
+  classic,
+  compact,
+  executive,
+  graduate,
+  minimal,
+  sidebar,
+  skillsFirst,
+  technical,
+  timeline,
+} from "./index";
 
-const TEMPLATES = { executive, technical, sidebar, timeline, banner } as const;
+const TEMPLATES = { classic, compact, minimal, executive, skillsFirst, graduate, technical, sidebar, timeline, banner } as const;
 
 type Drawn = { text: string; page: PDFPage; color?: RGB };
 
@@ -151,7 +162,7 @@ describe.each(Object.entries(TEMPLATES))("%s", (_name, template) => {
   it("runs a long career onto a second page", async () => {
     const { pages, texts } = await render(templateSampleLong, template);
     expect(pages).toBeGreaterThanOrEqual(2);
-    expect(texts.some((text) => text.includes("Company 7"))).toBe(true);
+    expect(texts.some((text) => text.includes("Company 12"))).toBe(true);
   });
 
   it("shows only the sections that have data", async () => {

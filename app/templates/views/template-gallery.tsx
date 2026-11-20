@@ -4,38 +4,37 @@ import { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '@components/ui';
-import { listResumeTemplates } from '@lib/templates';
-import type { TemplateKey } from '@lib/types';
+import { showsNewTag } from '@lib/templates';
+import type { TemplateItem, TemplateKey } from '@lib/types';
 import { cn } from '@lib/utils';
 import {
-  TEMPLATES_LEVELS,
+  TEMPLATE_NEW_TAG,
+  TEMPLATES_CAROUSEL_LABEL,
   TEMPLATES_NEXT_LABEL,
   TEMPLATES_PREVIOUS_LABEL,
   TEMPLATES_USE_LABEL,
+  templateBestFor,
   templateCardLabel,
-  templatesCarouselLabel,
-  templatesDotLabel,
   templatesSlideLabel,
-  type TemplatesPageLevel,
 } from '@/lib/templates-page-copy';
 
 type TemplateGalleryProps = {
-  level: TemplatesPageLevel;
+  templates: readonly TemplateItem[];
   onSelect: (key: TemplateKey) => void;
 };
 
 const pillClassName = 'items-center rounded-md bg-secondary text-md font-medium whitespace-nowrap text-secondary-foreground';
 
 /**
- * The templates of one level: a grid from `md` (2 columns, 4 from `lg`) and a swipeable carousel below it, built
- * from the same list so each preview loads once. Render it with `key={level}` so a level change starts the carousel
+ * The templates the filter shows: a grid from `md` (2 columns, 4 from `lg`) and a swipeable carousel below it, built
+ * from the same list so each preview loads once. Render it with `key={filter}` so a filter change starts the carousel
  * at the first card.
  */
-export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
-  const templates = listResumeTemplates()[level];
-  const levelLabel = TEMPLATES_LEVELS.find((item) => item.id === level)?.label ?? level;
+export function TemplateGallery({ templates, onSelect }: TemplateGalleryProps) {
   const trackRef = useRef<HTMLUListElement>(null);
   const [slide, setSlide] = useState(0);
+  /** The card an arrow is scrolling to. Until the row gets there, its scroll events don't move the counter back. */
+  const targetRef = useRef<number | null>(null);
   const last = templates.length - 1;
 
   /** Each slide's scroll position, measured from the first so the track's own padding cancels out. */
@@ -46,8 +45,13 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
 
   const goTo = (index: number) => {
     const target = Math.max(0, Math.min(last, index));
+    targetRef.current = target;
     trackRef.current?.scrollTo?.({ left: slideOffsets()[target] ?? 0, behavior: 'smooth' });
     setSlide(target);
+  };
+
+  const release = () => {
+    targetRef.current = null;
   };
 
   const onScroll = () => {
@@ -60,16 +64,30 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
       (best, offset, index) => (Math.abs(offset - track.scrollLeft) < Math.abs(offsets[best] - track.scrollLeft) ? index : best),
       0,
     );
+    if (targetRef.current !== null) {
+      if (current !== targetRef.current) {
+        return;
+      }
+      targetRef.current = null;
+    }
     if (current !== slide) {
       setSlide(current);
     }
   };
 
   return (
-    <section aria-roledescription="carousel" aria-label={templatesCarouselLabel(levelLabel)} className="mt-7 lg:mt-12">
+    <section aria-roledescription="carousel" aria-label={TEMPLATES_CAROUSEL_LABEL} className="mt-6">
       <ul
         ref={trackRef}
         onScroll={onScroll}
+        // Wherever the row stops, the counter follows it. A swipe, wheel or key takes over from an arrow's scroll.
+        onScrollEnd={() => {
+          targetRef.current = null;
+          onScroll();
+        }}
+        onPointerDown={release}
+        onWheel={release}
+        onKeyDown={release}
         className={cn(
           '-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 [scrollbar-width:none]',
           // A spacer after the last card, the row's width less one card and gap (31.2rem), lets every card reach its
@@ -78,7 +96,7 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
           'md:mx-0 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:px-0 md:after:hidden lg:grid-cols-4',
         )}
       >
-        {templates.map(({ key, name, description, imageUrl }, index) => (
+        {templates.map(({ key, name, description, bestFor, imageUrl, isNew }, index) => (
           <li
             key={key}
             aria-roledescription="slide"
@@ -87,7 +105,7 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
           >
             <button
               type="button"
-              aria-label={templateCardLabel(name, levelLabel)}
+              aria-label={templateCardLabel(name)}
               onClick={() => onSelect(key)}
               className="group flex w-full flex-col gap-3 rounded-lg bg-card p-3 text-left outline-none hover:cursor-pointer hover:ring-2 hover:ring-secondary focus-visible:ring-2 focus-visible:ring-secondary md:gap-4 md:p-4"
             >
@@ -97,7 +115,7 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
                   fill
                   sizes="(min-width: 1024px) 270px, (min-width: 768px) 50vw, 300px"
                   className="object-cover object-top"
-                  alt={`${level} ${name}`}
+                  alt=""
                 />
                 <span
                   aria-hidden="true"
@@ -110,14 +128,20 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
                   {TEMPLATES_USE_LABEL}
                 </span>
               </span>
-              <span className="flex items-center justify-between gap-3">
-                <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="flex min-h-[8.8rem] min-w-0 flex-col gap-1">
+                <span className="flex items-center gap-2">
                   <span className="text-lg leading-[1.4] font-semibold text-primary">{name}</span>
-                  <span className="text-md leading-[1.4] text-muted-foreground">{description}</span>
+                  {showsNewTag({ isNew }) ? (
+                    <span data-allow-small-text className="rounded-md bg-popover px-2 py-0.5 text-xs font-semibold text-foreground">
+                      {TEMPLATE_NEW_TAG}
+                    </span>
+                  ) : null}
                 </span>
-                <span aria-hidden="true" className={cn(pillClassName, 'inline-flex h-9 shrink-0 px-3 md:hidden')}>
-                  {TEMPLATES_USE_LABEL}
-                </span>
+                <span className="text-md leading-[1.5] text-foreground">{description}</span>
+                <span className="text-md leading-[1.5] text-muted-foreground">{templateBestFor(bestFor)}</span>
+              </span>
+              <span aria-hidden="true" className={cn(pillClassName, 'flex h-[4.4rem] w-full justify-center md:hidden')}>
+                {TEMPLATES_USE_LABEL}
               </span>
             </button>
           </li>
@@ -135,22 +159,9 @@ export function TemplateGallery({ level, onSelect }: TemplateGalleryProps) {
         >
           <ChevronLeft aria-hidden="true" className="size-[1.8rem]" />
         </Button>
-        <div className="flex items-center gap-1">
-          {templates.map(({ key, name }, index) => (
-            <button
-              key={key}
-              type="button"
-              aria-label={templatesDotLabel(name)}
-              aria-current={slide === index ? 'true' : undefined}
-              onClick={() => goTo(index)}
-              className="flex h-[4.4rem] w-6 items-center justify-center rounded-md outline-none hover:cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span
-                className={cn('block h-2 rounded-full transition-all', slide === index ? 'w-5 bg-secondary' : 'w-2 bg-input')}
-              />
-            </button>
-          ))}
-        </div>
+        <p aria-live="polite" className="text-md font-medium text-foreground">
+          {templatesSlideLabel(slide + 1, templates.length)}
+        </p>
         <Button
           type="button"
           variant="outline"

@@ -21,7 +21,7 @@ export function Switch({ checked, onCheckedChange, label, disabled, className }:
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        'inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-foreground outline-none',
+        'inline-flex min-h-[4.4rem] items-center gap-2 rounded-md text-sm font-medium text-foreground outline-none',
         'focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}

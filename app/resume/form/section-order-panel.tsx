@@ -130,7 +130,7 @@ export function SectionOrderPanel({
                 <span
                   aria-label={COPY.drag(name)}
                   role="img"
-                  className="flex h-11 w-8 shrink-0 cursor-grab items-center justify-center text-muted-foreground"
+                  className="flex h-[4.4rem] w-8 shrink-0 cursor-grab items-center justify-center text-muted-foreground"
                 >
                   <GripVertical aria-hidden="true" className="size-4" />
                 </span>
@@ -170,14 +170,14 @@ export function SectionOrderPanel({
             setMessage(COPY.resetDone(templateName));
           }}
           className={cn(
-            'min-h-11 text-sm font-medium text-secondary underline underline-offset-2 outline-none',
+            'min-h-[4.4rem] text-sm font-medium text-secondary underline underline-offset-2 outline-none',
             'focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:text-secondary-hover',
             !custom && 'cursor-not-allowed opacity-40',
           )}
         >
           {COPY.reset(templateName)}
         </button>
-        <Button type="button" className="h-11 px-5 font-semibold" onClick={onDone}>
+        <Button type="button" className="h-[4.4rem] px-5 font-semibold" onClick={onDone}>
           {COPY.done}
         </Button>
       </div>

@@ -49,8 +49,8 @@ test('RES-04 edits a draft once and keeps rapid acknowledged saves', async ({ pa
   await waitForRole(draft.userId, 'Rapid Three');
   await expect(page.getByText('Saved to your account')).toBeVisible();
 
-  await chooseTemplate(page, 'Mid level', 'Talvio');
-  await expect.poll(async () => (await listResumes(draft.userId))[0]?.templateKey).toBe('mid-level-talvio');
+  await chooseTemplate(page, 'Timeline');
+  await expect.poll(async () => (await listResumes(draft.userId))[0]?.templateKey).toBe('timeline');
   await chooseColor(page, '#005BA2');
   await expect.poll(async () => (await listResumes(draft.userId))[0]?.color).toBe('#005BA2');
   await chooseFontSize(page, 'L');
@@ -68,7 +68,7 @@ test('RES-04 edits a draft once and keeps rapid acknowledged saves', async ({ pa
   const rows = await listResumes(draft.userId);
   expect(rows).toHaveLength(1);
   expect(rows[0]?.id).toBe(draft.resumeId);
-  expect(rows[0]?.templateKey).toBe('mid-level-talvio');
+  expect(rows[0]?.templateKey).toBe('timeline');
   expect(rows[0]?.color).toBe('#005BA2');
   expect(rows[0]?.fontSize).toBe('lg');
   expect(rows[0]?.pdfUrl).toBeNull();
@@ -269,7 +269,7 @@ test('RES-09 renders long Unicode content across preview pages and style changes
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 
-  await chooseTemplate(page, 'Senior level', 'Mint');
+  await chooseTemplate(page, 'Mint');
   await waitForPreview(page);
   await chooseFontSize(page, 'L');
   await waitForPreview(page);
