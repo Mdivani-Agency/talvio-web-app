@@ -5,7 +5,12 @@ import { profileToResumeDocument } from '@lib/models/resume-document';
 import { TEMPLATE_LIST } from '@lib/templates';
 
 import { fullAccountDto } from '../../test/fixtures/flow';
-import { generateResumePdfBytes, UnsupportedCharactersError, unsupportedStandardCharacters } from './resume-pdf.server';
+import {
+  generateResumePdfBytes,
+  unsupportedCharacters,
+  UnsupportedCharactersError,
+  unsupportedStandardCharacters,
+} from './resume-pdf.server';
 
 const drawText = PDFPage.prototype.drawText;
 
@@ -76,6 +81,13 @@ describe('generateResumePdfBytes', () => {
       fetchSpy.mockRestore();
       warn.mockRestore();
     }
+  });
+});
+
+describe('unsupportedCharacters', () => {
+  it('checks against the character set of the font the render used', () => {
+    const latinAndCyrillic = new Set([...'AdaИван'].map((char) => char.codePointAt(0)!));
+    expect(unsupportedCharacters({ name: 'Ada Иван', role: '文' }, latinAndCyrillic)).toEqual(['文']);
   });
 });
 

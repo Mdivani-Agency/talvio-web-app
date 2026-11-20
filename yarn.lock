@@ -12544,6 +12544,7 @@ __metadata:
     "@graphql-codegen/typescript-operations": "npm:6.1.6"
     "@headlessui/react": "npm:2.2.10"
     "@parcel/watcher": "npm:2.6.0"
+    "@pdf-lib/fontkit": "npm:1.1.1"
     "@pdf-tlv/resume": "npm:0.4.0"
     "@playwright/test": "npm:1.55.1"
     "@radix-ui/react-aspect-ratio": "npm:1.1.15"
