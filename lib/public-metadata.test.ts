@@ -152,7 +152,7 @@ describe('public metadata', () => {
     const sitemap = publicSitemap({ plansPage: false });
     const lastModified = (path: string) => sitemap.find((entry) => entry.url.endsWith(path))?.lastModified;
     // The contents list and Back to top changed both pages; the legal text and its "Last updated" dates did not.
-    expect(lastModified('/privacy-policy')).toBe('2026-11-19');
+    expect(lastModified('/privacy-policy')).toBe('2026-11-20');
     expect(lastModified('/terms')).toBe('2026-11-19');
   });
 });

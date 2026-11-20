@@ -140,7 +140,7 @@ export const PRIVACY: LegalDocument = {
           'We keep your account, profile, resumes and PDFs for as long as you have an account. When you ask us to delete your account, we delete them. Technical logs are kept for a shorter period by our hosting providers. Copies in backups are removed as those backups expire.',
         ),
         p(
-          'What you send to the AI features is kept only as long as the task needs it and is then deleted automatically: uploaded files within 24 hours, and the text of your documents, answers, job posts and AI results within 7 days. Records of AI tasks without that text (for example when a task ran and how much of the daily limit it used) are deleted within 30 days. These copies are not deleted the moment you delete your account; they are removed on this schedule. Anthropic keeps its own copy only for the limited time described in section 5.',
+          'What you send to the AI features is kept only as long as the task needs it and is then deleted automatically: uploaded files within 24 hours, and the text of your documents, answers, job posts and AI results within 7 days. Records of AI tasks without that text (for example when a task ran and how much of the daily limit it used) are deleted within 30 days. These copies are not deleted the moment you delete your account; they are removed on this schedule. One exception: if you use the free profile improvement, our AI service keeps a record that your account has used it (an identifier for the task and the date, with none of your text), so that it is offered once per account. That record is not removed on this schedule. Anthropic keeps its own copy only for the limited time described in section 5.',
         ),
       ],
     },
