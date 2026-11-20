@@ -29,7 +29,7 @@ describe('generateResumePdfBytes', () => {
     'draws the experience job description and every bullet in %s',
     async (_key, template) => {
       const resume = profileToResumeDocument(fullAccountDto);
-      const text = await renderedText(resume, template, { color: '#000000', isPreview: false });
+      const text = await renderedText(resume, template, { color: '#000000' });
 
       expect(text).toContain('Platform group');
       expect(text).toContain('Shipped template gallery');

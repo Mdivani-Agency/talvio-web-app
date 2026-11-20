@@ -1,4 +1,4 @@
-import { Config, ResumePDFService, Template, ResumeData, formatUrl } from '@pdf-tlv/resume';
+import { RenderOptions, ResumePDFService, Template, ResumeData, formatUrl } from '@pdf-tlv/resume';
 import { ResumeForm } from '@lib/types';
 import { capitalise, formatDate } from '@lib/utils';
 
@@ -80,7 +80,6 @@ export class ResumeService {
       color: '#000',
       fontSize: 'md',
       leading: 'md',
-      isPreview: true,
       watermark: {
         text: 'Talvio',
         url: '/logo.png',
@@ -89,7 +88,7 @@ export class ResumeService {
     });
   }
 
-  async generate(data: ResumeForm, template: Template, options: Partial<Config> = {}) {
+  async generate(data: ResumeForm, template: Template, options: RenderOptions = {}) {
     const resumeData = convertToResumeData(data);
     return this.$resume.generate({ data: resumeData, template, options });
   }

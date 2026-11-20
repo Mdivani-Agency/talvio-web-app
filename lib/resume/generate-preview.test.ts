@@ -43,7 +43,6 @@ describe('generateResumePreview', () => {
       {
         color: '#111111',
         fontSize: 'md',
-        isPreview: true,
       },
     );
     expect(authedFetch).not.toHaveBeenCalled();
@@ -59,7 +58,7 @@ describe('generateResumePreview', () => {
     expect(generate).toHaveBeenCalledWith(
       input.resume,
       expect.anything(),
-      expect.objectContaining({ isPreview: true }),
+      expect.objectContaining({ color: input.color }),
     );
   });
 });

@@ -113,7 +113,6 @@ export async function generateAndChargeResumePdf(
     const bytes = await generateResumePdfBytes(resume.metadata, template.template, {
       color: resume.color,
       fontSize: resume.fontSize,
-      isPreview: false,
     });
     const uploaded = await uploadResumePdfBytes(
       context.user.id,
