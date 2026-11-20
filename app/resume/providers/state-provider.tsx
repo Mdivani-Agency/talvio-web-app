@@ -285,15 +285,18 @@ function ResumeMachine({
         changeResume: (resume) => updateFlow({ ...flow, resume }),
       }}
     >
-      <DraftStatusBanner
-        status={persistStatus}
-        guestDraft={Boolean(guestDraft)}
-        onAdoptGuest={adoptGuestDraft}
-        onDiscardGuest={discardGuestDraft}
-        onKeepLocal={keepLocalCopy}
-        onUseServer={clearResumeDraft}
-      />
-      {children}
+      {/* The editor fills the viewport and scrolls inside, so a banner takes its height from the editor, not the page. */}
+      <div className={flow.step === 'resumePreview' ? 'flex h-dvh flex-col' : undefined}>
+        <DraftStatusBanner
+          status={persistStatus}
+          guestDraft={Boolean(guestDraft)}
+          onAdoptGuest={adoptGuestDraft}
+          onDiscardGuest={discardGuestDraft}
+          onKeepLocal={keepLocalCopy}
+          onUseServer={clearResumeDraft}
+        />
+        {children}
+      </div>
     </ResumeContext.Provider>
   );
 }
