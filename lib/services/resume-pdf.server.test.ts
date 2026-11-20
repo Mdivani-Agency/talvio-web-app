@@ -97,4 +97,14 @@ describe('unsupportedStandardCharacters', () => {
       await unsupportedStandardCharacters({ name: 'Zoë Ödegaard', role: 'Engineer 文\u00a0' }),
     ).toEqual(['文']);
   });
+
+  it('checks against the standard fonts when the template uses a serif or mono role without font files', async () => {
+    const { executive } = await import('@lib/pdf-templates');
+    const resume = { ...profileToResumeDocument(fullAccountDto) };
+    resume.profile = { ...resume.profile, role: 'Инженер' };
+    // Inter covers Cyrillic, but Executive also draws in the serif role, which falls back to Times here.
+    await expect(generateResumePdfBytes(resume, executive, { color: '#000000' })).rejects.toBeInstanceOf(
+      UnsupportedCharactersError,
+    );
+  });
 });

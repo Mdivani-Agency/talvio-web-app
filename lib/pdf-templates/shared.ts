@@ -10,17 +10,19 @@ import type {
   RowParamStyles,
   Size,
   TextItem,
-} from '@pdf-tlv/resume';
+} from "@pdf-tlv/resume";
 
 /**
  * Building blocks shared by the app's own templates (not part of @pdf-tlv/resume). Ported from the
  * talv-pdf playground (playground/templates/shared.ts, commit 1dedd54, v0.4.0).
  */
 
-export const style = (overrides: Partial<LineParamStyles> = {}): LineParamStyles => ({
-  fontSize: 'md',
-  color: 'primary',
-  font: 'regular',
+export const style = (
+  overrides: Partial<LineParamStyles> = {},
+): LineParamStyles => ({
+  fontSize: "md",
+  color: "primary",
+  font: "regular",
   ...overrides,
 });
 
@@ -28,15 +30,20 @@ export const style = (overrides: Partial<LineParamStyles> = {}): LineParamStyles
 export const text = (
   name: string,
   overrides: Partial<LineParamStyles> = {},
-  margins?: TextItem<LineParamStyles>['margins'],
-): TextItem<LineParamStyles> => ({ type: 'text', name, margins, item: style(overrides) });
+  margins?: TextItem<LineParamStyles>["margins"],
+): TextItem<LineParamStyles> => ({
+  type: "text",
+  name,
+  margins,
+  item: style(overrides),
+});
 
 /** Several values on one line, each with its own style. */
 export const row = (
   keys: string[],
   styles: Record<string, Partial<LineParamStyles>> = {},
   {
-    justify = 'start',
+    justify = "start",
     separator,
     gap,
     margins,
@@ -44,10 +51,10 @@ export const row = (
     justify?: RowJustify;
     separator?: string;
     gap?: Size;
-    margins?: RowItem<RowParamStyles>['margins'];
+    margins?: RowItem<RowParamStyles>["margins"];
   } = {},
 ): RowItem<RowParamStyles> => ({
-  type: 'row',
+  type: "row",
   keys,
   margins,
   item: {
@@ -61,11 +68,13 @@ export const row = (
 
 /** A rich-text description. */
 export const description = (
-  overrides: Partial<Pick<LineParamStyles, 'fontSize' | 'color' | 'family'>> = {},
-  top: Size = 'sm',
+  overrides: Partial<
+    Pick<LineParamStyles, "fontSize" | "color" | "family">
+  > = {},
+  top: Size = "sm",
 ): ItemStyle => ({
-  type: 'content',
-  name: 'description',
+  type: "content",
+  name: "description",
   margins: { top },
   ...(Object.keys(overrides).length ? { item: overrides } : {}),
 });
@@ -74,12 +83,18 @@ export const description = (
 export const joined = (
   name: string,
   overrides: Partial<LineParamStyles> = {},
-  { label, separator = ', ' }: { label?: LabelItem; separator?: string } = {},
+  { label, separator = ", " }: { label?: LabelItem; separator?: string } = {},
 ): Field<ItemStyle> => ({
   name,
-  source: 'root',
+  source: "root",
   label,
-  join: { type: 'join', output: 'text', separator, width: 0, item: style(overrides) },
+  join: {
+    type: "join",
+    output: "text",
+    separator,
+    width: 0,
+    item: style(overrides),
+  },
   items: [],
 });
 
@@ -88,15 +103,21 @@ export const entries = (
   name: string,
   items: ItemStyle[],
   extra: Partial<Field<ItemStyle>> = {},
-): Field<ItemStyle> => ({ name, source: 'objects', gap: 'sm', items, ...extra });
+): Field<ItemStyle> => ({
+  name,
+  source: "objects",
+  gap: "sm",
+  items,
+  ...extra,
+});
 
 /** Top-level values, such as the name and role. */
 export const root = (
   items: ItemStyle[],
   extra: Partial<Field<ItemStyle>> = {},
 ): Field<ItemStyle> => ({
-  name: 'root',
-  source: 'root',
+  name: "root",
+  source: "root",
   items,
   ...extra,
 });
@@ -107,7 +128,14 @@ export const section = (
   label: LabelItem | undefined,
   fields: Field<ItemStyle>[],
   extra: Partial<Group<ItemStyle>> = {},
-): Group<ItemStyle> => ({ width: 'full', section: name, gap: 'md', label, fields, ...extra });
+): Group<ItemStyle> => ({
+  width: "full",
+  section: name,
+  gap: "md",
+  label,
+  fields,
+  ...extra,
+});
 
 /**
  * Wraps the template's groups to give the page wider side margins than the engine's 20 points. The
@@ -115,9 +143,9 @@ export const section = (
  */
 export const page = (
   groups: Group<ItemStyle>[],
-  padding: Padding = { x: 'xl' },
+  padding: Padding = { x: "xl" },
 ): Group<ItemStyle> => ({
-  width: 'full',
+  width: "full",
   padding,
   groups,
 });
