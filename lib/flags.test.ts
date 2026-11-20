@@ -7,12 +7,13 @@ describe('feature flags', () => {
     vi.unstubAllEnvs();
   });
 
-  it('defaults to beta on, plans page off, purchase UI off, and Improve with AI off', () => {
+  it('defaults to beta on, plans page off, purchase UI off, and both AI improvements off', () => {
     const defaults = {
       betaMode: true,
       plansPage: false,
       creditPurchaseUi: false,
       resumeAiImprove: false,
+      profileAiImprove: false,
     };
     expect(featureFlags({})).toEqual(defaults);
     expect(DEFAULT_FEATURE_FLAGS).toEqual(defaults);
@@ -25,8 +26,9 @@ describe('feature flags', () => {
         NEXT_PUBLIC_FLAG_PLANS_PAGE: 'true',
         NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI: '1',
         NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: 'on',
+        NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: 'true',
       }),
-    ).toEqual({ betaMode: false, plansPage: true, creditPurchaseUi: true, resumeAiImprove: true });
+    ).toEqual({ betaMode: false, plansPage: true, creditPurchaseUi: true, resumeAiImprove: true, profileAiImprove: true });
     expect(featureFlags({ NEXT_PUBLIC_FLAG_PLANS_PAGE: ' ON ', NEXT_PUBLIC_FLAG_BETA_MODE: '0' })).toMatchObject({
       betaMode: false,
       plansPage: true,

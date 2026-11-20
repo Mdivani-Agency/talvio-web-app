@@ -300,6 +300,20 @@ describe('useProfileImprove', () => {
     second.unmount();
   });
 
+  it('keeps a typed answer when going back a question and forward again', async () => {
+    const { result, unmount } = setup();
+    act(() => result.current.start());
+    await waitFor(() => expect(result.current.step).toBe('questions'), WAIT);
+    act(() => result.current.answerCurrent('skipped'));
+    act(() => result.current.setUnsentAnswer('I mentor two engineers'));
+    act(() => result.current.goToPreviousQuestion());
+    expect(result.current.currentQuestionId).toBe('r1-q1');
+    act(() => result.current.answerCurrent('skipped'));
+    expect(result.current.currentQuestionId).toBe('r1-q2');
+    expect(result.current.unsentAnswer).toBe('I mentor two engineers');
+    unmount();
+  });
+
   it('starts nothing once the improvement is used', async () => {
     mockGraphqlSdk.ProfileImprovement = vi.fn().mockResolvedValue({
       profile_ai_improvementsCollection: { edges: [{ node: { used_at: '2026-11-19T09:00:00Z', applied_at: null } }] },

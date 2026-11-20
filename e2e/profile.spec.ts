@@ -41,6 +41,11 @@ async function saveForm(page: import('@playwright/test').Page) {
 
 test.beforeEach(async ({ page }) => {
   await fetch('http://127.0.0.1:3999/__e2e/reset', { method: 'POST' });
+  // Local E2E builds turn on profileAiImprove, so a first Save profile opens the "Make your profile stronger"
+  // offer (MDI-646). These tests are about the profile itself: take Skip for now whenever the offer shows.
+  await page.addLocatorHandler(page.getByRole('heading', { name: 'Answer a few questions, get better wording' }), async () => {
+    await page.getByRole('link', { name: 'Skip for now' }).click();
+  });
   await page.route('**/*', (route) => {
     const target = route.request().url();
     if (target.startsWith('data:') || target.startsWith('blob:')) {

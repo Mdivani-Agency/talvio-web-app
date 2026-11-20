@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { submitWrapper } from '@app/actions/action.utils';
 import { useLlmJob } from '@hooks/use-llm-job';
-import { nextQuestionId, upsertAnswer, type OnboardingQuestion, type QuestionAnswer } from '@lib/ai-improve/questions';
+import { nextQuestionId, previousQuestionId, upsertAnswer, type OnboardingQuestion, type QuestionAnswer } from '@lib/ai-improve/questions';
 import { AI_IMPROVE_SESSION_PREFIX, aiImproveJobStorageKey, profileImproveStorageKey } from '@lib/drafts';
 import { profileToCareerDocument } from '@lib/llm/career-document';
 import { createLlmClient, type LlmClient } from '@lib/llm/client';
@@ -53,6 +53,17 @@ export type ProfileImproveStep =
 
 type Running = 'analysis' | 'questions' | 'proposal';
 
+/** What a wait is doing, for the loading screen's live status. */
+export type ProfileImproveLoadingStage = 'analysis' | 'questions' | 'answers' | 'proposal';
+
+/** The parts of a service question the screen shows besides the prompt. */
+export type ProfileQuestionDetail = {
+  reason: string;
+  guidance: string | null;
+  targetSection: string | null;
+  targetEntityId: string | null;
+};
+
 type StoredSession = {
   v: 1;
   /** createSession's key, so a repeat after a lost answer returns the same session. */
@@ -63,6 +74,8 @@ type StoredSession = {
   analysisJobId: string | null;
   questionSetId: string | null;
   questions: OnboardingQuestion[] | null;
+  /** Reason, guidance and target of each question, by id. */
+  questionDetails?: Record<string, ProfileQuestionDetail>;
   answers: QuestionAnswer[];
   currentQuestionId: string | null;
   unsentAnswer: string;
@@ -124,21 +137,40 @@ function sessionAnswers(answers: QuestionAnswer[]): SessionAnswer[] {
   });
 }
 
-function questionsFrom(result: unknown): { questionSetId: string; questions: OnboardingQuestion[] } | null {
+function questionsFrom(result: unknown): {
+  questionSetId: string;
+  questions: OnboardingQuestion[];
+  details: Record<string, ProfileQuestionDetail>;
+} | null {
   const set = result as { questionSetId?: unknown; questions?: unknown } | null;
   if (!set || typeof set.questionSetId !== 'string' || !Array.isArray(set.questions)) {
     return null;
   }
+  const details: Record<string, ProfileQuestionDetail> = {};
+  const text = (value: unknown) => (typeof value === 'string' && value.trim() ? value : null);
   const questions = set.questions.flatMap((item): OnboardingQuestion[] => {
-    const question = item as { id?: unknown; prompt?: unknown; guidance?: unknown; reason?: unknown };
+    const question = item as {
+      id?: unknown;
+      prompt?: unknown;
+      guidance?: unknown;
+      reason?: unknown;
+      targetSection?: unknown;
+      targetEntityId?: unknown;
+    };
     if (typeof question.id !== 'string' || typeof question.prompt !== 'string') {
       return [];
     }
-    const guidance = typeof question.guidance === 'string' && question.guidance ? question.guidance : null;
-    const reason = typeof question.reason === 'string' ? question.reason : '';
+    const guidance = text(question.guidance);
+    const reason = text(question.reason) ?? '';
+    details[question.id] = {
+      reason,
+      guidance,
+      targetSection: text(question.targetSection),
+      targetEntityId: text(question.targetEntityId),
+    };
     return [{ id: question.id, question: question.prompt, example: guidance ?? reason }];
   });
-  return { questionSetId: set.questionSetId, questions };
+  return { questionSetId: set.questionSetId, questions, details };
 }
 
 export function useProfileImprove({ userId, account, locale = 'en-US', client }: Options) {
@@ -154,6 +186,7 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
   const [failure, setFailure] = useState<Failure | null>(null);
   const [refused, setRefused] = useState<'used' | null>(null);
   const [done, setDone] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set(stored?.proposal?.changes.map((change) => change.id) ?? []));
   const [confirmed, setConfirmed] = useState<ReadonlySet<string>>(() => new Set());
   const [saving, setSaving] = useState(false);
@@ -248,6 +281,7 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
         running: null,
         questionSetId: set.questionSetId,
         questions: set.questions,
+        questionDetails: set.details,
         answers: [],
         currentQuestionId: set.questions[0]?.id ?? null,
         unsentAnswer: '',
@@ -442,6 +476,28 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
     }
   }, [persist, runProposal]);
 
+  /** Back to the previous question, keeping what was typed there. */
+  const goToPreviousQuestion = useCallback(() => {
+    const session = storedRef.current;
+    if (!session?.questions) {
+      return;
+    }
+    const current = session.currentQuestionId;
+    const previousId = current ? previousQuestionId(session.questions, current) : session.questions.at(-1)?.id ?? null;
+    if (previousId) {
+      // Keep what was typed here, so going forward again finds it.
+      const answers = current && session.unsentAnswer.trim()
+        ? upsertAnswer(session.answers, { questionId: current, status: 'answered', value: session.unsentAnswer })
+        : session.answers;
+      persist({
+        ...session,
+        answers,
+        currentQuestionId: previousId,
+        unsentAnswer: answers.find((answer) => answer.questionId === previousId)?.value ?? '',
+      });
+    }
+  }, [persist]);
+
   /** Skips every question left and requests the suggestions. */
   const skipRemaining = useCallback(() => {
     const session = storedRef.current;
@@ -513,6 +569,7 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
         successMessage: 'Your profile is updated.',
       });
       if (saved && run === runRef.current) {
+        setSavedCount(review.applied.length);
         end();
         setDone(true);
       }
@@ -577,10 +634,23 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
     }
   }
 
+  let loadingStage: ProfileImproveLoadingStage | null = null;
+  if (step === 'loading') {
+    loadingStage = stored?.running === 'questions' ? 'questions' : 'analysis';
+  } else if (step === 'loadingProposal') {
+    loadingStage = stored?.running === 'proposal' ? 'proposal' : 'answers';
+  }
+
   return {
     step,
+    loadingStage,
+    savedCount,
+    questionDetails: stored?.questionDetails ?? {},
     /** The free improvement from the database flag; `used` is true once improve_profile was admitted. */
     improvement: improvement.data ?? null,
+    /** The flag could not be read: the page offers a retry instead of waiting. */
+    improvementError: improvement.isError && !improvement.data,
+    refetchImprovement: () => void improvement.refetch(),
     questions: stored?.questions ?? [],
     answers: stored?.answers ?? [],
     currentQuestionId: stored?.currentQuestionId ?? null,
@@ -593,6 +663,7 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
     start,
     setUnsentAnswer,
     answerCurrent,
+    goToPreviousQuestion,
     skipRemaining,
     requestProposal: () => void runProposal(),
     toggleSelected,
