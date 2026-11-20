@@ -113,3 +113,168 @@ describe('LLM adapter', () => {
     expect(String((fetcher.mock.calls[0] as unknown as [URL])[0])).toBe(`${BASE}/v1/jobs?cursor=abc`);
   });
 });
+
+describe('LLM adapter: the once-per-account profile improvement', () => {
+  const KEY = 'improve:profile-0001';
+
+  function flag(claim: 'claimed' | 'replay' | 'used' | 'busy' = 'claimed', usedBy: string | null = null) {
+    return {
+      claim: vi.fn(async () => claim),
+      confirm: vi.fn(async () => {}),
+      release: vi.fn(async () => {}),
+      markUsed: vi.fn(async () => {}),
+      usedBy: vi.fn(async () => usedBy),
+    };
+  }
+
+  const improveBody = JSON.stringify({ operation: 'improve_profile', clientRequestId: KEY });
+
+  const post = (body: string, improvement: ReturnType<typeof flag>, fetcher: typeof fetch) =>
+    proxyLlmRequest(
+      request('v1/jobs', { method: 'POST', body, headers: { 'Idempotency-Key': KEY } }),
+      ['v1', 'jobs'],
+      { baseUrl: BASE, fetcher, improvement },
+    );
+
+  const accepted = () =>
+    vi.fn(async () => Response.json({ jobId: JOB_ID, status: 'queued', replayed: false }, { status: 202 }));
+
+  it('refuses a used improvement without calling the service', async () => {
+    const improvement = flag('used', 'improve:an-earlier-key');
+    const fetcher = vi.fn();
+    const response = await post(improveBody, improvement, fetcher);
+    expect(response.status).toBe(403);
+    expect((await response.json()).error).toMatchObject({
+      code: 'profile_improvement_used',
+      message: 'You have used your free profile improvement.',
+      retryable: false,
+    });
+    expect(improvement.claim).toHaveBeenCalledWith('token-1', KEY);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('forwards a repeat of the request that used it, so its job comes back', async () => {
+    const improvement = flag('used', KEY);
+    const fetcher = accepted();
+    const response = await post(improveBody, improvement, fetcher);
+    expect(response.status).toBe(202);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks the client to wait while another request holds the claim', async () => {
+    const fetcher = vi.fn();
+    const response = await post(improveBody, flag('busy'), fetcher);
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toMatchObject({ code: 'profile_improvement_busy', retryable: true });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('confirms the claim with the job id once the service admits the job', async () => {
+    const improvement = flag('claimed');
+    const response = await post(improveBody, improvement, accepted());
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ jobId: JOB_ID });
+    expect(improvement.confirm).toHaveBeenCalledWith('token-1', KEY, JOB_ID);
+    expect(improvement.release).not.toHaveBeenCalled();
+  });
+
+  it('asks the client to repeat the key when confirming fails, and confirms on the repeat', async () => {
+    const improvement = flag('claimed');
+    improvement.confirm.mockRejectedValueOnce(new Error('network'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const first = await post(improveBody, improvement, accepted());
+    expect(first.status).toBe(503);
+    expect((await first.json()).error).toMatchObject({ code: 'dependency_unavailable', retryable: true });
+    expect(error).toHaveBeenCalledWith('profile improvement confirm failed');
+    expect(improvement.release).not.toHaveBeenCalled();
+
+    improvement.claim.mockResolvedValueOnce('replay');
+    const repeat = await post(improveBody, improvement, accepted());
+    expect(repeat.status).toBe(202);
+    expect(improvement.confirm).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
+
+  it('answers a retryable 503 when it cannot tell who used the improvement', async () => {
+    const improvement = flag('used');
+    improvement.usedBy.mockRejectedValueOnce(new Error('graphql down'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetcher = vi.fn();
+    const response = await post(improveBody, improvement, fetcher);
+    expect(response.status).toBe(503);
+    expect((await response.json()).error).toMatchObject({ code: 'dependency_unavailable', retryable: true });
+    expect(fetcher).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it('releases the claim when the service refuses the request', async () => {
+    const improvement = flag('claimed');
+    const fetcher = vi.fn(async () =>
+      Response.json({ error: { code: 'quota_exceeded', retryable: true } }, { status: 429 }),
+    );
+    const response = await post(improveBody, improvement, fetcher);
+    expect(response.status).toBe(429);
+    expect(improvement.release).toHaveBeenCalledWith('token-1', KEY);
+    expect(improvement.confirm).not.toHaveBeenCalled();
+  });
+
+  it('marks the improvement used when the service says it already was', async () => {
+    const improvement = flag('claimed');
+    const fetcher = vi.fn(async () =>
+      Response.json({ error: { code: 'operation_limit_reached', retryable: false } }, { status: 429 }),
+    );
+    const response = await post(improveBody, improvement, fetcher);
+    expect(response.status).toBe(429);
+    expect((await response.json()).error.code).toBe('operation_limit_reached');
+    expect(improvement.markUsed).toHaveBeenCalledWith('token-1', null);
+    expect(improvement.release).not.toHaveBeenCalled();
+  });
+
+  it('keeps the claim on a timeout, and a repeat of the same key goes ahead as a replay', async () => {
+    const improvement = flag('claimed');
+    const timedOut = vi.fn(async () => {
+      throw new DOMException('timed out', 'TimeoutError');
+    });
+    const first = await post(improveBody, improvement, timedOut);
+    expect(first.status).toBe(503);
+    expect(improvement.release).not.toHaveBeenCalled();
+    expect(improvement.confirm).not.toHaveBeenCalled();
+
+    improvement.claim.mockResolvedValueOnce('replay');
+    const repeat = await post(improveBody, improvement, accepted());
+    expect(repeat.status).toBe(202);
+    expect(improvement.confirm).toHaveBeenCalledWith('token-1', KEY, JOB_ID);
+  });
+
+  it('keeps the claim when the service fails', async () => {
+    const improvement = flag('claimed');
+    const fetcher = vi.fn(async () => Response.json({ error: { code: 'internal_error' } }, { status: 500 }));
+    expect((await post(improveBody, improvement, fetcher)).status).toBe(500);
+    expect(improvement.release).not.toHaveBeenCalled();
+  });
+
+  it('answers 503 without calling the service when the flag cannot be read', async () => {
+    const improvement = flag('claimed');
+    improvement.claim.mockRejectedValueOnce(new Error('graphql down'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetcher = vi.fn();
+    const response = await post(improveBody, improvement, fetcher);
+    expect(response.status).toBe(503);
+    expect(fetcher).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it('never touches the flag for other operations or bodies that are not JSON', async () => {
+    const improvement = flag('used');
+    for (const body of [
+      JSON.stringify({ operation: 'improve_resume', clientRequestId: KEY }),
+      'not json',
+      JSON.stringify({ clientRequestId: KEY }),
+    ]) {
+      const response = await post(body, improvement, accepted());
+      expect(response.status).toBe(202);
+    }
+    expect(improvement.claim).not.toHaveBeenCalled();
+    expect(improvement.confirm).not.toHaveBeenCalled();
+  });
+});
