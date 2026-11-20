@@ -4,6 +4,7 @@ import {
   EDUCATION_FIELDS,
   EXPERIENCE_FIELDS,
   HIGHLIGHT_FIELDS,
+  HEADLINE_ACHIEVEMENT_COPY,
   PROFILE_FIELDS,
   PROFILE_SECTIONS,
   PROJECT_FIELDS,
@@ -48,6 +49,7 @@ const PROFILE_LABELS: Record<string, string> = {
 const LIST_LABELS: Record<string, string> = {
   links: HIGHLIGHT_FIELDS.links.label,
   skills: HIGHLIGHT_FIELDS.skills.label,
+  headlineAchievements: HEADLINE_ACHIEVEMENT_COPY.label,
   tools: HIGHLIGHT_FIELDS.tools.label,
   experience: PROFILE_SECTIONS.experience.title,
   education: PROFILE_SECTIONS.education.title,
@@ -64,6 +66,7 @@ const ITEM_LABELS: Record<string, Record<string, string>> = {
   },
   education: { name: EDUCATION_FIELDS.name.label, degreeType: EDUCATION_FIELDS.degreeType.label },
   projects: { name: PROJECT_FIELDS.name.label, url: PROJECT_FIELDS.url.label },
+  headlineAchievements: { value: 'Value', label: 'What it measures' },
 };
 
 /** The visible label of the field an error belongs to, for the error summary. */

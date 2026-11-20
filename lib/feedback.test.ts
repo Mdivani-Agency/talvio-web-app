@@ -13,7 +13,7 @@ import {
 } from './feedback';
 
 const migration = readFileSync(
-  join(process.cwd(), 'supabase/migrations/20261120000200_user_feedback.sql'),
+  join(process.cwd(), 'supabase/migrations/20261120000300_user_feedback.sql'),
   'utf8',
 );
 

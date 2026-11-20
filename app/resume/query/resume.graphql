@@ -107,7 +107,7 @@ mutation Apply_Llm_Proposal($p_request: JSON!) {
   apply_llm_proposal(p_request: $p_request)
 }
 
-# MDI-652: the review prompt after a new PDF. RPCs from 20261120000200_user_feedback.sql.
+# MDI-652: the review prompt after a new PDF. RPCs from 20261120000300_user_feedback.sql.
 mutation Feedback_Prompt_Due {
   feedback_prompt_due
 }

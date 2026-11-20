@@ -64,12 +64,20 @@ export const DRAFT_BANNER = {
 /** The Design tab: template, accent colour and text size. */
 export const DESIGN_PANEL = {
   template: 'Template',
-  levelsLabel: 'Experience level',
-  levels: [
-    { value: 'entry', name: 'Entry level' },
-    { value: 'mid', name: 'Mid level' },
-    { value: 'senior', name: 'Senior level' },
-  ],
+  /** Beside the heading, announced: "14 templates", or "4 of 14" with a filter on. */
+  templateCount: (shown: number, total: number) => (shown === total ? `${total} templates` : `${shown} of ${total}`),
+  selected: (name: string) => `${name} is selected`,
+  summary: (description: string, bestFor: string) => `${description}. Best for ${bestFor}.`,
+  sectionOrder: (names: string, custom: boolean) =>
+    custom ? `Section order: your own (${names}).` : `Section order: ${names}.`,
+  optionalFields: (fields: string) => `Shows optional fields: ${fields}. Empty ones are left out.`,
+  fillThemIn: 'Fill them in',
+  /** The optional fields as the info box lists them. */
+  optionalFieldNames: {
+    headlineAchievements: 'headline achievements',
+    skillGroups: 'skill groups',
+    stack: 'a stack per role',
+  },
   accent: 'Accent colour',
   textSize: 'Text size',
   sizes: [
@@ -79,9 +87,8 @@ export const DESIGN_PANEL = {
   ],
 } as const;
 
-/** "Use the Modern template, senior level". */
-export const templateButtonLabel = (name: string, levelName: string) =>
-  `Use the ${name} template, ${levelName.toLowerCase()}`;
+/** A small template card: "Modern template", or "Modern template, selected". */
+export const templateButtonLabel = (name: string, selected: boolean) => `${name} template${selected ? ', selected' : ''}`;
 
 /** The resume accent colours by `RESUME_COLORS_MAP` key, in the order the Design tab shows them. */
 export const ACCENT_COLOURS = [
@@ -111,15 +118,55 @@ export const GENERATE_DIALOG = {
 
 /** The Content tab's accordion, in order. `prefixes` are the form paths each section owns. */
 export const RESUME_SECTIONS = [
-  { id: 'about', title: 'About you', prefixes: ['profile'] },
+  { id: 'about', title: 'About you', prefixes: ['profile', 'headlineAchievements'] },
   { id: 'contact', title: 'Contact information', prefixes: ['contacts', 'location'] },
   { id: 'highlights', title: 'Highlights', prefixes: ['skills', 'tools', 'languages', 'links'] },
   { id: 'experience', title: 'Experience', prefixes: ['experience'] },
   { id: 'education', title: 'Education', prefixes: ['education'] },
   { id: 'projects', title: 'Projects', prefixes: ['projects'] },
+  { id: 'recommendations', title: 'Recommendations', prefixes: ['recommendations'] },
 ] as const;
 
 export type ResumeSectionId = (typeof RESUME_SECTIONS)[number]['id'];
+
+export const RECOMMENDATIONS_INTRO = 'Optional. A short quote from someone you worked with.';
+
+/** The Content tab's section order (MDI-665): the line under Contact information and the Reorder sections list. */
+export const SECTION_ORDER_COPY = {
+  /** Short names, for the order line. Skills carries tools and languages. */
+  shortNames: {
+    experience: 'Experience',
+    education: 'Education',
+    skills: 'Skills',
+    projects: 'Projects',
+    recommendations: 'Recommendations',
+  },
+  /** Long names, for the list rows and announcements. */
+  longNames: {
+    experience: 'Experience',
+    education: 'Education',
+    skills: 'Skills, tools and languages',
+    projects: 'Projects',
+    recommendations: 'Recommendations',
+  },
+  templateOrder: (template: string) => `${template} order:`,
+  yourOrder: 'Your order:',
+  reorder: 'Reorder sections',
+  title: 'Section order',
+  intro: 'Drag a section, or use the arrows. Your name, contact details and summary always come first.',
+  position: (index: number, total: number) => `${index} of ${total}`,
+  drag: (name: string) => `Drag to move ${name}`,
+  moveUp: (name: string) => `Move ${name} up`,
+  moveDown: (name: string) => `Move ${name} down`,
+  moved: (name: string, direction: 'up' | 'down', index: number, total: number) =>
+    `${name} moved ${direction}. Now ${index} of ${total}.`,
+  reset: (template: string) => `Reset to the ${template} order`,
+  resetDone: (template: string) => `Order reset to the ${template} template.`,
+  done: 'Done',
+  /** Two-column templates keep each section in its column. */
+  columnNote: (template: string) =>
+    `In the ${template} template, skills and education stay in the side column. The order applies within each column.`,
+} as const;
 
 /** Field names in words, by the last part of a form path, for the error summary and the fix line. */
 export const RESUME_FIELD_LABELS: Record<string, string> = {
@@ -146,6 +193,11 @@ export const RESUME_FIELD_LABELS: Record<string, string> = {
   locationType: 'Location type',
   degreeType: 'Degree type',
   additionalDetails: 'Description',
+  headlineAchievements: 'Headline achievements',
+  value: 'Achievement value',
+  label: 'What it measures',
+  stack: 'Stack',
+  group: 'Skill group',
 };
 
 export const SECTION_SUMMARY = {
@@ -155,6 +207,11 @@ export const SECTION_SUMMARY = {
   entries: (count: number) => `${count} ${count === 1 ? 'entry' : 'entries'}`,
   projects: (count: number) => `${count} ${count === 1 ? 'project' : 'projects'}`,
   skills: (count: number) => `${count} ${count === 1 ? 'skill' : 'skills'}`,
+  /** "4 skills in 3 groups", when Group skills is on. */
+  groupedSkills: (count: number, groups: number) =>
+    `${count} ${count === 1 ? 'skill' : 'skills'} in ${groups} ${groups === 1 ? 'group' : 'groups'}`,
+  achievements: (count: number) => `${count} ${count === 1 ? 'achievement' : 'achievements'}`,
+  recommendations: (count: number) => `${count} ${count === 1 ? 'recommendation' : 'recommendations'}`,
   tools: (count: number) => `${count} ${count === 1 ? 'tool' : 'tools'}`,
   languages: (count: number) => `${count} ${count === 1 ? 'language' : 'languages'}`,
   /** "Fix 1 field: first name". */

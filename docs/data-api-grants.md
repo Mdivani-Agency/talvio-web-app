@@ -20,7 +20,8 @@ Copied from Notion *Data API / GraphQL (pg_graphql)* and locked for v1.
 ### Owner CRUD (profile, children, resumes)
 
 `profiles`, `contacts`, `experiences`, `educations`, `projects`,
-`recommendations`, `skills`, `tools`, `links`, `languages`, `resumes`.
+`recommendations`, `skills`, `tools`, `links`, `languages`,
+`headline_achievements`, `resumes`.
 
 Owner hard-deletes their own rows in v1 (no `deleted_at`), so `authenticated`
 gets `DELETE`. No `anon` grants — there is no public resume sharing.
@@ -176,8 +177,8 @@ the GraphQL `JSON` scalar (serialized string).
 | `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
 | `llm_proposal_applications` | none | SELECT | all | `20261112000100_llm_proposal_applications.sql` (rows written only by `apply_llm_proposal`) |
 | `profile_ai_improvements` | none | SELECT | all | `20261120000100_profile_ai_improvement.sql` (rows written only by the profile improvement RPCs and `apply_llm_proposal`) |
-| `user_feedback` | none | SELECT | all | `20261120000200_user_feedback.sql` (rows written only by `submit_feedback`) |
-| `feedback_prompt_state` | none | SELECT | all | `20261120000200_user_feedback.sql` (rows written only by `record_feedback_prompt` and `record_trustpilot_click`) |
+| `user_feedback` | none | SELECT | all | `20261120000300_user_feedback.sql` (rows written only by `submit_feedback`) |
+| `feedback_prompt_state` | none | SELECT | all | `20261120000300_user_feedback.sql` (rows written only by `record_feedback_prompt` and `record_trustpilot_click`) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

@@ -21,6 +21,7 @@ export async function fetchProfile(userId: string): Promise<Account | null> {
     tools: unwrapCollection(data.toolsCollection),
     links: unwrapCollection(data.linksCollection),
     languages: unwrapCollection(data.languagesCollection),
+    headlineAchievements: unwrapCollection(data.headline_achievementsCollection),
   });
 }
 

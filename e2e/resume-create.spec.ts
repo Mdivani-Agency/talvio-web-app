@@ -37,7 +37,7 @@ test('RES-01 creates a resume without a profile and keeps it after reload', asyn
   await page.getByLabel('Email', { exact: true }).fill('nia.manual@talvio.test');
   await openResumeSection(page, 'About you', 'First name');
   await page.getByRole('tab', { name: /^Design/ }).click();
-  await page.getByRole('button', { name: 'Use the Ember template, senior level', exact: true }).click();
+  await page.getByRole('button', { name: 'Ember template', exact: true }).click();
   await page.getByRole('tab', { name: /^Content/ }).click();
 
   const downloads = await generateFromModal(page, 'Nia Manual Resume', 'First resume');

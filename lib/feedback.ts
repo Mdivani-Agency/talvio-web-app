@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * The review prompt rules (MDI-650). The database is the source of truth: `feedback_prompt_rule()` in
- * `supabase/migrations/20261120000200_user_feedback.sql` enforces them in `record_feedback_prompt`. These constants
+ * `supabase/migrations/20261120000300_user_feedback.sql` enforces them in `record_feedback_prompt`. These constants
  * mirror it for the client and its tests; change both together.
  */
 export const FEEDBACK_PROMPT_MAX_PROMPTS = 3;

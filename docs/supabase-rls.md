@@ -27,6 +27,7 @@ Every table below except `user_credits` has four policies:
 | `projects` | select / insert / update / delete own |
 | `recommendations` | select / insert / update / delete own |
 | `skills` | select / insert / update / delete own |
+| `headline_achievements` | select / insert / update / delete own |
 | `tools` | select / insert / update / delete own |
 | `links` | select / insert / update / delete own |
 | `languages` | select / insert / update / delete own |
@@ -51,8 +52,11 @@ can call it.
 
 `save_profile` is `SECURITY INVOKER` and `VOLATILE` (required for a Mutation
 field). A payload `user_id` cannot override `auth.uid()`. It upserts the
-caller's profile and any child rows in the payload; it never deletes children.
-Removals use collection DELETE mutations. Job-specific copies live in
+caller's profile and any child rows in the payload; it never deletes children,
+except headline achievements: the profile form sends that capped set of three
+whole, so when the payload has `headlineAchievements`, rows it no longer lists
+are deleted before the rest are upserted. A payload without the key leaves
+them alone. Other removals use collection DELETE mutations. Job-specific copies live in
 `resumes.content` — `profiles.user_id` is 1:1 with `auth.users`.
 
 `generate_pdf(p_resume_id)` is `SECURITY DEFINER` and `VOLATILE`. It uses
@@ -107,7 +111,7 @@ mutations on `/graphql/v1` (`inflect_names` off):
 Query: `profilesCollection`, `contactsCollection`, `experiencesCollection`,
 `educationsCollection`, `projectsCollection`, `recommendationsCollection`,
 `skillsCollection`, `toolsCollection`, `linksCollection`,
-`languagesCollection`, `resumesCollection`, `user_creditsCollection`,
+`languagesCollection`, `headline_achievementsCollection`, `resumesCollection`, `user_creditsCollection`,
 `llm_proposal_applicationsCollection`, `profile_ai_improvementsCollection`,
 `user_feedbackCollection`, `feedback_prompt_stateCollection`.
 

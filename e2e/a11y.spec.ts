@@ -62,14 +62,15 @@ test('UX-01 named controls, keyboard entry, and dialog escape', async ({ page, p
 
   await page.goto('/templates');
   await expectNamedControls(page);
-  await page.getByRole('button', { name: 'Entry level', exact: true }).focus();
+  const filters = page.getByRole('group', { name: 'Filter templates' });
+  await filters.getByRole('button', { name: /^First job/ }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(filters.getByRole('button', { name: /^First job/ })).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Mid level', exact: true })).toBeFocused();
+  await expect(filters.getByRole('button', { name: /^Experienced/ })).toBeFocused();
   await page.keyboard.press('Space');
-  await expect(page.getByRole('button', { name: 'Mid level', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('button', { name: 'Entry level', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await expect(filters.getByRole('button', { name: /^Experienced/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(filters.getByRole('button', { name: /^First job/ })).toHaveAttribute('aria-pressed', 'false');
 
   const owner = persona(personas, 'complete');
   const resumeId = await seedResume({ userId: owner.userId, name: 'Keyboard resume' });

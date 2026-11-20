@@ -6,7 +6,7 @@ import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, SUPPORT_ANSWER } from './p
  */
 
 /** Sitemap date (ISO). Change it with the homepage copy. */
-export const HOME_LAST_MODIFIED = '2026-11-18';
+export const HOME_LAST_MODIFIED = '2026-11-20';
 
 /** New visitors sign in here. There is no separate sign-up route. */
 export const PRIMARY_CTA_HREF = '/auth/sign-in';
@@ -53,7 +53,7 @@ export const BENEFITS = [
   },
   {
     title: 'A layout that fits',
-    body: 'Pick a template for your experience level and preview it before you download.',
+    body: 'Pick from 14 templates and preview before you download.',
   },
   {
     title: 'You stay in control',
