@@ -161,4 +161,31 @@ describe('ResumeDocumentForm', () => {
     expect(screen.getByRole('status').textContent).toBe('Order reset to the Mint template.');
     expect(onSubmit.mock.lastCall?.[0]).not.toHaveProperty('sectionOrder');
   });
+
+  it('keeps a stored order as the user\'s own and resettable when it matches the template default', async () => {
+    const onSubmit = vi.fn();
+    render(
+      <TooltipProvider>
+        <CurrentTemplateProvider template={{ key: 'senior-level-mint', name: 'Mint' }}>
+          <ResumeDocumentForm
+            defaultValues={{
+              ...EMPTY_RESUME_DOCUMENT,
+              sectionOrder: ['skills', 'experience', 'education', 'projects', 'recommendations'],
+            }}
+            onSubmit={onSubmit}
+          />
+        </CurrentTemplateProvider>
+      </TooltipProvider>,
+    );
+    expect(screen.getByText('Your order:')).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Reorder sections' }));
+    });
+    const reset = screen.getByRole('button', { name: 'Reset to the Mint order' });
+    expect(reset.getAttribute('aria-disabled')).toBeNull();
+    await act(async () => {
+      fireEvent.click(reset);
+    });
+    expect(onSubmit.mock.lastCall?.[0]).not.toHaveProperty('sectionOrder');
+  });
 });

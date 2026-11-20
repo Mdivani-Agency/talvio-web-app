@@ -10,7 +10,6 @@ import { resolveAvailableTemplate } from '@lib/resume/resolve-editor';
 import {
   effectiveSectionOrder,
   storedSectionOrder,
-  templateSectionOrder,
   type MovableSection,
 } from '@lib/resume/section-order';
 import { ContactsForm, RESUME_CONTACT_FIELDS } from '@app/account/create/views/forms/contacts.form';
@@ -116,8 +115,9 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
   const templateItem = resolveAvailableTemplate(current?.key);
   const templateName = current?.name ?? templateItem.name;
   const order = effectiveSectionOrder(values.sectionOrder, templateItem.template);
-  const customOrder = Boolean(values.sectionOrder?.length)
-    && order.join() !== templateSectionOrder(templateItem.template).join();
+  // Custom means an order is stored, even one that happens to equal this template's default: it still applies after
+  // a switch to another template, so it must show as the user's and stay resettable.
+  const customOrder = Boolean(values.sectionOrder?.length);
   const setOrder = (next: MovableSection[]) =>
     form.setFieldValue('sectionOrder', storedSectionOrder(next, templateItem.template));
   const [reordering, setReordering] = useState(false);
