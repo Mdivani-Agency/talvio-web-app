@@ -188,6 +188,8 @@ export type IntListFilter = {
 export type Mutation = {
   __typename?: 'Mutation';
   apply_llm_proposal?: Maybe<Scalars['JSON']['output']>;
+  claim_profile_improvement?: Maybe<Scalars['String']['output']>;
+  confirm_profile_improvement?: Maybe<Scalars['Opaque']['output']>;
   /** Deletes zero or more records from the `contacts` collection */
   deleteFromcontactsCollection: ContactsDeleteResponse;
   /** Deletes zero or more records from the `educations` collection */
@@ -234,6 +236,8 @@ export type Mutation = {
   insertIntoskillsCollection?: Maybe<SkillsInsertResponse>;
   /** Adds one or more `tools` records to the collection */
   insertIntotoolsCollection?: Maybe<ToolsInsertResponse>;
+  mark_profile_improvement_used?: Maybe<Scalars['Opaque']['output']>;
+  release_profile_improvement?: Maybe<Scalars['Opaque']['output']>;
   release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
   /** Updates zero or more records in the `contacts` collection */
@@ -263,6 +267,17 @@ export type Mutation = {
 /** The root type for creating and mutating data */
 export type MutationApply_Llm_ProposalArgs = {
   p_request: Scalars['JSON']['input'];
+};
+
+/** The root type for creating and mutating data */
+export type MutationClaim_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
+};
+
+/** The root type for creating and mutating data */
+export type MutationConfirm_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
+  p_job_id: Scalars['UUID']['input'];
 };
 
 /** The root type for creating and mutating data */
@@ -396,6 +411,16 @@ export type MutationInsertIntoskillsCollectionArgs = {
 /** The root type for creating and mutating data */
 export type MutationInsertIntotoolsCollectionArgs = {
   objects: Array<ToolsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationMark_Profile_Improvement_UsedArgs = {
+  p_job_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationRelease_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
 };
 
 /** The root type for creating and mutating data */
@@ -544,6 +569,10 @@ export type Query = {
   llm_proposal_applicationsCollection: Llm_Proposal_ApplicationsConnection;
   /** Retrieve a record by its `ID` */
   node?: Maybe<Node>;
+  /** Retrieve a record of type `profile_ai_improvements` by its primary key */
+  profile_ai_improvementsByPk?: Maybe<Profile_Ai_Improvements>;
+  /** A pagable collection of type `profile_ai_improvements` */
+  profile_ai_improvementsCollection: Profile_Ai_ImprovementsConnection;
   /** Retrieve a record of type `profiles` by its primary key */
   profilesByPk?: Maybe<Profiles>;
   /** A pagable collection of type `profiles` */
@@ -673,6 +702,22 @@ export type QueryLlm_Proposal_ApplicationsCollectionArgs = {
 /** The root type for querying data */
 export type QueryNodeArgs = {
   nodeId: Scalars['ID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryProfile_Ai_ImprovementsByPkArgs = {
+  user_id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryProfile_Ai_ImprovementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Profile_Ai_ImprovementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Profile_Ai_ImprovementsOrderBy>>;
 };
 
 /** The root type for querying data */
@@ -1530,6 +1575,58 @@ export type Location_TypeFilter = {
   neq?: InputMaybe<Location_Type>;
 };
 
+export type Profile_Ai_Improvements = Node & {
+  __typename?: 'profile_ai_improvements';
+  applied_at?: Maybe<Scalars['Datetime']['output']>;
+  claimed_at: Scalars['Datetime']['output'];
+  client_request_id: Scalars['String']['output'];
+  job_id?: Maybe<Scalars['UUID']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  updated_at: Scalars['Datetime']['output'];
+  used_at?: Maybe<Scalars['Datetime']['output']>;
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Profile_Ai_ImprovementsConnection = {
+  __typename?: 'profile_ai_improvementsConnection';
+  edges: Array<Profile_Ai_ImprovementsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Profile_Ai_ImprovementsEdge = {
+  __typename?: 'profile_ai_improvementsEdge';
+  cursor: Scalars['String']['output'];
+  node: Profile_Ai_Improvements;
+};
+
+export type Profile_Ai_ImprovementsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Profile_Ai_ImprovementsFilter>>;
+  applied_at?: InputMaybe<DatetimeFilter>;
+  claimed_at?: InputMaybe<DatetimeFilter>;
+  client_request_id?: InputMaybe<StringFilter>;
+  job_id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Profile_Ai_ImprovementsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Profile_Ai_ImprovementsFilter>>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  used_at?: InputMaybe<DatetimeFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Profile_Ai_ImprovementsOrderBy = {
+  applied_at?: InputMaybe<OrderByDirection>;
+  claimed_at?: InputMaybe<OrderByDirection>;
+  client_request_id?: InputMaybe<OrderByDirection>;
+  job_id?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  used_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
 export type Profiles = Node & {
   __typename?: 'profiles';
   city?: Maybe<Scalars['String']['output']>;
@@ -2342,6 +2439,39 @@ export type CreditsQueryVariables = Exact<{
 
 export type CreditsQuery = { user_creditsCollection: { edges: Array<{ node: { balance: number } }> } };
 
+export type ClaimProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+}>;
+
+export type ClaimProfileImprovementMutation = { claim_profile_improvement: string | null };
+
+export type ConfirmProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+  p_job_id: string;
+}>;
+
+export type ConfirmProfileImprovementMutation = { confirm_profile_improvement: unknown };
+
+export type ReleaseProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+}>;
+
+export type ReleaseProfileImprovementMutation = { release_profile_improvement: unknown };
+
+export type MarkProfileImprovementUsedMutationVariables = Exact<{
+  p_job_id?: string | null | undefined;
+}>;
+
+export type MarkProfileImprovementUsedMutation = { mark_profile_improvement_used: unknown };
+
+export type ProfileImprovementRequestQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type ProfileImprovementRequestQuery = { profile_ai_improvementsCollection: { edges: Array<{ node: { client_request_id: string, used_at: string | null } }> } };
+
+export type ProfileImprovementQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type ProfileImprovementQuery = { profile_ai_improvementsCollection: { edges: Array<{ node: { used_at: string | null, applied_at: string | null } }> } };
+
 export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string };
 
 export type ProfileByUserQueryVariables = Exact<{
@@ -2468,6 +2598,53 @@ export const CreditsDocument = gql`
     edges {
       node {
         balance
+      }
+    }
+  }
+}
+    `;
+export const ClaimProfileImprovementDocument = gql`
+    mutation ClaimProfileImprovement($p_client_request_id: String!) {
+  claim_profile_improvement(p_client_request_id: $p_client_request_id)
+}
+    `;
+export const ConfirmProfileImprovementDocument = gql`
+    mutation ConfirmProfileImprovement($p_client_request_id: String!, $p_job_id: UUID!) {
+  confirm_profile_improvement(
+    p_client_request_id: $p_client_request_id
+    p_job_id: $p_job_id
+  )
+}
+    `;
+export const ReleaseProfileImprovementDocument = gql`
+    mutation ReleaseProfileImprovement($p_client_request_id: String!) {
+  release_profile_improvement(p_client_request_id: $p_client_request_id)
+}
+    `;
+export const MarkProfileImprovementUsedDocument = gql`
+    mutation MarkProfileImprovementUsed($p_job_id: UUID) {
+  mark_profile_improvement_used(p_job_id: $p_job_id)
+}
+    `;
+export const ProfileImprovementRequestDocument = gql`
+    query ProfileImprovementRequest {
+  profile_ai_improvementsCollection(first: 1) {
+    edges {
+      node {
+        client_request_id
+        used_at
+      }
+    }
+  }
+}
+    `;
+export const ProfileImprovementDocument = gql`
+    query ProfileImprovement {
+  profile_ai_improvementsCollection(first: 1) {
+    edges {
+      node {
+        used_at
+        applied_at
       }
     }
   }
@@ -2766,6 +2943,24 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
   return {
     Credits(variables?: CreditsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<CreditsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<CreditsQuery>({ document: CreditsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Credits', 'query', variables);
+    },
+    ClaimProfileImprovement(variables: ClaimProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ClaimProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ClaimProfileImprovementMutation>({ document: ClaimProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ClaimProfileImprovement', 'mutation', variables);
+    },
+    ConfirmProfileImprovement(variables: ConfirmProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ConfirmProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ConfirmProfileImprovementMutation>({ document: ConfirmProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ConfirmProfileImprovement', 'mutation', variables);
+    },
+    ReleaseProfileImprovement(variables: ReleaseProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ReleaseProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ReleaseProfileImprovementMutation>({ document: ReleaseProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ReleaseProfileImprovement', 'mutation', variables);
+    },
+    MarkProfileImprovementUsed(variables?: MarkProfileImprovementUsedMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<MarkProfileImprovementUsedMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<MarkProfileImprovementUsedMutation>({ document: MarkProfileImprovementUsedDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'MarkProfileImprovementUsed', 'mutation', variables);
+    },
+    ProfileImprovementRequest(variables?: ProfileImprovementRequestQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileImprovementRequestQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ProfileImprovementRequestQuery>({ document: ProfileImprovementRequestDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileImprovementRequest', 'query', variables);
+    },
+    ProfileImprovement(variables?: ProfileImprovementQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileImprovementQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ProfileImprovementQuery>({ document: ProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileImprovement', 'query', variables);
     },
     ProfileByUser(variables: ProfileByUserQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileByUserQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProfileByUserQuery>({ document: ProfileByUserDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileByUser', 'query', variables);

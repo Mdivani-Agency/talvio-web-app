@@ -40,6 +40,8 @@ describe('privacy policy copy', () => {
     expect(retention).toContain('within 7 days');
     expect(retention).toContain('within 30 days');
     expect(retention).toContain('not deleted the moment you delete your account');
+    // The once-per-account profile improvement record (MDI-647) has no retention limit.
+    expect(retention).toContain('a record that your account has used it');
   });
 
   it('discloses Vercel Web Analytics', () => {

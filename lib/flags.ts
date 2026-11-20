@@ -20,6 +20,12 @@ export type FeatureFlags = {
   creditPurchaseUi: boolean;
   /** Shows Improve with AI in the resume editor and the download dialog (MDI-426). Off in production until the pilot. */
   resumeAiImprove: boolean;
+  /**
+   * "Make your profile stronger" after Save profile and `/account/improve` (MDI-643). Off in production until the
+   * LLM service enforces once per user (talvio-llm-service MDI-649) is deployed. The homepage FAQ says optional
+   * questions during setup can suggest edits; that is true only with this on.
+   */
+  profileAiImprove: boolean;
 };
 
 export type FeatureFlagEnv = {
@@ -27,6 +33,7 @@ export type FeatureFlagEnv = {
   NEXT_PUBLIC_FLAG_PLANS_PAGE?: string;
   NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI?: string;
   NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE?: string;
+  NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE?: string;
 };
 
 export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
@@ -34,6 +41,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   plansPage: false,
   creditPurchaseUi: false,
   resumeAiImprove: false,
+  profileAiImprove: false,
 };
 
 function parseFlag(value: string | undefined, fallback: boolean): boolean {
@@ -57,6 +65,7 @@ function processFlagEnv(): FeatureFlagEnv {
     NEXT_PUBLIC_FLAG_PLANS_PAGE: process.env.NEXT_PUBLIC_FLAG_PLANS_PAGE,
     NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI: process.env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI,
     NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE,
+    NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE,
   };
 }
 
@@ -66,5 +75,6 @@ export function featureFlags(env: FeatureFlagEnv = processFlagEnv()): FeatureFla
     plansPage: parseFlag(env.NEXT_PUBLIC_FLAG_PLANS_PAGE, DEFAULT_FEATURE_FLAGS.plansPage),
     creditPurchaseUi: parseFlag(env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI, DEFAULT_FEATURE_FLAGS.creditPurchaseUi),
     resumeAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.resumeAiImprove),
+    profileAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.profileAiImprove),
   };
 }

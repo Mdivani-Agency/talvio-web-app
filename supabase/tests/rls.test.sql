@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(48);
+select plan(63);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -576,6 +576,124 @@ select is(
   (select updated_at from revision_capture),
   'release keeps the revision clock'
 );
+
+-- MDI-644: the once-per-account profile improvement flag.
+
+select ok(
+  not has_function_privilege('anon', 'public.claim_profile_improvement(text)', 'execute'),
+  'anon cannot claim a profile improvement'
+);
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select throws_ok(
+  $$
+    insert into public.profile_ai_improvements (user_id, client_request_id, used_at)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'improve:self-insert', now());
+  $$,
+  '42501',
+  null,
+  'a user cannot write the profile improvement flag'
+);
+
+select is(
+  public.claim_profile_improvement('improve:request-1'),
+  'claimed',
+  'the first request claims the profile improvement'
+);
+
+select is(
+  public.claim_profile_improvement('improve:request-1'),
+  'replay',
+  'the same request id is a replay'
+);
+
+select is(
+  public.claim_profile_improvement('improve:request-2'),
+  'busy',
+  'another request waits while a fresh claim is held'
+);
+
+select throws_ok(
+  $$ update public.profile_ai_improvements set used_at = null, claimed_at = now() - interval '1 hour'; $$,
+  '42501',
+  null,
+  'a user cannot update the profile improvement flag'
+);
+
+select throws_ok(
+  $$ delete from public.profile_ai_improvements; $$,
+  '42501',
+  null,
+  'a user cannot delete the profile improvement flag'
+);
+
+select pg_temp.logout();
+update public.profile_ai_improvements
+set claimed_at = now() - interval '3 minutes'
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.claim_profile_improvement('improve:request-2'),
+  'claimed',
+  'an unconfirmed claim older than 2 minutes is taken over'
+);
+
+select public.confirm_profile_improvement('improve:request-2', 'c4c4c4c4-c4c4-4c4c-8c4c-c4c4c4c4c4c4');
+
+select is(
+  public.claim_profile_improvement('improve:request-3'),
+  'used',
+  'after confirm the profile improvement is used'
+);
+
+select public.release_profile_improvement('improve:request-2');
+
+select isnt(
+  (select used_at from public.profile_ai_improvements),
+  null,
+  'release never clears a used flag'
+);
+
+select public.confirm_profile_improvement('improve:request-4', 'c5c5c5c5-c5c5-4c5c-8c5c-c5c5c5c5c5c5');
+select public.mark_profile_improvement_used(null);
+
+select is(
+  (select job_id from public.profile_ai_improvements),
+  'c4c4c4c4-c4c4-4c4c-8c4c-c4c4c4c4c4c4'::uuid,
+  'a used flag keeps its job through confirm and mark'
+);
+
+select is(
+  public.claim_profile_improvement('improve:request-2'),
+  'used',
+  'the flag stays used for the request that set it'
+);
+
+select is(
+  (select count(*)::int from public.profile_ai_improvements),
+  1,
+  'a user reads their own profile improvement'
+);
+
+select pg_temp.login('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+select is(
+  (select count(*)::int from public.profile_ai_improvements),
+  0,
+  'a user cannot read another user''s profile improvement'
+);
+
+select public.mark_profile_improvement_used(null);
+
+select isnt(
+  (select used_at from public.profile_ai_improvements),
+  null,
+  'mark_profile_improvement_used sets the flag when no row exists'
+);
+
+select pg_temp.logout();
 
 select * from finish();
 

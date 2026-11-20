@@ -67,6 +67,13 @@ export const applyReceiptSchema = z.looseObject({
 
 export type ApplyReceipt = z.infer<typeof applyReceiptSchema>;
 
+/** The receipt of an `improve_profile` apply (MDI-644): the target is the profile. */
+export const profileApplyReceiptSchema = applyReceiptSchema.extend({
+  target: z.looseObject({ kind: z.literal('profile'), profileId: z.string() }),
+});
+
+export type ProfileApplyReceipt = z.infer<typeof profileApplyReceiptSchema>;
+
 /** One key per proposal, so a retry after a lost answer is recognised as the same Accept. */
 export function applyIdempotencyKey(proposalId: string): string {
   return `apply:${proposalId}`.slice(0, 128);
@@ -142,6 +149,8 @@ const APPLY_ERRORS: Record<string, string> = {
   resume_generated: 'This resume already has a PDF. Create a draft to change it.',
   resume_generation_in_progress: 'A PDF is being created for this resume. Try again when it is ready.',
   resume_not_found: 'Resume not found',
+  profile_not_found: 'Profile not found',
+  profile_improvement_not_used: 'These suggestions can no longer be saved. Start again from your account page.',
   invalid_apply_request: 'The changes could not be saved. Try again.',
 };
 

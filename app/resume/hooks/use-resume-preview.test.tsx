@@ -9,6 +9,15 @@ import type { PreviewRenderInputs } from '@lib/resume/preview-inputs';
 
 import { useResumePreview, type ResumePreviewDeps } from './use-resume-preview';
 
+// Every test injects its own generatePreview. The real module builds the PDF service at import and
+// starts loading fonts without awaiting it (lib/services/resume.service.ts); in jsdom that load
+// fails some time later as an unhandled rejection, so keep it out of this file.
+vi.mock('@lib/resume/generate-preview', () => ({
+  generateResumePreview: vi.fn(async () => {
+    throw new Error('generateResumePreview must be injected in tests');
+  }),
+}));
+
 const baseInput: PreviewRenderInputs = {
   resume: structuredClone(fullResumeContent),
   templateKey: 'senior-level-modern',

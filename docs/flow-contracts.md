@@ -89,6 +89,32 @@ Shown only when `NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE` is on (`featureFlags().resu
 Every AI feature runs on the Talvio LLM service (talvio-llm-service, contract in its `docs/contracts.md`). The OpenAI routes under `/api/resume`, `NEXT_PUBLIC_FLAG_LLM_SERVICE` and the calls to the web app's own AI daily cap were removed in MDI-224.
 
 - Adapter: `app/api/llm/[...path]/route.ts` → `proxyLlmRequest` (`lib/services/llm-proxy.server.ts`). It forwards only the service's routes (documents, sessions, jobs) to `${LLM_SERVICE_URL}/v1/...` with the caller's bearer token and `Idempotency-Key`, and returns the answer unchanged (only `Content-Type` and `Retry-After` headers). No provider SDK, prompts or long-running work: one request, 25 s timeout, 1 MB body cap. The service verifies the token, account status and plan itself. Errors the adapter makes use the service's error body.
+- Profile improvement after Save profile (MDI-645, epic MDI-643): `useProfileImprove` (`app/account/hooks/use-profile-improve.ts`) holds the client logic. The screens are on `/account/improve` (MDI-646). One run makes these calls:
+  1. One `POST /sessions`, with the saved profile from `profileToCareerDocument` (entity ids are row UUIDs) and source `{ kind: 'profile', id: userId, revision: updatedAt }`.
+  2. An `analyze_resume` job.
+  3. A `generate_questions` job (round 1, up to 5, with `analysisJobId`). Zero questions goes to "nothing to ask".
+  4. One `POST /sessions/{id}/answers`, with answered and skipped items.
+  5. An `improve_profile` job, with `targetRole` set to the profile role. It keeps one Idempotency-Key across repeats.
+  6. One `DELETE /sessions/{id}` on done, skip or stop.
+
+  The run, its questions, answers and typed answer are kept under `talvio-llm-improve:v1:profile:user:<id>`, so a reload resumes at the same step. The review (`lib/llm/profile-proposal.ts`) starts with every change selected and claims unconfirmed, drops changes that no longer match the saved profile, and blocks Save while a selected change has an unconfirmed claim. Save calls `apply_llm_proposal` with `improve_profile`; the `save_profile` payload is the saved profile with only the selected changes written in. `useProfileImprovement` reads `profile_ai_improvementsCollection`; once `used_at` is set, a new run is not started.
+- `/account/improve` (MDI-646) is behind `NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE` (`featureFlags().profileAiImprove`, default off; local E2E builds turn it on). With the flag off the route redirects to `/account`, and Save profile opens `/account` as before.
+  - With the flag on, a first Save profile on `/account/create` opens `/account/improve?saved=1` while the improvement is unused (`pathAfterSave` in `use-save-profile-flow.ts`). If it is used, or the lookup fails, Save opens `/account`.
+  - The screens follow the canvas section "AI questions after Save profile": offer (with the "Profile saved" banner after Save), loading with two live steps, one question at a time, review with per-edit checkboxes and claim confirmation, done, used, and the daily limit. Copy lives in `lib/profile-improve-copy.ts`.
+  - **Skip for now**, **Cancel**, **Stop** and **Keep my profile as it is** never write the profile. Only Save in the review does.
+  - The account page shows a "Make your profile stronger" card under the profile header (MDI-647, `app/account/views/improve-card.tsx`). It is shown only when all of these hold: the flag is on, `profile_ai_improvements.used_at` is unset, and the access token's `account_status` is active (`lib/auth/ai-access.ts`). It links to `/account/improve`, and reads **Continue the questions** when this device holds a run in progress. Once the improvement is used, whether the edits were saved or not, the card is gone for good.
+- Once-per-account profile improvement (MDI-648, epic MDI-643): `POST v1/jobs` with `operation: "improve_profile"` is the one route that is not plain pass-through. Before forwarding, the adapter calls `claim_profile_improvement(Idempotency-Key)` as the user (`lib/services/profile-improvement.server.ts`, server GraphQL client):
+  - `used` → `403 profile_improvement_used` without calling the service. The exception is a repeat of the request that used it, which is forwarded so its job comes back.
+  - `busy` → `409 profile_improvement_busy`, which is retryable.
+  - `claimed` or `replay` → forwarded.
+
+  After the service answers:
+  - `202` → `confirm_profile_improvement(key, jobId)`.
+  - `operation_limit_reached` (the service's own once-only refusal, MDI-649) → `mark_profile_improvement_used`.
+  - Any other `4xx` → `release_profile_improvement(key)`.
+  - A `5xx`, a timeout or a lost connection keep the claim, so the client's repeat of the key gets `replay`.
+
+  If the confirm fails, the adapter answers a retryable `503`, so the client repeats the same key, gets the same job and confirms again. If a release or mark-used write fails, the error is logged and the service's answer is returned. If the claim, or the check of who used the improvement, cannot be read, the adapter answers `503` and does not call the service.
 - Client: `createLlmClient` (`lib/llm/client.ts`) calls `/api/llm/v1` through `authedFetch`, with a 20 s timeout. Responses are checked loosely (`lib/llm/contract.ts`): unknown fields and enum members are tolerated, as the contract asks for minor versions. A guest gets `unauthorized` without a request.
 - Errors (`lib/llm/errors.ts`): `quota_exceeded` → capped (reset time from `Retry-After`), `unauthorized` → "Please sign in" (a suspended account keeps the service's message), `stale_context` → regenerate, no answer → offline, `not_found`/`deadline_exceeded`/`revoked` → expired.
 - Jobs: `useLlmJob({ storageKey })` (`hooks/use-llm-job.ts`) runs `createJobRunner` (`lib/llm/job-runner.ts`). The request and its `clientRequestId` are stored before the first send, so a submit that gets no answer is sent again with the same key (up to 3 times, then Retry does it) and the service returns the job it already admitted. The stored job id brings a reload back to the same job, and its result stays until the feature calls `clear()`. Polling follows the service's `pollAfterMs` (0.5–30 s), backs off on network errors, pauses while offline, and stops 60 s after the job's deadline or after 400 polls. Retry retries a retryable job error in place and starts any other failure over with a new key. Cancel cancels on the service and forgets the job; a job admitted after its submission was cancelled is cancelled too.
