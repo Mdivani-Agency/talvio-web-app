@@ -33,6 +33,8 @@ const pillClassName = 'items-center rounded-md bg-secondary text-md font-medium 
 export function TemplateGallery({ templates, onSelect }: TemplateGalleryProps) {
   const trackRef = useRef<HTMLUListElement>(null);
   const [slide, setSlide] = useState(0);
+  /** The card an arrow is scrolling to. Until the row gets there, its scroll events don't move the counter back. */
+  const targetRef = useRef<number | null>(null);
   const last = templates.length - 1;
 
   /** Each slide's scroll position, measured from the first so the track's own padding cancels out. */
@@ -43,8 +45,13 @@ export function TemplateGallery({ templates, onSelect }: TemplateGalleryProps) {
 
   const goTo = (index: number) => {
     const target = Math.max(0, Math.min(last, index));
+    targetRef.current = target;
     trackRef.current?.scrollTo?.({ left: slideOffsets()[target] ?? 0, behavior: 'smooth' });
     setSlide(target);
+  };
+
+  const release = () => {
+    targetRef.current = null;
   };
 
   const onScroll = () => {
@@ -57,6 +64,12 @@ export function TemplateGallery({ templates, onSelect }: TemplateGalleryProps) {
       (best, offset, index) => (Math.abs(offset - track.scrollLeft) < Math.abs(offsets[best] - track.scrollLeft) ? index : best),
       0,
     );
+    if (targetRef.current !== null) {
+      if (current !== targetRef.current) {
+        return;
+      }
+      targetRef.current = null;
+    }
     if (current !== slide) {
       setSlide(current);
     }
@@ -67,6 +80,14 @@ export function TemplateGallery({ templates, onSelect }: TemplateGalleryProps) {
       <ul
         ref={trackRef}
         onScroll={onScroll}
+        // Wherever the row stops, the counter follows it. A swipe, wheel or key takes over from an arrow's scroll.
+        onScrollEnd={() => {
+          targetRef.current = null;
+          onScroll();
+        }}
+        onPointerDown={release}
+        onWheel={release}
+        onKeyDown={release}
         className={cn(
           '-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 [scrollbar-width:none]',
           // A spacer after the last card, the row's width less one card and gap (31.2rem), lets every card reach its
@@ -119,7 +140,7 @@ export function TemplateGallery({ templates, onSelect }: TemplateGalleryProps) {
                 <span className="text-sm leading-[1.4286] text-foreground">{description}</span>
                 <span className="text-sm leading-[1.4286] text-muted-foreground">{templateBestFor(bestFor)}</span>
               </span>
-              <span aria-hidden="true" className={cn(pillClassName, 'flex h-11 w-full justify-center md:hidden')}>
+              <span aria-hidden="true" className={cn(pillClassName, 'flex h-[4.4rem] w-full justify-center md:hidden')}>
                 {TEMPLATES_USE_LABEL}
               </span>
             </button>
