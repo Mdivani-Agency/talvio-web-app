@@ -28,7 +28,24 @@ export type ProfileReviewChange = AiFieldChange & {
   id: string;
   selected: boolean;
   confirmed: boolean;
+  /** The question whose answer the change cites, or null when it comes from the profile alone. */
+  fromQuestionId: string | null;
 };
+
+/** The first answer a raw change cites as evidence. */
+function answerQuestionId(change: unknown): string | null {
+  const evidence = (change as { evidence?: unknown } | null)?.evidence;
+  if (!Array.isArray(evidence)) {
+    return null;
+  }
+  for (const item of evidence) {
+    const ref = item as { sourceKind?: unknown; questionId?: unknown } | null;
+    if (ref?.sourceKind === 'answer' && typeof ref.questionId === 'string') {
+      return ref.questionId;
+    }
+  }
+  return null;
+}
 
 export type ProfileReview = {
   proposalId: string;
@@ -128,7 +145,15 @@ export function reviewProfileProposal(
   const kept = reviewServiceProposal(resume, selectedProposal(proposal, selected), confirmed);
   const applied = kept.changes.filter((change) => !change.needsConfirmation || (change.id !== undefined && confirmed.has(change.id)));
   const changes = all.changes.flatMap((change): ProfileReviewChange[] =>
-    change.id ? [{ ...change, id: change.id, selected: selected.has(change.id), confirmed: confirmed.has(change.id) }] : [],
+    change.id
+      ? [{
+          ...change,
+          id: change.id,
+          selected: selected.has(change.id),
+          confirmed: confirmed.has(change.id),
+          fromQuestionId: answerQuestionId(proposal.changes.find((raw) => raw.id === change.id)),
+        }]
+      : [],
   );
   return {
     proposalId: proposal.proposalId,
