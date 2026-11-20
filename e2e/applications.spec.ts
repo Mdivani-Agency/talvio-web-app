@@ -1,7 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-import { serviceClient } from './fixtures/data';
-import { openSignedIn, persona, resetAndGuard } from './fixtures/resume-ui';
+import { readFeedbackState, resetFeedbackPrompt, serviceClient } from './fixtures/data';
+import { generateFromModal, openSignedIn, persona, resetAndGuard } from './fixtures/resume-ui';
+import { seedProfile, seedResume, SEEDED_RESUME_CONTENT } from './fixtures/resumes';
 import { test } from './fixtures/test';
 
 // Local E2E builds set NEXT_PUBLIC_FLAG_APPLICATION_TRACKER=true (scripts/e2e-env.mjs). The tracker's cards are
@@ -427,4 +428,72 @@ test('APP-06 the panel returns focus to the card and Delete removes the card and
     .eq('user_id', owner.userId);
   expect(count).toBe(0);
   expect((await resumeIds(owner.userId)).length).toBe(2);
+});
+
+async function trackerOwner(personas: Parameters<typeof persona>[0], name: string) {
+  const owner = persona(personas, 'creditsAmple');
+  // The review prompt is due too, so these tests see which one wins.
+  await resetFeedbackPrompt(owner.userId);
+  await seedProfile(owner.userId);
+  const resumeId = await seedResume({ userId: owner.userId, name, content: SEEDED_RESUME_CONTENT });
+  return { owner, resumeId };
+}
+
+const trackerBar = (page: Page) => page.getByRole('status', { name: 'Applying with this resume?' });
+const reviewPrompt = (page: Page) => page.getByRole('dialog', { name: 'How did it go? Review Talvio on Trustpilot' });
+
+test('APP-07 after a new PDF only the tracker bar shows, and Add to tracker makes a card with the resume linked', async ({
+  page,
+  personas,
+}) => {
+  const { owner, resumeId } = await trackerOwner(personas, 'Tracker copy');
+
+  await openSignedIn(page, owner, `/resume/${resumeId}`);
+  await generateFromModal(page, 'Tracker copy');
+  await expect(page.getByRole('dialog', { name: /Generate your PDF/ })).toBeHidden();
+  const bar = trackerBar(page);
+  await expect(bar).toBeVisible();
+  await expect(bar.getByText('Add it to your tracker so you know what you sent where.')).toBeVisible();
+  await expect(reviewPrompt(page)).toHaveCount(0);
+  // The review prompt was not recorded as shown: it waits for the next PDF.
+  expect((await readFeedbackState(owner.userId)).state?.prompts_shown ?? 0).toBe(0);
+
+  await bar.getByRole('button', { name: 'Add to tracker' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add an application' });
+  await expect(dialog.getByLabel('Stage')).toHaveText(/Applied/);
+  await expect(dialog.getByLabel('Resume sent (optional)')).toHaveText(/Tracker copy/);
+  await expect(dialog.getByLabel('Applied on (optional)')).not.toHaveValue('');
+  await dialog.getByLabel('Position').fill('Staff Engineer');
+  await dialog.getByLabel('Company').fill('Northwind Health');
+  await dialog.getByRole('button', { name: 'Add application' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(trackerBar(page)).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'View in tracker' }).click();
+  await expect(page).toHaveURL(/\/account\/applications\?card=/);
+  const panel = page.getByRole('dialog', { name: 'Staff Engineer' });
+  await expect(panel.getByText('Tracker copy')).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Download PDF' })).toBeVisible();
+  await expect
+    .poll(async () => (await ownedCards(owner.userId)).map(({ position, stage }) => ({ position, stage })))
+    .toEqual([{ position: 'Staff Engineer', stage: 'applied' }]);
+
+  await page.keyboard.press('Escape');
+  await page.goto('/account');
+  await expect(page.getByTestId('resume-row').filter({ hasText: 'Tracker copy' }).getByRole('link', { name: /^In tracker/ })).toBeVisible();
+});
+
+test('APP-08 a resume already on a card gets no tracker bar, and the review prompt shows instead', async ({ page, personas }) => {
+  const { owner, resumeId } = await trackerOwner(personas, 'Already tracked');
+  const seeded = await serviceClient()
+    .from('job_applications')
+    .insert({ user_id: owner.userId, position: 'Tech Lead', company: 'Aster Mobility', resume_id: resumeId });
+  if (seeded.error) {
+    throw new Error(seeded.error.message);
+  }
+
+  await openSignedIn(page, owner, `/resume/${resumeId}`);
+  await generateFromModal(page, 'Already tracked');
+  await expect(reviewPrompt(page)).toBeVisible();
+  await expect(trackerBar(page)).toHaveCount(0);
 });

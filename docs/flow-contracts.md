@@ -175,6 +175,12 @@ Preserved from MDI-174. Do not rebuild them.
   - Resume sent shows the linked resume with Open and, for a generated one, Download PDF (the free re-download path). Links open in a new tab with `rel="noopener noreferrer"`. Labels and links are capped at 10.
   - Notes use a minimal TipTap editor (paragraphs, bulleted and numbered lists) and store its HTML (at most 5,000 characters). `NoteContent` (`lib/rich-text/note-content.tsx`) renders that HTML by rebuilding only paragraphs, lists and line breaks as React elements, with no attributes; it never uses `dangerouslySetInnerHTML`.
   - Delete removes the card, its notes and its history (cascade); the linked resume is kept.
+- **Add to tracker after a new PDF** (MDI-658): `FeedbackPromptProvider` (`/resume` layout) decides what follows a new PDF with `choosePostGeneratePrompt` (`lib/post-generate-prompts.ts`): the "Applying with this resume?" bar or the Trustpilot review prompt, never both.
+  - The bar is due when `applicationTracker` is on, no card links the resume or its generated original (`ApplicationsByResumes`), and it was not dismissed for that resume on this device (`talvio-tracker-prompt:v1:<userId>`). A failed check shows no bar.
+  - When the bar is due, `feedback_prompt_due` is not called and `record_feedback_prompt` is not, so the review prompt waits for the next PDF. When it is not due, the review prompt works as before.
+  - Like the review prompt, the bar waits for the Generate dialog to close; the download has already started. It is `role="status"`, takes no focus and stays until dismissed, used or the page is left.
+  - **Add to tracker** opens the Add dialog with the resume linked, Stage Applied and Applied on today. A resume made by "Tailor to a job" also pre-fills Position and Company, kept on this device with the resume (`talvio-tailored-job:v1:<userId>`; the tailor intake has no job post link). The new card goes to the end of its column; the toast offers **View in tracker** (`/account/applications?card=<id>`).
+  - The dashboard's resume rows and the Documents cards show **In tracker** when a card links the resume (Documents matches by `pdf_media_key`).
 
 ## Review prompt after a new PDF (MDI-652)
 

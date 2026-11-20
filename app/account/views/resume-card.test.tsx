@@ -5,6 +5,9 @@ import type { Resume } from '@lib/types';
 
 const allowance = vi.hoisted(() => ({ current: undefined as undefined | { exhausted: boolean; renewsOn: Date } }));
 const mutate = vi.hoisted(() => ({ generate: vi.fn(), remove: vi.fn() }));
+const tracker = vi.hoisted(() => ({ cards: {} as Record<string, string> }));
+
+vi.mock('@app/account/applications/query/use-resume-cards', () => ({ useResumeCards: () => ({ data: tracker.cards }) }));
 
 vi.mock('@app/account/hooks/use-allowance', () => ({ useAllowance: () => ({ allowance: allowance.current }) }));
 vi.mock('@app/resume/query/use-generate-pdf', () => ({
@@ -83,6 +86,25 @@ describe('ResumeCard', () => {
     expect(draft.queryByText('Unpublished draft')).toBeNull();
     expect(draft.getByRole('button', { name: 'Generate PDF' }).hasAttribute('disabled')).toBe(false);
     expect(screen.getByRole('link', { name: 'Create resume' })).toBeTruthy();
+  });
+
+  it('links a resume family that is on a tracker card to that card', () => {
+    tracker.cards = { a: 'card-1' };
+    render(
+      <ResumeCard
+        resumes={[
+          resume({ id: 'a', label: 'Backend CV', pdf: true }),
+          resume({ id: 'b', label: 'Draft CV' }),
+        ]}
+      />,
+    );
+
+    const rows = screen.getAllByTestId('resume-row');
+    expect(within(rows[0]!).getByRole('link', { name: 'In tracker: Backend CV' }).getAttribute('href')).toBe(
+      '/account/applications?card=card-1',
+    );
+    expect(within(rows[1]!).queryByRole('link', { name: /In tracker/ })).toBeNull();
+    tracker.cards = {};
   });
 
   it('disables Generate PDF with the blocked note when no PDFs are left', () => {

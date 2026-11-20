@@ -236,3 +236,16 @@ export function fullDate(value: Date): string {
 export function detailSubheading(company: string, location: string | null): string {
   return location?.trim() ? `${company} · ${location.trim()}` : company;
 }
+
+/** "Add to tracker" after a new resume PDF, and the tracker links elsewhere (MDI-658). */
+export const TRACKER_PROMPT_TITLE = 'Applying with this resume?';
+export const TRACKER_PROMPT_BODY = 'Add it to your tracker so you know what you sent where.';
+export const TRACKER_PROMPT_ADD_LABEL = 'Add to tracker';
+export const TRACKER_PROMPT_DISMISS_LABEL = 'Dismiss';
+export const VIEW_IN_TRACKER_LABEL = 'View in tracker';
+export const IN_TRACKER_LABEL = 'In tracker';
+
+/** The tracker with a card's panel open. */
+export function cardHref(applicationId: string): string {
+  return `/account/applications?card=${encodeURIComponent(applicationId)}`;
+}

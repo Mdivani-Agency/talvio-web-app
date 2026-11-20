@@ -14,6 +14,7 @@ import { isGeneratedResume, isOpenDraft } from '@lib/adapters/resume.adapter';
 import { signInHref } from '@lib/auth/sign-in-href';
 import { DEFAULT_RESUME_TEMPLATE } from '@lib/drafts';
 import { profileToResumeDocument } from '@lib/models/resume-document';
+import { rememberTailoredJob } from '@/lib/post-generate-prompts';
 import { useUserSession } from '@lib/providers';
 import { RESUME_COLORS_MAP } from '@lib/utils';
 
@@ -81,16 +82,19 @@ function TailorPage() {
   }, [profile.data, resumes.data]);
 
   // The new resume and its AI receipt are written together; Create again returns the same resume.
-  const { applyRequest } = tailor;
+  const { applyRequest, jobPost } = tailor;
   const onCreate = useCallback(async () => {
     const request = applyRequest();
     if (!userId || !request) {
       throw new Error('The resume could not be created. Try again.');
     }
     const receipt = await applyLlmProposal(request);
+    // "Add to tracker" pre-fills the card from the job this resume was tailored to (MDI-658). The tailor intake does
+    // not ask for the job post's link, so only the title and company are known.
+    rememberTailoredJob(userId, receipt.target.resumeId, { position: jobPost?.title ?? '', company: jobPost?.company ?? '' });
     await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
     return receipt.target.resumeId;
-  }, [applyRequest, queryClient, userId]);
+  }, [applyRequest, jobPost, queryClient, userId]);
 
   if (isPending || (userId && (profile.isLoading || resumes.isLoading))) {
     return <Loading message="Loading your resumes..." />;

@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { TRUSTPILOT_REVIEW_URL } from '../lib/feedback-copy';
 
-import { readFeedbackState, resetFeedbackPrompt } from './fixtures/data';
+import { readFeedbackState, resetFeedbackPrompt, serviceClient } from './fixtures/data';
 import { expect, test } from './fixtures/test';
 import { generateFromModal, openSignedIn, persona, resetAndGuard } from './fixtures/resume-ui';
 import { seedProfile, seedResume, SEEDED_RESUME_CONTENT } from './fixtures/resumes';
@@ -46,6 +46,13 @@ async function ownerWithResumes(personas: Parameters<typeof persona>[0], names: 
   const ids: string[] = [];
   for (const name of names) {
     ids.push(await seedResume({ userId: owner.userId, name, content: SEEDED_RESUME_CONTENT }));
+  }
+  // Each resume is already on a tracker card, so the "Add to tracker" bar is not due and the review prompt is (MDI-658).
+  const cards = await serviceClient()
+    .from('job_applications')
+    .insert(ids.map((resumeId, index) => ({ user_id: owner.userId, position: `Role ${index}`, company: 'Acme', resume_id: resumeId })));
+  if (cards.error) {
+    throw new Error(cards.error.message);
   }
   return { owner, ids };
 }
