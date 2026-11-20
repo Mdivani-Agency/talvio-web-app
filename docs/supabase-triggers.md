@@ -23,7 +23,7 @@ has an `updated_at` column:
 
 ## Optional template field checks
 
-Added by `20261120000100_template_optional_fields.sql` (MDI-664). Both are
+Added by `20261120000200_template_optional_fields.sql` (MDI-664). Both are
 `SECURITY INVOKER` trigger functions with `EXECUTE` revoked from `public`,
 `anon` and `authenticated`; pg_graphql does not expose trigger functions.
 

@@ -41,7 +41,7 @@ export const profileSchema = baseProfileSchema.partial({
   groupSkills: true,
 });
 
-/** Limits shared with the database checks in `20261120000100_template_optional_fields.sql`. */
+/** Limits shared with the database checks in `20261120000200_template_optional_fields.sql`. */
 export const HEADLINE_ACHIEVEMENTS_MAX = 3;
 export const HEADLINE_VALUE_MAX = 24;
 export const HEADLINE_LABEL_MAX = 60;
