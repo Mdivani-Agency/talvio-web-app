@@ -7,13 +7,14 @@ describe('feature flags', () => {
     vi.unstubAllEnvs();
   });
 
-  it('defaults to beta on, plans page off, purchase UI off, and both AI improvements off', () => {
+  it('defaults to beta on and every other flag off', () => {
     const defaults = {
       betaMode: true,
       plansPage: false,
       creditPurchaseUi: false,
       resumeAiImprove: false,
       profileAiImprove: false,
+      applicationTracker: false,
     };
     expect(featureFlags({})).toEqual(defaults);
     expect(DEFAULT_FEATURE_FLAGS).toEqual(defaults);
@@ -27,8 +28,16 @@ describe('feature flags', () => {
         NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI: '1',
         NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: 'on',
         NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: 'true',
+        NEXT_PUBLIC_FLAG_APPLICATION_TRACKER: 'on',
       }),
-    ).toEqual({ betaMode: false, plansPage: true, creditPurchaseUi: true, resumeAiImprove: true, profileAiImprove: true });
+    ).toEqual({
+      betaMode: false,
+      plansPage: true,
+      creditPurchaseUi: true,
+      resumeAiImprove: true,
+      profileAiImprove: true,
+      applicationTracker: true,
+    });
     expect(featureFlags({ NEXT_PUBLIC_FLAG_PLANS_PAGE: ' ON ', NEXT_PUBLIC_FLAG_BETA_MODE: '0' })).toMatchObject({
       betaMode: false,
       plansPage: true,
@@ -43,6 +52,8 @@ describe('feature flags', () => {
 
   it('reads process.env when no env is given', () => {
     vi.stubEnv('NEXT_PUBLIC_FLAG_PLANS_PAGE', 'true');
+    vi.stubEnv('NEXT_PUBLIC_FLAG_APPLICATION_TRACKER', 'true');
     expect(featureFlags().plansPage).toBe(true);
+    expect(featureFlags().applicationTracker).toBe(true);
   });
 });

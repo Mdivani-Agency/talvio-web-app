@@ -159,6 +159,17 @@ Preserved from MDI-174. Do not rebuild them.
 
 `app/account/documents` download of an existing media URL is unchanged. The empty `onDownload` noted in the pre-MDI-174 review is fixed in `edit-resume.tsx`.
 
+## Application tracker (MDI-656, epic MDI-654)
+
+`/account/applications` is behind `NEXT_PUBLIC_FLAG_APPLICATION_TRACKER` (`featureFlags().applicationTracker`, default off; local E2E builds turn it on). Off, the route is the 404 page and the sidebar has no Applications entry.
+
+- The board loads every card (`useApplications`, pages of `APPLICATION_PAGE_SIZE` = 100 while `hasNextPage`) and searches, filters by label and counts on the client. Picked labels are in the URL (`?labels=Remote&labels=Top%20choice`); a card must carry every picked label. Labels no card carries are ignored.
+- Five columns: Saved, Applied, Interview, Offer, Closed. Closed holds accepted, rejected and withdrawn, with the outcome as a badge.
+- A move updates the cached board first (`useUpdateApplication` `onMutate`), then saves `stage`, `sort_order` and, when moving into Applied with no date, `applied_on`. A failed save puts the card back and toasts through `submitWrapper`. `sort_order` is the midpoint between the shown neighbours, so a card dropped while filtered keeps its place among the cards on screen.
+- Drag and drop (`@dnd-kit`, pointer only) works on the md+ board. Every card also has a **Move to…** menu with all seven stages: the keyboard and phone route. Dropping a card on Closed asks for the outcome. Below md the board is one stage at a time, as tabs.
+- **Add application** inserts a card at the end of its column. A job post link is saved as a link named "Job post".
+- Stage history and `stage_changed_at` are written by the database (MDI-655), never by the client.
+
 ## Confirmed gaps vs already fixed
 
 ### Already fixed — do not treat as open work

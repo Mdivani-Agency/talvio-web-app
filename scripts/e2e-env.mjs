@@ -56,6 +56,7 @@ export function localE2EEnv(status) {
     BLOG_API_TOKEN: BLOG_E2E_TOKEN,
     NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: 'true',
     NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: 'true',
+    NEXT_PUBLIC_FLAG_APPLICATION_TRACKER: 'true',
   };
   assertLocalServiceOrigins(env);
   return env;

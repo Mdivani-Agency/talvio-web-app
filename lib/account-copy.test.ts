@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ACCOUNT_NAV_LINKS,
+  APPLICATIONS_NAV_LINK,
+  accountNavLinks,
   DOCUMENTS_MORE_ERROR,
   DOCUMENT_PREVIEW_LOADING,
   DOCUMENT_PREVIEW_UNAVAILABLE,
@@ -60,6 +62,12 @@ describe('account copy', () => {
     expect(CREATE_RESUME_HREF).toBe('/resume');
   });
 
+  it('adds Applications under Documents only while the tracker is on', () => {
+    expect(accountNavLinks(false)).toEqual(ACCOUNT_NAV_LINKS);
+    expect(accountNavLinks(true)).toEqual([...ACCOUNT_NAV_LINKS, { name: 'Applications', href: '/account/applications' }]);
+    expect(APPLICATIONS_NAV_LINK.href).toBe('/account/applications');
+  });
+
   it('builds initials from the name, or the email when there is no name', () => {
     expect(accountInitials('Maya Lindqvist', 'maya@example.com')).toBe('ML');
     expect(accountInitials('  ada  ', 'a@example.com')).toBe('A');
@@ -72,6 +80,7 @@ describe('account copy', () => {
     expect(activeAccountHref('/account')).toBe('/account');
     expect(activeAccountHref('/account/create')).toBe('/account');
     expect(activeAccountHref('/account/documents')).toBe('/account/documents');
+    expect(activeAccountHref('/account/applications')).toBe('/account/applications');
   });
 
   it('uses the approved dashboard copy', () => {

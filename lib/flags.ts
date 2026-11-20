@@ -26,6 +26,8 @@ export type FeatureFlags = {
    * questions during setup can suggest edits; that is true only with this on.
    */
   profileAiImprove: boolean;
+  /** The application tracker: Applications in the account sidebar and `/account/applications` (MDI-654). Off until launch. */
+  applicationTracker: boolean;
 };
 
 export type FeatureFlagEnv = {
@@ -34,6 +36,7 @@ export type FeatureFlagEnv = {
   NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI?: string;
   NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE?: string;
   NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE?: string;
+  NEXT_PUBLIC_FLAG_APPLICATION_TRACKER?: string;
 };
 
 export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
@@ -42,6 +45,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   creditPurchaseUi: false,
   resumeAiImprove: false,
   profileAiImprove: false,
+  applicationTracker: false,
 };
 
 function parseFlag(value: string | undefined, fallback: boolean): boolean {
@@ -66,6 +70,7 @@ function processFlagEnv(): FeatureFlagEnv {
     NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI: process.env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI,
     NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE,
     NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE,
+    NEXT_PUBLIC_FLAG_APPLICATION_TRACKER: process.env.NEXT_PUBLIC_FLAG_APPLICATION_TRACKER,
   };
 }
 
@@ -76,5 +81,6 @@ export function featureFlags(env: FeatureFlagEnv = processFlagEnv()): FeatureFla
     creditPurchaseUi: parseFlag(env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI, DEFAULT_FEATURE_FLAGS.creditPurchaseUi),
     resumeAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.resumeAiImprove),
     profileAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.profileAiImprove),
+    applicationTracker: parseFlag(env.NEXT_PUBLIC_FLAG_APPLICATION_TRACKER, DEFAULT_FEATURE_FLAGS.applicationTracker),
   };
 }
