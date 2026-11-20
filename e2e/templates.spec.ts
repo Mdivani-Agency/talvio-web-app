@@ -63,7 +63,8 @@ test.describe('templates', () => {
       await page.getByRole('button', { name: /Fill it in yourself/ }).click();
       await waitForPreview(page);
       await page.getByRole('tab', { name: 'Design', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'Classic template, selected', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      // A new resume without a template starts on Modern (`DEFAULT_RESUME_TEMPLATE`), as before.
+      await expect(page.getByRole('button', { name: 'Modern template, selected', exact: true })).toHaveAttribute('aria-pressed', 'true');
       await page.evaluate(() => window.localStorage.clear());
     }
   });

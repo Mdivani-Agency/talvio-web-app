@@ -5,8 +5,14 @@ import { profileToResumeDocument } from '@lib/models/resume-document';
 import { TEMPLATE_LIST } from '@lib/templates';
 
 import { fullAccountDto } from '../../test/fixtures/flow';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
+import { resumeFonts } from '@lib/pdf-templates/fonts';
+
 import {
   generateResumePdfBytes,
+  renderCharset,
   unsupportedCharacters,
   UnsupportedCharactersError,
   unsupportedStandardCharacters,
@@ -88,6 +94,50 @@ describe('unsupportedCharacters', () => {
   it('checks against the character set of the font the render used', () => {
     const latinAndCyrillic = new Set([...'AdaИван'].map((char) => char.codePointAt(0)!));
     expect(unsupportedCharacters({ name: 'Ada Иван', role: '文' }, latinAndCyrillic)).toEqual(['文']);
+  });
+});
+
+describe('renderCharset', () => {
+  /** Serves `public/fonts` from disk; Inter is fetched as in the app. */
+  const serveLocalFonts = () => {
+    const realFetch = globalThis.fetch;
+    return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      const local = /^https:\/\/fonts\.test(\/fonts\/.+\.ttf)$/.exec(url)?.[1];
+      return local ? new Response(await readFile(resolve('public', `.${local}`))) : realFetch(input, init);
+    });
+  };
+  const fonts = resumeFonts('https://fonts.test');
+  const code = (char: string) => char.codePointAt(0)!;
+
+  it('keeps only the characters every font of the template has', async () => {
+    const { technical, classic } = await import('@lib/pdf-templates');
+    const fetchSpy = serveLocalFonts();
+    try {
+      // Technical sets text in IBM Plex Mono, which has no Greek; Inter alone has it.
+      const mono = await renderCharset(technical, 'all', fonts);
+      expect(mono.has(code('A'))).toBe(true);
+      expect(mono.has(code('Ж'))).toBe(true);
+      expect(mono.has(code('α'))).toBe(false);
+      expect((await renderCharset(technical, 'body', fonts)).has(code('Ж'))).toBe(false);
+
+      // Classic is Source Serif 4, which has Greek.
+      expect((await renderCharset(classic, 'all', fonts)).has(code('α'))).toBe(true);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  }, 60_000);
+
+  it('counts a font file it cannot read as the standard set', async () => {
+    const { technical } = await import('@lib/pdf-templates');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'));
+    try {
+      const charset = await renderCharset(technical, 'all', resumeFonts('https://unreachable.test'));
+      expect(charset.has(code('é'))).toBe(true);
+      expect(charset.has(code('Ж'))).toBe(false);
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 });
 
