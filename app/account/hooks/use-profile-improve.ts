@@ -358,6 +358,19 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
     }
   }, [fail, job, jobRequest, llm, persist]);
 
+  /**
+   * Every question is answered but no suggestions job is stored: the page was reloaded while the
+   * answers were being sent. Send them (or skip that, when they arrived) and request the job again.
+   */
+  const answeredWithoutProposal = Boolean(
+    stored?.questions?.length && !stored.currentQuestionId && !stored.running && !stored.proposal,
+  );
+  useEffect(() => {
+    if (answeredWithoutProposal && !pending && !failure && !done) {
+      void runProposal();
+    }
+  }, [answeredWithoutProposal, done, failure, pending, runProposal]);
+
   /** Starts a run, or picks up the stored one. Does nothing once the improvement is used. */
   const start = useCallback(() => {
     setDone(false);
@@ -366,6 +379,8 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
     if (session) {
       if (!session.questions && !session.running && !session.proposal && !pending) {
         void runAnalysis(session);
+      } else if (session.questions?.length && !session.currentQuestionId && !session.running && !session.proposal && !pending) {
+        void runProposal();
       }
       return;
     }
@@ -395,7 +410,7 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
     };
     persist(created);
     void runAnalysis(created);
-  }, [account, improvement.data?.used, pending, persist, runAnalysis, userId]);
+  }, [account, improvement.data?.used, pending, persist, runAnalysis, runProposal, userId]);
 
   const setUnsentAnswer = useCallback((unsentAnswer: string) => {
     const session = storedRef.current;

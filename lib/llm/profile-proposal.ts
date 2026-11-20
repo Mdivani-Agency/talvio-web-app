@@ -57,13 +57,14 @@ function acceptedAccount(account: AccountDto, review: ServiceReview): AccountDto
   const accepted = documentToAiPayload(review.resume) as unknown as Record<string, Item[]> & { profile: Item };
   let next: AccountDto = account;
 
+  // Read from the reviewed document itself: the payload view drops an empty tagline, and an
+  // accepted change may clear it.
+  const reviewedProfile = (review.resume.profile ?? {}) as Item;
   const profilePatch: Item = {};
   for (const change of review.changes) {
     if (change.section === 'profile' && (change.field === 'role' || change.field === 'tagline')) {
-      const value = accepted.profile[change.field];
-      if (typeof value === 'string') {
-        profilePatch[change.field] = value;
-      }
+      const value = reviewedProfile[change.field];
+      profilePatch[change.field] = typeof value === 'string' ? value : '';
     }
   }
   if (Object.keys(profilePatch).length) {

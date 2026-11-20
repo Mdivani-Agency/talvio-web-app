@@ -80,6 +80,16 @@ describe('reviewProfileProposal', () => {
     expect(review.account.profile.email).toBe('ada@talvio.test');
   });
 
+  it('writes an accepted change that clears the tagline', () => {
+    const clear: ServiceProposal = {
+      ...proposal,
+      changes: [{ ...proposal.changes[0]!, id: 'clear', proposedValue: '' }],
+    };
+    const review = reviewProfileProposal(fullAccountDto, clear, new Set(['clear']), new Set());
+    expect(review.applied.map((change) => change.id)).toEqual(['clear']);
+    expect(review.account.profile.tagline).toBe('');
+  });
+
   it('adds a confirmed skill as a new row', () => {
     const review = reviewProfileProposal(fullAccountDto, proposal, new Set(['skill']), new Set(['skill']));
     expect(review.account.skills).toEqual([{ id: SKILL_ID, name: 'TypeScript' }, { name: 'Mentoring' }]);

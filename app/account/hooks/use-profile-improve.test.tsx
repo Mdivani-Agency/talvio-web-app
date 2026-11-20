@@ -283,6 +283,23 @@ describe('useProfileImprove', () => {
     second.unmount();
   });
 
+  it('requests the suggestions again after a reload while the answers were being sent', async () => {
+    const client = fakeClient();
+    client.submitAnswers.mockImplementationOnce(() => new Promise(() => undefined));
+    const first = setup(client);
+    act(() => first.result.current.start());
+    await waitFor(() => expect(first.result.current.step).toBe('questions'), WAIT);
+    act(() => first.result.current.skipRemaining());
+    expect(first.result.current.step).toBe('loadingProposal');
+    first.unmount();
+
+    const second = setup(client);
+    await waitFor(() => expect(second.result.current.step).toBe('review'), WAIT);
+    expect(client.submitAnswers).toHaveBeenCalledTimes(2);
+    expect(operations(client).filter((operation) => operation === 'improve_profile')).toHaveLength(1);
+    second.unmount();
+  });
+
   it('starts nothing once the improvement is used', async () => {
     mockGraphqlSdk.ProfileImprovement = vi.fn().mockResolvedValue({
       profile_ai_improvementsCollection: { edges: [{ node: { used_at: '2026-11-19T09:00:00Z', applied_at: null } }] },
