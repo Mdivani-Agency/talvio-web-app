@@ -77,6 +77,27 @@ export function sortOrderAt(shownCards: JobApplication[], index: number): number
   return sortOrderBetween(shownCards[clamped - 1]?.sortOrder, shownCards[clamped]?.sortOrder);
 }
 
+/**
+ * Where a dragged card lands in its final column. `ids` is the column as the board shows it during the drag (the card
+ * already in it). Dropping on another card takes that card's place; dropping on the column itself (the space below
+ * the last card) puts it at the end.
+ */
+export function dropOrder(ids: string[], activeId: string, overId: string, column: string): string[] {
+  const from = ids.indexOf(activeId);
+  if (from === -1) {
+    return ids;
+  }
+  const without = ids.filter((id) => id !== activeId);
+  if (overId === column) {
+    return [...without, activeId];
+  }
+  const to = ids.indexOf(overId);
+  if (to === -1 || to === from) {
+    return ids;
+  }
+  return [...without.slice(0, to), activeId, ...without.slice(to)];
+}
+
 /** The sort_order that puts a card at the end of a column. */
 export function sortOrderAtEnd(columnCards: JobApplication[]): number {
   return sortOrderBetween(columnCards.at(-1)?.sortOrder, undefined);

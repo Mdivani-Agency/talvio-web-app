@@ -73,6 +73,9 @@ export const ADD_FIELDS = {
   appliedOn: { label: 'Applied on (optional)' },
   resumeId: { label: 'Resume sent (optional)', placeholder: 'Choose one of your resumes', none: 'No resume' },
 } as const;
+/** The resume picker could not load the user's resumes; "No resume" is not the whole list. */
+export const RESUMES_LOAD_ERROR = "Your resumes didn't load, so you can't pick one yet.";
+export const RESUMES_RETRY_LABEL = 'Try again';
 export const ADD_CANCEL_LABEL = 'Cancel';
 export const ADD_SUBMIT_LABEL = 'Add application';
 export const APPLICATION_ADDED_MESSAGE = 'Application added';

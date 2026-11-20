@@ -9,6 +9,7 @@ import {
   EMPTY_CTA_LABEL,
   EMPTY_TITLE,
   NO_MATCHING_CARDS,
+  RESUMES_LOAD_ERROR,
   OUTCOME_NAMES,
   STAGE_NAMES,
   applicationsSummary,
@@ -28,6 +29,7 @@ describe('applications copy', () => {
     );
     expect(EMPTY_CTA_LABEL).toBe('Add your first application');
     expect(NO_MATCHING_CARDS).toBe('No cards with these labels');
+    expect(RESUMES_LOAD_ERROR).toBe("Your resumes didn't load, so you can't pick one yet.");
   });
 
   it('names every stage, column and outcome', () => {

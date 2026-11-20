@@ -21,7 +21,7 @@ import { BOARD_COLUMNS } from '@lib/schema/application.schema';
 import type { ApplicationStage, BoardColumn, JobApplication } from '@lib/types';
 import { cn } from '@lib/utils';
 
-import { sortOrderAt, type BoardColumns } from '../board';
+import { dropOrder, sortOrderAt, type BoardColumns } from '../board';
 import { ApplicationCard } from './application-card';
 import { COLUMN_DOTS } from './tones';
 
@@ -178,15 +178,7 @@ export function Board({ columns, now, emptyHint, onDrop, onMove }: BoardProps) {
     if (!column) {
       return;
     }
-    // Within the column, the drop target's place is where the card goes.
-    const ids = current[column];
-    const overIndex = ids.indexOf(String(over.id));
-    const fromIndex = ids.indexOf(id);
-    const finalIds = [...ids];
-    if (overIndex !== -1 && fromIndex !== -1 && overIndex !== fromIndex) {
-      finalIds.splice(fromIndex, 1);
-      finalIds.splice(overIndex, 0, id);
-    }
+    const finalIds = dropOrder(current[column], id, String(over.id), column);
     const index = finalIds.indexOf(id);
     const neighbours = finalIds.filter((item) => item !== id).map((item) => byId.get(item)!);
     const startColumn = columnOfId(layoutOf(columns), id);

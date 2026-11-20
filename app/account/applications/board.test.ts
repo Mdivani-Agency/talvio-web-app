@@ -5,6 +5,7 @@ import type { JobApplication } from '@lib/types';
 import {
   calendarDay,
   cardMatches,
+  dropOrder,
   countActive,
   dateLine,
   groupByColumn,
@@ -123,6 +124,23 @@ describe('sort order', () => {
     expect(sortOrderAt(shown, 2)).toBe(3);
     expect(sortOrderAt([], 0)).toBe(0);
     expect(sortOrderAtEnd(shown)).toBe(3);
+  });
+});
+
+describe('dropOrder', () => {
+  it('takes the place of the card it is dropped on, up or down', () => {
+    expect(dropOrder(['a', 'b', 'c'], 'a', 'c', 'saved')).toEqual(['b', 'c', 'a']);
+    expect(dropOrder(['a', 'b', 'c'], 'c', 'a', 'saved')).toEqual(['c', 'a', 'b']);
+  });
+
+  it('goes to the end when dropped on the column below the last card', () => {
+    expect(dropOrder(['a', 'b', 'c'], 'a', 'saved', 'saved')).toEqual(['b', 'c', 'a']);
+  });
+
+  it('stays put when dropped on itself or outside the column', () => {
+    expect(dropOrder(['a', 'b'], 'a', 'a', 'saved')).toEqual(['a', 'b']);
+    expect(dropOrder(['a', 'b'], 'a', 'elsewhere', 'saved')).toEqual(['a', 'b']);
+    expect(dropOrder(['a', 'b'], 'x', 'b', 'saved')).toEqual(['a', 'b']);
   });
 });
 
