@@ -203,8 +203,9 @@ export function ResumeEditorShell({
       />
       {family ? <DraftBanner family={family} /> : null}
       <EditorTabs view={view} onView={setView} hasIssues={hasIssues} variant="phone" className="px-4 pt-3 pb-2 md:hidden" />
-      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,40rem)_minmax(0,1fr)] lg:grid-cols-[48rem_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,40rem)_minmax(0,1fr)] lg:grid-cols-[clamp(51.2rem,42vw,88rem)_minmax(0,1fr)]">
         <div
+          data-testid="editor-panel"
           className={cn(
             'relative min-h-0 flex-col md:flex md:border-r md:border-border',
             view === 'preview' ? 'hidden' : 'flex',

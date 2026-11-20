@@ -12,7 +12,7 @@ interface ResumeImageCarouselProps {
 /** The preview pages at A4 ratio, sized to the stage's height, with a spinner while a new render loads. */
 export function ResumeImageCarousel({ isLoading, images = [], currentIndex, className }: ResumeImageCarouselProps) {
   return (
-    <div className={cn('relative aspect-[210/297]', className)}>
+    <div data-testid="preview-page" className={cn('relative aspect-[210/297]', className)}>
       {isLoading && (
         <div className="absolute top-0 left-0 z-10 flex h-full w-full items-center justify-center">
           <Icon type="Spinner" className="size-8 animate-spin text-primary-500" />

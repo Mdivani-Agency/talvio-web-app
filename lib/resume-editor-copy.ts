@@ -55,6 +55,8 @@ export const pageOfText = (page: number, count: number) => `Page ${page} of ${co
 export const PREVIOUS_PAGE = 'Previous page';
 export const NEXT_PAGE = 'Next page';
 export const FULL_SIZE_LABEL = 'Full size';
+/** A toggle beside Full size: the page fills the stage's width, up to A4 at real size, and the stage scrolls. */
+export const FIT_WIDTH_LABEL = 'Fit width';
 export const previewImageAlt = (page: number) => `Preview of page ${page} of your resume`;
 
 export const DRAFT_BANNER = {

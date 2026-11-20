@@ -1,9 +1,9 @@
 'use client';
-import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2, MoveHorizontal } from 'lucide-react';
 
 import { Button } from '@components/ui';
 import { cn } from '@lib/utils/tailwind';
-import { FULL_SIZE_LABEL, NEXT_PAGE, PREVIOUS_PAGE, pageOfText } from '@/lib/resume-editor-copy';
+import { FIT_WIDTH_LABEL, FULL_SIZE_LABEL, NEXT_PAGE, PREVIOUS_PAGE, pageOfText } from '@/lib/resume-editor-copy';
 
 type PreviewToolbarProps = {
   imageCount: number;
@@ -12,9 +12,12 @@ type PreviewToolbarProps = {
   goToPrevious: () => void;
   goToNext: () => void;
   handlePreviewOpen: () => void;
+  /** Fit width (MDI-667). The toggle shows only from `lg`, where the preview sits beside the panel. */
+  fitWidth?: boolean;
+  onFitWidthChange?: (next: boolean) => void;
 };
 
-/** Under the preview: Previous page, "Page x of y", Next page and Full size. */
+/** Under the preview: Previous page, "Page x of y", Next page, Fit width (from `lg`) and Full size. */
 export const PreviewToolbar = ({
   imageCount,
   currentIndex,
@@ -22,6 +25,8 @@ export const PreviewToolbar = ({
   goToPrevious,
   goToNext,
   handlePreviewOpen,
+  fitWidth = false,
+  onFitWidthChange,
 }: PreviewToolbarProps) => {
   const empty = imageCount === 0;
   return (
@@ -55,6 +60,18 @@ export const PreviewToolbar = ({
         <ChevronRight aria-hidden="true" className="size-4" />
       </Button>
       <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
+      {onFitWidthChange ? (
+        <Button
+          type="button"
+          variant="ghost"
+          aria-pressed={fitWidth}
+          className="hidden h-[4.4rem] px-3 aria-pressed:bg-accent aria-pressed:text-accent-foreground lg:inline-flex"
+          onClick={() => onFitWidthChange(!fitWidth)}
+        >
+          <MoveHorizontal aria-hidden="true" className="size-4" />
+          {FIT_WIDTH_LABEL}
+        </Button>
+      ) : null}
       <Button type="button" variant="ghost" className="h-[4.4rem] px-3" disabled={empty} onClick={handlePreviewOpen}>
         <Maximize2 aria-hidden="true" className="size-4" />
         {FULL_SIZE_LABEL}

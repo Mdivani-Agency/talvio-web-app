@@ -34,4 +34,47 @@ describe('PreviewToolbar', () => {
       expect(screen.getByRole('button', { name }).hasAttribute('disabled')).toBe(true);
     }
   });
+
+  it('toggles Fit width with aria-pressed, shown only from lg', () => {
+    const onFitWidthChange = vi.fn();
+    const { rerender } = render(
+      <PreviewToolbar
+        imageCount={1}
+        currentIndex={0}
+        goToPrevious={vi.fn()}
+        goToNext={vi.fn()}
+        handlePreviewOpen={vi.fn()}
+        fitWidth={false}
+        onFitWidthChange={onFitWidthChange}
+      />,
+    );
+    const toggle = screen.getByRole('button', { name: 'Fit width' });
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.className).toContain('hidden');
+    expect(toggle.className).toContain('lg:inline-flex');
+    fireEvent.click(toggle);
+    expect(onFitWidthChange).toHaveBeenLastCalledWith(true);
+
+    rerender(
+      <PreviewToolbar
+        imageCount={1}
+        currentIndex={0}
+        goToPrevious={vi.fn()}
+        goToNext={vi.fn()}
+        handlePreviewOpen={vi.fn()}
+        fitWidth
+        onFitWidthChange={onFitWidthChange}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Fit width' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Fit width' }));
+    expect(onFitWidthChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it('leaves out Fit width without a handler', () => {
+    render(
+      <PreviewToolbar imageCount={1} currentIndex={0} goToPrevious={vi.fn()} goToNext={vi.fn()} handlePreviewOpen={vi.fn()} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Fit width' })).toBeNull();
+  });
 });
