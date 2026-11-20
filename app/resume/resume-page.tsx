@@ -18,6 +18,7 @@ import type { SaveStatus } from '@lib/resume/save-queue';
 import { useUserSession } from '@lib/providers';
 import type { PreviewDto, Resume } from '@lib/types';
 
+import { useFeedbackPrompt } from './providers/feedback-prompt-provider';
 import { useResumeContext } from './providers/state-provider';
 import { ResumeEditorShell } from './views/resume-editor-shell';
 
@@ -43,7 +44,8 @@ export function ResumePreviewPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved-locally');
   const [saveMessage, setSaveMessage] = useState<string>();
   const downloadLock = useRef<Promise<Resume> | null>(null);
-  const generatePdf = useGenerateResumePdf(session?.user.id);
+  const feedbackPrompt = useFeedbackPrompt();
+  const generatePdf = useGenerateResumePdf(session?.user.id, { onNewPdf: feedbackPrompt.notifyNewPdf });
 
   const signInReturn = useCallback(() => {
     const template = searchParams.get('template');

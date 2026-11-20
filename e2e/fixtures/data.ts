@@ -85,7 +85,36 @@ async function createUser(client: SupabaseClient, email: string) {
   if (created.error || !created.data.user) {
     throw new Error(created.error?.message ?? `Could not create ${email}`);
   }
-  return created.data.user.id;
+  const userId = created.data.user.id;
+  // Local E2E builds turn the review prompt on (MDI-652). A persona that already clicked through to Trustpilot is never
+  // asked, so only e2e/feedback.spec.ts, which clears this row, sees the prompt.
+  const optedOut = await client
+    .from('feedback_prompt_state')
+    .insert({ user_id: userId, trustpilot_clicked_at: new Date().toISOString() });
+  if (optedOut.error) {
+    throw new Error(optedOut.error.message);
+  }
+  return userId;
+}
+
+/** Lets a persona see the review prompt: no prompts yet and no Trustpilot click. */
+export async function resetFeedbackPrompt(userId: string) {
+  const removed = await serviceClient().from('feedback_prompt_state').delete().eq('user_id', userId);
+  if (removed.error) {
+    throw new Error(removed.error.message);
+  }
+}
+
+export async function readFeedbackState(userId: string) {
+  const client = serviceClient();
+  const [state, messages] = await Promise.all([
+    client.from('feedback_prompt_state').select('prompts_shown, last_prompted_at, trustpilot_clicked_at').eq('user_id', userId).maybeSingle(),
+    client.from('user_feedback').select('comment, resume_id').eq('user_id', userId),
+  ]);
+  if (state.error || messages.error) {
+    throw new Error(state.error?.message ?? messages.error?.message);
+  }
+  return { state: state.data, messages: messages.data ?? [] };
 }
 
 async function insertProfile(client: SupabaseClient, userId: string, email: string) {

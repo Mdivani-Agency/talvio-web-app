@@ -18,9 +18,12 @@ export function triggerBrowserDownload(url: string, filename: string) {
   link.remove();
 }
 
-export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
+/** The resume with its PDF, and whether this call created a new PDF (`false` for a free re-download). */
+export type GeneratedPdf = { resume: Resume; generated: boolean };
+
+export async function generatePdfFile(resume: Resume): Promise<GeneratedPdf> {
   if (isGeneratedResume(resume) && resume.media?.url) {
-    return resume;
+    return { resume, generated: false };
   }
 
   try {
@@ -29,9 +32,9 @@ export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
       body: JSON.stringify({ resumeId: resume.id }),
     });
 
-    let payload: { error?: string; url?: string; key?: string } = {};
+    let payload: { error?: string; url?: string; key?: string; generated?: boolean } = {};
     try {
-      payload = (await response.json()) as { error?: string; url?: string; key?: string };
+      payload = (await response.json()) as typeof payload;
     } catch {
       payload = {};
     }
@@ -44,15 +47,19 @@ export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
     }
 
     return {
-      ...resume,
-      media: { url: payload.url, key: payload.key || resume.media?.key || '' },
+      resume: {
+        ...resume,
+        media: { url: payload.url, key: payload.key || resume.media?.key || '' },
+      },
+      generated: payload.generated === true,
     };
   } catch (error) {
     // A dropped response can arrive after finalize already stored the file.
     try {
       const fresh = await fetchResume(resume.id);
       if (isGeneratedResume(fresh) && fresh.media?.url) {
-        return fresh;
+        // Unknown whether this call created it; a lost response does not open the review prompt.
+        return { resume: fresh, generated: false };
       }
     } catch {
       // Keep the original failure so a real credit or render error stays visible.
@@ -61,20 +68,39 @@ export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
   }
 }
 
-export async function downloadResumePdf(resume: Resume): Promise<Resume> {
-  const generated = await generateAndPersistPdf(resume);
-  if (!generated.media?.url) {
-    throw new Error('Resume PDF was not created');
-  }
-  triggerBrowserDownload(generated.media.url, generated.name);
-  return generated;
+export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
+  return (await generatePdfFile(resume)).resume;
 }
 
-export function useGenerateResumePdf(userId?: string) {
+export async function downloadPdfFile(resume: Resume): Promise<GeneratedPdf> {
+  const result = await generatePdfFile(resume);
+  if (!result.resume.media?.url) {
+    throw new Error('Resume PDF was not created');
+  }
+  triggerBrowserDownload(result.resume.media.url, result.resume.name);
+  return result;
+}
+
+export async function downloadResumePdf(resume: Resume): Promise<Resume> {
+  return (await downloadPdfFile(resume)).resume;
+}
+
+type GenerateResumePdfOptions = {
+  /** Called after the download of a newly generated PDF has started; not after a free re-download. */
+  onNewPdf?: (resume: Resume) => void;
+};
+
+export function useGenerateResumePdf(userId?: string, { onNewPdf }: GenerateResumePdfOptions = {}) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: downloadResumePdf,
+    mutationFn: async (resume: Resume) => {
+      const { resume: saved, generated } = await downloadPdfFile(resume);
+      if (generated) {
+        onNewPdf?.(saved);
+      }
+      return saved;
+    },
     onSuccess: async (resume) => {
       await queryClient.invalidateQueries({ queryKey: ['resume', resume.id] });
       await queryClient.invalidateQueries({ queryKey: ['resume-family'] });

@@ -97,6 +97,7 @@ describe('generateAndChargeResumePdf', () => {
     await expect(generateAndChargeResumePdf(resume.id, context)).resolves.toEqual({
       url: 'https://media.talvio.co/ann.pdf',
       key: 'ann.pdf',
+      generated: false,
     });
     expect(rpc).not.toHaveBeenCalled();
     expect(generateResumePdfBytes).not.toHaveBeenCalled();
@@ -123,6 +124,7 @@ describe('generateAndChargeResumePdf', () => {
     await expect(generateAndChargeResumePdf(resume.id, context)).resolves.toEqual({
       url: 'https://media.talvio.co/new.pdf',
       key: 'resume/new.pdf',
+      generated: true,
     });
 
     expect(rpc).toHaveBeenNthCalledWith(1, 'generate_pdf', { p_resume_id: resume.id });
@@ -155,6 +157,7 @@ describe('generateAndChargeResumePdf', () => {
     await expect(generateAndChargeResumePdf(resume.id, context)).resolves.toEqual({
       url: 'https://media.talvio.co/ann.pdf',
       key: '',
+      generated: false,
     });
     expect(generateResumePdfBytes).not.toHaveBeenCalled();
     expect(uploadResumePdfBytes).not.toHaveBeenCalled();
