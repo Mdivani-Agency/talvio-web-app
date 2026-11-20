@@ -28,6 +28,16 @@ export type FeatureFlags = {
   profileAiImprove: boolean;
   /** The application tracker: Applications in the account sidebar and `/account/applications` (MDI-654). Off until launch. */
   applicationTracker: boolean;
+  /**
+   * The Trustpilot review prompt after a new resume PDF, with "Tell us what went wrong" (MDI-652). Off by default.
+   * The cap (3 prompts, one per 30 days, never after a Trustpilot click) is enforced by the database (MDI-651).
+   */
+  feedbackPrompt: boolean;
+  /**
+   * The Trustpilot reviews section on the homepage (MDI-653). Off in production until the Trustpilot profile has at least
+   * 10 reviews (decided 19 Nov 2026). Even when on, the section shows only with 3 or more quotes in `lib/reviews-copy.ts`.
+   */
+  trustpilotReviews: boolean;
 };
 
 export type FeatureFlagEnv = {
@@ -37,6 +47,8 @@ export type FeatureFlagEnv = {
   NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE?: string;
   NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE?: string;
   NEXT_PUBLIC_FLAG_APPLICATION_TRACKER?: string;
+  NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT?: string;
+  NEXT_PUBLIC_FLAG_TRUSTPILOT_REVIEWS?: string;
 };
 
 export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
@@ -46,6 +58,8 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   resumeAiImprove: false,
   profileAiImprove: false,
   applicationTracker: false,
+  feedbackPrompt: false,
+  trustpilotReviews: false,
 };
 
 function parseFlag(value: string | undefined, fallback: boolean): boolean {
@@ -71,6 +85,8 @@ function processFlagEnv(): FeatureFlagEnv {
     NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE,
     NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE,
     NEXT_PUBLIC_FLAG_APPLICATION_TRACKER: process.env.NEXT_PUBLIC_FLAG_APPLICATION_TRACKER,
+    NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT: process.env.NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT,
+    NEXT_PUBLIC_FLAG_TRUSTPILOT_REVIEWS: process.env.NEXT_PUBLIC_FLAG_TRUSTPILOT_REVIEWS,
   };
 }
 
@@ -82,5 +98,7 @@ export function featureFlags(env: FeatureFlagEnv = processFlagEnv()): FeatureFla
     resumeAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.resumeAiImprove),
     profileAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.profileAiImprove),
     applicationTracker: parseFlag(env.NEXT_PUBLIC_FLAG_APPLICATION_TRACKER, DEFAULT_FEATURE_FLAGS.applicationTracker),
+    feedbackPrompt: parseFlag(env.NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT, DEFAULT_FEATURE_FLAGS.feedbackPrompt),
+    trustpilotReviews: parseFlag(env.NEXT_PUBLIC_FLAG_TRUSTPILOT_REVIEWS, DEFAULT_FEATURE_FLAGS.trustpilotReviews),
   };
 }

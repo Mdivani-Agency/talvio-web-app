@@ -20,7 +20,15 @@ import { ACTION_CLASS, ACTIONS_CLASS, Eyebrow, ScreenCard, ScreenHeading } from 
 
 const POINT_ICONS = [Clock, SkipForward, Check];
 
-export function OfferView({ saved, onStart, starting }: { saved: boolean; onStart: () => void; starting: boolean }) {
+type OfferViewProps = {
+  saved: boolean;
+  onStart: () => void;
+  starting: boolean;
+  /** Where Skip for now goes; the new resume the user was starting before onboarding, when there is one. */
+  skipHref?: string;
+};
+
+export function OfferView({ saved, onStart, starting, skipHref = ACCOUNT_HREF }: OfferViewProps) {
   return (
     <>
       {saved && (
@@ -59,7 +67,7 @@ export function OfferView({ saved, onStart, starting }: { saved: boolean; onStar
             {START_QUESTIONS_LABEL}
           </Button>
           <Button asChild variant="ghost" size="lg" className={ACTION_CLASS}>
-            <Link href={ACCOUNT_HREF}>{SKIP_FOR_NOW_LABEL}</Link>
+            <Link href={skipHref}>{SKIP_FOR_NOW_LABEL}</Link>
           </Button>
         </div>
         <p className="m-0 flex gap-2 text-[1.3rem] leading-[1.5] text-muted-foreground">

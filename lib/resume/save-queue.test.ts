@@ -222,3 +222,21 @@ describe('createSaveRunner', () => {
     expect(runner.getState().baseUpdatedAt).toBe('2026-11-12T10:01:00.000Z');
   });
 });
+
+describe('mergeResumePatch and section order', () => {
+  it('keeps the latest resume content, with or without a section order', () => {
+    const ordered = { ...fullResumeContentForQueue(), sectionOrder: ['education', 'experience'] };
+    const merged = mergeResumePatch({ resume: fullResumeContentForQueue() }, { resume: ordered });
+    expect(merged.resume?.sectionOrder).toEqual(['education', 'experience']);
+    // Reset stores no order: the newer content wins and has none.
+    const reset = mergeResumePatch(merged, { resume: fullResumeContentForQueue() });
+    expect(reset.resume).not.toHaveProperty('sectionOrder');
+  });
+});
+
+function fullResumeContentForQueue() {
+  return {
+    profile: { firstName: 'Ada', lastName: 'Owner', role: 'Engineer' },
+    contacts: { email: 'ada@example.com' },
+  };
+}

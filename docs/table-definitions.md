@@ -41,6 +41,7 @@ There is **no intentional drift** from the Notion SQL.
 | `seniority` | `seniority_level not null default 'entry'` | Template tier |
 | `city` | `text` | |
 | `country` | `text` | |
+| `group_skills` | `boolean not null default false` | The "Group skills" switch. Off keeps `skills.group_name`, hidden. `20261120000200` |
 | `created_at` | `timestamptz not null default now()` | |
 | `updated_at` | `timestamptz not null default now()` | trigger `profiles_set_updated_at` |
 
@@ -84,6 +85,7 @@ Indexes:
 | `achievements` | `text[] not null default '{}'` | |
 | `responsibilities` | `text[] not null default '{}'` | |
 | `key_contributions` | `text[] not null default '{}'` | |
+| `stack` | `text[] not null default '{}'` | Technologies of the role, shown by the Technical template. `20261120000200` |
 | `additional_details` | `text` | plain, profile side |
 | `description` | `jsonb` | TipTap |
 | `sort_order` | `int not null default 0` | |
@@ -93,6 +95,8 @@ Indexes:
 Constraints / indexes:
 
 - `experiences_dates_ck`: `is_present = true or end_date is null or end_date >= start_date`
+- `experiences_stack_count_ck`: `cardinality(stack) <= 8`
+- trigger `experiences_validate_stack`: each stack item is 1–30 characters after trimming (a check constraint cannot look inside an array without a helper function, and a public helper would be exposed on GraphQL `Query`)
 - `experiences_user_id_idx (user_id, sort_order)`
 
 ## `educations`
@@ -153,14 +157,30 @@ Index: `recommendations_user_id_idx (user_id, sort_order)`.
 | `id` | `uuid` | PK |
 | `user_id` | `uuid not null` | `references profiles (user_id) on delete cascade` |
 | `name` | `text not null` | |
+| `group_name` | `text` | Optional group, such as "Architecture". `skills_group_name_length_ck`: null or 1–40 characters. `20261120000200` |
 | `sort_order` | `int not null default 0` | |
 | `created_at` | `timestamptz not null default now()` | no `updated_at` |
 
 Index: unique `skills_user_name_uq (user_id, lower(name))`.
 
+## `headline_achievements`
+
+Up to three results shown at the top of the Executive template, such as "1.2 million" / "patients on the platform". Added by `20261120000200_template_optional_fields.sql` ([MDI-664](https://linear.app/mdivani/issue/MDI-664)).
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK, `gen_random_uuid()` |
+| `user_id` | `uuid not null` | `references profiles (user_id) on delete cascade` |
+| `value` | `text not null` | `headline_achievements_value_length_ck`: 1–24 characters after trimming |
+| `label` | `text not null` | `headline_achievements_label_length_ck`: 1–60 characters after trimming |
+| `sort_order` | `int not null default 0` | |
+| `created_at` | `timestamptz not null default now()` | no `updated_at` |
+
+Index: `headline_achievements_user_id_idx (user_id, sort_order)`. Trigger `headline_achievements_enforce_limit` rejects a fourth row per user (SQLSTATE `23514`).
+
 ## `tools`
 
-Same shape as `skills`. Unique `tools_user_name_uq (user_id, lower(name))`.
+Same shape as `skills` (without `group_name`). Unique `tools_user_name_uq (user_id, lower(name))`.
 
 ## `links`
 
@@ -371,9 +391,64 @@ user; `invalid_profile_improvement_request` for a missing or malformed id):
   when the LLM service reports the improvement already used; sets `used_at`
   (and `job_id` when none is stored). `p_job_id` may be null.
 
+## `user_feedback`
+
+Messages sent through "Tell us what went wrong" in the review prompt shown
+after a new resume PDF (`20261120000300_user_feedback.sql`,
+[MDI-651](https://linear.app/mdivani/issue/MDI-651), epic
+[MDI-650](https://linear.app/mdivani/issue/MDI-650)). One row per message.
+There is no rating column: the prompt has no star rating of its own. Owner
+`SELECT` only (`user_feedbackCollection`); rows are written only by
+`submit_feedback`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK, `gen_random_uuid()` |
+| `user_id` | `uuid not null` | FK → `auth.users(id)` on delete cascade |
+| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; the resume the PDF was generated from |
+| `comment` | `text not null` | Check: 1–2,000 characters after `btrim` |
+| `created_at` | `timestamptz not null default now()` | |
+
+Indexes: `(user_id, created_at desc)`; `(resume_id)` where not null.
+
+## `feedback_prompt_state`
+
+The review prompt cap per user (same migration). At most one row per user,
+created by the first `record_feedback_prompt` or `record_trustpilot_click`.
+Owner `SELECT` only (`feedback_prompt_stateCollection`).
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `user_id` | `uuid` | PK, FK → `auth.users(id)` on delete cascade |
+| `prompts_shown` | `int not null default 0` | Check: `>= 0` |
+| `last_prompted_at` | `timestamptz` | When the prompt last opened |
+| `trustpilot_clicked_at` | `timestamptz` | First click through to Trustpilot; the "never ask again" flag. Never cleared |
+| `created_at` | `timestamptz not null default now()` | |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+The prompt is due when `trustpilot_clicked_at` is null, `prompts_shown < 3`
+and `last_prompted_at` is null or at least 30 days old. The rule lives in the
+private `feedback_prompt_rule(int, timestamptz, timestamptz)` and is mirrored
+in `lib/feedback.ts`.
+
+RPCs (all `SECURITY DEFINER`, `VOLATILE`, for `auth.uid()`; `not authenticated`
+without a session):
+
+- `feedback_prompt_due() returns text`: `due` or `no`. A user with no row is due.
+- `record_feedback_prompt() returns text`: called when the prompt opens. Re-checks
+  the rule under a row lock, then increments `prompts_shown` and sets
+  `last_prompted_at`. `recorded` or `no`. Close, "Not now" and sending a message
+  all count, because the prompt is recorded when it opens.
+- `submit_feedback(p_comment text, p_resume_id uuid default null) returns text`:
+  stores the trimmed message and returns its id. Raises `invalid_feedback`
+  (empty or over 2,000 characters after trimming) or `resume_not_found` (the
+  resume is not the caller's). Does not change the prompt state.
+- `record_trustpilot_click() returns void`: sets `trustpilot_clicked_at` if it
+  is null, inserting the row if needed. Later clicks keep the first time.
+
 ## `job_applications`
 
-Application tracker cards (`20261120000200_job_applications.sql`,
+Application tracker cards (`20261120000400_job_applications.sql`,
 [MDI-655](https://linear.app/mdivani/issue/MDI-655), epic
 [MDI-654](https://linear.app/mdivani/issue/MDI-654)). One row per job
 application, shown as "Position at Company". Owner CRUD; hard delete.

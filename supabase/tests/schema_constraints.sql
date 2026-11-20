@@ -9,10 +9,12 @@
 --   * profile_ai_improvements: applied_at needs used_at; request ids are 8-128 chars
 --   * job_applications: stage, position, labels and links are checked;
 --     job_application_notes: content is 1-5,000 characters
+--   * user_feedback: comment is 1-2000 characters after trimming
+--   * feedback_prompt_state: prompts_shown is not negative
 
 begin;
 
-select plan(32);
+select plan(35);
 
 insert into auth.users (
   instance_id,
@@ -398,6 +400,36 @@ select throws_ok(
   '23514',
   null,
   'a profile improvement request id is at least 8 characters'
+);
+
+select throws_ok(
+  $$
+    insert into public.user_feedback (user_id, comment)
+    values ('11111111-1111-4111-8111-111111111111', '   ');
+  $$,
+  '23514',
+  null,
+  'a feedback message cannot be empty'
+);
+
+select throws_ok(
+  $$
+    insert into public.user_feedback (user_id, comment)
+    values ('11111111-1111-4111-8111-111111111111', repeat('x', 2001));
+  $$,
+  '23514',
+  null,
+  'a feedback message is at most 2,000 characters'
+);
+
+select throws_ok(
+  $$
+    insert into public.feedback_prompt_state (user_id, prompts_shown)
+    values ('11111111-1111-4111-8111-111111111111', -1);
+  $$,
+  '23514',
+  null,
+  'the feedback prompt count cannot be negative'
 );
 
 -- Application tracker (MDI-655).

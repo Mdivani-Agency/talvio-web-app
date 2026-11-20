@@ -15,6 +15,8 @@ describe('feature flags', () => {
       resumeAiImprove: false,
       profileAiImprove: false,
       applicationTracker: false,
+      feedbackPrompt: false,
+      trustpilotReviews: false,
     };
     expect(featureFlags({})).toEqual(defaults);
     expect(DEFAULT_FEATURE_FLAGS).toEqual(defaults);
@@ -29,6 +31,8 @@ describe('feature flags', () => {
         NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: 'on',
         NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: 'true',
         NEXT_PUBLIC_FLAG_APPLICATION_TRACKER: 'on',
+        NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT: 'true',
+        NEXT_PUBLIC_FLAG_TRUSTPILOT_REVIEWS: 'on',
       }),
     ).toEqual({
       betaMode: false,
@@ -37,6 +41,8 @@ describe('feature flags', () => {
       resumeAiImprove: true,
       profileAiImprove: true,
       applicationTracker: true,
+      feedbackPrompt: true,
+      trustpilotReviews: true,
     });
     expect(featureFlags({ NEXT_PUBLIC_FLAG_PLANS_PAGE: ' ON ', NEXT_PUBLIC_FLAG_BETA_MODE: '0' })).toMatchObject({
       betaMode: false,

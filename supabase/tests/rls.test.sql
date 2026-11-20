@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(90);
+select plan(121);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -691,6 +691,240 @@ select isnt(
   (select used_at from public.profile_ai_improvements),
   null,
   'mark_profile_improvement_used sets the flag when no row exists'
+);
+
+select pg_temp.logout();
+
+-- MDI-651: feedback messages and the Trustpilot review prompt cap.
+
+select ok(
+  not has_function_privilege('anon', 'public.submit_feedback(text, uuid)', 'execute'),
+  'anon cannot send feedback'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.feedback_prompt_due()', 'execute'),
+  'anon cannot check the feedback prompt'
+);
+
+select ok(
+  not has_function_privilege('authenticated', 'public.feedback_prompt_rule(int, timestamptz, timestamptz)', 'execute'),
+  'the feedback prompt rule is private'
+);
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select throws_ok(
+  $$
+    insert into public.user_feedback (user_id, comment)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Direct write');
+  $$,
+  '42501',
+  null,
+  'a user cannot insert feedback directly'
+);
+
+select throws_ok(
+  $$
+    insert into public.feedback_prompt_state (user_id, trustpilot_clicked_at)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', now());
+  $$,
+  '42501',
+  null,
+  'a user cannot insert the feedback prompt state directly'
+);
+
+select is(
+  public.feedback_prompt_due(),
+  'due',
+  'a user who was never prompted is due'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'recorded',
+  'the first prompt is recorded'
+);
+
+select is(
+  public.feedback_prompt_due(),
+  'no',
+  'the prompt is not due right after a prompt'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'no',
+  'a second prompt within 30 days is not recorded'
+);
+
+select throws_ok(
+  $$ update public.feedback_prompt_state set prompts_shown = 0, last_prompted_at = null; $$,
+  '42501',
+  null,
+  'a user cannot reset the feedback prompt state'
+);
+
+select throws_ok(
+  $$ delete from public.feedback_prompt_state; $$,
+  '42501',
+  null,
+  'a user cannot delete the feedback prompt state'
+);
+
+select isnt(
+  public.submit_feedback('  The PDF cut off my last job.  ', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+  null,
+  'a user sends feedback about their own resume'
+);
+
+select is(
+  (select comment from public.user_feedback
+   where resume_id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+  'The PDF cut off my last job.',
+  'feedback is stored trimmed, with its resume'
+);
+
+select throws_ok(
+  $$ select public.submit_feedback('   ', null); $$,
+  'P0001',
+  'invalid_feedback',
+  'an empty message is refused'
+);
+
+select throws_ok(
+  $$ select public.submit_feedback(repeat('x', 2001), null); $$,
+  'P0001',
+  'invalid_feedback',
+  'a message over 2,000 characters is refused'
+);
+
+select throws_ok(
+  $$ select public.submit_feedback('Not my resume', 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'); $$,
+  'P0001',
+  'resume_not_found',
+  'feedback about another user''s resume is refused'
+);
+
+select isnt(
+  public.submit_feedback(repeat('y', 2000), null),
+  null,
+  'a 2,000 character message without a resume is stored'
+);
+
+select throws_ok(
+  $$ delete from public.user_feedback; $$,
+  '42501',
+  null,
+  'a user cannot delete feedback'
+);
+
+select is(
+  (select count(*)::int from public.user_feedback),
+  2,
+  'a user reads their own feedback'
+);
+
+select pg_temp.logout();
+update public.feedback_prompt_state
+set last_prompted_at = now() - interval '31 days'
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.feedback_prompt_due(),
+  'due',
+  'the prompt is due again after 30 days, even after sending a message'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'recorded',
+  'the second prompt is recorded'
+);
+
+select pg_temp.logout();
+update public.feedback_prompt_state
+set last_prompted_at = now() - interval '31 days'
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.record_feedback_prompt(),
+  'recorded',
+  'the third prompt is recorded'
+);
+
+select pg_temp.logout();
+update public.feedback_prompt_state
+set last_prompted_at = now() - interval '365 days'
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.feedback_prompt_due(),
+  'no',
+  'the prompt is never due after 3 prompts'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'no',
+  'a fourth prompt is not recorded'
+);
+
+select is(
+  (select prompts_shown from public.feedback_prompt_state),
+  3,
+  'a user reads their own prompt count'
+);
+
+select pg_temp.login('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+select is(
+  (select count(*)::int from public.user_feedback),
+  0,
+  'a user cannot read another user''s feedback'
+);
+
+select is(
+  (select count(*)::int from public.feedback_prompt_state),
+  0,
+  'a user cannot read another user''s prompt state'
+);
+
+select public.record_trustpilot_click();
+
+select is(
+  public.feedback_prompt_due(),
+  'no',
+  'the prompt is never due after a Trustpilot click'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'no',
+  'no prompt is recorded after a Trustpilot click'
+);
+
+select pg_temp.logout();
+update public.feedback_prompt_state
+set trustpilot_clicked_at = now() - interval '400 days'
+where user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+select pg_temp.login('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+select public.record_trustpilot_click();
+
+select is(
+  (select trustpilot_clicked_at from public.feedback_prompt_state),
+  now() - interval '400 days',
+  'a later click keeps the first click time'
+);
+
+select is(
+  public.feedback_prompt_due(),
+  'no',
+  'a Trustpilot click is never undone by time'
 );
 
 select pg_temp.logout();

@@ -90,11 +90,11 @@ export async function openEditorTab(page: Page, tab: 'Content' | 'Design') {
   await page.getByRole('tab', { name: new RegExp(`^${tab}`) }).click();
 }
 
-/** Pick a template in the Design tab, such as `chooseTemplate(page, 'Mid level', 'Talvio')`. */
-export async function chooseTemplate(page: Page, level: 'Entry level' | 'Mid level' | 'Senior level', template: string) {
+/** Pick a template in the Design tab, such as `chooseTemplate(page, 'Timeline')`. */
+export async function chooseTemplate(page: Page, template: string) {
   await openEditorTab(page, 'Design');
-  await page.getByRole('button', { name: level, exact: true }).click();
-  await page.getByRole('button', { name: `Use the ${template} template, ${level.toLowerCase()}`, exact: true }).click();
+  await page.getByRole('button', { name: `${template} template`, exact: true }).click();
+  await expect(page.getByRole('button', { name: `${template} template, selected`, exact: true })).toBeVisible();
   await openEditorTab(page, 'Content');
   await expect(page.getByLabel('First name', { exact: true })).toBeVisible();
 }

@@ -3753,13 +3753,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pdf-tlv/resume@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@pdf-tlv/resume@npm:0.2.3"
+"@pdf-tlv/resume@npm:0.4.0":
+  version: 0.4.0
+  resolution: "@pdf-tlv/resume@npm:0.4.0"
   dependencies:
     "@pdf-lib/fontkit": "npm:1.1.1"
     pdf-lib: "npm:1.17.1"
-  checksum: 10c0/5f0848c05a7395cc9011e5d1e33ca53919a3185bf5fd4dd948c17d658a5bcc5ee191bf879297ac8c4f997fe7b599dfec9f4bc52aa0b405fdda0729a0bf743329
+  checksum: 10c0/676e11e1369b5b1190efae5fcc9977efa27cc8de819bff5cd75537cd5d51bc4cf3274b7172e70a2ad2769414109c51905bb6d0c23fb0e31b1148be58d70da109
   languageName: node
   linkType: hard
 
@@ -12596,7 +12596,8 @@ __metadata:
     "@graphql-codegen/typescript-operations": "npm:6.1.6"
     "@headlessui/react": "npm:2.2.10"
     "@parcel/watcher": "npm:2.6.0"
-    "@pdf-tlv/resume": "npm:0.2.3"
+    "@pdf-lib/fontkit": "npm:1.1.1"
+    "@pdf-tlv/resume": "npm:0.4.0"
     "@playwright/test": "npm:1.55.1"
     "@radix-ui/react-aspect-ratio": "npm:1.1.15"
     "@radix-ui/react-avatar": "npm:1.2.6"
@@ -12654,6 +12655,7 @@ __metadata:
     markdown-it: "npm:14.1.0"
     next: "npm:16.3.5"
     next-themes: "npm:0.4.6"
+    pdf-lib: "npm:1.17.1"
     pdfjs-dist: "npm:4.10.38"
     react: "npm:19.3.0"
     react-colorful: "npm:5.8.1"

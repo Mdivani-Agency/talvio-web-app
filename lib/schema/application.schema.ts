@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * The application tracker (MDI-654). Stages, label colours and limits mirror the database
- * (`supabase/migrations/20261120000200_job_applications.sql`); the database stays the source of truth.
+ * (`supabase/migrations/20261120000400_job_applications.sql`); the database stays the source of truth.
  */
 export const APPLICATION_STAGES = ['saved', 'applied', 'interview', 'offer', 'accepted', 'rejected', 'withdrawn'] as const;
 export const applicationStageSchema = z.enum(APPLICATION_STAGES);

@@ -176,7 +176,7 @@ Naming (pg_graphql, `inflect_names` off):
 Codegen:
 
 - `yarn codegen` regenerates `lib/graphql/generated.ts` from the checked-in snapshot `lib/graphql/schema.graphql`. Run it after changing any `.graphql` file.
-- After a migration changes the GraphQL surface, the snapshot must be refreshed with `yarn codegen:from-supabase` (needs local Supabase). Ask the user to run it, then commit both `schema.graphql` and `generated.ts`.
+- After a migration changes the GraphQL surface, refresh the snapshot yourself with `yarn codegen:from-supabase` against a local Supabase stack (steps in `docs/supabase-schema.md`), then commit both `schema.graphql` and `generated.ts`. Do not ask the user to run it, and never hand-write or hand-merge `schema.graphql`.
 - CI runs `yarn codegen && git diff --exit-code lib/graphql/generated.ts`.
 - A JSON argument is a serialized string (`p_payload: JSON.stringify(...)`). BigFloat values are strings.
 
@@ -222,7 +222,7 @@ Location: `supabase/migrations/<timestamp>_<feature_name>.sql`. Timestamp format
 
 Before you start:
 
-- Never run migration commands. Ask the user to run them when needed.
+- Never run migration commands against a hosted project. CI applies pending migrations (`supabase db push`) once they merge to `development`; do not ask the user to apply them. Starting or resetting a disposable local stack to test them or refresh the GraphQL snapshot is fine.
 - Read the database docs before exploring migrations: `docs/supabase-schema.md`, `docs/table-definitions.md`, `docs/supabase-rls.md`, `docs/supabase-triggers.md`, `docs/data-api-grants.md`.
 - Always ask to update the docs files affected by a database change. A new migration also gets a row in the "Migration chain" table in `docs/supabase-schema.md`.
 
@@ -249,7 +249,7 @@ Also:
 
 - Tables with an `updated_at` column get the `set_updated_at` trigger.
 - v1 has no soft-delete: owners hard-delete their rows. If a table gains `deleted_at` or similar, disable `DELETE` on it.
-- When the SQL is finished, ask the user to run the migrations and `yarn codegen:from-supabase` before you move on to UI changes.
+- When the SQL is finished, start a local stack, run `yarn codegen:from-supabase` and the database tests yourself, then move on to UI changes.
 
 Data API exposure:
 
@@ -313,7 +313,7 @@ COMMENT ON CONSTRAINT <table>_<column>_fkey ON public.<table>
 - Mock GraphQL by mocking `@/lib/graphql-client` with `@/test/mocks/graphql-client` and setting methods on `mockGraphqlSdk`. Reference: `app/resume/query/use-delete-resume.test.ts`.
 - New schemas, formatters, adapters, query and mutation functions ship with a co-located test. Assert Zod `safeParse` on `error.issues[].path`, not on message strings.
 - Browser journeys live in `e2e/` (Playwright). A change to a public page updates `e2e/public.spec.ts` and the page's copy test in the same pull request.
-- Database tests live in `supabase/tests/` (`schema_constraints.sql`, `rls.test.sql`) and run with `yarn db:test` after `yarn db:reset`. Add or extend a test for new constraints, policies and RPCs, and ask the user to run them.
+- Database tests live in `supabase/tests/` (`schema_constraints.sql`, `rls.test.sql`) and run with `yarn db:test` after `yarn db:reset`. Add or extend a test for new constraints, policies and RPCs, and run them yourself on a local stack.
 
 ## Linear workflow
 

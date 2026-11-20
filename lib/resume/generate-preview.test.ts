@@ -40,11 +40,8 @@ describe('generateResumePreview', () => {
     expect(generate).toHaveBeenCalledWith(
       resume,
       expect.anything(),
-      {
-        color: '#111111',
-        fontSize: 'md',
-        isPreview: true,
-      },
+      // The watermark comes from the preview service itself (`create({ isPreview: true, watermark })`).
+      { color: '#111111', fontSize: 'md' },
     );
     expect(authedFetch).not.toHaveBeenCalled();
     expect(resume).toEqual(fullResumeContent);
@@ -59,7 +56,7 @@ describe('generateResumePreview', () => {
     expect(generate).toHaveBeenCalledWith(
       input.resume,
       expect.anything(),
-      expect.objectContaining({ isPreview: true }),
+      expect.objectContaining({ color: input.color }),
     );
   });
 });

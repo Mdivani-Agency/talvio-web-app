@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useProfileImprove } from '@app/account/hooks/use-profile-improve';
 import { fetchProfile } from '@app/account/query/use-profile';
 import { ErrorView, Loading, PageContainer } from '@components/views';
+import { onboardingReturnPath } from '@lib/auth/onboarding-return';
 import { shouldRetryGraphqlQuery } from '@/lib/graphql-client';
 import { ACCOUNT_HREF, ERROR_TITLE, UNAVAILABLE_TITLE } from '@/lib/profile-improve-copy';
 
@@ -34,7 +35,10 @@ import { ReviewView } from './views/review';
 export default function ImprovePage() {
   const { userId } = useAccountContext();
   const router = useRouter();
-  const saved = useSearchParams().get('saved') === '1';
+  const searchParams = useSearchParams();
+  const saved = searchParams.get('saved') === '1';
+  // Set when `/resume` sent a new user to onboarding first: leaving goes back to that resume, not the account page.
+  const returnTo = onboardingReturnPath(searchParams);
   const accountQuery = useQuery({
     queryKey: ['account', userId],
     enabled: !!userId,
@@ -47,7 +51,7 @@ export default function ImprovePage() {
 
   const leave = () => {
     improve.stop();
-    router.push(ACCOUNT_HREF);
+    router.push(returnTo ?? ACCOUNT_HREF);
   };
 
   const content = () => {
@@ -68,7 +72,7 @@ export default function ImprovePage() {
         return improve.improvement.used ? (
           <UsedView usedAt={improve.improvement.usedAt} />
         ) : (
-          <OfferView saved={saved} onStart={improve.start} starting={false} />
+          <OfferView saved={saved} onStart={improve.start} starting={false} skipHref={returnTo ?? undefined} />
         );
       case 'loading':
       case 'loadingProposal':
@@ -124,7 +128,7 @@ export default function ImprovePage() {
         );
       }
       case 'done':
-        return <DoneView count={improve.savedCount} />;
+        return <DoneView count={improve.savedCount} resumeHref={returnTo ?? undefined} />;
       case 'used':
         return <UsedView usedAt={improve.improvement?.usedAt ?? null} />;
       case 'limit':

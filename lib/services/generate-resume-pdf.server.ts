@@ -84,10 +84,13 @@ export async function generateAndChargeResumePdf(
   context: ApiUserContext,
 ) {
   const loaded = await loadOwnedResume(resumeId, context);
+  // `generated` is true only when this call rendered and charged a new PDF; the review prompt (MDI-652) uses it to
+  // tell a new PDF from a free re-download.
   if (loaded.media?.url) {
     return {
       url: loaded.media.url,
       key: loaded.media.key,
+      generated: false,
     };
   }
 
@@ -100,7 +103,7 @@ export async function generateAndChargeResumePdf(
       throw mapRpcError(peekError);
     }
     if (existingUrl) {
-      return { url: existingUrl as string, key: loaded.media?.key ?? '' };
+      return { url: existingUrl as string, key: loaded.media?.key ?? '', generated: false };
     }
 
     locked = true;
@@ -134,6 +137,7 @@ export async function generateAndChargeResumePdf(
     return {
       url: (chargedUrl as string) || uploaded.url,
       key: uploaded.key,
+      generated: true,
     };
   } catch (error) {
     if (locked) {

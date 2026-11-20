@@ -6,6 +6,8 @@ vi.mock('@components/icons', () => ({ Icon: () => null }));
 import { TooltipProvider } from '@components/ui';
 import { EMPTY_RESUME_DOCUMENT } from '@lib/models/resume-document';
 
+import { CurrentTemplateProvider } from '@app/account/create/views/forms/template-context';
+
 import { ResumeDocumentForm } from './resume.form';
 
 afterEach(cleanup);
@@ -108,5 +110,82 @@ describe('ResumeDocumentForm', () => {
     const startMonth = screen.getByRole('button', { name: 'Start date, month: not chosen' });
     expect(document.activeElement).toBe(startMonth);
     expect(screen.getByRole('button', { name: 'Start date, year: not chosen' })).toBeTruthy();
+  });
+
+  it('reorders sections by keyboard, announces each move, saves the order and resets it', async () => {
+    const onSubmit = vi.fn();
+    render(
+      <TooltipProvider>
+        <CurrentTemplateProvider template={{ key: 'senior-level-mint', name: 'Mint' }}>
+          <ResumeDocumentForm defaultValues={EMPTY_RESUME_DOCUMENT} onSubmit={onSubmit} />
+        </CurrentTemplateProvider>
+      </TooltipProvider>,
+    );
+    expect(screen.getByText('Mint order:')).toBeTruthy();
+    expect(screen.getByText(/Skills, Experience, Education, Projects, Recommendations/)).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Reorder sections' }));
+    });
+    const list = screen.getByRole('list', { name: 'Section order' });
+    expect(list.querySelectorAll('[role="listitem"]')).toHaveLength(5);
+    expect(screen.getByRole('button', { name: 'Move Skills, tools and languages up' }).getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Reset to the Mint order' }).getAttribute('aria-disabled')).toBe('true');
+    // The movable sections give way to the list; About you and Contact information stay.
+    expect(screen.queryByRole('button', { name: /^Experience/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /^About you/ })).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Move Education up' }));
+    });
+    expect(screen.getByRole('status').textContent).toBe('Education moved up. Now 2 of 5.');
+    expect(onSubmit).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sectionOrder: ['skills', 'education', 'experience', 'projects', 'recommendations'] }),
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    });
+    expect(screen.getByText('Your order:')).toBeTruthy();
+    const titles = [...document.querySelectorAll('section[id^="resume-section-"] h2 button')].map(
+      (button) => button.id.replace('resume-section-', '').replace('-button', ''),
+    );
+    expect(titles).toEqual(['about', 'contact', 'highlights', 'education', 'experience', 'projects', 'recommendations']);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Reorder sections' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Reset to the Mint order' }));
+    });
+    expect(screen.getByRole('status').textContent).toBe('Order reset to the Mint template.');
+    expect(onSubmit.mock.lastCall?.[0]).not.toHaveProperty('sectionOrder');
+  });
+
+  it('keeps a stored order as the user\'s own and resettable when it matches the template default', async () => {
+    const onSubmit = vi.fn();
+    render(
+      <TooltipProvider>
+        <CurrentTemplateProvider template={{ key: 'senior-level-mint', name: 'Mint' }}>
+          <ResumeDocumentForm
+            defaultValues={{
+              ...EMPTY_RESUME_DOCUMENT,
+              sectionOrder: ['skills', 'experience', 'education', 'projects', 'recommendations'],
+            }}
+            onSubmit={onSubmit}
+          />
+        </CurrentTemplateProvider>
+      </TooltipProvider>,
+    );
+    expect(screen.getByText('Your order:')).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Reorder sections' }));
+    });
+    const reset = screen.getByRole('button', { name: 'Reset to the Mint order' });
+    expect(reset.getAttribute('aria-disabled')).toBeNull();
+    await act(async () => {
+      fireEvent.click(reset);
+    });
+    expect(onSubmit.mock.lastCall?.[0]).not.toHaveProperty('sectionOrder');
   });
 });

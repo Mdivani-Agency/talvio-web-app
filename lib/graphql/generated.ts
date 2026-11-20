@@ -196,6 +196,8 @@ export type Mutation = {
   deleteFromeducationsCollection: EducationsDeleteResponse;
   /** Deletes zero or more records from the `experiences` collection */
   deleteFromexperiencesCollection: ExperiencesDeleteResponse;
+  /** Deletes zero or more records from the `headline_achievements` collection */
+  deleteFromheadline_achievementsCollection: Headline_AchievementsDeleteResponse;
   /** Deletes zero or more records from the `job_application_notes` collection */
   deleteFromjob_application_notesCollection: Job_Application_NotesDeleteResponse;
   /** Deletes zero or more records from the `job_applications` collection */
@@ -216,6 +218,7 @@ export type Mutation = {
   deleteFromskillsCollection: SkillsDeleteResponse;
   /** Deletes zero or more records from the `tools` collection */
   deleteFromtoolsCollection: ToolsDeleteResponse;
+  feedback_prompt_due?: Maybe<Scalars['String']['output']>;
   finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
   /** Adds one or more `contacts` records to the collection */
@@ -224,6 +227,8 @@ export type Mutation = {
   insertIntoeducationsCollection?: Maybe<EducationsInsertResponse>;
   /** Adds one or more `experiences` records to the collection */
   insertIntoexperiencesCollection?: Maybe<ExperiencesInsertResponse>;
+  /** Adds one or more `headline_achievements` records to the collection */
+  insertIntoheadline_achievementsCollection?: Maybe<Headline_AchievementsInsertResponse>;
   /** Adds one or more `job_application_notes` records to the collection */
   insertIntojob_application_notesCollection?: Maybe<Job_Application_NotesInsertResponse>;
   /** Adds one or more `job_applications` records to the collection */
@@ -245,15 +250,20 @@ export type Mutation = {
   /** Adds one or more `tools` records to the collection */
   insertIntotoolsCollection?: Maybe<ToolsInsertResponse>;
   mark_profile_improvement_used?: Maybe<Scalars['Opaque']['output']>;
+  record_feedback_prompt?: Maybe<Scalars['String']['output']>;
+  record_trustpilot_click?: Maybe<Scalars['Opaque']['output']>;
   release_profile_improvement?: Maybe<Scalars['Opaque']['output']>;
   release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
+  submit_feedback?: Maybe<Scalars['String']['output']>;
   /** Updates zero or more records in the `contacts` collection */
   updatecontactsCollection: ContactsUpdateResponse;
   /** Updates zero or more records in the `educations` collection */
   updateeducationsCollection: EducationsUpdateResponse;
   /** Updates zero or more records in the `experiences` collection */
   updateexperiencesCollection: ExperiencesUpdateResponse;
+  /** Updates zero or more records in the `headline_achievements` collection */
+  updateheadline_achievementsCollection: Headline_AchievementsUpdateResponse;
   /** Updates zero or more records in the `job_application_notes` collection */
   updatejob_application_notesCollection: Job_Application_NotesUpdateResponse;
   /** Updates zero or more records in the `job_applications` collection */
@@ -308,6 +318,12 @@ export type MutationDeleteFromeducationsCollectionArgs = {
 export type MutationDeleteFromexperiencesCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ExperiencesFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromheadline_AchievementsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Headline_AchievementsFilter>;
 };
 
 /** The root type for creating and mutating data */
@@ -398,6 +414,11 @@ export type MutationInsertIntoexperiencesCollectionArgs = {
 };
 
 /** The root type for creating and mutating data */
+export type MutationInsertIntoheadline_AchievementsCollectionArgs = {
+  objects: Array<Headline_AchievementsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationInsertIntojob_Application_NotesCollectionArgs = {
   objects: Array<Job_Application_NotesInsertInput>;
 };
@@ -468,6 +489,12 @@ export type MutationSave_ProfileArgs = {
 };
 
 /** The root type for creating and mutating data */
+export type MutationSubmit_FeedbackArgs = {
+  p_comment: Scalars['String']['input'];
+  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationUpdatecontactsCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ContactsFilter>;
@@ -486,6 +513,13 @@ export type MutationUpdateexperiencesCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ExperiencesFilter>;
   set: ExperiencesUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdateheadline_AchievementsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  set: Headline_AchievementsUpdateInput;
 };
 
 /** The root type for creating and mutating data */
@@ -603,6 +637,14 @@ export type Query = {
   experiencesByPk?: Maybe<Experiences>;
   /** A pagable collection of type `experiences` */
   experiencesCollection: ExperiencesConnection;
+  /** Retrieve a record of type `feedback_prompt_state` by its primary key */
+  feedback_prompt_stateByPk?: Maybe<Feedback_Prompt_State>;
+  /** A pagable collection of type `feedback_prompt_state` */
+  feedback_prompt_stateCollection: Feedback_Prompt_StateConnection;
+  /** Retrieve a record of type `headline_achievements` by its primary key */
+  headline_achievementsByPk?: Maybe<Headline_Achievements>;
+  /** A pagable collection of type `headline_achievements` */
+  headline_achievementsCollection: Headline_AchievementsConnection;
   /** Retrieve a record of type `job_application_events` by its primary key */
   job_application_eventsByPk?: Maybe<Job_Application_Events>;
   /** A pagable collection of type `job_application_events` */
@@ -661,6 +703,10 @@ export type Query = {
   user_creditsByPk?: Maybe<User_Credits>;
   /** A pagable collection of type `user_credits` */
   user_creditsCollection: User_CreditsConnection;
+  /** Retrieve a record of type `user_feedback` by its primary key */
+  user_feedbackByPk?: Maybe<User_Feedback>;
+  /** A pagable collection of type `user_feedback` */
+  user_feedbackCollection: User_FeedbackConnection;
 };
 
 /** The root type for querying data */
@@ -709,6 +755,38 @@ export type QueryExperiencesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryFeedback_Prompt_StateByPkArgs = {
+  user_id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryFeedback_Prompt_StateCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Feedback_Prompt_StateFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Feedback_Prompt_StateOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryHeadline_AchievementsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryHeadline_AchievementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Headline_AchievementsOrderBy>>;
 };
 
 /** The root type for querying data */
@@ -938,6 +1016,22 @@ export type QueryUser_CreditsCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<User_CreditsOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryUser_FeedbackByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryUser_FeedbackCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<User_FeedbackFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<User_FeedbackOrderBy>>;
 };
 
 /** Boolean expression comparing fields on type "String" */
@@ -1276,6 +1370,7 @@ export type Experiences = Node & {
   profiles?: Maybe<Profiles>;
   responsibilities: Array<Maybe<Scalars['String']['output']>>;
   sort_order: Scalars['Int']['output'];
+  stack: Array<Maybe<Scalars['String']['output']>>;
   start_date: Scalars['Date']['output'];
   updated_at: Scalars['Datetime']['output'];
   user_id: Scalars['UUID']['output'];
@@ -1322,6 +1417,7 @@ export type ExperiencesFilter = {
   or?: InputMaybe<Array<ExperiencesFilter>>;
   responsibilities?: InputMaybe<StringListFilter>;
   sort_order?: InputMaybe<IntFilter>;
+  stack?: InputMaybe<StringListFilter>;
   start_date?: InputMaybe<DateFilter>;
   updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
@@ -1342,6 +1438,7 @@ export type ExperiencesInsertInput = {
   location_type?: InputMaybe<Location_Type>;
   responsibilities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
+  stack?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   start_date?: InputMaybe<Scalars['Date']['input']>;
   updated_at?: InputMaybe<Scalars['Datetime']['input']>;
   user_id?: InputMaybe<Scalars['UUID']['input']>;
@@ -1386,6 +1483,7 @@ export type ExperiencesUpdateInput = {
   location_type?: InputMaybe<Location_Type>;
   responsibilities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
+  stack?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   start_date?: InputMaybe<Scalars['Date']['input']>;
   updated_at?: InputMaybe<Scalars['Datetime']['input']>;
   user_id?: InputMaybe<Scalars['UUID']['input']>;
@@ -1397,6 +1495,147 @@ export type ExperiencesUpdateResponse = {
   affectedCount: Scalars['Int']['output'];
   /** Array of records impacted by the mutation */
   records: Array<Experiences>;
+};
+
+export type Feedback_Prompt_State = Node & {
+  __typename?: 'feedback_prompt_state';
+  created_at: Scalars['Datetime']['output'];
+  last_prompted_at?: Maybe<Scalars['Datetime']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  prompts_shown: Scalars['Int']['output'];
+  trustpilot_clicked_at?: Maybe<Scalars['Datetime']['output']>;
+  updated_at: Scalars['Datetime']['output'];
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Feedback_Prompt_StateConnection = {
+  __typename?: 'feedback_prompt_stateConnection';
+  edges: Array<Feedback_Prompt_StateEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Feedback_Prompt_StateEdge = {
+  __typename?: 'feedback_prompt_stateEdge';
+  cursor: Scalars['String']['output'];
+  node: Feedback_Prompt_State;
+};
+
+export type Feedback_Prompt_StateFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Feedback_Prompt_StateFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  last_prompted_at?: InputMaybe<DatetimeFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Feedback_Prompt_StateFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Feedback_Prompt_StateFilter>>;
+  prompts_shown?: InputMaybe<IntFilter>;
+  trustpilot_clicked_at?: InputMaybe<DatetimeFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Feedback_Prompt_StateOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  last_prompted_at?: InputMaybe<OrderByDirection>;
+  prompts_shown?: InputMaybe<OrderByDirection>;
+  trustpilot_clicked_at?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type Headline_Achievements = Node & {
+  __typename?: 'headline_achievements';
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  label: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
+  sort_order: Scalars['Int']['output'];
+  user_id: Scalars['UUID']['output'];
+  value: Scalars['String']['output'];
+};
+
+export type Headline_AchievementsConnection = {
+  __typename?: 'headline_achievementsConnection';
+  edges: Array<Headline_AchievementsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Headline_AchievementsDeleteResponse = {
+  __typename?: 'headline_achievementsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
+};
+
+export type Headline_AchievementsEdge = {
+  __typename?: 'headline_achievementsEdge';
+  cursor: Scalars['String']['output'];
+  node: Headline_Achievements;
+};
+
+export type Headline_AchievementsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Headline_AchievementsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  label?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Headline_AchievementsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Headline_AchievementsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+  value?: InputMaybe<StringFilter>;
+};
+
+export type Headline_AchievementsInsertInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type Headline_AchievementsInsertResponse = {
+  __typename?: 'headline_achievementsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
+};
+
+export type Headline_AchievementsOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  label?: InputMaybe<OrderByDirection>;
+  sort_order?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+  value?: InputMaybe<OrderByDirection>;
+};
+
+export type Headline_AchievementsUpdateInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type Headline_AchievementsUpdateResponse = {
+  __typename?: 'headline_achievementsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
 };
 
 export type Job_Application_Events = Node & {
@@ -2056,6 +2295,8 @@ export type Profiles = Node & {
   educationsCollection?: Maybe<EducationsConnection>;
   experiencesCollection?: Maybe<ExperiencesConnection>;
   first_name: Scalars['String']['output'];
+  group_skills: Scalars['Boolean']['output'];
+  headline_achievementsCollection?: Maybe<Headline_AchievementsConnection>;
   languagesCollection?: Maybe<LanguagesConnection>;
   last_name: Scalars['String']['output'];
   linksCollection?: Maybe<LinksConnection>;
@@ -2100,6 +2341,16 @@ export type ProfilesExperiencesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
+};
+
+export type ProfilesHeadline_AchievementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Headline_AchievementsOrderBy>>;
 };
 
 export type ProfilesLanguagesCollectionArgs = {
@@ -2169,6 +2420,7 @@ export type ProfilesFilter = {
   country?: InputMaybe<StringFilter>;
   created_at?: InputMaybe<DatetimeFilter>;
   first_name?: InputMaybe<StringFilter>;
+  group_skills?: InputMaybe<BooleanFilter>;
   last_name?: InputMaybe<StringFilter>;
   nodeId?: InputMaybe<IdFilter>;
   /** Negates a filter */
@@ -2187,6 +2439,7 @@ export type ProfilesInsertInput = {
   country?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
   first_name?: InputMaybe<Scalars['String']['input']>;
+  group_skills?: InputMaybe<Scalars['Boolean']['input']>;
   last_name?: InputMaybe<Scalars['String']['input']>;
   role?: InputMaybe<Scalars['String']['input']>;
   seniority?: InputMaybe<Seniority_Level>;
@@ -2208,6 +2461,7 @@ export type ProfilesOrderBy = {
   country?: InputMaybe<OrderByDirection>;
   created_at?: InputMaybe<OrderByDirection>;
   first_name?: InputMaybe<OrderByDirection>;
+  group_skills?: InputMaybe<OrderByDirection>;
   last_name?: InputMaybe<OrderByDirection>;
   role?: InputMaybe<OrderByDirection>;
   seniority?: InputMaybe<OrderByDirection>;
@@ -2221,6 +2475,7 @@ export type ProfilesUpdateInput = {
   country?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
   first_name?: InputMaybe<Scalars['String']['input']>;
+  group_skills?: InputMaybe<Scalars['Boolean']['input']>;
   last_name?: InputMaybe<Scalars['String']['input']>;
   role?: InputMaybe<Scalars['String']['input']>;
   seniority?: InputMaybe<Seniority_Level>;
@@ -2496,6 +2751,7 @@ export type Resumes = Node & {
   template_key: Scalars['String']['output'];
   type: Resume_Type;
   updated_at: Scalars['Datetime']['output'];
+  user_feedbackCollection?: Maybe<User_FeedbackConnection>;
   user_id: Scalars['UUID']['output'];
 };
 
@@ -2527,6 +2783,16 @@ export type ResumesResumesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ResumesOrderBy>>;
+};
+
+export type ResumesUser_FeedbackCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<User_FeedbackFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<User_FeedbackOrderBy>>;
 };
 
 export type ResumesConnection = {
@@ -2652,6 +2918,7 @@ export type Seniority_LevelFilter = {
 export type Skills = Node & {
   __typename?: 'skills';
   created_at: Scalars['Datetime']['output'];
+  group_name?: Maybe<Scalars['String']['output']>;
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
   /** Globally Unique Record Identifier */
@@ -2685,6 +2952,7 @@ export type SkillsFilter = {
   /** Returns true only if all its inner filters are true, otherwise returns false */
   and?: InputMaybe<Array<SkillsFilter>>;
   created_at?: InputMaybe<DatetimeFilter>;
+  group_name?: InputMaybe<StringFilter>;
   id?: InputMaybe<UuidFilter>;
   name?: InputMaybe<StringFilter>;
   nodeId?: InputMaybe<IdFilter>;
@@ -2698,6 +2966,7 @@ export type SkillsFilter = {
 
 export type SkillsInsertInput = {
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  group_name?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['UUID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
@@ -2714,6 +2983,7 @@ export type SkillsInsertResponse = {
 
 export type SkillsOrderBy = {
   created_at?: InputMaybe<OrderByDirection>;
+  group_name?: InputMaybe<OrderByDirection>;
   id?: InputMaybe<OrderByDirection>;
   name?: InputMaybe<OrderByDirection>;
   sort_order?: InputMaybe<OrderByDirection>;
@@ -2722,6 +2992,7 @@ export type SkillsOrderBy = {
 
 export type SkillsUpdateInput = {
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  group_name?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['UUID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
@@ -2863,6 +3134,53 @@ export type User_CreditsOrderBy = {
   user_id?: InputMaybe<OrderByDirection>;
 };
 
+export type User_Feedback = Node & {
+  __typename?: 'user_feedback';
+  comment: Scalars['String']['output'];
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  resume_id?: Maybe<Scalars['UUID']['output']>;
+  resumes?: Maybe<Resumes>;
+  user_id: Scalars['UUID']['output'];
+};
+
+export type User_FeedbackConnection = {
+  __typename?: 'user_feedbackConnection';
+  edges: Array<User_FeedbackEdge>;
+  pageInfo: PageInfo;
+};
+
+export type User_FeedbackEdge = {
+  __typename?: 'user_feedbackEdge';
+  cursor: Scalars['String']['output'];
+  node: User_Feedback;
+};
+
+export type User_FeedbackFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<User_FeedbackFilter>>;
+  comment?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<User_FeedbackFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<User_FeedbackFilter>>;
+  resume_id?: InputMaybe<UuidFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type User_FeedbackOrderBy = {
+  comment?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  resume_id?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
 /** Boolean expression comparing fields on type "Datetime" */
 export type ListApplicationFragment = { id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string };
 
@@ -2981,13 +3299,13 @@ export type ProfileImprovementQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type ProfileImprovementQuery = { profile_ai_improvementsCollection: { edges: Array<{ node: { used_at: string | null, applied_at: string | null } }> } };
 
-export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string };
+export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, group_skills: boolean, created_at: string, updated_at: string };
 
 export type ProfileByUserQueryVariables = Exact<{
   userId: string;
 }>;
 
-export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string } }> }, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } }> }, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string | null>, responsibilities: Array<string | null>, key_contributions: Array<string | null>, additional_details: string | null, sort_order: number } }> }, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } }> }, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } }> }, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } }> }, skillsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } }> }, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } }> } };
+export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, group_skills: boolean, created_at: string, updated_at: string } }> }, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } }> }, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string | null>, responsibilities: Array<string | null>, key_contributions: Array<string | null>, stack: Array<string | null>, additional_details: string | null, sort_order: number } }> }, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } }> }, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } }> }, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } }> }, skillsCollection: { edges: Array<{ node: { id: string, name: string, group_name: string | null, sort_order: number } }> }, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } }> }, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } }> }, headline_achievementsCollection: { edges: Array<{ node: { id: string, value: string, label: string, sort_order: number } }> } };
 
 export type ListResumeFragment = { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string };
 
@@ -3046,6 +3364,25 @@ export type Apply_Llm_ProposalMutationVariables = Exact<{
 }>;
 
 export type Apply_Llm_ProposalMutation = { apply_llm_proposal: string | null };
+
+export type Feedback_Prompt_DueMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Feedback_Prompt_DueMutation = { feedback_prompt_due: string | null };
+
+export type Record_Feedback_PromptMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Record_Feedback_PromptMutation = { record_feedback_prompt: string | null };
+
+export type Submit_FeedbackMutationVariables = Exact<{
+  p_comment: string;
+  p_resume_id?: string | null | undefined;
+}>;
+
+export type Submit_FeedbackMutation = { submit_feedback: string | null };
+
+export type Record_Trustpilot_ClickMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Record_Trustpilot_ClickMutation = { record_trustpilot_click: unknown };
 
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3117,6 +3454,7 @@ export const ProfileFieldsFragmentDoc = gql`
   seniority
   city
   country
+  group_skills
   created_at
   updated_at
 }
@@ -3382,6 +3720,7 @@ export const ProfileByUserDocument = gql`
         achievements
         responsibilities
         key_contributions
+        stack
         additional_details
         sort_order
       }
@@ -3444,6 +3783,7 @@ export const ProfileByUserDocument = gql`
       node {
         id
         name
+        group_name
         sort_order
       }
     }
@@ -3485,6 +3825,20 @@ export const ProfileByUserDocument = gql`
         id
         language
         proficiency
+        sort_order
+      }
+    }
+  }
+  headline_achievementsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 3
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        value
+        label
         sort_order
       }
     }
@@ -3589,6 +3943,26 @@ export const ResumesBySourceDocument = gql`
 export const Apply_Llm_ProposalDocument = gql`
     mutation Apply_Llm_Proposal($p_request: JSON!) {
   apply_llm_proposal(p_request: $p_request)
+}
+    `;
+export const Feedback_Prompt_DueDocument = gql`
+    mutation Feedback_Prompt_Due {
+  feedback_prompt_due
+}
+    `;
+export const Record_Feedback_PromptDocument = gql`
+    mutation Record_Feedback_Prompt {
+  record_feedback_prompt
+}
+    `;
+export const Submit_FeedbackDocument = gql`
+    mutation Submit_Feedback($p_comment: String!, $p_resume_id: UUID) {
+  submit_feedback(p_comment: $p_comment, p_resume_id: $p_resume_id)
+}
+    `;
+export const Record_Trustpilot_ClickDocument = gql`
+    mutation Record_Trustpilot_Click {
+  record_trustpilot_click
 }
     `;
 export const HealthDocument = gql`
@@ -3707,6 +4081,18 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Apply_Llm_Proposal(variables: Apply_Llm_ProposalMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Apply_Llm_ProposalMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Apply_Llm_ProposalMutation>({ document: Apply_Llm_ProposalDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Apply_Llm_Proposal', 'mutation', variables);
+    },
+    Feedback_Prompt_Due(variables?: Feedback_Prompt_DueMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Feedback_Prompt_DueMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Feedback_Prompt_DueMutation>({ document: Feedback_Prompt_DueDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Feedback_Prompt_Due', 'mutation', variables);
+    },
+    Record_Feedback_Prompt(variables?: Record_Feedback_PromptMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Record_Feedback_PromptMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Record_Feedback_PromptMutation>({ document: Record_Feedback_PromptDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Record_Feedback_Prompt', 'mutation', variables);
+    },
+    Submit_Feedback(variables: Submit_FeedbackMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Submit_FeedbackMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Submit_FeedbackMutation>({ document: Submit_FeedbackDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Submit_Feedback', 'mutation', variables);
+    },
+    Record_Trustpilot_Click(variables?: Record_Trustpilot_ClickMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Record_Trustpilot_ClickMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Record_Trustpilot_ClickMutation>({ document: Record_Trustpilot_ClickDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Record_Trustpilot_Click', 'mutation', variables);
     },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);

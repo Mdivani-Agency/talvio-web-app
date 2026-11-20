@@ -38,7 +38,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
 
   await page.goto('/templates');
   await expect(page.getByRole('heading', { name: 'Free resume templates', level: 1 })).toBeVisible();
-  await expect(page.getByText('Pick a template for your experience level. Preview is free.')).toBeVisible();
+  await expect(page.getByText('14 templates, from classic to bold. Filter by where you are in your career. Preview is free.')).toBeVisible();
   await expect(page.getByRole('main').getByRole('link', { name: /pricing/i })).toHaveCount(0);
   await page.locator('header').first().getByRole('link', { name: /Talvio/ }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -82,6 +82,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   expect(privacyText).toContain('sent to Anthropic');
   expect(privacyText).toContain('uploaded files within 24 hours');
   expect(privacyText).toContain('a record that your account has used it');
+  expect(privacyText).toContain('we store your message with your account and the resume it is about');
   expect(privacyText).not.toContain('OpenAI');
 
   const missing = await page.goto('/this-page-does-not-exist');
@@ -197,6 +198,18 @@ test('PUB-04 the homepage says what is free and mentions no credits or prices', 
   await page.goto('/auth/sign-in');
   await expect(page.getByText('New here? Signing in creates your account. No card needed.')).toBeVisible();
   expect(await page.locator('body').innerText()).not.toMatch(/credit|\$\d|subscription/i);
+});
+
+test('PUB-12 with trustpilotReviews on and no listed reviews, the homepage has no reviews section or review data', async ({ page }) => {
+  // Local E2E builds turn NEXT_PUBLIC_FLAG_TRUSTPILOT_REVIEWS on (scripts/e2e-env.mjs); lib/reviews-copy.ts ships empty,
+  // and the section needs 3 quotes (MDI-653).
+  await page.goto('/home');
+  await expect(page.getByRole('heading', { name: 'Frequently asked questions' })).toBeVisible();
+  await expect(page.locator('#reviews')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'What people say about Talvio' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Read all reviews on Trustpilot/ })).toHaveCount(0);
+  const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(jsonLd.join('\n')).not.toMatch(/"(Review|AggregateRating)"/);
 });
 
 test('PUB-05c the homepage hero shows three templates, links without nested buttons, and paints the front template last', async ({ page }) => {
@@ -355,55 +368,53 @@ test('PUB-05g a blog article reads in a 720px column with a 1.75 line height and
   }
 });
 
-test('PUB-05h on a phone the templates swipe in a carousel with arrows and dots, and reset on a level change', async ({ page }) => {
+test('PUB-05h on a phone the templates swipe in a carousel with arrows and a counter, and reset on a filter change', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/templates');
-  const carousel = page.getByRole('region', { name: 'Senior level templates' });
+  const carousel = page.getByRole('region', { name: 'Templates' });
   const track = carousel.getByRole('list');
-  const current = () => carousel.locator('[aria-current="true"]');
-  await expect(carousel.getByRole('listitem')).toHaveCount(4);
-  await expect(current()).toHaveAccessibleName('Show Modern');
+  const counter = carousel.getByText(/^\d+ of \d+$/);
+  await expect(carousel.getByRole('listitem')).toHaveCount(14);
+  await expect(counter).toHaveText('1 of 14');
   await expect(carousel.getByRole('button', { name: 'Previous template' })).toBeDisabled();
 
   await carousel.getByRole('button', { name: 'Next template' }).click();
-  await expect(current()).toHaveAccessibleName('Show Ember');
+  await expect(counter).toHaveText('2 of 14');
   await expect.poll(() => track.evaluate((list) => list.scrollLeft)).toBeGreaterThan(0);
 
-  await carousel.getByRole('button', { name: 'Show Talvio' }).click();
-  await expect(current()).toHaveAccessibleName('Show Talvio');
-  await expect(carousel.getByRole('button', { name: 'Next template' })).toBeDisabled();
-
-  // A swipe is a scroll of the row; the dots follow it.
+  // A swipe is a scroll of the row; the counter follows it.
   await track.evaluate((list) => list.scrollTo({ left: 0 }));
-  await expect(current()).toHaveAccessibleName('Show Modern');
+  await expect(counter).toHaveText('1 of 14');
 
   // Only the row scrolls sideways, never the page.
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
-  await page.getByRole('button', { name: 'Entry level', exact: true }).click();
-  const entry = page.getByRole('region', { name: 'Entry level templates' });
-  await expect(entry.locator('[aria-current="true"]')).toHaveAccessibleName('Show Modern');
-  await expect.poll(() => entry.getByRole('list').evaluate((list) => list.scrollLeft)).toBe(0);
-  await entry.getByRole('button', { name: 'Use the Modern template, entry level' }).click();
-  await expect(page).toHaveURL(/\/resume\?template=entry-level-modern$/);
+  await carousel.getByRole('button', { name: 'Next template' }).click();
+  await expect(counter).toHaveText('2 of 14');
+  await page.getByRole('group', { name: 'Filter templates' }).getByRole('button', { name: /^First job/ }).click();
+  await expect(counter).toHaveText(/^1 of \d+$/);
+  await expect.poll(() => track.evaluate((list) => list.scrollLeft)).toBe(0);
+  await carousel.getByRole('button', { name: 'Use the Classic template' }).click();
+  await expect(page).toHaveURL(/\/resume\?template=classic$/);
 });
 
 test('PUB-05i every template in the phone carousel has its own position, including on wide phones', async ({ page }) => {
   for (const width of [390, 700]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/templates');
-    const carousel = page.getByRole('region', { name: 'Senior level templates' });
+    const carousel = page.getByRole('region', { name: 'Templates' });
     const track = carousel.getByRole('list');
-    const positions: number[] = [];
-    for (const name of ['Modern', 'Ember', 'Mint', 'Talvio']) {
-      await carousel.getByRole('button', { name: `Show ${name}`, exact: true }).click();
-      // The dot stays on the card that was asked for once the row stops scrolling.
-      await expect(carousel.locator('[aria-current="true"]'), `${width}px ${name}`).toHaveAccessibleName(`Show ${name}`);
+    const next = carousel.getByRole('button', { name: 'Next template' });
+    const positions = [await track.evaluate((list) => list.scrollLeft)];
+    for (let index = 2; index <= 14; index += 1) {
+      await next.click();
+      // The counter stays on the card that was asked for once the row stops scrolling.
+      await expect(carousel.getByText(/^\d+ of 14$/), `${width}px card ${index}`).toHaveText(`${index} of 14`);
       await expect.poll(async () => track.evaluate((list) => list.scrollLeft)).not.toBe(positions.at(-1));
       positions.push(await track.evaluate((list) => list.scrollLeft));
     }
-    expect(new Set(positions).size, `${width}px`).toBe(4);
-    await expect(carousel.getByRole('button', { name: 'Next template' })).toBeDisabled();
+    expect(new Set(positions).size, `${width}px`).toBe(14);
+    await expect(next).toBeDisabled();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
 });
@@ -411,7 +422,7 @@ test('PUB-05i every template in the phone carousel has its own position, includi
 test('PUB-05 the first template is above the fold on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/templates');
-  const first = page.getByRole('main').getByRole('img').first();
+  const first = page.getByRole('main').getByRole('listitem').first().locator('img');
   await expect(first).toBeVisible();
   const box = await first.boundingBox();
   expect(box).not.toBeNull();
@@ -419,21 +430,24 @@ test('PUB-05 the first template is above the fold on a phone', async ({ page }) 
   expect(box!.y + box!.height / 2).toBeLessThan(page.viewportSize()!.height);
 });
 
-test('PUB-05b every template preview PNG loads for each experience level', async ({ page }) => {
+test('PUB-05b every template preview PNG loads, and the filters narrow the gallery', async ({ page }) => {
   await page.goto('/templates');
   const main = page.getByRole('main');
-  for (const level of ['Entry level', 'Mid level', 'Senior level']) {
-    await main.getByRole('button', { name: level, exact: true }).click();
-    const previews = main.getByRole('img');
-    await expect(previews).toHaveCount(4);
-    for (const preview of await previews.all()) {
-      await preview.scrollIntoViewIfNeeded();
-      // A missing asset still renders a visible <img>, so check the decoded size.
-      await expect
-        .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0), { message: level })
-        .toBe(true);
-      expect(decodeURIComponent((await preview.getAttribute('src')) ?? '')).toMatch(/\/templates\/[a-z-]+\.png/);
-    }
+  const previews = main.getByRole('listitem').locator('img');
+  await expect(previews).toHaveCount(14);
+  for (const preview of await previews.all()) {
+    await preview.scrollIntoViewIfNeeded();
+    // A missing asset still renders a visible <img>, so check the decoded size.
+    await expect.poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    expect(decodeURIComponent((await preview.getAttribute('src')) ?? '')).toMatch(/\/templates\/[a-z-]+\.png/);
+  }
+
+  const filters = main.getByRole('group', { name: 'Filter templates' });
+  for (const chip of await filters.getByRole('button').all()) {
+    const [, label, count] = /^(.+) \((\d+)\)$/.exec((await chip.textContent()) ?? '') ?? [];
+    await chip.click();
+    await expect(chip).toHaveAttribute('aria-pressed', 'true');
+    await expect(previews, label).toHaveCount(Number(count));
   }
 });
 
@@ -441,7 +455,7 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
   // Each page's link preview image: the homepage one is the default.
   const pages = [
     ['/', 'Free PDF resume generator | Talvio Beta', 'share-image-v2.png'],
-    ['/templates', 'Free resume templates by experience level | Talvio', 'share-templates-v1.png'],
+    ['/templates', 'Free resume templates: 14 layouts to choose from | Talvio', 'share-templates-v2.png'],
     ['/blog', 'Resume and job search articles | Talvio', 'share-blog-v1.png'],
     ['/terms', 'Terms of Service | Talvio', 'share-image-v2.png'],
     ['/privacy-policy', 'Privacy Policy | Talvio', 'share-image-v2.png'],
@@ -465,7 +479,7 @@ test('PUB-06 public pages render complete search and share metadata', async ({ p
   const jsonLd = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}');
   expect(jsonLd['@graph'].map((node: { '@type': string }) => node['@type'])).toEqual(['Organization', 'WebSite', 'WebApplication']);
 
-  for (const file of ['share-image-v2.png', 'share-templates-v1.png', 'share-blog-v1.png']) {
+  for (const file of ['share-image-v2.png', 'share-templates-v2.png', 'share-blog-v1.png']) {
     const image = await request.get(`/${file}`);
     expect(image.ok(), file).toBe(true);
     expect(image.headers()['content-type'], file).toBe('image/png');
@@ -678,9 +692,9 @@ test('PUB-10 phone controls are at least 44px tall (the spacing scale has no 11,
   await page.goto('/templates');
   await atLeast44(page.getByRole('button', { name: 'Previous template' }), 'Previous template');
   await atLeast44(page.getByRole('button', { name: 'Next template' }), 'Next template');
-  const dots = page.getByRole('button', { name: /^Show / });
-  for (let index = 0; index < (await dots.count()); index += 1) {
-    await atLeast44(dots.nth(index), `carousel dot ${index + 1}`);
+  const chips = page.getByRole('group', { name: 'Filter templates' }).getByRole('button');
+  for (let index = 0; index < (await chips.count()); index += 1) {
+    await atLeast44(chips.nth(index), `filter chip ${index + 1}`);
   }
 
   await page.goto('/terms');

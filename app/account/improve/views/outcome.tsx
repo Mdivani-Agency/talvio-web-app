@@ -45,10 +45,10 @@ function AccountLink({ primary }: { primary?: boolean }) {
   );
 }
 
-function ResumeLink({ primary }: { primary?: boolean }) {
+function ResumeLink({ primary, href = RESUME_HREF }: { primary?: boolean; href?: string }) {
   return (
     <Button asChild variant={primary ? 'default' : 'outline'} size="lg" className={ACTION_CLASS}>
-      <Link href={RESUME_HREF}>
+      <Link href={href}>
         {primary && <Plus aria-hidden className="size-[1.8rem]" />}
         {CREATE_RESUME_LABEL}
       </Link>
@@ -68,7 +68,8 @@ function Notice({ id, title, body, children, note }: { id: string; title: string
   );
 }
 
-export function DoneView({ count }: { count: number }) {
+/** `resumeHref` is the new resume the user was starting before onboarding, when there is one. */
+export function DoneView({ count, resumeHref }: { count: number; resumeHref?: string }) {
   return (
     <ScreenCard labelledBy="improve-done" className="items-start gap-4">
       <span className="flex size-14 items-center justify-center rounded-[1.6rem] bg-green-50 text-green-600 dark:bg-green-950">
@@ -77,7 +78,7 @@ export function DoneView({ count }: { count: number }) {
       <ScreenHeading id="improve-done">{doneTitle(count)}</ScreenHeading>
       <p className="m-0 text-md leading-[1.6] text-muted-foreground">{DONE_BODY}</p>
       <div className={`${ACTIONS_CLASS} self-stretch`}>
-        <ResumeLink primary />
+        <ResumeLink primary href={resumeHref} />
         <AccountLink />
       </div>
     </ScreenCard>

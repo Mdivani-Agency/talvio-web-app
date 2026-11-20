@@ -27,6 +27,7 @@ Every table below except `user_credits` has four policies:
 | `projects` | select / insert / update / delete own |
 | `recommendations` | select / insert / update / delete own |
 | `skills` | select / insert / update / delete own |
+| `headline_achievements` | select / insert / update / delete own |
 | `tools` | select / insert / update / delete own |
 | `links` | select / insert / update / delete own |
 | `languages` | select / insert / update / delete own |
@@ -39,6 +40,8 @@ Every table below except `user_credits` has four policies:
 | `job_application_notes` | select / insert / update / delete own; insert and update also require `application_id` to be the caller's card |
 | `job_application_events` | `job_application_events_select_own` only; written by the `job_applications_record_stage` trigger |
 | `profile_ai_improvements` | `profile_ai_improvements_select_own` only; written by `claim_` / `confirm_` / `release_profile_improvement`, `mark_profile_improvement_used` and `apply_llm_proposal` |
+| `user_feedback` | `user_feedback_select_own` only; written by `submit_feedback` |
+| `feedback_prompt_state` | `feedback_prompt_state_select_own` only; written by `record_feedback_prompt` and `record_trustpilot_click` |
 
 `user_credits` has no insert / update / delete policies. Authenticated clients
 cannot write the balance through GraphQL; `handle_new_user` and
@@ -52,8 +55,11 @@ can call it.
 
 `save_profile` is `SECURITY INVOKER` and `VOLATILE` (required for a Mutation
 field). A payload `user_id` cannot override `auth.uid()`. It upserts the
-caller's profile and any child rows in the payload; it never deletes children.
-Removals use collection DELETE mutations. Job-specific copies live in
+caller's profile and any child rows in the payload; it never deletes children,
+except headline achievements: the profile form sends that capped set of three
+whole, so when the payload has `headlineAchievements`, rows it no longer lists
+are deleted before the rest are upserted. A payload without the key leaves
+them alone. Other removals use collection DELETE mutations. Job-specific copies live in
 `resumes.content` — `profiles.user_id` is 1:1 with `auth.users`.
 
 `generate_pdf(p_resume_id)` is `SECURITY DEFINER` and `VOLATILE`. It uses
@@ -99,6 +105,14 @@ user's resume and a note cannot sit on another user's card: those
 has no write policies and no write grants; the `SECURITY DEFINER` trigger
 `job_applications_record_stage` writes it.
 
+`user_feedback` and `feedback_prompt_state` ([MDI-651](https://linear.app/mdivani/issue/MDI-651))
+hold "Tell us what went wrong" messages and the Trustpilot review prompt cap.
+Clients read their own rows and cannot insert, update or delete them. The four
+RPCs are `SECURITY DEFINER` and act only on `auth.uid()`'s rows. The cap and
+the click-through flag are enforced in `record_feedback_prompt`, not only in
+the client. `submit_feedback` refuses a resume that is not the caller's.
+No function clears `trustpilot_clicked_at`.
+
 ## GraphQL exposure
 
 After grants + RLS, an **authenticated** JWT should see these collections and
@@ -107,14 +121,16 @@ mutations on `/graphql/v1` (`inflect_names` off):
 Query: `profilesCollection`, `contactsCollection`, `experiencesCollection`,
 `educationsCollection`, `projectsCollection`, `recommendationsCollection`,
 `skillsCollection`, `toolsCollection`, `linksCollection`,
-`languagesCollection`, `resumesCollection`, `user_creditsCollection`,
+`languagesCollection`, `headline_achievementsCollection`, `resumesCollection`, `user_creditsCollection`,
 `llm_proposal_applicationsCollection`, `profile_ai_improvementsCollection`,
-`job_applicationsCollection`, `job_application_notesCollection`,
-`job_application_eventsCollection`.
+`user_feedbackCollection`, `feedback_prompt_stateCollection`, `job_applicationsCollection`,
+`job_application_notesCollection`, `job_application_eventsCollection`.
 
 Mutation: `save_profile`, `generate_pdf`, `finalize_pdf`, `release_resume_generation`,
 `apply_llm_proposal`, `claim_profile_improvement`, `confirm_profile_improvement`,
 `release_profile_improvement`, `mark_profile_improvement_used`,
+`feedback_prompt_due`, `record_feedback_prompt`, `submit_feedback`,
+`record_trustpilot_click`,
 `insertIntoresumesCollection`,
 `updateresumesCollection`, `deleteFromresumesCollection` (and the matching
 profile-child and application tracker collection mutations; there are none

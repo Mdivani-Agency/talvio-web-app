@@ -18,11 +18,28 @@ has an `updated_at` column:
 | `resumes` | `resumes_set_updated_at` |
 | `user_credits` | `user_credits_set_updated_at` |
 | `credit_prices` | `credit_prices_set_updated_at` |
+| `feedback_prompt_state` | `feedback_prompt_state_set_updated_at` |
 | `profile_ai_improvements` | `profile_ai_improvements_set_updated_at` |
 | `job_applications` | `job_applications_set_updated_at` |
 | `job_application_notes` | `job_application_notes_set_updated_at` |
 
-`contacts`, `skills`, `tools`, `links`, and `languages` have `created_at` only.
+`contacts`, `skills`, `tools`, `links`, `languages` and `headline_achievements` have `created_at` only.
+
+## Optional template field checks
+
+Added by `20261120000200_template_optional_fields.sql` (MDI-664). Both are
+`SECURITY INVOKER` trigger functions with `EXECUTE` revoked from `public`,
+`anon` and `authenticated`; pg_graphql does not expose trigger functions.
+
+- `experiences_validate_stack` — `BEFORE INSERT OR UPDATE OF stack` on
+  `experiences`. Each stack item must be 1–30 characters after trimming
+  (`check_violation`, SQLSTATE `23514`). The count limit (8) is the check
+  constraint `experiences_stack_count_ck`.
+- `headline_achievements_enforce_limit` — `BEFORE INSERT OR UPDATE OF user_id`
+  on `headline_achievements`. At most 3 rows per user, through `save_profile`
+  or the collection mutations (`check_violation`). It takes a per-user
+  transaction advisory lock before counting, so concurrent inserts for the
+  same user run one after the other.
 
 ## `handle_new_user`
 
@@ -74,7 +91,7 @@ from `public` / `anon` / `authenticated` — trigger-only.
 
 ## Application tracker triggers
 
-Defined in `20261120000200_job_applications.sql`
+Defined in `20261120000400_job_applications.sql`
 ([MDI-655](https://linear.app/mdivani/issue/MDI-655)). Execute is revoked
 from `public` / `anon` / `authenticated` on all three functions —
 trigger-only. `BEFORE` triggers on `job_applications` run in name order:

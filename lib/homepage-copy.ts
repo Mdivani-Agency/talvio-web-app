@@ -6,7 +6,7 @@ import { ACCOUNT_DELETION_ANSWER, DATA_SAFETY_ANSWER, SUPPORT_ANSWER } from './p
  */
 
 /** Sitemap date (ISO). Change it with the homepage copy. */
-export const HOME_LAST_MODIFIED = '2026-11-18';
+export const HOME_LAST_MODIFIED = '2026-11-20';
 
 /** New visitors sign in here. There is no separate sign-up route. */
 export const PRIMARY_CTA_HREF = '/auth/sign-in';
@@ -53,7 +53,7 @@ export const BENEFITS = [
   },
   {
     title: 'A layout that fits',
-    body: 'Pick a template for your experience level and preview it before you download.',
+    body: 'Pick from 14 templates and preview before you download.',
   },
   {
     title: 'You stay in control',
@@ -111,6 +111,22 @@ export const HOME_FAQ: readonly FaqItem[] = [
   { question: 'How do I close my account?', answer: ACCOUNT_DELETION_ANSWER },
   { question: 'How do I get support?', answer: SUPPORT_ANSWER },
 ];
+
+// Reviews section (MDI-653). Shown only with `trustpilotReviews` on and 3 or more quotes in `lib/reviews-copy.ts`.
+export const REVIEWS_ID = 'reviews';
+export const REVIEWS_NAME = 'Reviews';
+export const REVIEWS_TITLE = 'What people say about Talvio';
+export const REVIEWS_ALL_LINK = 'Read all reviews on Trustpilot';
+/** Read by screen readers after a link that opens a new tab. */
+export const REVIEWS_NEW_TAB = '(opens in a new tab)';
+export const reviewedOnTrustpilot = (date: string) => `Reviewed on Trustpilot · ${date}`;
+export const REVIEWS_FOOTNOTE =
+  'Selected reviews, quoted as written. See every review, including critical ones, on Trustpilot.';
+
+/** The reviews section's own lines, without the quotes, for the copy tests. */
+export function reviewsSectionCopyText(): string {
+  return [REVIEWS_NAME, REVIEWS_TITLE, REVIEWS_ALL_LINK, reviewedOnTrustpilot('1 November 2026'), REVIEWS_FOOTNOTE].join('\n');
+}
 
 /** Alt text for the phone beside the benefit cards. */
 export const BENEFITS_ART_ALT = 'Phone showing a Talvio resume template';
