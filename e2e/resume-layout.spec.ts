@@ -24,6 +24,13 @@ async function width(page: Page, testId: string) {
   return box!.width;
 }
 
+/** The rendered first page, as the design measures it (the wrapper around it adds the page's margin). */
+async function pageWidth(page: Page) {
+  const box = await page.getByTestId('preview-page').getByRole('img', { name: 'PDF page 1' }).boundingBox();
+  expect(box, 'PDF page 1').not.toBeNull();
+  return box!.width;
+}
+
 async function openDraft(page: Page, personas: Parameters<typeof persona>[0]) {
   const draft = persona(personas, 'draft');
   if (!draft.resumeId) {
@@ -43,7 +50,7 @@ test('RES-16 scales the form panel and the preview with the screen', async ({ pa
     await page.setViewportSize({ width: size.width, height: size.height });
     await expect.poll(() => width(page, 'editor-panel')).toBeGreaterThan(size.panel - TOLERANCE);
     expect(Math.abs((await width(page, 'editor-panel')) - size.panel), `panel at ${size.width}`).toBeLessThanOrEqual(TOLERANCE);
-    expect(Math.abs((await width(page, 'preview-page')) - size.wholePage), `whole page at ${size.width}`).toBeLessThanOrEqual(
+    expect(Math.abs((await pageWidth(page)) - size.wholePage), `whole page at ${size.width}`).toBeLessThanOrEqual(
       TOLERANCE,
     );
   }
@@ -53,7 +60,7 @@ test('RES-16 scales the form panel and the preview with the screen', async ({ pa
   for (const size of SIZES) {
     await page.setViewportSize({ width: size.width, height: size.height });
     await expect
-      .poll(async () => Math.abs((await width(page, 'preview-page')) - size.fitWidth), { message: `fit width at ${size.width}` })
+      .poll(async () => Math.abs((await pageWidth(page)) - size.fitWidth), { message: `fit width at ${size.width}` })
       .toBeLessThanOrEqual(TOLERANCE);
   }
 });

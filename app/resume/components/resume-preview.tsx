@@ -76,7 +76,8 @@ export function ResumePreview({
         <ResumeImageCarousel
           className={cn(
             'max-h-full w-full max-w-full md:h-full md:w-auto',
-            fitWidth && 'lg:h-auto lg:max-h-none lg:w-[min(100cqw,79.4rem)] lg:max-w-none lg:flex-none',
+            // The page is drawn at 98% of this box (`.a4-container`), so the box is a little wider than the page.
+            fitWidth && 'lg:h-auto lg:max-h-none lg:w-[calc(min(100cqw,79.4rem)/0.98)] lg:max-w-none lg:flex-none',
           )}
           isLoading={isLoading}
           images={images}
