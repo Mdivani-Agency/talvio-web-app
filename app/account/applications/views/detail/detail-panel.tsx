@@ -106,17 +106,24 @@ function SaveState({ status, onRetry }: { status: SaveStatus; onRetry: () => voi
   );
 }
 
-function PanelBody({ application, userId, knownLabels, stagePatch, onClose }: DetailPanelProps & { application: JobApplication }) {
-  const detail = useApplication(application.id);
+function PanelBody({
+  application: stored,
+  userId,
+  knownLabels,
+  stagePatch,
+  onClose,
+}: DetailPanelProps & { application: JobApplication }) {
+  const detail = useApplication(stored.id);
   const deleteApplication = useDeleteApplication(userId);
-  const { status, save, retry } = useAutoSave(application, userId);
+  // `application` includes edits still waiting to save, so each edit builds on the ones before it.
+  const { status, current: application, save, retry, forget } = useAutoSave(stored, userId);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const form = useAppForm<DetailsFormValues>({
     defaultValues: detailsDefaults(application),
     schema: detailsFormValuesSchema,
   });
 
-  // A field saves once it is valid and differs from what is stored; errors stay under the field.
+  // A field saves once it is valid and differs from the card (stored value plus queued edits); errors stay under it.
   const commit = async (name: DetailsFieldName) => {
     await form.validateField(name, 'change');
     if ((form.getFieldMeta(name)?.errors ?? []).length > 0) {
@@ -125,6 +132,9 @@ function PanelBody({ application, userId, knownLabels, stagePatch, onClose }: De
     const patch = detailsPatch(application, name, String(form.getFieldValue(name) ?? ''));
     if (patch) {
       await save(patch);
+    } else {
+      // Same as the card: nothing to write, and an earlier failed edit of this field must not be retried.
+      forget(name);
     }
   };
 

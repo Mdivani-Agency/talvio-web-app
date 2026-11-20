@@ -161,4 +161,27 @@ describe('post-generate prompts in FeedbackPromptProvider', () => {
     view.rerender(tree());
     expect(screen.queryByRole('status', BAR)).toBeNull();
   });
+
+  it('shows no bar when the user has left for another page before the check finishes', async () => {
+    mocks.pathname = '/resume/resume-1';
+    let finish: (cards: Record<string, string>) => void = () => undefined;
+    mocks.cards.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const tree = () => (
+      <QueryClientProvider client={client}>
+        <FeedbackPromptProvider>
+          <Probe />
+        </FeedbackPromptProvider>
+      </QueryClientProvider>
+    );
+    const view = render(tree());
+    act(() => probe.current?.notifyNewPdf({ id: 'resume-1', sourceResumeId: null }));
+
+    // The user opens Tailor to a job while the tracker check is still running.
+    mocks.pathname = '/resume/tailor';
+    view.rerender(tree());
+    await act(async () => finish({}));
+    expect(screen.queryByRole('status', BAR)).toBeNull();
+    expect(mocks.record).not.toHaveBeenCalled();
+  });
 });
