@@ -76,15 +76,12 @@ export class ResumeService {
 
   constructor() {
     this.$resume = new ResumePDFService();
+    // No watermark: @pdf-tlv/resume up to 0.2.3 ignored it, so previews never had one. From 0.2.4 a watermark is
+    // drawn on every page, and an image URL that fails to load stops the whole render.
     this.$resume.create({
       color: '#000',
       fontSize: 'md',
       leading: 'md',
-      watermark: {
-        text: 'Talvio',
-        url: '/logo.png',
-        color: '#1E20D4',
-      },
     });
   }
 
