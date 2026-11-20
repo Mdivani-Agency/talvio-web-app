@@ -22,6 +22,7 @@ const sidebar = () => within(document.querySelector('aside')!);
 describe('Sidebar', () => {
   beforeEach(() => {
     vi.stubEnv('NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI', '');
+    vi.stubEnv('NEXT_PUBLIC_FLAG_APPLICATION_TRACKER', '');
     pathname = '/account';
     session = { user: { name: 'Maya Lindqvist', email: 'maya@example.com' } };
   });
@@ -40,6 +41,20 @@ describe('Sidebar', () => {
     const nav = within(sidebar().getByRole('navigation', { name: 'Account' }));
     expect(nav.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/account', '/account/documents']);
     expect(sidebar().queryByRole('link', { name: 'Upgrade now' })).toBeNull();
+  });
+
+  it('lists Applications under Documents and marks it current only while the tracker is on', () => {
+    vi.stubEnv('NEXT_PUBLIC_FLAG_APPLICATION_TRACKER', 'true');
+    pathname = '/account/applications';
+    render(<Sidebar />);
+
+    const nav = within(sidebar().getByRole('navigation', { name: 'Account' }));
+    expect(nav.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
+      '/account',
+      '/account/documents',
+      '/account/applications',
+    ]);
+    expect(nav.getByRole('link', { name: 'Applications' }).getAttribute('aria-current')).toBe('page');
   });
 
   it.each([

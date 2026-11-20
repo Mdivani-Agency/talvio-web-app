@@ -1,0 +1,66 @@
+fragment ListApplication on job_applications {
+  id
+  user_id
+  position
+  company
+  stage
+  sort_order
+  location
+  salary
+  contact
+  applied_on
+  next_step_on
+  next_step
+  resume_id
+  labels
+  links
+  stage_changed_at
+  created_at
+  updated_at
+}
+
+query ApplicationsByUser($userId: UUID!, $first: Int!, $after: Cursor) {
+  job_applicationsCollection(
+    filter: { user_id: { eq: $userId } }
+    orderBy: [{ sort_order: AscNullsLast }, { created_at: AscNullsLast }, { id: AscNullsLast }]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ListApplication
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+mutation InsertApplication($objects: [job_applicationsInsertInput!]!) {
+  insertIntojob_applicationsCollection(objects: $objects) {
+    affectedCount
+    records {
+      ...ListApplication
+    }
+  }
+}
+
+mutation UpdateApplication($id: UUID!, $set: job_applicationsUpdateInput!, $atMost: Int!) {
+  updatejob_applicationsCollection(set: $set, filter: { id: { eq: $id } }, atMost: $atMost) {
+    affectedCount
+    records {
+      ...ListApplication
+    }
+  }
+}
+
+mutation DeleteApplication($id: UUID!, $atMost: Int!) {
+  deleteFromjob_applicationsCollection(filter: { id: { eq: $id } }, atMost: $atMost) {
+    affectedCount
+    records {
+      id
+    }
+  }
+}

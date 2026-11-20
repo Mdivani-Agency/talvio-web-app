@@ -10,7 +10,6 @@ import {
   ACCOUNT_MENU_OPEN_LABEL,
   ACCOUNT_MENU_TITLE,
   ACCOUNT_NAV_LABEL,
-  ACCOUNT_NAV_LINKS,
   CREATE_RESUME_HREF,
   CREATE_RESUME_LABEL,
   DARK_THEME_LABEL,
@@ -21,9 +20,10 @@ import {
   PREMIUM_TITLE,
   SIGN_OUT_LABEL,
   accountInitials,
+  accountNavLinks,
   activeAccountHref,
 } from '@/lib/account-copy';
-import { FileText, LogOut, MenuIcon, Moon, Plus, Sun, UserRound } from 'lucide-react';
+import { BriefcaseBusiness, FileText, LogOut, MenuIcon, Moon, Plus, Sun, UserRound } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -32,6 +32,7 @@ import { useState } from 'react';
 const NAV_ICONS: Record<string, typeof UserRound> = {
   '/account': UserRound,
   '/account/documents': FileText,
+  '/account/applications': BriefcaseBusiness,
 };
 
 const rowClassName =
@@ -43,7 +44,7 @@ const AccountNav = ({ onNavigate }: { onNavigate?: () => void }) => {
   return (
     <nav aria-label={ACCOUNT_NAV_LABEL}>
       <ul className="flex flex-col gap-1">
-        {ACCOUNT_NAV_LINKS.map((link) => {
+        {accountNavLinks(featureFlags().applicationTracker).map((link) => {
           const current = link.href === active;
           const NavIcon = NAV_ICONS[link.href] ?? UserRound;
           return (

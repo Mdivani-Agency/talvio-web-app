@@ -29,6 +29,9 @@
     "templates:previews": "node scripts/render-template-previews.mjs public/templates"
   },
   "dependencies": {
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/sortable": "10.0.0",
+    "@dnd-kit/utilities": "3.2.2",
     "@headlessui/react": "2.2.10",
     "@pdf-tlv/resume": "0.2.3",
     "@radix-ui/react-aspect-ratio": "1.1.15",

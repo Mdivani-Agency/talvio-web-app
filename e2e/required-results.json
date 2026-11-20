@@ -1,5 +1,7 @@
 {
-  "projects": ["chromium"],
+  "projects": [
+    "chromium"
+  ],
   "focused": [
     {
       "project": "mobile-chromium",
@@ -33,6 +35,10 @@
     "PAI-01 answers one question, keeps the chosen edits, confirms a claim and saves them to the profile",
     "PAI-02 Skip for now leaves the profile as saved and the improvement unused",
     "PAI-03 after one run, the account card is gone and /account/improve shows the used screen",
+    "APP-01 adds a card, moves it with the menu to Interview and then Closed as Rejected, and keeps it after reload",
+    "APP-02 label filters keep cards with every picked label, survive a reload and clear; search combines",
+    "APP-03 dragging moves a card between columns, asks for the outcome on Closed, and keeps the order",
+    "APP-04 on a phone, stages are tabs and cards move with the menu",
     "RES-01 creates a resume without a profile and keeps it after reload",
     "RES-01 prefills a resume from the profile and saves the edited draft",
     "RES-01 guest download returns to the resume and can keep the draft",
