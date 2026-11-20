@@ -1,4 +1,5 @@
 import { ResumePDFService, Template, ResumeData, formatUrl, interFont, type RenderOptions } from '@pdf-tlv/resume';
+import { RESUME_FONTS } from '@lib/pdf-templates/fonts';
 import { pdfSectionOrder } from '@lib/resume/section-order';
 import { ResumeForm } from '@lib/types';
 import { capitalise, formatDate } from '@lib/utils';
@@ -17,9 +18,10 @@ export const RESUME_PDF_FONT = interFont;
 type GenerateParams = Parameters<ResumePDFService['generate']>[0];
 
 /**
- * Render with Inter, falling back to the standard font when Inter cannot be downloaded (offline, or a network that
- * blocks Google Fonts), as 0.2.3 did. 0.4.0 rejects the whole render instead. A failure is remembered on the service so
- * later renders don't wait on the download again. A render error that is not about the font fails the retry too.
+ * Render with the template fonts (Inter, Source Serif 4, IBM Plex Mono; only the roles a template uses are fetched),
+ * falling back to the standard fonts when a file cannot be downloaded (offline, or a network that blocks the font
+ * hosts), as 0.2.3 did with Inter. 0.4.0 rejects the whole render instead. A failure is remembered on the service so
+ * later renders don't wait on the download again. A render error that is not about the fonts fails the retry too.
  */
 export async function generateWithFontFallback(
   service: ResumePDFService,
@@ -31,7 +33,7 @@ export async function generateWithFontFallback(
   }
   let fontError: unknown;
   try {
-    return await service.generate({ ...params, options: { ...params.options, customFont: RESUME_PDF_FONT } });
+    return await service.generate({ ...params, options: { ...params.options, fonts: RESUME_FONTS } });
   } catch (error) {
     fontError = error;
   }

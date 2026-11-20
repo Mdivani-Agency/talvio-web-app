@@ -98,13 +98,20 @@ describe('unsupportedStandardCharacters', () => {
     ).toEqual(['文']);
   });
 
-  it('checks against the standard fonts when the template uses a serif or mono role without font files', async () => {
+  it('checks a serif template against the standard fonts after the font fallback', async () => {
     const { executive } = await import('@lib/pdf-templates');
     const resume = { ...profileToResumeDocument(fullAccountDto) };
     resume.profile = { ...resume.profile, role: 'Инженер' };
-    // Inter covers Cyrillic, but Executive also draws in the serif role, which falls back to Times here.
-    await expect(generateResumePdfBytes(resume, executive, { color: '#000000' })).rejects.toBeInstanceOf(
-      UnsupportedCharactersError,
-    );
-  });
+    // Without the font files, every role falls back to the standard fonts, which cannot show it.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      await expect(generateResumePdfBytes(resume, executive, { color: '#000000' })).rejects.toBeInstanceOf(
+        UnsupportedCharactersError,
+      );
+    } finally {
+      fetchSpy.mockRestore();
+      warn.mockRestore();
+    }
+  }, 60_000);
 });

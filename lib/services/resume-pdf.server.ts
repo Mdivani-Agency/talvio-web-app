@@ -1,4 +1,4 @@
-import { Config, ResumePDFService, Template, templateFamilies, type ResumeData } from '@pdf-tlv/resume';
+import { Config, ResumePDFService, Template, type ResumeData } from '@pdf-tlv/resume';
 import fontkit from '@pdf-lib/fontkit';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 
@@ -95,10 +95,9 @@ export async function generateResumePdfBytes(
   }, font);
   // A paid PDF must show the resume's own text. 0.4.0 draws what the font lacks as "?" (standard font) or an empty box
   // (Inter) instead of failing as 0.2.3 did, so check the font the render used and fail before upload and charge.
-  // Only body text gets a font file (Inter). A template that also uses the serif or mono role is drawn entirely in
-  // the standard fonts' character set, as the engine limits all text when any role it uses has no files.
-  const standardOnly = font.fontUnavailable || templateFamilies(template).some((family) => family !== 'body');
-  const charset = standardOnly
+  // With the font files, Inter's set stands for all three roles: Source Serif 4 and IBM Plex Mono cover the same
+  // Latin, Greek and Cyrillic ranges. After the fallback, the engine limits all text to the standard fonts' set.
+  const charset = font.fontUnavailable
     ? await standardFontCharset()
     : await interFontCharset().catch(() => standardFontCharset());
   const missing = unsupportedCharacters(resumeData, charset);

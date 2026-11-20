@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { ResumeForm } from '@lib/types';
 
-import { convertToResumeData, generateWithFontFallback, RESUME_PDF_FONT, skillGroupsOf } from './resume.service';
+import { RESUME_FONTS } from '@lib/pdf-templates/fonts';
+
+import { convertToResumeData, generateWithFontFallback, skillGroupsOf } from './resume.service';
 
 const base: ResumeForm = {
   profile: { firstName: 'Maya', lastName: 'Lindqvist', role: 'Staff Engineer' },
@@ -82,11 +84,11 @@ describe('convertToResumeData optional template fields', () => {
 describe('generateWithFontFallback', () => {
   const params = { data: { name: 'Ada', role: 'Engineer' }, template: { groups: [] } };
 
-  it('renders with Inter', async () => {
+  it('renders with the template fonts', async () => {
     const generate = vi.fn().mockResolvedValue(new Uint8Array([1]));
     const state = { fontUnavailable: false };
     await generateWithFontFallback({ generate } as never, params, state);
-    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ options: { customFont: RESUME_PDF_FONT } }));
+    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ options: { fonts: RESUME_FONTS } }));
     expect(state.fontUnavailable).toBe(false);
   });
 
