@@ -669,9 +669,7 @@ type Query {
     """The record's `ID`"""
     nodeId: ID!
   ): Node
-  """
-  Retrieve a record of type `profile_ai_improvements` by its primary key
-  """
+  """Retrieve a record of type `profile_ai_improvements` by its primary key"""
   profile_ai_improvementsByPk(
     """The record's `user_id` value"""
     user_id: UUID!
