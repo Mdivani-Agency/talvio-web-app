@@ -3221,7 +3221,23 @@ export type ApplicationByIdQueryVariables = Exact<{
   id: string;
 }>;
 
-export type ApplicationByIdQuery = { job_applicationsCollection: { edges: Array<{ node: { id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string, job_application_notesCollection: { edges: Array<{ node: { id: string, content: string, created_at: string, updated_at: string } }> } | null, job_application_eventsCollection: { edges: Array<{ node: { id: string, from_stage: string | null, to_stage: string, created_at: string } }> } | null } }> } };
+export type ApplicationByIdQuery = { job_applicationsCollection: { edges: Array<{ node: { id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string } }> } };
+
+export type NotesByApplicationQueryVariables = Exact<{
+  applicationId: string;
+  first: number;
+  after?: string | null | undefined;
+}>;
+
+export type NotesByApplicationQuery = { job_application_notesCollection: { edges: Array<{ node: { id: string, content: string, created_at: string, updated_at: string } }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } };
+
+export type EventsByApplicationQueryVariables = Exact<{
+  applicationId: string;
+  first: number;
+  after?: string | null | undefined;
+}>;
+
+export type EventsByApplicationQuery = { job_application_eventsCollection: { edges: Array<{ node: { id: string, from_stage: string | null, to_stage: string, created_at: string } }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } };
 
 export type InsertApplicationNoteMutationVariables = Exact<{
   objects: Array<Job_Application_NotesInsertInput> | Job_Application_NotesInsertInput;
@@ -3521,33 +3537,51 @@ export const ApplicationByIdDocument = gql`
     edges {
       node {
         ...ListApplication
-        job_application_notesCollection(
-          first: 100
-          orderBy: [{created_at: DescNullsLast}, {id: DescNullsLast}]
-        ) {
-          edges {
-            node {
-              ...ApplicationNote
-            }
-          }
-        }
-        job_application_eventsCollection(
-          first: 100
-          orderBy: [{created_at: DescNullsLast}, {id: DescNullsLast}]
-        ) {
-          edges {
-            node {
-              ...ApplicationEvent
-            }
-          }
-        }
       }
     }
   }
 }
-    ${ListApplicationFragmentDoc}
-${ApplicationNoteFragmentDoc}
-${ApplicationEventFragmentDoc}`;
+    ${ListApplicationFragmentDoc}`;
+export const NotesByApplicationDocument = gql`
+    query NotesByApplication($applicationId: UUID!, $first: Int!, $after: Cursor) {
+  job_application_notesCollection(
+    filter: {application_id: {eq: $applicationId}}
+    orderBy: [{created_at: DescNullsLast}, {id: DescNullsLast}]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ApplicationNote
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    ${ApplicationNoteFragmentDoc}`;
+export const EventsByApplicationDocument = gql`
+    query EventsByApplication($applicationId: UUID!, $first: Int!, $after: Cursor) {
+  job_application_eventsCollection(
+    filter: {application_id: {eq: $applicationId}}
+    orderBy: [{created_at: DescNullsLast}, {id: DescNullsLast}]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ApplicationEvent
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    ${ApplicationEventFragmentDoc}`;
 export const InsertApplicationNoteDocument = gql`
     mutation InsertApplicationNote($objects: [job_application_notesInsertInput!]!) {
   insertIntojob_application_notesCollection(objects: $objects) {
@@ -3984,6 +4018,12 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     ApplicationById(variables: ApplicationByIdQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ApplicationByIdQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ApplicationByIdQuery>({ document: ApplicationByIdDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ApplicationById', 'query', variables);
+    },
+    NotesByApplication(variables: NotesByApplicationQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<NotesByApplicationQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<NotesByApplicationQuery>({ document: NotesByApplicationDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'NotesByApplication', 'query', variables);
+    },
+    EventsByApplication(variables: EventsByApplicationQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<EventsByApplicationQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<EventsByApplicationQuery>({ document: EventsByApplicationDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'EventsByApplication', 'query', variables);
     },
     InsertApplicationNote(variables: InsertApplicationNoteMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<InsertApplicationNoteMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<InsertApplicationNoteMutation>({ document: InsertApplicationNoteDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'InsertApplicationNote', 'mutation', variables);

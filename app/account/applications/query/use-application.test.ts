@@ -30,42 +30,52 @@ const card = {
   updated_at: '2026-11-20T10:00:00+00:00',
 };
 
+function notesPage(ids: string[], hasNextPage: boolean, endCursor: string | null) {
+  return {
+    job_application_notesCollection: {
+      edges: ids.map((id) => ({ node: { id, content: `<p>${id}</p>`, created_at: 'c', updated_at: 'u' } })),
+      pageInfo: { hasNextPage, endCursor },
+    },
+  };
+}
+
 describe('fetchApplication', () => {
   beforeEach(() => {
-    mockGraphqlSdk.ApplicationById = vi.fn();
+    mockGraphqlSdk.ApplicationById = vi.fn().mockResolvedValue({ job_applicationsCollection: { edges: [{ node: card }] } });
+    mockGraphqlSdk.NotesByApplication = vi.fn().mockResolvedValue(notesPage(['n1'], false, null));
+    mockGraphqlSdk.EventsByApplication = vi.fn().mockResolvedValue({
+      job_application_eventsCollection: {
+        edges: [
+          { node: { id: 'e2', from_stage: 'saved', to_stage: 'interview', created_at: '2026-11-20' } },
+          { node: { id: 'e1', from_stage: null, to_stage: 'saved', created_at: '2026-11-18' } },
+        ],
+        pageInfo: { hasNextPage: false, endCursor: null },
+      },
+    });
   });
 
   it('returns the card with its notes and stage history', async () => {
-    mockGraphqlSdk.ApplicationById = vi.fn().mockResolvedValue({
-      job_applicationsCollection: {
-        edges: [
-          {
-            node: {
-              ...card,
-              job_application_notesCollection: {
-                edges: [{ node: { id: 'n1', content: '<p>Call</p>', created_at: 'c', updated_at: 'u' } }],
-              },
-              job_application_eventsCollection: {
-                edges: [
-                  { node: { id: 'e2', from_stage: 'saved', to_stage: 'interview', created_at: '2026-11-20' } },
-                  { node: { id: 'e1', from_stage: null, to_stage: 'saved', created_at: '2026-11-18' } },
-                ],
-              },
-            },
-          },
-        ],
-      },
-    });
-
     const detail = await fetchApplication('a1');
 
     expect(mockGraphqlSdk.ApplicationById).toHaveBeenCalledWith({ id: 'a1' });
     expect(detail.application).toMatchObject({ id: 'a1', stage: 'interview' });
-    expect(detail.notes.map((note) => note.content)).toEqual(['<p>Call</p>']);
+    expect(detail.notes.map((note) => note.content)).toEqual(['<p>n1</p>']);
     expect(detail.events.map((event) => [event.fromStage, event.toStage])).toEqual([
       ['saved', 'interview'],
       [null, 'saved'],
     ]);
+  });
+
+  it('loads every page of notes, so nothing past the first 100 is cut off', async () => {
+    mockGraphqlSdk.NotesByApplication = vi
+      .fn()
+      .mockResolvedValueOnce(notesPage(['n1', 'n2'], true, 'c1'))
+      .mockResolvedValueOnce(notesPage(['n3'], false, null));
+
+    const detail = await fetchApplication('a1');
+
+    expect(detail.notes.map((note) => note.id)).toEqual(['n1', 'n2', 'n3']);
+    expect(mockGraphqlSdk.NotesByApplication).toHaveBeenLastCalledWith({ applicationId: 'a1', first: 100, after: 'c1' });
   });
 
   it('throws when RLS hides the card or it is gone', async () => {

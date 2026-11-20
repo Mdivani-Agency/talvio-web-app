@@ -72,8 +72,11 @@ export function NoteEditor({ initialHtml = '', submitLabel, onSubmit, onCancel }
     if (!editor || empty || tooLong) {
       return;
     }
+    // Read-only while saving, so nothing typed after Add note is lost when the editor clears.
     setSaving(true);
+    editor.setEditable(false);
     const saved = await onSubmit(html);
+    editor.setEditable(true);
     setSaving(false);
     if (saved && !initialHtml) {
       editor.commands.clearContent(true);
