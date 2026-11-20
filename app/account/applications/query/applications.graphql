@@ -79,27 +79,52 @@ fragment ApplicationEvent on job_application_events {
   created_at
 }
 
-# One card with its notes and stage history, newest first. A card holds far fewer than 100 of either.
 query ApplicationById($id: UUID!) {
   job_applicationsCollection(filter: { id: { eq: $id } }, first: 1) {
     edges {
       node {
         ...ListApplication
-        job_application_notesCollection(first: 100, orderBy: [{ created_at: DescNullsLast }, { id: DescNullsLast }]) {
-          edges {
-            node {
-              ...ApplicationNote
-            }
-          }
-        }
-        job_application_eventsCollection(first: 100, orderBy: [{ created_at: DescNullsLast }, { id: DescNullsLast }]) {
-          edges {
-            node {
-              ...ApplicationEvent
-            }
-          }
-        }
       }
+    }
+  }
+}
+
+# A card's notes, newest first, page by page.
+query NotesByApplication($applicationId: UUID!, $first: Int!, $after: Cursor) {
+  job_application_notesCollection(
+    filter: { application_id: { eq: $applicationId } }
+    orderBy: [{ created_at: DescNullsLast }, { id: DescNullsLast }]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ApplicationNote
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# A card's stage history, newest first, page by page.
+query EventsByApplication($applicationId: UUID!, $first: Int!, $after: Cursor) {
+  job_application_eventsCollection(
+    filter: { application_id: { eq: $applicationId } }
+    orderBy: [{ created_at: DescNullsLast }, { id: DescNullsLast }]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ApplicationEvent
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
     }
   }
 }
