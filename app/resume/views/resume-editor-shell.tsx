@@ -22,6 +22,7 @@ import { DraftBanner } from '../components/draft-banner';
 import { EditorTabs, type EditorView } from '../components/editor-tabs';
 import { EditorTopBar } from '../components/editor-top-bar';
 import { ResumePreview } from '../components/resume-preview';
+import { useFeedbackPrompt } from '../providers/feedback-prompt-provider';
 import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../hooks/use-service-improve';
 import { DesignPanel } from './design-panel';
 import { EditResumeView } from './edit-resume-view';
@@ -97,6 +98,11 @@ export function ResumeEditorShell({
   // The AI overlay sits in the panel, so a session started from the phone's Preview tab brings the panel back.
   const showPanel = () => setView((current) => (current === 'preview' ? 'content' : current));
   const [downloadOpen, setDownloadOpen] = useState(false);
+  // The review prompt (MDI-652) waits for this dialog to close.
+  const { setGenerateDialogOpen } = useFeedbackPrompt();
+  useEffect(() => {
+    setGenerateDialogOpen(downloadOpen);
+  }, [downloadOpen, setGenerateDialogOpen]);
   const [downloadName, setDownloadName] = useState(document.name);
   const [downloadLabel, setDownloadLabel] = useState(document.label ?? '');
   const { allowance } = useAllowance();

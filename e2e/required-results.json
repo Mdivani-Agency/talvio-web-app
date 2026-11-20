@@ -1,5 +1,7 @@
 {
-  "projects": ["chromium"],
+  "projects": [
+    "chromium"
+  ],
   "focused": [
     {
       "project": "mobile-chromium",
@@ -84,6 +86,11 @@
     "DOC-01 documents show an empty library, a failed list, and a downloadable file",
     "UX-01 named controls, keyboard entry, and dialog escape",
     "UX-02 mobile sign-in, editing, download, and delete stay on screen",
-    "UX-03 failed profile, resume, and document reads recover, and a pending generate stays disabled"
+    "UX-03 failed profile, resume, and document reads recover, and a pending generate stays disabled",
+    "FB-01 a new PDF asks for a Trustpilot review, and a click stops every later ask",
+    "FB-02 Tell us what went wrong stores the message and still offers Trustpilot",
+    "FB-03 Not now counts as a prompt: no ask on the next PDF within 30 days",
+    "FB-04 Escape closes the prompt and a free re-download never asks",
+    "PUB-12 with trustpilotReviews on and no listed reviews, the homepage has no reviews section or review data"
   ]
 }

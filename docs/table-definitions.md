@@ -390,3 +390,58 @@ user; `invalid_profile_improvement_request` for a missing or malformed id):
 - `mark_profile_improvement_used(p_job_id uuid default null) returns void`: reconciliation
   when the LLM service reports the improvement already used; sets `used_at`
   (and `job_id` when none is stored). `p_job_id` may be null.
+
+## `user_feedback`
+
+Messages sent through "Tell us what went wrong" in the review prompt shown
+after a new resume PDF (`20261120000300_user_feedback.sql`,
+[MDI-651](https://linear.app/mdivani/issue/MDI-651), epic
+[MDI-650](https://linear.app/mdivani/issue/MDI-650)). One row per message.
+There is no rating column: the prompt has no star rating of its own. Owner
+`SELECT` only (`user_feedbackCollection`); rows are written only by
+`submit_feedback`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK, `gen_random_uuid()` |
+| `user_id` | `uuid not null` | FK → `auth.users(id)` on delete cascade |
+| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; the resume the PDF was generated from |
+| `comment` | `text not null` | Check: 1–2,000 characters after `btrim` |
+| `created_at` | `timestamptz not null default now()` | |
+
+Indexes: `(user_id, created_at desc)`; `(resume_id)` where not null.
+
+## `feedback_prompt_state`
+
+The review prompt cap per user (same migration). At most one row per user,
+created by the first `record_feedback_prompt` or `record_trustpilot_click`.
+Owner `SELECT` only (`feedback_prompt_stateCollection`).
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `user_id` | `uuid` | PK, FK → `auth.users(id)` on delete cascade |
+| `prompts_shown` | `int not null default 0` | Check: `>= 0` |
+| `last_prompted_at` | `timestamptz` | When the prompt last opened |
+| `trustpilot_clicked_at` | `timestamptz` | First click through to Trustpilot; the "never ask again" flag. Never cleared |
+| `created_at` | `timestamptz not null default now()` | |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+The prompt is due when `trustpilot_clicked_at` is null, `prompts_shown < 3`
+and `last_prompted_at` is null or at least 30 days old. The rule lives in the
+private `feedback_prompt_rule(int, timestamptz, timestamptz)` and is mirrored
+in `lib/feedback.ts`.
+
+RPCs (all `SECURITY DEFINER`, `VOLATILE`, for `auth.uid()`; `not authenticated`
+without a session):
+
+- `feedback_prompt_due() returns text`: `due` or `no`. A user with no row is due.
+- `record_feedback_prompt() returns text`: called when the prompt opens. Re-checks
+  the rule under a row lock, then increments `prompts_shown` and sets
+  `last_prompted_at`. `recorded` or `no`. Close, "Not now" and sending a message
+  all count, because the prompt is recorded when it opens.
+- `submit_feedback(p_comment text, p_resume_id uuid default null) returns text`:
+  stores the trimmed message and returns its id. Raises `invalid_feedback`
+  (empty or over 2,000 characters after trimming) or `resume_not_found` (the
+  resume is not the caller's). Does not change the prompt state.
+- `record_trustpilot_click() returns void`: sets `trustpilot_clicked_at` if it
+  is null, inserting the row if needed. Later clicks keep the first time.

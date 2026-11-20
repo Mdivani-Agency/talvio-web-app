@@ -37,6 +37,8 @@ Every table below except `user_credits` has four policies:
 | `monthly_allowance_runs` | none (no grants, no policies) |
 | `llm_proposal_applications` | `llm_proposal_applications_select_own` only; written by `apply_llm_proposal` |
 | `profile_ai_improvements` | `profile_ai_improvements_select_own` only; written by `claim_` / `confirm_` / `release_profile_improvement`, `mark_profile_improvement_used` and `apply_llm_proposal` |
+| `user_feedback` | `user_feedback_select_own` only; written by `submit_feedback` |
+| `feedback_prompt_state` | `feedback_prompt_state_select_own` only; written by `record_feedback_prompt` and `record_trustpilot_click` |
 
 `user_credits` has no insert / update / delete policies. Authenticated clients
 cannot write the balance through GraphQL; `handle_new_user` and
@@ -93,6 +95,14 @@ The LLM service keeps its own once-per-user record (MDI-649); reset it there
 too, or the next `improve_profile` job is refused and the web marks the flag
 used again.
 
+`user_feedback` and `feedback_prompt_state` ([MDI-651](https://linear.app/mdivani/issue/MDI-651))
+hold "Tell us what went wrong" messages and the Trustpilot review prompt cap.
+Clients read their own rows and cannot insert, update or delete them. The four
+RPCs are `SECURITY DEFINER` and act only on `auth.uid()`'s rows. The cap and
+the click-through flag are enforced in `record_feedback_prompt`, not only in
+the client. `submit_feedback` refuses a resume that is not the caller's.
+No function clears `trustpilot_clicked_at`.
+
 ## GraphQL exposure
 
 After grants + RLS, an **authenticated** JWT should see these collections and
@@ -102,11 +112,14 @@ Query: `profilesCollection`, `contactsCollection`, `experiencesCollection`,
 `educationsCollection`, `projectsCollection`, `recommendationsCollection`,
 `skillsCollection`, `toolsCollection`, `linksCollection`,
 `languagesCollection`, `headline_achievementsCollection`, `resumesCollection`, `user_creditsCollection`,
-`llm_proposal_applicationsCollection`, `profile_ai_improvementsCollection`.
+`llm_proposal_applicationsCollection`, `profile_ai_improvementsCollection`,
+`user_feedbackCollection`, `feedback_prompt_stateCollection`.
 
 Mutation: `save_profile`, `generate_pdf`, `finalize_pdf`, `release_resume_generation`,
 `apply_llm_proposal`, `claim_profile_improvement`, `confirm_profile_improvement`,
 `release_profile_improvement`, `mark_profile_improvement_used`,
+`feedback_prompt_due`, `record_feedback_prompt`, `submit_feedback`,
+`record_trustpilot_click`,
 `insertIntoresumesCollection`,
 `updateresumesCollection`, `deleteFromresumesCollection` (and the matching
 profile-child collection mutations). `consume_credits` is **not** a Mutation

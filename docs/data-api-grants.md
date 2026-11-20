@@ -60,6 +60,21 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.profile_ai_improvements TO servic
 -- anon: none
 ```
 
+`user_feedback` and `feedback_prompt_state` (MDI-651) use the same tier:
+authenticated reads its own rows; writes go only through the
+`SECURITY DEFINER` RPCs `submit_feedback`, `record_feedback_prompt` and
+`record_trustpilot_click`.
+
+```sql
+REVOKE ALL ON TABLE public.user_feedback FROM public, anon, authenticated;
+GRANT SELECT ON public.user_feedback TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_feedback TO service_role;
+REVOKE ALL ON TABLE public.feedback_prompt_state FROM public, anon, authenticated;
+GRANT SELECT ON public.feedback_prompt_state TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.feedback_prompt_state TO service_role;
+-- anon: none
+```
+
 ### Server-side only (`credit_prices`)
 
 Price catalog for paid actions. No Data API grants — invisible to
@@ -98,6 +113,15 @@ GRANT EXECUTE ON FUNCTION public.claim_profile_improvement(text) TO authenticate
 GRANT EXECUTE ON FUNCTION public.confirm_profile_improvement(text, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.release_profile_improvement(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.mark_profile_improvement_used(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.feedback_prompt_rule(int, timestamptz, timestamptz) FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.feedback_prompt_due() FROM public, anon;
+REVOKE ALL ON FUNCTION public.record_feedback_prompt() FROM public, anon;
+REVOKE ALL ON FUNCTION public.submit_feedback(text, uuid) FROM public, anon;
+REVOKE ALL ON FUNCTION public.record_trustpilot_click() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.feedback_prompt_due() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.record_feedback_prompt() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.submit_feedback(text, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.record_trustpilot_click() TO authenticated;
 ```
 
 `apply_llm_proposal(p_request jsonb)` (MDI-222) is `SECURITY DEFINER`. It
@@ -153,6 +177,8 @@ the GraphQL `JSON` scalar (serialized string).
 | `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
 | `llm_proposal_applications` | none | SELECT | all | `20261112000100_llm_proposal_applications.sql` (rows written only by `apply_llm_proposal`) |
 | `profile_ai_improvements` | none | SELECT | all | `20261120000100_profile_ai_improvement.sql` (rows written only by the profile improvement RPCs and `apply_llm_proposal`) |
+| `user_feedback` | none | SELECT | all | `20261120000300_user_feedback.sql` (rows written only by `submit_feedback`) |
+| `feedback_prompt_state` | none | SELECT | all | `20261120000300_user_feedback.sql` (rows written only by `record_feedback_prompt` and `record_trustpilot_click`) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

@@ -214,6 +214,7 @@ export type Mutation = {
   deleteFromskillsCollection: SkillsDeleteResponse;
   /** Deletes zero or more records from the `tools` collection */
   deleteFromtoolsCollection: ToolsDeleteResponse;
+  feedback_prompt_due?: Maybe<Scalars['String']['output']>;
   finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
   /** Adds one or more `contacts` records to the collection */
@@ -241,9 +242,12 @@ export type Mutation = {
   /** Adds one or more `tools` records to the collection */
   insertIntotoolsCollection?: Maybe<ToolsInsertResponse>;
   mark_profile_improvement_used?: Maybe<Scalars['Opaque']['output']>;
+  record_feedback_prompt?: Maybe<Scalars['String']['output']>;
+  record_trustpilot_click?: Maybe<Scalars['Opaque']['output']>;
   release_profile_improvement?: Maybe<Scalars['Opaque']['output']>;
   release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
+  submit_feedback?: Maybe<Scalars['String']['output']>;
   /** Updates zero or more records in the `contacts` collection */
   updatecontactsCollection: ContactsUpdateResponse;
   /** Updates zero or more records in the `educations` collection */
@@ -451,6 +455,12 @@ export type MutationSave_ProfileArgs = {
 };
 
 /** The root type for creating and mutating data */
+export type MutationSubmit_FeedbackArgs = {
+  p_comment: Scalars['String']['input'];
+  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationUpdatecontactsCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ContactsFilter>;
@@ -579,6 +589,10 @@ export type Query = {
   experiencesByPk?: Maybe<Experiences>;
   /** A pagable collection of type `experiences` */
   experiencesCollection: ExperiencesConnection;
+  /** Retrieve a record of type `feedback_prompt_state` by its primary key */
+  feedback_prompt_stateByPk?: Maybe<Feedback_Prompt_State>;
+  /** A pagable collection of type `feedback_prompt_state` */
+  feedback_prompt_stateCollection: Feedback_Prompt_StateConnection;
   /** Retrieve a record of type `headline_achievements` by its primary key */
   headline_achievementsByPk?: Maybe<Headline_Achievements>;
   /** A pagable collection of type `headline_achievements` */
@@ -629,6 +643,10 @@ export type Query = {
   user_creditsByPk?: Maybe<User_Credits>;
   /** A pagable collection of type `user_credits` */
   user_creditsCollection: User_CreditsConnection;
+  /** Retrieve a record of type `user_feedback` by its primary key */
+  user_feedbackByPk?: Maybe<User_Feedback>;
+  /** A pagable collection of type `user_feedback` */
+  user_feedbackCollection: User_FeedbackConnection;
 };
 
 /** The root type for querying data */
@@ -677,6 +695,22 @@ export type QueryExperiencesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryFeedback_Prompt_StateByPkArgs = {
+  user_id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryFeedback_Prompt_StateCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Feedback_Prompt_StateFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Feedback_Prompt_StateOrderBy>>;
 };
 
 /** The root type for querying data */
@@ -874,6 +908,22 @@ export type QueryUser_CreditsCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<User_CreditsOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryUser_FeedbackByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryUser_FeedbackCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<User_FeedbackFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<User_FeedbackOrderBy>>;
 };
 
 /** Boolean expression comparing fields on type "String" */
@@ -1337,6 +1387,55 @@ export type ExperiencesUpdateResponse = {
   affectedCount: Scalars['Int']['output'];
   /** Array of records impacted by the mutation */
   records: Array<Experiences>;
+};
+
+export type Feedback_Prompt_State = Node & {
+  __typename?: 'feedback_prompt_state';
+  created_at: Scalars['Datetime']['output'];
+  last_prompted_at?: Maybe<Scalars['Datetime']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  prompts_shown: Scalars['Int']['output'];
+  trustpilot_clicked_at?: Maybe<Scalars['Datetime']['output']>;
+  updated_at: Scalars['Datetime']['output'];
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Feedback_Prompt_StateConnection = {
+  __typename?: 'feedback_prompt_stateConnection';
+  edges: Array<Feedback_Prompt_StateEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Feedback_Prompt_StateEdge = {
+  __typename?: 'feedback_prompt_stateEdge';
+  cursor: Scalars['String']['output'];
+  node: Feedback_Prompt_State;
+};
+
+export type Feedback_Prompt_StateFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Feedback_Prompt_StateFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  last_prompted_at?: InputMaybe<DatetimeFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Feedback_Prompt_StateFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Feedback_Prompt_StateFilter>>;
+  prompts_shown?: InputMaybe<IntFilter>;
+  trustpilot_clicked_at?: InputMaybe<DatetimeFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Feedback_Prompt_StateOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  last_prompted_at?: InputMaybe<OrderByDirection>;
+  prompts_shown?: InputMaybe<OrderByDirection>;
+  trustpilot_clicked_at?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
 };
 
 export type Headline_Achievements = Node & {
@@ -2231,6 +2330,7 @@ export type Resumes = Node & {
   template_key: Scalars['String']['output'];
   type: Resume_Type;
   updated_at: Scalars['Datetime']['output'];
+  user_feedbackCollection?: Maybe<User_FeedbackConnection>;
   user_id: Scalars['UUID']['output'];
 };
 
@@ -2252,6 +2352,16 @@ export type ResumesResumesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ResumesOrderBy>>;
+};
+
+export type ResumesUser_FeedbackCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<User_FeedbackFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<User_FeedbackOrderBy>>;
 };
 
 export type ResumesConnection = {
@@ -2593,6 +2703,53 @@ export type User_CreditsOrderBy = {
   user_id?: InputMaybe<OrderByDirection>;
 };
 
+export type User_Feedback = Node & {
+  __typename?: 'user_feedback';
+  comment: Scalars['String']['output'];
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  resume_id?: Maybe<Scalars['UUID']['output']>;
+  resumes?: Maybe<Resumes>;
+  user_id: Scalars['UUID']['output'];
+};
+
+export type User_FeedbackConnection = {
+  __typename?: 'user_feedbackConnection';
+  edges: Array<User_FeedbackEdge>;
+  pageInfo: PageInfo;
+};
+
+export type User_FeedbackEdge = {
+  __typename?: 'user_feedbackEdge';
+  cursor: Scalars['String']['output'];
+  node: User_Feedback;
+};
+
+export type User_FeedbackFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<User_FeedbackFilter>>;
+  comment?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<User_FeedbackFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<User_FeedbackFilter>>;
+  resume_id?: InputMaybe<UuidFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type User_FeedbackOrderBy = {
+  comment?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  resume_id?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
 /** Boolean expression comparing fields on type "Datetime" */
 export type CreditsQueryVariables = Exact<{
   first?: number | null | undefined;
@@ -2698,6 +2855,25 @@ export type Apply_Llm_ProposalMutationVariables = Exact<{
 }>;
 
 export type Apply_Llm_ProposalMutation = { apply_llm_proposal: string | null };
+
+export type Feedback_Prompt_DueMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Feedback_Prompt_DueMutation = { feedback_prompt_due: string | null };
+
+export type Record_Feedback_PromptMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Record_Feedback_PromptMutation = { record_feedback_prompt: string | null };
+
+export type Submit_FeedbackMutationVariables = Exact<{
+  p_comment: string;
+  p_resume_id?: string | null | undefined;
+}>;
+
+export type Submit_FeedbackMutation = { submit_feedback: string | null };
+
+export type Record_Trustpilot_ClickMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Record_Trustpilot_ClickMutation = { record_trustpilot_click: unknown };
 
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3080,6 +3256,26 @@ export const Apply_Llm_ProposalDocument = gql`
   apply_llm_proposal(p_request: $p_request)
 }
     `;
+export const Feedback_Prompt_DueDocument = gql`
+    mutation Feedback_Prompt_Due {
+  feedback_prompt_due
+}
+    `;
+export const Record_Feedback_PromptDocument = gql`
+    mutation Record_Feedback_Prompt {
+  record_feedback_prompt
+}
+    `;
+export const Submit_FeedbackDocument = gql`
+    mutation Submit_Feedback($p_comment: String!, $p_resume_id: UUID) {
+  submit_feedback(p_comment: $p_comment, p_resume_id: $p_resume_id)
+}
+    `;
+export const Record_Trustpilot_ClickDocument = gql`
+    mutation Record_Trustpilot_Click {
+  record_trustpilot_click
+}
+    `;
 export const HealthDocument = gql`
     query Health {
   __typename
@@ -3166,6 +3362,18 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Apply_Llm_Proposal(variables: Apply_Llm_ProposalMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Apply_Llm_ProposalMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Apply_Llm_ProposalMutation>({ document: Apply_Llm_ProposalDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Apply_Llm_Proposal', 'mutation', variables);
+    },
+    Feedback_Prompt_Due(variables?: Feedback_Prompt_DueMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Feedback_Prompt_DueMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Feedback_Prompt_DueMutation>({ document: Feedback_Prompt_DueDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Feedback_Prompt_Due', 'mutation', variables);
+    },
+    Record_Feedback_Prompt(variables?: Record_Feedback_PromptMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Record_Feedback_PromptMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Record_Feedback_PromptMutation>({ document: Record_Feedback_PromptDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Record_Feedback_Prompt', 'mutation', variables);
+    },
+    Submit_Feedback(variables: Submit_FeedbackMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Submit_FeedbackMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Submit_FeedbackMutation>({ document: Submit_FeedbackDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Submit_Feedback', 'mutation', variables);
+    },
+    Record_Trustpilot_Click(variables?: Record_Trustpilot_ClickMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Record_Trustpilot_ClickMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Record_Trustpilot_ClickMutation>({ document: Record_Trustpilot_ClickDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Record_Trustpilot_Click', 'mutation', variables);
     },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);

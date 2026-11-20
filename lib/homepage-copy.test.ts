@@ -19,6 +19,12 @@ import {
   HOME_FAQ,
   homepageCopyText,
   PRIMARY_CTA_HREF,
+  REVIEWS_ALL_LINK,
+  REVIEWS_FOOTNOTE,
+  REVIEWS_NAME,
+  REVIEWS_TITLE,
+  reviewedOnTrustpilot,
+  reviewsSectionCopyText,
   PRIMARY_CTA_LABEL,
   SECONDARY_CTA_HREF,
   SECONDARY_CTA_LABEL,
@@ -156,5 +162,19 @@ describe('homepage copy', () => {
     expect(homepageCopyText()).not.toMatch(banned);
     expect(homepageCopyText()).not.toMatch(unsupported);
     expect(WHATS_FREE_TITLE).not.toMatch(banned);
+  });
+
+  it('words the reviews section as designed, keeps the critical-reviews line, and claims no rating (MDI-653)', () => {
+    expect(REVIEWS_NAME).toBe('Reviews');
+    expect(REVIEWS_TITLE).toBe('What people say about Talvio');
+    expect(REVIEWS_ALL_LINK).toBe('Read all reviews on Trustpilot');
+    expect(reviewedOnTrustpilot('2 November 2026')).toBe('Reviewed on Trustpilot · 2 November 2026');
+    expect(REVIEWS_FOOTNOTE).toBe(
+      'Selected reviews, quoted as written. See every review, including critical ones, on Trustpilot.',
+    );
+    expect(reviewsSectionCopyText()).not.toMatch(banned);
+    expect(reviewsSectionCopyText()).not.toMatch(/\bstars?\b|rating|trustscore|excellent/i);
+    // Hidden by default: not part of the homepage text until the flag is on and reviews are listed.
+    expect(homepageCopyText()).not.toContain(REVIEWS_TITLE);
   });
 });

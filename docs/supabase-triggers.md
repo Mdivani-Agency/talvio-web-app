@@ -18,6 +18,7 @@ has an `updated_at` column:
 | `resumes` | `resumes_set_updated_at` |
 | `user_credits` | `user_credits_set_updated_at` |
 | `credit_prices` | `credit_prices_set_updated_at` |
+| `feedback_prompt_state` | `feedback_prompt_state_set_updated_at` |
 
 `contacts`, `skills`, `tools`, `links`, `languages` and `headline_achievements` have `created_at` only.
 

@@ -20,6 +20,7 @@ import { useUserSession } from '@lib/providers';
 import { RESUME_SAVED_TOAST } from '@/lib/resume-editor-copy';
 import type { PreviewDto, Resume } from '@lib/types';
 
+import { useFeedbackPrompt } from './providers/feedback-prompt-provider';
 import { useResumeContext } from './providers/state-provider';
 import { ResumeEditorShell } from './views/resume-editor-shell';
 
@@ -54,7 +55,8 @@ export function ResumePreviewPage() {
   const [savePending, setSavePending] = useState(false);
   // Retry repeats the action that failed: a failed Save must not turn into a paid download.
   const lastAction = useRef<'save' | 'download'>('download');
-  const generatePdf = useGenerateResumePdf(session?.user.id);
+  const feedbackPrompt = useFeedbackPrompt();
+  const generatePdf = useGenerateResumePdf(session?.user.id, { onNewPdf: feedbackPrompt.notifyNewPdf });
 
   const signInReturn = useCallback(() => {
     const template = searchParams.get('template');
