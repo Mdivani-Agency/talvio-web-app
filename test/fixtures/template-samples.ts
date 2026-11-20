@@ -111,10 +111,10 @@ export const templateSampleWithoutOptionalFields: ResumeForm = {
   experience: templateSample.experience?.map((entry) => ({ ...entry, stack: [] })),
 };
 
-/** A career long enough to run past one page. */
+/** A career long enough to run past one page, even in Compact. */
 export const templateSampleLong: ResumeForm = {
   ...templateSample,
-  experience: Array.from({ length: 7 }, (_, index) => ({
+  experience: Array.from({ length: 12 }, (_, index) => ({
     ...templateSample.experience![index % 2]!,
     company: `Company ${index + 1}`,
     description: bullets(
