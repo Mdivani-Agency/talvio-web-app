@@ -41,4 +41,62 @@ describe('useAutoSave', () => {
     await act(() => result.current.save({ salary: '125k' }));
     expect(result.current.status).toBe('saved');
   });
+
+  it('runs saves one at a time, in the order they were made', async () => {
+    const { result } = renderHook(() => useAutoSave(card, 'u1'));
+    const calls: string[] = [];
+    let releaseFirst: () => void = () => undefined;
+    mutateAsync.mockReset();
+    mutateAsync
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            calls.push('start applied');
+            releaseFirst = () => {
+              calls.push('end applied');
+              resolve();
+            };
+          }),
+      )
+      .mockImplementationOnce(async () => {
+        calls.push('start interview');
+      });
+
+    let first: Promise<boolean> = Promise.resolve(true);
+    let second: Promise<boolean> = Promise.resolve(true);
+    act(() => {
+      first = result.current.save({ stage: 'applied' });
+      second = result.current.save({ stage: 'interview' });
+    });
+    expect(result.current.status).toBe('saving');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(calls).toEqual(['start applied']);
+
+    await act(async () => {
+      releaseFirst();
+      await first;
+      await second;
+    });
+    expect(calls).toEqual(['start applied', 'end applied', 'start interview']);
+    expect(result.current.status).toBe('saved');
+  });
+
+  it('forgets a failed field once it is back to its stored value, so Retry does not write the old edit', async () => {
+    const { result } = renderHook(() => useAutoSave(card, 'u1'));
+    mutateAsync.mockReset();
+
+    mutateAsync.mockRejectedValueOnce(new Error('offline'));
+    await act(() => result.current.save({ salary: '120k' }));
+    expect(result.current.status).toBe('failed');
+
+    await act(async () => {
+      result.current.forget('salary');
+      await Promise.resolve();
+    });
+    expect(result.current.status).toBe('idle');
+    await act(() => result.current.retry());
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+  });
 });

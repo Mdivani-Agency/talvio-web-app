@@ -109,7 +109,7 @@ function SaveState({ status, onRetry }: { status: SaveStatus; onRetry: () => voi
 function PanelBody({ application, userId, knownLabels, stagePatch, onClose }: DetailPanelProps & { application: JobApplication }) {
   const detail = useApplication(application.id);
   const deleteApplication = useDeleteApplication(userId);
-  const { status, save, retry } = useAutoSave(application, userId);
+  const { status, save, retry, forget } = useAutoSave(application, userId);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const form = useAppForm<DetailsFormValues>({
     defaultValues: detailsDefaults(application),
@@ -125,6 +125,9 @@ function PanelBody({ application, userId, knownLabels, stagePatch, onClose }: De
     const patch = detailsPatch(application, name, String(form.getFieldValue(name) ?? ''));
     if (patch) {
       await save(patch);
+    } else {
+      // Back to the stored value: nothing to write, and an earlier failed edit of this field must not be retried.
+      forget(name);
     }
   };
 

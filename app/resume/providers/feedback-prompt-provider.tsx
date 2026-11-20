@@ -128,6 +128,9 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
         return;
       }
       busy.current = true;
+      // The page the PDF was generated on. The checks below are async; if the user has gone elsewhere by the time
+      // they finish, the bar is not shown.
+      const origin = currentPath.current;
       void (async () => {
         try {
           const trackerDue = flags.applicationTracker ? await isTrackerDue(userId, resume) : false;
@@ -147,7 +150,9 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
           }
           await generateDialogClosed();
           if (prompt === 'tracker') {
-            setTracker({ resume, path: currentPath.current });
+            if (currentPath.current === origin || currentPath.current === `/resume/${resume.id}`) {
+              setTracker({ resume, path: origin });
+            }
             busy.current = false;
             return;
           }
