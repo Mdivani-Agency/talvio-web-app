@@ -333,6 +333,11 @@ export function normalizeResumeDocument<T>(document: T): T {
     });
   }
 
+  // No custom section order means the template's own: store none, so a later template change follows its default.
+  if ('sectionOrder' in root && (!Array.isArray(root.sectionOrder) || root.sectionOrder.length === 0)) {
+    delete root.sectionOrder;
+  }
+
   if (root.location && typeof root.location === 'object' && !Array.isArray(root.location)) {
     const location = root.location as { city?: unknown; country?: unknown };
     const city = typeof location.city === 'string' ? location.city : '';

@@ -4,6 +4,14 @@ import { HighlightsForm } from '@app/account/create/views/forms/highlights.form'
 import { ExperienceView } from '@app/account/create/views/experience';
 import { EducationView } from '@app/account/create/views/education';
 import { ProjectsView } from '@app/account/create/views/projects';
+import { RecommendationsView } from '@app/account/create/views/recommendations';
+import { useCurrentTemplate } from '@app/account/create/views/forms/template-context';
+import { resolveAvailableTemplate } from '@lib/resume/resolve-editor';
+import {
+  effectiveSectionOrder,
+  storedSectionOrder,
+  type MovableSection,
+} from '@lib/resume/section-order';
 import { ContactsForm, RESUME_CONTACT_FIELDS } from '@app/account/create/views/forms/contacts.form';
 import { useAppForm } from '@lib/forms/use-form';
 import { hasFieldError } from '@lib/forms/errors';
@@ -12,7 +20,9 @@ import { resumeDraftSchema } from '@lib/schema/resume.schema';
 import type { ResumeForm } from '@lib/types';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@lib/utils';
-import { downloadErrorSummaryTitle, type ResumeSectionId } from '@/lib/resume-editor-copy';
+import { downloadErrorSummaryTitle, RECOMMENDATIONS_INTRO, type ResumeSectionId } from '@/lib/resume-editor-copy';
+
+import { SectionOrderLine, SectionOrderPanel } from './section-order-panel';
 
 import {
   resumeFieldLabel,
@@ -53,6 +63,18 @@ function documentDefaults(values: ResumeForm): ResumeForm {
   };
 }
 
+/** The editor section that holds each movable PDF section: skills, tools and languages sit in Highlights. */
+const EDITOR_SECTION: Record<MovableSection, ResumeSectionId> = {
+  experience: 'experience',
+  education: 'education',
+  skills: 'highlights',
+  projects: 'projects',
+  recommendations: 'recommendations',
+};
+
+/** Templates with a side column, where a section keeps its column whatever the order. */
+const COLUMN_TEMPLATES = ['talvio', 'sidebar'];
+
 export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDocumentFormProps) => {
   const form = useAppForm<ResumeForm>({
     defaultValues: documentDefaults(defaultValues),
@@ -85,7 +107,26 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
   if (hasFieldError(form, 'experience')) formErrors.add('experience');
   if (hasFieldError(form, 'education')) formErrors.add('education');
   if (hasFieldError(form, 'projects')) formErrors.add('projects');
-  const sections = resumeSectionStates(values, issues, formErrors);
+  if (hasFieldError(form, 'recommendations')) formErrors.add('recommendations');
+  const allSections = resumeSectionStates(values, issues, formErrors);
+
+  // Section order: the user's own, else the template's. Stored only when it differs from the template's default.
+  const current = useCurrentTemplate();
+  const templateItem = resolveAvailableTemplate(current?.key);
+  const templateName = current?.name ?? templateItem.name;
+  const order = effectiveSectionOrder(values.sectionOrder, templateItem.template);
+  // Custom means an order is stored, even one that happens to equal this template's default: it still applies after
+  // a switch to another template, so it must show as the user's and stay resettable.
+  const customOrder = Boolean(values.sectionOrder?.length);
+  const setOrder = (next: MovableSection[]) =>
+    form.setFieldValue('sectionOrder', storedSectionOrder(next, templateItem.template));
+  const [reordering, setReordering] = useState(false);
+  const movable = new Set<ResumeSectionId>(Object.values(EDITOR_SECTION));
+  const fixedSections = allSections.filter((section) => !movable.has(section.id));
+  const orderedSections = order
+    .map((name) => allSections.find((section) => section.id === EDITOR_SECTION[name]))
+    .filter((section): section is (typeof allSections)[number] => Boolean(section));
+  const columnTemplate = COLUMN_TEMPLATES.some((name) => templateItem.key === name || templateItem.key.endsWith(`-${name}`));
 
   // One section is open at a time, About you first. A download that finds issues opens the first one with an issue.
   const [open, setOpen] = useState<ResumeSectionId | null>(() =>
@@ -107,6 +148,7 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
   }, [issues]);
 
   const focusIssue = (issue: ResumeFieldIssue) => {
+    setReordering(false);
     const id = resumeSectionOf(issue.path);
     setOpen(id);
     requestAnimationFrame(() => {
@@ -139,55 +181,92 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
     experience: <ExperienceView form={form} documentMode heading={false} />,
     education: <EducationView form={form} documentMode heading={false} />,
     projects: <ProjectsView form={form} documentMode heading={false} />,
+    recommendations: (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-muted-foreground">{RECOMMENDATIONS_INTRO}</p>
+        <RecommendationsView form={form} documentMode />
+      </div>
+    ),
+  };
+
+  const renderSection = (section: (typeof allSections)[number]) => {
+    const expanded = open === section.id;
+    return (
+      <section key={section.id} id={`resume-section-${section.id}`} className="flex-none rounded-[1.2rem] bg-card">
+        <h2>
+          <button
+            type="button"
+            id={buttonId(section.id)}
+            aria-expanded={expanded}
+            aria-controls={panelId(section.id)}
+            aria-describedby={summaryId(section.id)}
+            onClick={() => setOpen(expanded ? null : section.id)}
+            className="flex w-full items-center gap-3 rounded-[1.2rem] p-4 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none md:px-5"
+          >
+            <SectionMark state={section.state} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-md font-semibold text-primary">{section.title}</span>
+              <span
+                id={summaryId(section.id)}
+                aria-hidden="true"
+                data-allow-small-text
+                className="truncate text-[1.3rem] text-muted-foreground"
+              >
+                {section.summary}
+              </span>
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={cn('size-4 shrink-0 text-muted-foreground transition-transform', expanded && 'rotate-180')}
+            />
+          </button>
+        </h2>
+        <div
+          id={panelId(section.id)}
+          role="region"
+          aria-labelledby={buttonId(section.id)}
+          hidden={!expanded}
+          className="px-4 pb-5 md:px-5"
+        >
+          {body[section.id]}
+        </div>
+      </section>
+    );
   };
 
   return (
     <div ref={rootRef} className="flex h-full w-full flex-col gap-3 overflow-y-auto px-4 pt-1 pb-6 md:px-6">
       {issues?.length ? <IssueSummary ref={summaryRef} issues={issues} onSelect={focusIssue} /> : null}
-      {sections.map((section) => {
-        const expanded = open === section.id;
-        return (
-          <section key={section.id} id={`resume-section-${section.id}`} className="flex-none rounded-[1.2rem] bg-card">
-            <h2>
-              <button
-                type="button"
-                id={buttonId(section.id)}
-                aria-expanded={expanded}
-                aria-controls={panelId(section.id)}
-                aria-describedby={summaryId(section.id)}
-                onClick={() => setOpen(expanded ? null : section.id)}
-                className="flex w-full items-center gap-3 rounded-[1.2rem] p-4 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none md:px-5"
-              >
-                <SectionMark state={section.state} />
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-md font-semibold text-primary">{section.title}</span>
-                  <span
-                    id={summaryId(section.id)}
-                    aria-hidden="true"
-                    data-allow-small-text
-                    className="truncate text-[1.3rem] text-muted-foreground"
-                  >
-                    {section.summary}
-                  </span>
-                </span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={cn('size-4 shrink-0 text-muted-foreground transition-transform', expanded && 'rotate-180')}
-                />
-              </button>
-            </h2>
-            <div
-              id={panelId(section.id)}
-              role="region"
-              aria-labelledby={buttonId(section.id)}
-              hidden={!expanded}
-              className="px-4 pb-5 md:px-5"
-            >
-              {body[section.id]}
-            </div>
-          </section>
-        );
-      })}
+      {fixedSections.map(renderSection)}
+      {reordering ? (
+        <SectionOrderPanel
+          order={order}
+          custom={customOrder}
+          templateName={templateName}
+          columnNote={columnTemplate}
+          onChange={setOrder}
+          onReset={() => form.setFieldValue('sectionOrder', undefined)}
+          onDone={() => {
+            setReordering(false);
+            requestAnimationFrame(() =>
+              rootRef.current?.querySelector<HTMLButtonElement>('[data-reorder-sections]')?.focus(),
+            );
+          }}
+        />
+      ) : (
+        <>
+          <SectionOrderLine
+            order={order}
+            custom={customOrder}
+            templateName={templateName}
+            onReorder={() => {
+              setOpen(null);
+              setReordering(true);
+            }}
+          />
+          {orderedSections.map(renderSection)}
+        </>
+      )}
     </div>
   );
 };

@@ -110,6 +110,11 @@ export const resumeFormSchema = z.object({
     groupSkills: z.boolean().optional(),
   }),
   headlineAchievements: headlineAchievementsSchema.optional(),
+  /**
+   * The user's order of the movable sections (`lib/resume/section-order.ts`). Missing means the template's own order.
+   * Per resume only; the profile has none.
+   */
+  sectionOrder: z.array(z.string().max(40)).max(12).optional(),
   contacts: z.object({
     email: z.email(),
     phone: z.string().optional(),

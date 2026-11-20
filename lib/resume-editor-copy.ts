@@ -117,9 +117,49 @@ export const RESUME_SECTIONS = [
   { id: 'experience', title: 'Experience', prefixes: ['experience'] },
   { id: 'education', title: 'Education', prefixes: ['education'] },
   { id: 'projects', title: 'Projects', prefixes: ['projects'] },
+  { id: 'recommendations', title: 'Recommendations', prefixes: ['recommendations'] },
 ] as const;
 
 export type ResumeSectionId = (typeof RESUME_SECTIONS)[number]['id'];
+
+export const RECOMMENDATIONS_INTRO = 'Optional. A short quote from someone you worked with.';
+
+/** The Content tab's section order (MDI-665): the line under Contact information and the Reorder sections list. */
+export const SECTION_ORDER_COPY = {
+  /** Short names, for the order line. Skills carries tools and languages. */
+  shortNames: {
+    experience: 'Experience',
+    education: 'Education',
+    skills: 'Skills',
+    projects: 'Projects',
+    recommendations: 'Recommendations',
+  },
+  /** Long names, for the list rows and announcements. */
+  longNames: {
+    experience: 'Experience',
+    education: 'Education',
+    skills: 'Skills, tools and languages',
+    projects: 'Projects',
+    recommendations: 'Recommendations',
+  },
+  templateOrder: (template: string) => `${template} order:`,
+  yourOrder: 'Your order:',
+  reorder: 'Reorder sections',
+  title: 'Section order',
+  intro: 'Drag a section, or use the arrows. Your name, contact details and summary always come first.',
+  position: (index: number, total: number) => `${index} of ${total}`,
+  drag: (name: string) => `Drag to move ${name}`,
+  moveUp: (name: string) => `Move ${name} up`,
+  moveDown: (name: string) => `Move ${name} down`,
+  moved: (name: string, direction: 'up' | 'down', index: number, total: number) =>
+    `${name} moved ${direction}. Now ${index} of ${total}.`,
+  reset: (template: string) => `Reset to the ${template} order`,
+  resetDone: (template: string) => `Order reset to the ${template} template.`,
+  done: 'Done',
+  /** Two-column templates keep each section in its column. */
+  columnNote: (template: string) =>
+    `In the ${template} template, skills and education stay in the side column. The order applies within each column.`,
+} as const;
 
 /** Field names in words, by the last part of a form path, for the error summary and the fix line. */
 export const RESUME_FIELD_LABELS: Record<string, string> = {
@@ -164,6 +204,7 @@ export const SECTION_SUMMARY = {
   groupedSkills: (count: number, groups: number) =>
     `${count} ${count === 1 ? 'skill' : 'skills'} in ${groups} ${groups === 1 ? 'group' : 'groups'}`,
   achievements: (count: number) => `${count} ${count === 1 ? 'achievement' : 'achievements'}`,
+  recommendations: (count: number) => `${count} ${count === 1 ? 'recommendation' : 'recommendations'}`,
   tools: (count: number) => `${count} ${count === 1 ? 'tool' : 'tools'}`,
   languages: (count: number) => `${count} ${count === 1 ? 'language' : 'languages'}`,
   /** "Fix 1 field: first name". */

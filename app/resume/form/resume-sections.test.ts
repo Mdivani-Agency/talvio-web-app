@@ -50,6 +50,7 @@ describe('resume sections', () => {
       { id: 'experience', title: 'Experience', state: 'done', summary: '2 roles' },
       { id: 'education', title: 'Education', state: 'done', summary: '1 entry' },
       { id: 'projects', title: 'Projects', state: 'todo', summary: 'Optional · none yet' },
+      { id: 'recommendations', title: 'Recommendations', state: 'todo', summary: 'Optional · none yet' },
     ]);
   });
 
@@ -76,6 +77,7 @@ describe('resume sections', () => {
       ['todo', 'Not started yet'],
       ['todo', 'Not started yet'],
       ['todo', 'Not started yet'],
+      ['todo', 'Optional · none yet'],
       ['todo', 'Optional · none yet'],
     ]);
   });
