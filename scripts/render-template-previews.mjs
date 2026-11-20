@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync, renameSync, existsSync, rmSync } from 'node:f
 import { join, resolve } from 'node:path';
 
 const require = createRequire(resolve(process.cwd(), 'package.json'));
-const { ResumePDFService, formatUrl } = require('@pdf-tlv/resume');
+const { ResumePDFService, formatUrl, interFont } = require('@pdf-tlv/resume');
 const { ember, mint, talvio } = require('@pdf-tlv/resume/dist/templates');
 const { PDFDocument } = createRequire(require.resolve('@pdf-tlv/resume/package.json'))('pdf-lib');
 
@@ -204,7 +204,7 @@ mkdirSync(tmp, { recursive: true });
 
 async function render(level, style, type) {
   const service = new ResumePDFService();
-  await service.create({ color: style.color, fontSize: type.fontSize, leading: type.leading, isPreview: false });
+  await service.create({ color: style.color, fontSize: type.fontSize, leading: type.leading, isPreview: false, customFont: interFont });
   const bytes = await service.generate({
     data: DATA[level],
     template: style.template,

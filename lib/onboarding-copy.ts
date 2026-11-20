@@ -53,6 +53,13 @@ export const PROJECT_FIELDS = {
 
 export type SectionCopy = { title: string; hint?: string };
 
+/** The resume editor's recommendation form. The PDF prints the name, the link and the quote. */
+export const RECOMMENDATION_FIELDS = {
+  name: { label: 'Name', example: 'Who recommends you' },
+  url: { label: 'Link', example: 'https://linkedin.com/in/their-profile' },
+  additionalDetails: { label: 'Quote', example: 'What they said about your work' },
+} as const satisfies Record<string, FieldCopy>;
+
 /** Section headings, in sentence case, with the one-line hint the design shows under some of them. */
 export const PROFILE_SECTIONS = {
   about: { title: 'About you' },
@@ -124,6 +131,12 @@ export const ENTRY_LISTS = {
     newTitle: 'New project',
     removeTitle: 'Remove project',
     empty: 'No projects added yet.',
+  },
+  recommendations: {
+    addLabel: 'Add recommendation',
+    newTitle: 'New recommendation',
+    removeTitle: 'Remove recommendation',
+    empty: 'No recommendations added yet.',
   },
 } as const satisfies Record<string, EntryListCopy>;
 

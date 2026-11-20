@@ -266,3 +266,17 @@ describe('resumeToPreviewDto', () => {
     expect(body.resume.profile.firstName).toBe('Ann');
   });
 });
+
+describe('section order in resume content', () => {
+  const content = {
+    profile: { firstName: 'Ada', lastName: 'Owner', role: 'Engineer' },
+    contacts: { email: 'ada@example.com' },
+  };
+
+  it('saves and loads the order with the content, and loads content saved without one', () => {
+    const set = toResumeUpdateSet({ resume: { ...content, sectionOrder: ['education', 'experience'] } });
+    expect(JSON.parse(set.content!).sectionOrder).toEqual(['education', 'experience']);
+    expect(parseResumeContent(JSON.parse(set.content!))?.sectionOrder).toEqual(['education', 'experience']);
+    expect(parseResumeContent(content)).not.toHaveProperty('sectionOrder');
+  });
+});

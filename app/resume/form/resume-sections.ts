@@ -83,6 +83,14 @@ function contentSummary(id: ResumeSectionId, values: ResumeForm): { summary: str
       const n = count(values.projects);
       return { summary: n ? SECTION_SUMMARY.projects(n) : SECTION_SUMMARY.optionalEmpty, done: n > 0, optional: true };
     }
+    case 'recommendations': {
+      const n = count(values.recommendations);
+      return {
+        summary: n ? SECTION_SUMMARY.recommendations(n) : SECTION_SUMMARY.optionalEmpty,
+        done: n > 0,
+        optional: true,
+      };
+    }
   }
 }
 

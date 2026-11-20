@@ -1,6 +1,7 @@
 import { Config, ResumePDFService, Template } from '@pdf-tlv/resume';
 
-import { convertToResumeData } from '@/lib/services/resume.service';
+import { pdfSectionOrder } from '@lib/resume/section-order';
+import { convertToResumeData, generateWithFontFallback } from '@/lib/services/resume.service';
 import type { ResumeForm } from '@lib/types';
 
 export async function generateResumePdfBytes(
@@ -15,10 +16,15 @@ export async function generateResumePdfBytes(
     leading: 'md',
     isPreview: false,
   });
-  const bytes = await service.generate({
+  const bytes = await generateWithFontFallback(service, {
     data: convertToResumeData(data),
     template,
-    options: { ...options, isPreview: false },
-  });
+    options: {
+      ...(options.color ? { color: options.color } : {}),
+      ...(options.fontSize ? { fontSize: options.fontSize } : {}),
+      ...(options.colors ? { colors: options.colors } : {}),
+    },
+    sectionOrder: pdfSectionOrder(data.sectionOrder),
+  }, { fontUnavailable: false });
   return bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes as ArrayBuffer);
 }

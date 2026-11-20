@@ -1,20 +1,46 @@
-import { Config, ResumePDFService, Template, ResumeData, formatUrl } from '@pdf-tlv/resume';
+import { ResumePDFService, Template, ResumeData, formatUrl, interFont, type RenderOptions } from '@pdf-tlv/resume';
+import { pdfSectionOrder } from '@lib/resume/section-order';
 import { ResumeForm } from '@lib/types';
 import { capitalise, formatDate } from '@lib/utils';
 
-/**
- * Optional template fields (MDI-664), in the shape `@pdf-tlv/resume` 0.4.0 reads. Declared here while the app pins an
- * older engine, whose `ResumeData` does not list them; the engine ignores fields a template does not use.
- */
-export type TemplateOptionalData = {
-  headlineAchievements?: Array<{ value: string; label: string }>;
-  skillGroups?: Array<{ name: string; skills: string[] }>;
-};
+/** Optional template fields (MDI-664), as `@pdf-tlv/resume` reads them. Templates that don't use them ignore them. */
+export type TemplateOptionalData = Pick<ResumeData, 'headlineAchievements' | 'skillGroups'>;
 
-export type ResumePdfData = Omit<ResumeData, 'experience'> &
-  TemplateOptionalData & {
-    experience?: Array<NonNullable<ResumeData['experience']>[number] & { stack?: string[] }>;
-  };
+export type ResumePdfData = ResumeData;
+
+/**
+ * Inter, which the built-in templates are designed with. From 0.3.0 the engine uses Helvetica unless it gets a custom
+ * font, so the app passes Inter to keep resumes looking as they did on 0.2.3.
+ */
+export const RESUME_PDF_FONT = interFont;
+
+type GenerateParams = Parameters<ResumePDFService['generate']>[0];
+
+/**
+ * Render with Inter, falling back to the standard font when Inter cannot be downloaded (offline, or a network that
+ * blocks Google Fonts), as 0.2.3 did. 0.4.0 rejects the whole render instead. A failure is remembered on the service so
+ * later renders don't wait on the download again. A render error that is not about the font fails the retry too.
+ */
+export async function generateWithFontFallback(
+  service: ResumePDFService,
+  params: GenerateParams,
+  state: { fontUnavailable: boolean },
+): Promise<Uint8Array> {
+  if (state.fontUnavailable) {
+    return service.generate(params);
+  }
+  let fontError: unknown;
+  try {
+    return await service.generate({ ...params, options: { ...params.options, customFont: RESUME_PDF_FONT } });
+  } catch (error) {
+    fontError = error;
+  }
+  // Only blame the font when the same render works without it.
+  const bytes = await service.generate(params);
+  state.fontUnavailable = true;
+  console.warn('Resume font unavailable, using the standard font', fontError);
+  return bytes;
+}
 
 /** The group that holds skills without a group when grouping is on. */
 export const UNGROUPED_SKILLS_LABEL = 'Other';
@@ -138,6 +164,7 @@ function optional<K extends string, V>(key: K, value: V | undefined): Partial<Re
 
 export class ResumeService {
   private readonly $resume: ResumePDFService;
+  private readonly $font = { fontUnavailable: false };
 
   constructor() {
     this.$resume = new ResumePDFService();
@@ -146,17 +173,20 @@ export class ResumeService {
       fontSize: 'md',
       leading: 'md',
       isPreview: true,
+      // Text only: there is no /logo.png. 0.2.3 skipped the missing image; 0.4.0 rejects the render instead.
       watermark: {
         text: 'Talvio',
-        url: '/logo.png',
         color: '#1E20D4',
       },
     });
   }
 
-  async generate(data: ResumeForm, template: Template, options: Partial<Config> = {}) {
-    const resumeData: ResumeData = convertToResumeData(data);
-    return this.$resume.generate({ data: resumeData, template, options });
+  async generate(data: ResumeForm, template: Template, options: RenderOptions = {}) {
+    return generateWithFontFallback(
+      this.$resume,
+      { data: convertToResumeData(data), template, options, sectionOrder: pdfSectionOrder(data.sectionOrder) },
+      this.$font,
+    );
   }
 }
 

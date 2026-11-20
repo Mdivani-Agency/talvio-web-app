@@ -37,4 +37,24 @@ describe('generateResumePdfBytes', () => {
       expect(text).toContain('Owned the editor');
     },
   );
+
+  // Talvio keeps education in its side column, so there projects move ahead of experience in the main column.
+  it.each(TEMPLATE_LIST.senior.map((item) => [item.key, item.template] as const))(
+    'draws the sections in the resume order in %s, and in the template order without one',
+    async (key, template) => {
+      const resume = profileToResumeDocument(fullAccountDto);
+      const moved = key.endsWith('talvio') ? 'projects' : 'education';
+      const movedText = (moved === 'projects' ? resume.projects?.[0]?.name : resume.education?.[0]?.name) ?? '';
+      const company = resume.experience?.[0]?.company ?? '';
+      expect(movedText && company).toBeTruthy();
+
+      const before = await renderedText(resume, template, { color: '#000000' });
+      expect(before.indexOf(company)).toBeLessThan(before.indexOf(movedText));
+
+      const reordered = await renderedText({ ...resume, sectionOrder: [moved, 'experience'] }, template, {
+        color: '#000000',
+      });
+      expect(reordered.indexOf(movedText)).toBeLessThan(reordered.indexOf(company));
+    },
+  );
 });
