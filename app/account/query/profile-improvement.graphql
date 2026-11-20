@@ -1,0 +1,29 @@
+# The once-per-account free profile improvement (MDI-643). The /api/llm adapter calls these
+# mutations as the user around an improve_profile job (lib/services/profile-improvement.server.ts).
+
+mutation ClaimProfileImprovement($p_client_request_id: String!) {
+  claim_profile_improvement(p_client_request_id: $p_client_request_id)
+}
+
+mutation ConfirmProfileImprovement($p_client_request_id: String!, $p_job_id: UUID!) {
+  confirm_profile_improvement(p_client_request_id: $p_client_request_id, p_job_id: $p_job_id)
+}
+
+mutation ReleaseProfileImprovement($p_client_request_id: String!) {
+  release_profile_improvement(p_client_request_id: $p_client_request_id)
+}
+
+mutation MarkProfileImprovementUsed($p_job_id: UUID) {
+  mark_profile_improvement_used(p_job_id: $p_job_id)
+}
+
+query ProfileImprovementRequest {
+  profile_ai_improvementsCollection(first: 1) {
+    edges {
+      node {
+        client_request_id
+        used_at
+      }
+    }
+  }
+}

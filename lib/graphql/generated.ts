@@ -2439,6 +2439,35 @@ export type CreditsQueryVariables = Exact<{
 
 export type CreditsQuery = { user_creditsCollection: { edges: Array<{ node: { balance: number } }> } };
 
+export type ClaimProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+}>;
+
+export type ClaimProfileImprovementMutation = { claim_profile_improvement: string | null };
+
+export type ConfirmProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+  p_job_id: string;
+}>;
+
+export type ConfirmProfileImprovementMutation = { confirm_profile_improvement: unknown };
+
+export type ReleaseProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+}>;
+
+export type ReleaseProfileImprovementMutation = { release_profile_improvement: unknown };
+
+export type MarkProfileImprovementUsedMutationVariables = Exact<{
+  p_job_id?: string | null | undefined;
+}>;
+
+export type MarkProfileImprovementUsedMutation = { mark_profile_improvement_used: unknown };
+
+export type ProfileImprovementRequestQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type ProfileImprovementRequestQuery = { profile_ai_improvementsCollection: { edges: Array<{ node: { client_request_id: string, used_at: string | null } }> } };
+
 export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string };
 
 export type ProfileByUserQueryVariables = Exact<{
@@ -2565,6 +2594,41 @@ export const CreditsDocument = gql`
     edges {
       node {
         balance
+      }
+    }
+  }
+}
+    `;
+export const ClaimProfileImprovementDocument = gql`
+    mutation ClaimProfileImprovement($p_client_request_id: String!) {
+  claim_profile_improvement(p_client_request_id: $p_client_request_id)
+}
+    `;
+export const ConfirmProfileImprovementDocument = gql`
+    mutation ConfirmProfileImprovement($p_client_request_id: String!, $p_job_id: UUID!) {
+  confirm_profile_improvement(
+    p_client_request_id: $p_client_request_id
+    p_job_id: $p_job_id
+  )
+}
+    `;
+export const ReleaseProfileImprovementDocument = gql`
+    mutation ReleaseProfileImprovement($p_client_request_id: String!) {
+  release_profile_improvement(p_client_request_id: $p_client_request_id)
+}
+    `;
+export const MarkProfileImprovementUsedDocument = gql`
+    mutation MarkProfileImprovementUsed($p_job_id: UUID) {
+  mark_profile_improvement_used(p_job_id: $p_job_id)
+}
+    `;
+export const ProfileImprovementRequestDocument = gql`
+    query ProfileImprovementRequest {
+  profile_ai_improvementsCollection(first: 1) {
+    edges {
+      node {
+        client_request_id
+        used_at
       }
     }
   }
@@ -2863,6 +2927,21 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
   return {
     Credits(variables?: CreditsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<CreditsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<CreditsQuery>({ document: CreditsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Credits', 'query', variables);
+    },
+    ClaimProfileImprovement(variables: ClaimProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ClaimProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ClaimProfileImprovementMutation>({ document: ClaimProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ClaimProfileImprovement', 'mutation', variables);
+    },
+    ConfirmProfileImprovement(variables: ConfirmProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ConfirmProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ConfirmProfileImprovementMutation>({ document: ConfirmProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ConfirmProfileImprovement', 'mutation', variables);
+    },
+    ReleaseProfileImprovement(variables: ReleaseProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ReleaseProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ReleaseProfileImprovementMutation>({ document: ReleaseProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ReleaseProfileImprovement', 'mutation', variables);
+    },
+    MarkProfileImprovementUsed(variables?: MarkProfileImprovementUsedMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<MarkProfileImprovementUsedMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<MarkProfileImprovementUsedMutation>({ document: MarkProfileImprovementUsedDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'MarkProfileImprovementUsed', 'mutation', variables);
+    },
+    ProfileImprovementRequest(variables?: ProfileImprovementRequestQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileImprovementRequestQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ProfileImprovementRequestQuery>({ document: ProfileImprovementRequestDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileImprovementRequest', 'query', variables);
     },
     ProfileByUser(variables: ProfileByUserQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileByUserQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProfileByUserQuery>({ document: ProfileByUserDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileByUser', 'query', variables);
