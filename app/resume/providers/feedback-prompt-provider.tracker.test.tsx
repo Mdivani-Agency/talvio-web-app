@@ -7,7 +7,10 @@ const mocks = vi.hoisted(() => ({
   due: vi.fn(),
   record: vi.fn(),
   cards: vi.fn(),
+  pathname: '/resume/resume-1',
 }));
+
+vi.mock('next/navigation', () => ({ usePathname: () => mocks.pathname }));
 
 vi.mock('@lib/providers', () => ({ useUserSession: () => ({ session: { user: { id: 'user-1' } } }) }));
 vi.mock('@lib/flags', () => ({ featureFlags: () => ({ feedbackPrompt: true, applicationTracker: true }) }));
@@ -75,6 +78,7 @@ describe('post-generate prompts in FeedbackPromptProvider', () => {
     mocks.due.mockReset().mockResolvedValue('due');
     mocks.record.mockReset().mockResolvedValue(true);
     mocks.cards.mockReset().mockResolvedValue({});
+    mocks.pathname = '/resume/resume-1';
   });
   afterEach(() => cleanup());
 
@@ -127,6 +131,34 @@ describe('post-generate prompts in FeedbackPromptProvider', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Add an application' });
     expect(dialog.textContent).toContain('Applied');
+    expect(screen.queryByRole('status', BAR)).toBeNull();
+  });
+
+  it('keeps the bar on its resume page and clears it when the user goes elsewhere', async () => {
+    mocks.pathname = '/resume';
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const tree = () => (
+      <QueryClientProvider client={client}>
+        <FeedbackPromptProvider>
+          <Probe />
+        </FeedbackPromptProvider>
+      </QueryClientProvider>
+    );
+    const view = render(tree());
+    act(() => probe.current?.notifyNewPdf({ id: 'resume-1', sourceResumeId: null }));
+    expect(await screen.findByRole('status', BAR)).toBeTruthy();
+
+    // The editor moves to the generated resume's own page: the bar stays.
+    mocks.pathname = '/resume/resume-1';
+    view.rerender(tree());
+    expect(screen.queryByRole('status', BAR)).toBeTruthy();
+
+    // Back to Tailor to a job, or any other page: the bar goes and does not come back.
+    mocks.pathname = '/resume/tailor';
+    view.rerender(tree());
+    expect(screen.queryByRole('status', BAR)).toBeNull();
+    mocks.pathname = '/resume/resume-1';
+    view.rerender(tree());
     expect(screen.queryByRole('status', BAR)).toBeNull();
   });
 });
