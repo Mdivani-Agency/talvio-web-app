@@ -2,7 +2,7 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react';
 import { cn } from '@lib/utils';
 import { Icon } from '../icons';
-import { Fragment, useState, useEffect, useRef, useMemo } from 'react';
+import { Fragment, useState, useEffect, useRef, useMemo, useId } from 'react';
 
 const MONTHS = [
   { value: 0, label: 'Jan' },
@@ -33,6 +33,10 @@ interface DatePickerProps {
   className?: string;
   minDate?: string;
   maxDate?: string;
+  /** Id of the month button, so a `<label htmlFor>` can point at the picker. */
+  id?: string;
+  /** The visible label's text. Each button is then named by it, its part and its value ("Start date, month: January"). */
+  label?: string;
 }
 
 const emptyDate = {
@@ -49,7 +53,12 @@ export function DatePicker({
   className,
   minDate,
   maxDate,
+  id,
+  label,
 }: DatePickerProps) {
+  const autoId = useId();
+  const monthId = id ?? `${autoId}-month`;
+  const yearId = `${monthId}-year`;
   // Parse string props to Date objects
   const minDateObj = useMemo(() => (minDate ? new Date(minDate) : undefined), [minDate]);
   const maxDateObj = useMemo(() => (maxDate ? new Date(maxDate) : undefined), [maxDate]);
@@ -141,6 +150,8 @@ export function DatePicker({
 
   const selectedMonthValue = selectedDate ? MONTHS.find((m) => m.value === selectedDate.getMonth())?.value : undefined;
   const selectedYearValue = selectedDate ? selectedDate.getFullYear() : undefined;
+  const monthLabel =
+    typeof selectedMonthValue === 'number' ? MONTHS.find((m) => m.value === selectedMonthValue)?.label : undefined;
 
   return (
     <div className={cn('flex gap-2', className)}>
@@ -151,6 +162,8 @@ export function DatePicker({
       >
         <div className="relative flex-1" ref={containerRef}>
           <ListboxButton
+            id={monthId}
+            aria-label={label ? `${label}, month: ${monthLabel ?? 'not chosen'}` : undefined}
             className={cn(
               'group flex w-full items-center justify-between overflow-hidden border appearance-none rounded-md p-3.5 font-medium text-foreground',
               'transition-colors duration-300 ease-in',
@@ -232,6 +245,8 @@ export function DatePicker({
       >
         <div className="relative flex-1">
           <ListboxButton
+            id={yearId}
+            aria-label={label ? `${label}, year: ${selectedYearValue || 'not chosen'}` : undefined}
             className={cn(
               'group flex w-full items-center justify-between overflow-hidden border appearance-none rounded-md p-3.5 font-medium text-foreground',
               'transition-colors duration-300 ease-in',

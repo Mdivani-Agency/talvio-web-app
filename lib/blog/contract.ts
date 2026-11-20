@@ -31,11 +31,51 @@ export function isSameOriginCoverPath(value: string): boolean {
   );
 }
 
+/** Talvio's media host. The backend also accepts covers here, stored as absolute https URLs. */
+export const TALVIO_MEDIA_ORIGIN = 'https://media.talvio.co';
+
+/**
+ * Backend cover rule (`isTalvioMediaCoverUrl` in the landing-page `lib/blog-schema.ts`): a canonical https URL on
+ * media.talvio.co with a plain path, so no credentials, port, query, fragment, `..` or backslash.
+ */
+export function isTalvioMediaCoverUrl(value: string): boolean {
+  if (
+    !value.startsWith(`${TALVIO_MEDIA_ORIGIN}/`) ||
+    value.includes('\\') ||
+    value.includes('..') ||
+    value.includes('?') ||
+    value.includes('#')
+  ) {
+    return false;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+  return url.origin === TALVIO_MEDIA_ORIGIN && url.pathname.length > 1 && url.href === value;
+}
+
+/** A cover is a path on the API origin or a media.talvio.co URL. */
+export function isAllowedCoverUrl(value: string): boolean {
+  return isSameOriginCoverPath(value) || isTalvioMediaCoverUrl(value);
+}
+
+/**
+ * Absolute URL for a stored cover. A media.talvio.co URL is used as it is. A path resolves against the API origin,
+ * never against Talvio, and is `null` when the API origin is unknown.
+ */
+export function resolveBlogCoverUrl(cover: string, apiOrigin: string | null): string | null {
+  if (isTalvioMediaCoverUrl(cover)) return cover;
+  return apiOrigin ? `${apiOrigin}${cover}` : null;
+}
+
 export const blogPostSummaryWireSchema = z.object({
   slug: z.string().refine(isValidBlogSlug),
   title: z.string().min(1),
   description: z.string().min(1),
-  cover_image_url: z.string().refine(isSameOriginCoverPath).nullable(),
+  cover_image_url: z.string().refine(isAllowedCoverUrl).nullable(),
   tags: z.array(z.string()),
   sites: z.array(z.enum(BLOG_SITE_KEYS)),
   status: z.enum(['draft', 'published']),
@@ -86,7 +126,7 @@ export type BlogPostSummary = {
   slug: string;
   title: string;
   description: string;
-  /** Path on the API origin, as the backend stores it. Resolving it to an asset URL belongs to the renderer. */
+  /** Path on the API origin or a media.talvio.co URL, as the backend stores it. Resolving it to an asset URL belongs to the renderer. */
   coverImagePath: string | null;
   tags: string[];
   sites: BlogSiteKey[];

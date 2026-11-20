@@ -8,6 +8,7 @@ import {
   blogListEnvelopeSchema,
   compareBlogPosts,
   isValidBlogSlug,
+  resolveBlogCoverUrl,
   toBlogPost,
   type BlogPostSummary,
 } from './contract';
@@ -62,13 +63,22 @@ describe('wire schemas', () => {
     '/assets/cover.png?w=1',
     '/assets/cover.png#x',
     '/assets\\cover.png',
-  ])('reject the cover %j, which is not a same-origin path', (cover) => {
+    'http://media.talvio.co/blog/cover.png',
+    'https://media.talvio.co',
+    'https://media.talvio.co/',
+    'https://media.talvio.co.evil.test/blog/cover.png',
+    'https://media.talvio.co:8443/blog/cover.png',
+    'https://user@media.talvio.co/blog/cover.png',
+    'https://media.talvio.co/blog/cover.png?v=1',
+    'https://media.talvio.co/blog/../secret.png',
+    'https://talvio-media-prod.s3.us-west-1.amazonaws.com/blog/cover.png',
+  ])('reject the cover %j, which is neither a same-origin path nor a media.talvio.co URL', (cover) => {
     const result = blogDetailEnvelopeSchema.safeParse({ ok: true, post: { ...talvioPublishedPost, cover_image_url: cover } });
     expect(result.error?.issues.map((issue) => issue.path)).toEqual([['post', 'cover_image_url']]);
   });
 
-  it('accept a same-origin cover path or no cover', () => {
-    for (const cover of ['/assets/blog/cover.png', null]) {
+  it('accept a same-origin cover path, a media.talvio.co URL, or no cover', () => {
+    for (const cover of ['/assets/blog/cover.png', 'https://media.talvio.co/blog/cover.png', null]) {
       const result = blogDetailEnvelopeSchema.safeParse({ ok: true, post: { ...talvioPublishedPost, cover_image_url: cover } });
       expect(result.success).toBe(true);
     }
@@ -104,5 +114,20 @@ describe('mapping and order', () => {
       .sort(compareBlogPosts)
       .map((item) => item.slug);
     expect(sorted).toEqual(['c', 'a', 'b']);
+  });
+});
+
+describe('resolveBlogCoverUrl', () => {
+  it('keep a media.talvio.co cover as it is, with or without an API origin', () => {
+    const cover = 'https://media.talvio.co/blog/cover.png';
+    expect(resolveBlogCoverUrl(cover, 'https://www.mdivani.agency')).toBe(cover);
+    expect(resolveBlogCoverUrl(cover, null)).toBe(cover);
+  });
+
+  it('resolve a path against the API origin, or give null without one', () => {
+    expect(resolveBlogCoverUrl('/assets/cover.png', 'https://www.mdivani.agency')).toBe(
+      'https://www.mdivani.agency/assets/cover.png',
+    );
+    expect(resolveBlogCoverUrl('/assets/cover.png', null)).toBeNull();
   });
 });
