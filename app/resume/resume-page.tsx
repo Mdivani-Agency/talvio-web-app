@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -42,6 +42,11 @@ export function ResumePreviewPage() {
   const [issues, setIssues] = useState<ResumeFieldIssue[]>([]);
   const { resume, resumeId, changeResume, clearResumeDraft, ensureDraftId } = useResumeContext();
   const createdRef = useRef<Resume | null>(null);
+  // The editor stays usable while a save is in flight; Save reads the latest document from here before it leaves.
+  const latestResume = useRef(resume);
+  useEffect(() => {
+    latestResume.current = resume;
+  }, [resume]);
   const generatedKeyRef = useRef<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved-locally');
   const [saveMessage, setSaveMessage] = useState<string>();
@@ -195,7 +200,14 @@ export function ResumePreviewPage() {
     void submitWrapper({
       fn: async () => {
         setSaveMessage(undefined);
-        const saved = await persist({ ...resume }, userId, ensureDraftId());
+        const clientDraftId = ensureDraftId();
+        let body = { ...latestResume.current };
+        let saved = await persist(body, userId, clientDraftId);
+        // Edits made while the request was in flight are saved too, before the local draft is cleared.
+        while (previewRevisionKey(latestResume.current) !== previewRevisionKey(body)) {
+          body = { ...latestResume.current };
+          saved = await persist(body, userId, clientDraftId);
+        }
         setSaveStatus('saved');
         clearResumeDraft();
         await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
