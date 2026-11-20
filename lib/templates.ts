@@ -118,6 +118,19 @@ export function findTemplate(key?: TemplateKey | null) {
   return ALL_TEMPLATES.find((template) => template.key === key);
 }
 
+/**
+ * The accent colour after a template change. A resume still on its template's own colour follows the new template to
+ * that template's colour, as its gallery image shows; a colour the user picked is kept.
+ */
+export function colorAfterTemplateChange(current: { template: TemplateKey; color: string }, next: TemplateKey): string {
+  const previous = findTemplate(current.template)?.color;
+  const nextColor = findTemplate(next)?.color;
+  if (!nextColor || !previous) {
+    return current.color;
+  }
+  return previous.toLowerCase() === current.color.toLowerCase() ? nextColor : current.color;
+}
+
 /** The gallery card a key belongs to: `mid-level-mint` shows as Mint. */
 export function galleryTemplateFor(key?: TemplateKey | null): TemplateItem | undefined {
   const style = findTemplate(key)?.style;

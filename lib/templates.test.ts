@@ -7,6 +7,7 @@ import { TemplateKeyEnum } from '@lib/schema/enums';
 
 import {
   findTemplate,
+  colorAfterTemplateChange,
   galleryTemplateFor,
   NEW_TAG_DAYS,
   NEW_TEMPLATES_LAUNCHED,
@@ -70,6 +71,25 @@ describe('template catalogue', () => {
     expect(showsNewTag(technical, new Date(launch.getTime() + (NEW_TAG_DAYS - 1) * day))).toBe(true);
     expect(showsNewTag(technical, new Date(launch.getTime() + NEW_TAG_DAYS * day))).toBe(false);
     expect(showsNewTag(findTemplate('senior-level-mint')!, launch)).toBe(false);
+  });
+});
+
+describe('colorAfterTemplateChange', () => {
+  const colorOf = (key: Parameters<typeof colorAfterTemplateChange>[1]) => galleryTemplateFor(key)!.color;
+
+  it('follows the new template while the resume is on its template\'s own colour', () => {
+    const modern = { template: 'senior-level-modern' as const, color: colorOf('senior-level-modern') };
+    expect(colorAfterTemplateChange(modern, 'timeline')).toBe(colorOf('timeline'));
+    expect(colorAfterTemplateChange({ ...modern, color: modern.color.toLowerCase() }, 'executive')).toBe(colorOf('executive'));
+  });
+
+  it('keeps a colour the user picked', () => {
+    const picked = { template: 'senior-level-modern' as const, color: '#BA8E23' };
+    expect(colorAfterTemplateChange(picked, 'timeline')).toBe('#BA8E23');
+  });
+
+  it('gives every gallery template a colour other than one shared default', () => {
+    expect(new Set(TEMPLATE_GALLERY.map((template) => template.color)).size).toBeGreaterThan(1);
   });
 });
 

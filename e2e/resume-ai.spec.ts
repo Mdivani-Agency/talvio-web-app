@@ -13,7 +13,7 @@ import {
   resetAndGuard,
   waitForPreview,
 } from './fixtures/resume-ui';
-import { listResumes, seedResume, SEEDED_RESUME_CONTENT } from './fixtures/resumes';
+import { listResumes, seedProfile, seedResume, SEEDED_RESUME_CONTENT } from './fixtures/resumes';
 
 // Local E2E builds set NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE=true (scripts/e2e-env.mjs). Improve with AI
 // runs on the local LLM service stand-in (e2e/services/llm-api.mjs): one question, then a proposal that
@@ -85,6 +85,7 @@ test('RES-10 improves a saved resume from the action bar and the autosaved row t
 
 test('RES-10 improves from the download dialog, and Reject leaves the resume as it was', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
+  await seedProfile(empty.userId);
   await openSignedIn(page, empty, '/resume');
   await startNewResume(page, 'Dialog');
   await waitForPreview(page);
@@ -162,6 +163,7 @@ test('RES-12 a guest is sent to sign-in and gets the draft back', async ({ page,
   expect(await page.evaluate(() => Object.values(localStorage).some((value) => value?.includes('Guestai')))).toBe(true);
   expect((await mediaStats()).ai.questions).toBe(0);
 
+  await seedProfile(empty.userId);
   await openSignedIn(page, empty, '/resume');
   await page.getByRole('button', { name: 'Keep draft' }).click();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Guestai');
@@ -201,6 +203,7 @@ test('RES-13 a generated resume forks a draft first, and the draft takes the edi
 
 test('RES-14 reload keeps the session, and an edit made since drops the suggestion it would overwrite', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
+  await seedProfile(empty.userId);
   await openSignedIn(page, empty, '/resume');
   await startNewResume(page, 'Stale');
   await improveFromActionBar(page);
