@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(63);
+select plan(90);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -694,6 +694,294 @@ select isnt(
 );
 
 select pg_temp.logout();
+
+-- Application tracker (MDI-655): owner-only cards, notes and stage history.
+insert into public.resumes (id, user_id, name, template_key)
+values (
+  'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  'Ann tracker CV',
+  'mid-level-modern'
+);
+
+insert into public.job_applications (id, user_id, position, company, stage)
+values (
+  'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  'Designer',
+  'Bob Co',
+  'applied'
+);
+
+insert into public.job_application_notes (id, application_id, user_id, content)
+values (
+  'b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3',
+  'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  '<p>Bob''s note</p>'
+);
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select lives_ok(
+  $$
+    insert into public.job_applications (id, position, company, resume_id, stage_changed_at)
+    values (
+      'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1',
+      'Staff Engineer',
+      'Northwind',
+      'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0',
+      '2000-01-01'
+    );
+  $$,
+  'a user adds a card with their own resume'
+);
+
+select is(
+  (select user_id from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
+  'a new card belongs to the caller by default'
+);
+
+select is(
+  (select stage_changed_at from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  now(),
+  'a client cannot set stage_changed_at on insert'
+);
+
+select results_eq(
+  $$
+    select from_stage, to_stage from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'
+  $$,
+  $$ values (null::text, 'saved'::text) $$,
+  'inserting a card writes one event'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_applications (position, company, resume_id)
+    values ('Engineer', 'Evil Co', 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+  $$,
+  '42501',
+  null,
+  'a user cannot add a card with another user''s resume'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set resume_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+    where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+  $$,
+  '42501',
+  null,
+  'a user cannot attach another user''s resume to a card'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_applications (user_id, position, company)
+    values ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Engineer', 'Evil Co');
+  $$,
+  '42501',
+  null,
+  'a user cannot add a card for another user'
+);
+
+update public.job_applications
+set company = 'Northwind Health', stage_changed_at = '2000-01-01'
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+
+select is(
+  (select count(*)::int from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  1,
+  'an edit that keeps the stage writes no event'
+);
+
+select is(
+  (select stage_changed_at from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  now(),
+  'a client cannot move stage_changed_at without a stage change'
+);
+
+select pg_temp.logout();
+update public.job_applications
+set stage_changed_at = '2000-01-01'
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+update public.job_applications
+set stage = 'applied'
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+
+select results_eq(
+  $$
+    select from_stage, to_stage from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'
+    order by from_stage nulls first
+  $$,
+  $$ values (null::text, 'saved'::text), ('saved'::text, 'applied'::text) $$,
+  'changing the stage writes a second event'
+);
+
+select is(
+  (select stage_changed_at from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  now(),
+  'changing the stage updates stage_changed_at'
+);
+
+update public.job_applications
+set stage = 'applied', position = 'Staff Engineer, Platform'
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+
+select is(
+  (select count(*)::int from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  2,
+  'setting the same stage again writes no event'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_application_events (application_id, user_id, to_stage)
+    values (
+      'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1',
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'offer'
+    );
+  $$,
+  '42501',
+  null,
+  'a client cannot write stage history'
+);
+
+select throws_ok(
+  $$ update public.job_application_events set to_stage = 'offer'; $$,
+  '42501',
+  null,
+  'a client cannot change stage history'
+);
+
+select throws_ok(
+  $$ delete from public.job_application_events; $$,
+  '42501',
+  null,
+  'a client cannot delete stage history'
+);
+
+select lives_ok(
+  $$
+    insert into public.job_application_notes (id, application_id, content)
+    values (
+      'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2',
+      'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1',
+      '<p>Recruiter call on Monday</p>'
+    );
+  $$,
+  'a user adds a note to their own card'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_application_notes (application_id, content)
+    values ('b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2', '<p>Sneaky</p>');
+  $$,
+  '42501',
+  null,
+  'a user cannot add a note to another user''s card'
+);
+
+select throws_ok(
+  $$
+    update public.job_application_notes
+    set application_id = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2'
+    where id = 'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2';
+  $$,
+  '42501',
+  null,
+  'a user cannot move a note onto another user''s card'
+);
+
+select is(
+  (select count(*)::int from public.job_applications),
+  1,
+  'a user sees only their own cards'
+);
+
+select is(
+  (select count(*)::int from public.job_application_notes),
+  1,
+  'a user sees only their own notes'
+);
+
+select is(
+  (select count(*)::int from public.job_application_events),
+  2,
+  'a user sees only their own stage history'
+);
+
+update public.job_applications
+set position = 'Hacked'
+where id = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2';
+
+delete from public.job_applications
+where id = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2';
+
+update public.job_application_notes
+set content = '<p>Hacked</p>'
+where id = 'b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3';
+
+delete from public.job_application_notes
+where id = 'b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3';
+
+delete from public.resumes
+where id = 'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0';
+
+select is(
+  (select resume_id from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  null,
+  'deleting a resume keeps the card with resume_id null'
+);
+
+delete from public.job_applications
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+
+select pg_temp.logout();
+
+select is(
+  (select position from public.job_applications where id = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2'),
+  'Designer',
+  'a user cannot change or delete another user''s card'
+);
+
+select is(
+  (select content from public.job_application_notes where id = 'b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3'),
+  '<p>Bob''s note</p>',
+  'a user cannot change or delete another user''s note'
+);
+
+select is(
+  (select count(*)::int from public.job_application_notes
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  0,
+  'deleting a card deletes its notes'
+);
+
+select is(
+  (select count(*)::int from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  0,
+  'deleting a card deletes its stage history'
+);
+
+select throws_ok(
+  $$ set local role anon; select count(*) from public.job_applications; $$,
+  '42501',
+  null,
+  'anon cannot read job_applications'
+);
 
 select * from finish();
 

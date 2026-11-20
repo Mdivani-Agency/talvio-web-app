@@ -7,10 +7,12 @@
 --   * duplicate React / react skill fails
 --   * user_credits.balance = -1 fails
 --   * profile_ai_improvements: applied_at needs used_at; request ids are 8-128 chars
+--   * job_applications: stage, position, labels and links are checked;
+--     job_application_notes: content is 1-5,000 characters
 
 begin;
 
-select plan(19);
+select plan(32);
 
 insert into auth.users (
   instance_id,
@@ -396,6 +398,158 @@ select throws_ok(
   '23514',
   null,
   'a profile improvement request id is at least 8 characters'
+);
+
+-- Application tracker (MDI-655).
+insert into public.job_applications (id, user_id, position, company)
+values (
+  'abababab-abab-4bab-8bab-abababababab',
+  '11111111-1111-4111-8111-111111111111',
+  'Engineer',
+  'Acme'
+);
+
+select lives_ok(
+  $$
+    update public.job_applications
+    set labels = '[{"name": "Remote", "color": "green"}, {"name": "Referral", "color": "amber"}]',
+        links = '[{"name": "Job post", "url": "https://example.com/jobs/1"}, {"name": "Notes", "url": "http://example.com"}]'
+    where id = 'abababab-abab-4bab-8bab-abababababab';
+  $$,
+  'valid labels and links are accepted'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_applications (user_id, position, company, stage)
+    values ('11111111-1111-4111-8111-111111111111', 'Engineer', 'Acme', 'hired');
+  $$,
+  '23514',
+  null,
+  'an unknown stage is rejected'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_applications (user_id, position, company)
+    values ('11111111-1111-4111-8111-111111111111', '   ', 'Acme');
+  $$,
+  '23514',
+  null,
+  'an empty position is rejected'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_applications (user_id, position, company)
+    values ('11111111-1111-4111-8111-111111111111', 'Engineer', repeat('x', 301));
+  $$,
+  '23514',
+  null,
+  'a company longer than 300 characters is rejected'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set labels = (
+      select jsonb_agg(jsonb_build_object('name', 'Label ' || n, 'color', 'blue'))
+      from generate_series(1, 11) as n
+    )
+    where id = 'abababab-abab-4bab-8bab-abababababab';
+  $$,
+  '23514',
+  null,
+  'more than 10 labels are rejected'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set labels = '[{"name": "Remote", "color": "chartreuse"}]'
+    where id = 'abababab-abab-4bab-8bab-abababababab';
+  $$,
+  '23514',
+  'invalid_job_application_labels',
+  'a label colour outside the fixed set is rejected'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set labels = '[{"name": "Remote", "color": "green"}, {"name": "remote ", "color": "blue"}]'
+    where id = 'abababab-abab-4bab-8bab-abababababab';
+  $$,
+  '23514',
+  'invalid_job_application_labels',
+  'two labels with the same name are rejected'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set labels = '[{"name": "", "color": "green"}]'
+    where id = 'abababab-abab-4bab-8bab-abababababab';
+  $$,
+  '23514',
+  'invalid_job_application_labels',
+  'a label without a name is rejected'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set links = (
+      select jsonb_agg(jsonb_build_object('name', 'Link ' || n, 'url', 'https://example.com/' || n))
+      from generate_series(1, 11) as n
+    )
+    where id = 'abababab-abab-4bab-8bab-abababababab';
+  $$,
+  '23514',
+  null,
+  'more than 10 links are rejected'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set links = '[{"name": "Script", "url": "javascript:alert(1)"}]'
+    where id = 'abababab-abab-4bab-8bab-abababababab';
+  $$,
+  '23514',
+  'invalid_job_application_links',
+  'a link that is not http or https is rejected'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set links = '{"name": "Job post", "url": "https://example.com"}'
+    where id = 'abababab-abab-4bab-8bab-abababababab';
+  $$,
+  '23514',
+  null,
+  'links must be an array'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_application_notes (application_id, user_id, content)
+    values ('abababab-abab-4bab-8bab-abababababab', '11111111-1111-4111-8111-111111111111', repeat('x', 5001));
+  $$,
+  '23514',
+  null,
+  'a note longer than 5,000 characters is rejected'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_application_notes (application_id, user_id, content)
+    values ('abababab-abab-4bab-8bab-abababababab', '11111111-1111-4111-8111-111111111111', '');
+  $$,
+  '23514',
+  null,
+  'an empty note is rejected'
 );
 
 select * from finish();
