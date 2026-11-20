@@ -45,6 +45,7 @@ import { Board } from './views/board';
 import { EmptyState } from './views/empty-state';
 import { LabelFilters } from './views/label-filters';
 import { OutcomeDialog } from './views/outcome-dialog';
+import { DetailPanel } from './views/detail/detail-panel';
 import { PhoneBoard } from './views/phone-board';
 
 type PendingClose = { application: JobApplication; sortOrder: number };
@@ -98,6 +99,19 @@ export default function ApplicationsPage() {
     router.replace(`${pathname}${searchWithLabels(searchParams.toString(), labels)}`, { scroll: false });
   };
 
+  // The open card is in the URL (?card=<id>), so a reload reopens it. An id that is not on the board is ignored.
+  const openCard = applications.find((application) => application.id === searchParams.get('card')) ?? null;
+  const setOpenCard = (id: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) {
+      params.set('card', id);
+    } else {
+      params.delete('card');
+    }
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false });
+  };
+
   const save = (application: JobApplication, stage: ApplicationStage, sortOrder: number) =>
     submitWrapper({
       fn: async () => {
@@ -116,10 +130,15 @@ export default function ApplicationsPage() {
     void save(application, column === 'closed' ? application.stage : column, sortOrder);
   };
 
-  /** The Move to… menu puts the card at the end of its new column. */
-  const handleMove = (application: JobApplication, stage: ApplicationStage) => {
+  /** The patch that moves a card to the end of its new column (the Move to… menu and the panel's Stage). */
+  const stagePatch = (application: JobApplication, stage: ApplicationStage) => {
     const target = allColumns[boardColumnOf(stage)].filter((card) => card.id !== application.id);
-    void save(application, stage, sortOrderAtEnd(target));
+    return movePatch(application, stage, sortOrderAtEnd(target), new Date());
+  };
+
+  const handleMove = (application: JobApplication, stage: ApplicationStage) => {
+    const patch = stagePatch(application, stage);
+    void save(application, patch.stage ?? application.stage, patch.sortOrder ?? application.sortOrder);
   };
 
   const handleCreate = async (values: AddApplicationFormValues, stage: ApplicationStage) => {
@@ -170,10 +189,31 @@ export default function ApplicationsPage() {
       {total === 0 ? (
         <EmptyState onAdd={() => setAddOpen(true)} />
       ) : desktop ? (
-        <Board columns={columns} now={now} emptyHint={emptyHint} onDrop={handleDrop} onMove={handleMove} />
+        <Board
+          columns={columns}
+          now={now}
+          emptyHint={emptyHint}
+          onDrop={handleDrop}
+          onMove={handleMove}
+          onOpen={(application) => setOpenCard(application.id)}
+        />
       ) : (
-        <PhoneBoard columns={columns} now={now} emptyHint={emptyHint} onMove={handleMove} />
+        <PhoneBoard
+          columns={columns}
+          now={now}
+          emptyHint={emptyHint}
+          onMove={handleMove}
+          onOpen={(application) => setOpenCard(application.id)}
+        />
       )}
+
+      <DetailPanel
+        application={openCard}
+        userId={userId}
+        knownLabels={labelOptions}
+        stagePatch={stagePatch}
+        onClose={() => setOpenCard(null)}
+      />
 
       <AddApplicationDialog open={addOpen} userId={userId} onOpenChange={setAddOpen} onCreate={handleCreate} />
       <OutcomeDialog

@@ -268,3 +268,163 @@ test('APP-04 on a phone, stages are tabs and cards move with the menu', async ({
   await expect(tabs.getByRole('tab', { name: 'Closed 0' })).toHaveAttribute('aria-selected', 'true');
   await expect(panel.getByText('Accepted, rejected and withdrawn')).toBeVisible();
 });
+
+async function resumeIds(userId: string) {
+  const { data, error } = await serviceClient().from('resumes').select('id, name').eq('user_id', userId);
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+async function cardRow(userId: string) {
+  const { data, error } = await serviceClient()
+    .from('job_applications')
+    .select('position, company, location, salary, contact, applied_on, next_step_on, next_step, stage, resume_id, labels, links')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+test('APP-05 the detail panel edits every field, links a resume, adds a link, a label and notes, and shows history', async ({
+  page,
+  personas,
+}) => {
+  const owner = persona(personas, 'generated');
+  await seedCards(owner.userId, [{ position: 'Staff Engineer', company: 'Fjord Analytics', stage: 'applied' }]);
+  const generated = (await resumeIds(owner.userId)).find((row) => row.name === 'Generated resume')!;
+
+  await openSignedIn(page, owner, '/account/applications');
+  const opener = page.getByRole('button', { name: 'Staff Engineer', exact: true });
+  await opener.click();
+  await expect(page.getByRole('dialog', { name: 'Staff Engineer' })).toBeVisible();
+  // The dialog is named after the position, which this test changes.
+  const panel = page.getByRole('dialog');
+  await expect(panel.getByText('Fjord Analytics', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/card=/);
+  await expect(panel.getByText('Changes save as you go')).toBeVisible();
+
+  // Details save on blur; an invalid value stays in the field with its error and is not saved.
+  await panel.getByLabel('Position').fill('');
+  await panel.getByLabel('Company').focus();
+  await expect(panel.getByText('Enter the position')).toBeVisible();
+  await panel.getByLabel('Position').fill('Staff Software Engineer');
+  await panel.getByLabel('Location (optional)').fill('Remote, EU');
+  await panel.getByLabel('Salary (optional)').fill('120k');
+  await panel.getByLabel('Contact (optional)').fill('Ingrid Solberg, recruiter');
+  await panel.getByLabel('Applied on (optional)').fill('2026-11-09');
+  await panel.getByLabel('Next step on').fill('2026-11-24');
+  await panel.getByLabel('Next step', { exact: true }).fill('Technical interview');
+  await panel.getByLabel('Position').focus();
+  await expect(panel.getByText('Saved', { exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Staff Software Engineer' })).toBeVisible();
+  await expect(panel.getByText('Fjord Analytics · Remote, EU')).toBeVisible();
+
+  // Resume sent: pick one, then Open and Download PDF are offered for a generated resume.
+  await panel.getByRole('combobox', { name: 'Resume sent' }).click();
+  await page.getByRole('option', { name: 'Generated resume' }).click();
+  await expect(panel.getByRole('link', { name: 'Open' })).toHaveAttribute('href', `/resume/${generated.id}`);
+  await expect(panel.getByRole('button', { name: 'Download PDF' })).toBeVisible();
+
+  await panel.getByRole('button', { name: 'Add a link' }).click();
+  await panel.getByLabel('Link name').fill('Job post');
+  await panel.getByLabel('URL').fill('https://example.com/careers/staff');
+  await panel.getByRole('button', { name: 'Add link' }).click();
+  const link = panel.getByRole('link', { name: 'Job post' });
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+
+  await panel.getByRole('button', { name: '+ Label' }).click();
+  await panel.getByLabel('Label name').fill('Remote');
+  await panel.getByRole('radio', { name: 'Green' }).click();
+  await panel.getByRole('button', { name: 'Add label' }).click();
+  await expect(panel.getByRole('button', { name: 'Remove label Remote' })).toBeVisible();
+
+  // Notes: "- " starts a bulleted list; the saved note keeps it.
+  const editor = panel.getByRole('textbox', { name: 'Note' });
+  await editor.click();
+  await page.keyboard.type('First call went well. They asked about:');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('- the monolith migration');
+  await panel.getByRole('button', { name: 'Add note' }).click();
+  const note = panel.getByTestId('application-note');
+  await expect(note.locator('ul li')).toHaveText('the monolith migration');
+  await note.getByRole('button', { name: /^Edit note from/ }).click();
+  // Edit puts the cursor at the end of the note.
+  await expect(note.getByRole('textbox', { name: 'Note' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('on-call setup');
+  await note.getByRole('button', { name: 'Save note' }).click();
+  await expect(note.locator('ul li')).toHaveText(['the monolith migration', 'on-call setup']);
+
+  // A stage change from the panel adds a history row.
+  await panel.getByLabel('Stage').click();
+  await page.getByRole('option', { name: 'Interview' }).click();
+  await expect(panel.getByRole('listitem').filter({ hasText: /Moved to Interview/ })).toBeVisible();
+
+  await page.reload();
+  const reopened = page.getByRole('dialog', { name: 'Staff Software Engineer' });
+  await expect(reopened.getByLabel('Salary (optional)')).toHaveValue('120k');
+  await expect(reopened.getByTestId('application-note').locator('ul li')).toHaveCount(2);
+  await expect(reopened.getByText('Added as Applied')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(reopened).toHaveCount(0);
+  await expect(page).not.toHaveURL(/card=/);
+  await expect(card(column(page, 'interview'), 'Staff Software Engineer').getByText('Remote', { exact: true })).toBeVisible();
+
+  await expect
+    .poll(() => cardRow(owner.userId))
+    .toEqual({
+      position: 'Staff Software Engineer',
+      company: 'Fjord Analytics',
+      location: 'Remote, EU',
+      salary: '120k',
+      contact: 'Ingrid Solberg, recruiter',
+      applied_on: '2026-11-09',
+      next_step_on: '2026-11-24',
+      next_step: 'Technical interview',
+      stage: 'interview',
+      resume_id: generated.id,
+      labels: [{ name: 'Remote', color: 'green' }],
+      links: [{ name: 'Job post', url: 'https://example.com/careers/staff' }],
+    });
+});
+
+test('APP-06 the panel returns focus to the card and Delete removes the card and its notes but keeps the resume', async ({
+  page,
+  personas,
+}) => {
+  const owner = persona(personas, 'generated');
+  await seedCards(owner.userId, [{ position: 'Tech Lead', company: 'Aster Mobility', stage: 'offer' }]);
+
+  await openSignedIn(page, owner, '/account/applications');
+  const opener = page.getByRole('button', { name: 'Tech Lead', exact: true });
+  await opener.click();
+  const panel = page.getByRole('dialog', { name: 'Tech Lead' });
+  await panel.getByRole('button', { name: 'Close' }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(opener).toBeFocused();
+
+  await opener.click();
+  const editor = panel.getByRole('textbox', { name: 'Note' });
+  await editor.click();
+  await page.keyboard.type('Offer call on Friday');
+  await panel.getByRole('button', { name: 'Add note' }).click();
+  await expect(panel.getByTestId('application-note')).toHaveCount(1);
+
+  await panel.getByRole('button', { name: 'Delete', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Delete application' }).getByRole('button', { name: 'Confirm' }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Keep track of every application' })).toBeVisible();
+  await expect.poll(() => cardRow(owner.userId)).toBeNull();
+  const { count } = await serviceClient()
+    .from('job_application_notes')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', owner.userId);
+  expect(count).toBe(0);
+  expect((await resumeIds(owner.userId)).length).toBe(2);
+});

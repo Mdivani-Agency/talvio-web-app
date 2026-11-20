@@ -39,6 +39,8 @@
     "APP-02 label filters keep cards with every picked label, survive a reload and clear; search combines",
     "APP-03 dragging moves a card between columns, asks for the outcome on Closed, and keeps the order",
     "APP-04 on a phone, stages are tabs and cards move with the menu",
+    "APP-05 the detail panel edits every field, links a resume, adds a link, a label and notes, and shows history",
+    "APP-06 the panel returns focus to the card and Delete removes the card and its notes but keeps the resume",
     "RES-01 creates a resume without a profile and keeps it after reload",
     "RES-01 prefills a resume from the profile and saves the edited draft",
     "RES-01 guest download returns to the resume and can keep the draft",

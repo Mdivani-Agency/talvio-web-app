@@ -1,4 +1,10 @@
-import type { Job_ApplicationsInsertInput, Job_ApplicationsUpdateInput, ListApplicationFragment } from '@/lib/graphql/generated';
+import type {
+  ApplicationEventFragment,
+  ApplicationNoteFragment,
+  Job_ApplicationsInsertInput,
+  Job_ApplicationsUpdateInput,
+  ListApplicationFragment,
+} from '@/lib/graphql/generated';
 import {
   applicationLabelSchema,
   applicationLinkSchema,
@@ -6,6 +12,7 @@ import {
   type AddApplicationFormValues,
   type ApplicationLabel,
   type ApplicationLink,
+  type ApplicationStage,
   type JobApplication,
 } from '@lib/schema/application.schema';
 
@@ -76,21 +83,74 @@ export function toApplicationInsert(values: AddApplicationFormValues, sortOrder:
   };
 }
 
-/** The fields a card move or edit can change. */
-export type ApplicationPatch = Partial<Pick<JobApplication, 'stage' | 'sortOrder' | 'appliedOn'>>;
+/** The fields a card move or edit can change. Stage history and stage_changed_at are the database's. */
+export type ApplicationPatch = Partial<
+  Pick<
+    JobApplication,
+    | 'stage'
+    | 'sortOrder'
+    | 'position'
+    | 'company'
+    | 'location'
+    | 'salary'
+    | 'contact'
+    | 'appliedOn'
+    | 'nextStepOn'
+    | 'nextStep'
+    | 'resumeId'
+    | 'labels'
+    | 'links'
+  >
+>;
+
+const PATCH_COLUMNS = {
+  stage: 'stage',
+  sortOrder: 'sort_order',
+  position: 'position',
+  company: 'company',
+  location: 'location',
+  salary: 'salary',
+  contact: 'contact',
+  appliedOn: 'applied_on',
+  nextStepOn: 'next_step_on',
+  nextStep: 'next_step',
+  resumeId: 'resume_id',
+} as const satisfies Partial<Record<keyof ApplicationPatch, keyof Job_ApplicationsUpdateInput>>;
 
 export function toApplicationUpdate(patch: ApplicationPatch): Job_ApplicationsUpdateInput {
-  const set: Job_ApplicationsUpdateInput = {};
-  if (patch.stage !== undefined) {
-    set.stage = patch.stage;
+  const set: Record<string, unknown> = {};
+  for (const [key, column] of Object.entries(PATCH_COLUMNS) as [keyof typeof PATCH_COLUMNS, string][]) {
+    if (patch[key] !== undefined) {
+      set[column] = patch[key];
+    }
   }
-  if (patch.sortOrder !== undefined) {
-    set.sort_order = patch.sortOrder;
+  // JSON columns are sent as serialized strings.
+  if (patch.labels !== undefined) {
+    set.labels = JSON.stringify(patch.labels);
   }
-  if (patch.appliedOn !== undefined) {
-    set.applied_on = patch.appliedOn;
+  if (patch.links !== undefined) {
+    set.links = JSON.stringify(patch.links);
   }
-  return set;
+  return set as Job_ApplicationsUpdateInput;
+}
+
+export type ApplicationNote = { id: string; content: string; createdAt: string; updatedAt: string };
+export type ApplicationEvent = { id: string; fromStage: ApplicationStage | null; toStage: ApplicationStage; createdAt: string };
+export type ApplicationDetail = { application: JobApplication; notes: ApplicationNote[]; events: ApplicationEvent[] };
+
+export function toApplicationNote(row: ApplicationNoteFragment): ApplicationNote {
+  return { id: row.id, content: row.content, createdAt: row.created_at, updatedAt: row.updated_at };
+}
+
+function stageOrNull(value: string | null): ApplicationStage | null {
+  const parsed = applicationStageSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+/** A history row; rows with an unknown stage are dropped. */
+export function toApplicationEvent(row: ApplicationEventFragment): ApplicationEvent | null {
+  const toStage = stageOrNull(row.to_stage);
+  return toStage ? { id: row.id, fromStage: stageOrNull(row.from_stage), toStage, createdAt: row.created_at } : null;
 }
 
 /** Applies a patch to a card the way the database will, for an optimistic update. */

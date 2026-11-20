@@ -64,3 +64,94 @@ mutation DeleteApplication($id: UUID!, $atMost: Int!) {
     }
   }
 }
+
+fragment ApplicationNote on job_application_notes {
+  id
+  content
+  created_at
+  updated_at
+}
+
+fragment ApplicationEvent on job_application_events {
+  id
+  from_stage
+  to_stage
+  created_at
+}
+
+query ApplicationById($id: UUID!) {
+  job_applicationsCollection(filter: { id: { eq: $id } }, first: 1) {
+    edges {
+      node {
+        ...ListApplication
+      }
+    }
+  }
+}
+
+# A card's notes, newest first, page by page.
+query NotesByApplication($applicationId: UUID!, $first: Int!, $after: Cursor) {
+  job_application_notesCollection(
+    filter: { application_id: { eq: $applicationId } }
+    orderBy: [{ created_at: DescNullsLast }, { id: DescNullsLast }]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ApplicationNote
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# A card's stage history, newest first, page by page.
+query EventsByApplication($applicationId: UUID!, $first: Int!, $after: Cursor) {
+  job_application_eventsCollection(
+    filter: { application_id: { eq: $applicationId } }
+    orderBy: [{ created_at: DescNullsLast }, { id: DescNullsLast }]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ApplicationEvent
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+mutation InsertApplicationNote($objects: [job_application_notesInsertInput!]!) {
+  insertIntojob_application_notesCollection(objects: $objects) {
+    affectedCount
+    records {
+      ...ApplicationNote
+    }
+  }
+}
+
+mutation UpdateApplicationNote($id: UUID!, $content: String!, $atMost: Int!) {
+  updatejob_application_notesCollection(set: { content: $content }, filter: { id: { eq: $id } }, atMost: $atMost) {
+    affectedCount
+    records {
+      ...ApplicationNote
+    }
+  }
+}
+
+mutation DeleteApplicationNote($id: UUID!, $atMost: Int!) {
+  deleteFromjob_application_notesCollection(filter: { id: { eq: $id } }, atMost: $atMost) {
+    affectedCount
+    records {
+      id
+    }
+  }
+}

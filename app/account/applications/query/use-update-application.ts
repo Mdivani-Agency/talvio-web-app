@@ -9,6 +9,7 @@ import {
 import { getGraphqlSdk } from '@/lib/graphql-client';
 import type { JobApplication } from '@lib/types';
 
+import { applicationQueryKey } from './use-application';
 import { applicationsQueryKey } from './use-applications';
 
 export type UpdateApplicationInput = { id: string; patch: ApplicationPatch };
@@ -50,8 +51,10 @@ export function useUpdateApplication(userId?: string) {
         queryClient.setQueryData(queryKey, context.previous);
       }
     },
-    onSettled: async () => {
+    onSettled: async (_result, _error, { id }) => {
       await queryClient.invalidateQueries({ queryKey: ['applications', userId] });
+      // A stage change adds a history row; the open panel reads it from here.
+      await queryClient.invalidateQueries({ queryKey: applicationQueryKey(id) });
     },
   });
 }

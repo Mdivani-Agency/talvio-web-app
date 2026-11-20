@@ -15,10 +15,11 @@ type PhoneBoardProps = {
   now: Date;
   emptyHint?: string;
   onMove: (application: JobApplication, stage: ApplicationStage) => void;
+  onOpen: (application: JobApplication) => void;
 };
 
 /** Below md: one stage at a time, as tabs with counts. Cards move with their Move to… menu; there is no drag. */
-export function PhoneBoard({ columns, now, emptyHint, onMove }: PhoneBoardProps) {
+export function PhoneBoard({ columns, now, emptyHint, onMove, onOpen }: PhoneBoardProps) {
   const [tab, setTab] = useState<BoardColumn>(() => BOARD_COLUMNS.find((column) => columns[column].length > 0) ?? 'saved');
   const baseId = useId();
   const tabId = (column: BoardColumn) => `${baseId}-tab-${column}`;
@@ -76,6 +77,7 @@ export function PhoneBoard({ columns, now, emptyHint, onMove }: PhoneBoardProps)
                   now={now}
                   surface="list"
                   onMove={(stage) => onMove(card, stage)}
+                  onOpen={() => onOpen(card)}
                 />
               </li>
             ))}
