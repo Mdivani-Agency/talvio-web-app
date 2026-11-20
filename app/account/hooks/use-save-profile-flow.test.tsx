@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fullAccountDto } from '../../../test/fixtures/flow';
 import { renderHook } from '../../../test/utils/render';
 
-const { push, completeSave, mutateAsync, toast, flags, improvement } = vi.hoisted(() => ({
+const { push, completeSave, mutateAsync, toast, flags, improvement, query } = vi.hoisted(() => ({
+  query: { value: '' },
   push: vi.fn(),
   completeSave: vi.fn(),
   mutateAsync: vi.fn(),
@@ -20,7 +21,10 @@ vi.mock('@/lib/flags', async () => {
 vi.mock('@/lib/graphql-client', () => ({ getGraphqlSdk: async () => ({}), parseGraphqlError: (error: Error) => error.message }));
 vi.mock('@app/account/query/use-profile-improvement', () => ({ fetchProfileImprovement: improvement }));
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(query.value),
+}));
 vi.mock('sonner', () => ({ toast }));
 vi.mock('../providers/state-provider', () => ({
   useAccountContext: () => ({ userId: 'user-1', completeSave }),
@@ -35,6 +39,42 @@ describe('useSaveProfileFlow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     flags.profileAiImprove = false;
+    query.value = '';
+  });
+
+  it('goes back to the new resume that sent the user to onboarding', async () => {
+    query.value = 'next=%2Fresume%3Ftemplate%3Dtimeline';
+    mutateAsync.mockResolvedValue({ ...fullAccountDto, id: 'user-1' });
+    const { result, unmount } = renderHook(() => useSaveProfileFlow());
+    act(() => {
+      result.current.save(fullAccountDto);
+    });
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/resume?template=timeline'));
+    unmount();
+  });
+
+  it('carries the new resume through the profile improvement offer', async () => {
+    query.value = 'next=%2Fresume';
+    flags.profileAiImprove = true;
+    improvement.mockResolvedValue({ available: true, used: false, usedAt: null, appliedAt: null });
+    mutateAsync.mockResolvedValue({ ...fullAccountDto, id: 'user-1' });
+    const { result, unmount } = renderHook(() => useSaveProfileFlow());
+    act(() => {
+      result.current.save(fullAccountDto);
+    });
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/account/improve?saved=1&next=%2Fresume'));
+    unmount();
+  });
+
+  it('ignores a return path that is not the new resume', async () => {
+    query.value = 'next=%2Faccount%2Fdocuments';
+    mutateAsync.mockResolvedValue({ ...fullAccountDto, id: 'user-1' });
+    const { result, unmount } = renderHook(() => useSaveProfileFlow());
+    act(() => {
+      result.current.save(fullAccountDto);
+    });
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/account'));
+    unmount();
   });
 
   it('opens the profile improvement offer when it is on and unused', async () => {

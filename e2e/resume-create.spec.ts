@@ -22,13 +22,19 @@ test.beforeEach(async ({ page }) => {
   await resetAndGuard(page);
 });
 
-test('RES-01 creates a resume without a profile and keeps it after reload', async ({ page, personas }) => {
+test('RES-01 a signed-in user without a profile is sent to onboarding, then creates a resume', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
-  await openSignedIn(page, empty, '/resume');
+  // A resume starts from the profile: without one, /resume opens onboarding and keeps the way back.
+  await openSignedIn(page, empty, '/resume?template=timeline');
+  await expect(page).toHaveURL(/\/account\/create\?next=/);
+  expect(new URL(page.url()).searchParams.get('next')).toBe('/resume?template=timeline');
+  await expect(page.getByRole('heading', { name: "Let's build your profile" })).toBeVisible();
+  expect(await listResumes(empty.userId)).toHaveLength(0);
+
+  await seedProfile(empty.userId);
+  await page.goto('/resume');
   await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
   await chooseManual(page);
-  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('');
-  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('');
 
   await page.getByLabel('First name', { exact: true }).fill('Nia');
   await page.getByLabel('Last name', { exact: true }).fill('Manual');
@@ -57,7 +63,6 @@ test('RES-01 creates a resume without a profile and keeps it after reload', asyn
   expect(pdf.text).toContain('Manual');
   expect(pdf.pages).toBeGreaterThan(0);
 
-  await seedProfile(empty.userId);
   await page.goto('/account');
   await expect(page.getByRole('link', { name: 'First resume', exact: true })).toBeVisible();
   await page.reload();
@@ -95,6 +100,30 @@ test('RES-01 prefills a resume from the profile and saves the edited draft', asy
   await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Principal Engineer');
 });
 
+test('RES-01 Save resume stores a new resume without a PDF or a credit', async ({ page, personas }) => {
+  const complete = persona(personas, 'complete');
+  await openSignedIn(page, complete, '/resume?template=timeline');
+  await chooseManual(page);
+  await page.getByLabel('Role', { exact: true }).fill('Saved Engineer');
+  await page.waitForFunction(() => Object.values(localStorage).some((value) => value?.includes('Saved Engineer')));
+  await expect(page.getByText('Saved on this device')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Save resume', exact: true }).click();
+  await page.waitForURL(/\/resume\/[0-9a-f-]{36}$/);
+  await expect(page.getByText('Saved to your account')).toBeVisible();
+  await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Saved Engineer');
+  await expect(page.getByRole('button', { name: 'Save resume', exact: true })).toHaveCount(0);
+
+  const rows = await listResumes(complete.userId);
+  expect(rows).toHaveLength(1);
+  expect(rows[0]?.pdfUrl).toBeFalsy();
+  expect(rows[0]?.templateKey).toBe('timeline');
+  // A new resume opens in its template's own accent colour (Timeline: Rust).
+  expect(rows[0]?.color).toBe('#983805');
+  expect(contentProfile(rows[0]?.content ?? {}).role).toBe('Saved Engineer');
+  expect(await creditBalance(complete.userId)).toBe(90);
+});
+
 test('RES-01 guest download returns to the resume and can keep the draft', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await page.goto('/resume');
@@ -111,6 +140,7 @@ test('RES-01 guest download returns to the resume and can keep the draft', async
   expect(new URL(page.url()).searchParams.get('callbackURL')).toBe('/resume');
   expect(await page.evaluate(() => Object.values(localStorage).some((value) => value?.includes('Guestkeep')))).toBe(true);
 
+  await seedProfile(empty.userId);
   await openSignedIn(page, empty, '/resume');
   await expect(page.getByText('A guest resume draft is on this browser. Keep it in this account?')).toBeVisible();
   await page.getByRole('button', { name: 'Keep draft' }).click();
@@ -132,6 +162,7 @@ test('RES-01 guest download keeps a template return path', async ({ page }) => {
 
 test('RES-02 imports a resume, edits the parsed values, and generates them', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
+  await seedProfile(empty.userId);
   await openSignedIn(page, empty, '/resume');
   await page.getByText('Import a resume', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
@@ -175,6 +206,7 @@ test('RES-02 imports a resume, edits the parsed values, and generates them', asy
 
 test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
+  await seedProfile(empty.userId);
   await openSignedIn(page, empty, '/resume');
   await page.getByText('Import a resume', { exact: true }).click();
   const input = page.getByTestId('file-input');

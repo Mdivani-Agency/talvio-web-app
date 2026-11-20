@@ -13,7 +13,7 @@ import { resolveAvailableTemplate } from '@lib/resume/resolve-editor';
 import type { OptionalTemplateField } from '@lib/template-fields';
 import type { ResumeSectionId } from '@/lib/resume-editor-copy';
 import type { SaveStatus } from '@lib/resume/save-queue';
-import { listResumeTemplates } from '@lib/templates';
+import { colorAfterTemplateChange, listResumeTemplates } from '@lib/templates';
 import { CurrentTemplateProvider } from '@app/account/create/views/forms/template-context';
 import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
@@ -63,6 +63,9 @@ type ResumeEditorShellProps = {
   onRetrySave?: () => void;
   onChange: (patch: Partial<PreviewDto>) => void;
   onDownload: (filename: string, label?: string) => boolean | void | Promise<boolean | void>;
+  /** Save to the account without a PDF. Only a new resume passes it: a saved one saves as you edit. */
+  onSave?: () => void;
+  savePending?: boolean;
   improve?: ResumeImproveControls | null;
   /** A visitor without a session: the top bar links home and offers Sign in. */
   guest?: boolean;
@@ -83,6 +86,8 @@ export function ResumeEditorShell({
   onRetrySave,
   onChange,
   onDownload,
+  onSave,
+  savePending = false,
   improve,
   guest = false,
   signInHref,
@@ -185,6 +190,8 @@ export function ResumeEditorShell({
           }
         }}
         onDownload={requestDownload}
+        onSave={readOnly ? undefined : onSave}
+        savePending={savePending}
         onImprove={improveEnabled ? requestImprove : undefined}
         improveDisabled={ai.active}
       />
@@ -223,7 +230,7 @@ export function ResumeEditorShell({
                 color={document.color}
                 fontSize={document.fontSize}
                 disabled={readOnly}
-                onTemplate={(key) => onChange({ template: key })}
+                onTemplate={(key) => onChange({ template: key, color: colorAfterTemplateChange(document, key) })}
                 onColor={(color) => onChange({ color })}
                 onFontSize={(fontSize) => onChange({ fontSize })}
               />

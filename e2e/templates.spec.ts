@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { openSignedIn, persona, waitForPreview } from './fixtures/resume-ui';
+import { seedProfile } from './fixtures/resumes';
 import { test as harnessTest } from './fixtures/test';
 
 // The `/templates` gallery: one card per template, filtered by who it suits. The editor's Design tab has the same
@@ -103,6 +104,7 @@ harnessTest.describe('restored import template', () => {
 
   harnessTest('TPL-01 a restored import draft uses the newly selected template', async ({ page, personas }) => {
     const empty = persona(personas, 'empty');
+    await seedProfile(empty.userId);
     await openSignedIn(page, empty, '/resume?template=senior-level-talvio');
     await page.getByRole('button', { name: /Import a resume/ }).click();
     await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();

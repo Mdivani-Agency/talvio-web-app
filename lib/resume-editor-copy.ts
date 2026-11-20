@@ -12,6 +12,10 @@ export const EDITOR_BACK = {
 
 export const EDITOR_SIGN_IN = 'Sign in';
 export const DOWNLOAD_PDF_LABEL = 'Download PDF';
+/** Saves a new resume to the account without creating a PDF. Not "Save": each entry form has its own Save. */
+export const SAVE_RESUME_LABEL = 'Save resume';
+export const SAVING_RESUME_LABEL = 'Saving…';
+export const RESUME_SAVED_TOAST = 'Resume saved to your account';
 export const IMPROVE_WITH_AI_LABEL = 'Improve with AI';
 export const RETRY_SAVE_LABEL = 'Retry';
 
