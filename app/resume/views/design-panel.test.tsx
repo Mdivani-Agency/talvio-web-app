@@ -15,7 +15,6 @@ function renderPanel(props: Partial<Parameters<typeof DesignPanel>[0]> = {}) {
   render(
     <DesignPanel
       templates={listResumeTemplates()}
-      level="senior"
       template="senior-level-modern"
       color={RESUME_COLORS_MAP.black}
       fontSize="md"
@@ -27,13 +26,38 @@ function renderPanel(props: Partial<Parameters<typeof DesignPanel>[0]> = {}) {
 }
 
 describe('DesignPanel', () => {
-  it('switches level and picks a template by its name', () => {
+  it('shows all 14 templates, marks the selected one, filters by chip and picks by name', () => {
     const { onTemplate } = renderPanel();
-    expect(screen.getByRole('button', { name: 'Senior level' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Use the Modern template, senior level' }).getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'Mid level' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Use the Ember template, mid level' }));
-    expect(onTemplate).toHaveBeenCalledWith('mid-level-ember');
+    expect(screen.getByText('14 templates')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Modern template, selected' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('Modern is selected')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Technical (1)' }));
+    expect(screen.getByText('1 of 14')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Classic template/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Technical template' }));
+    expect(onTemplate).toHaveBeenCalledWith('technical');
+  });
+
+  it('marks the style of an older level key as selected', () => {
+    renderPanel({ template: 'mid-level-mint' });
+    expect(screen.getByRole('button', { name: 'Mint template, selected' })).toBeTruthy();
+  });
+
+  it('describes the selected template, its section order and the optional fields it shows', () => {
+    const onFillOptionalField = vi.fn();
+    renderPanel({ template: 'technical', onFillOptionalField });
+    expect(screen.getByText('Technical is selected')).toBeTruthy();
+    expect(screen.getByText('A skills table, the stack under each role, and project links. Best for engineering, data and IT.')).toBeTruthy();
+    expect(screen.getByText('Section order: Skills, Experience, Projects, Education, Recommendations.')).toBeTruthy();
+    expect(screen.getByText('Shows optional fields: skill groups, a stack per role. Empty ones are left out.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Fill them in' }));
+    expect(onFillOptionalField).toHaveBeenCalledWith('skillGroups');
+    cleanup();
+
+    renderPanel({ template: 'senior-level-mint', sectionOrder: ['education', 'experience'] });
+    expect(screen.getByText(/^Section order: your own \(Education, Experience, Skills/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Fill them in' })).toBeNull();
   });
 
   it('names each accent colour, shows the chosen one and moves with the arrow keys', () => {
@@ -56,7 +80,7 @@ describe('DesignPanel', () => {
     renderPanel({ disabled: true });
     expect(screen.getByRole('radio', { name: 'Small' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('radio', { name: 'Mint' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Use the Mint template, senior level' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Mint template' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('wraps arrow keys around the group', () => {

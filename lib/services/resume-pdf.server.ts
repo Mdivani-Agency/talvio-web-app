@@ -1,9 +1,12 @@
-import { Config, ResumePDFService, Template, type ResumeData } from '@pdf-tlv/resume';
+import { Config, ResumePDFService, Template, templateFamilies, type ResumeData } from '@pdf-tlv/resume';
+
+import { resumeFonts } from '@lib/pdf-templates/fonts';
+import { siteOrigin } from '@lib/site';
 import fontkit from '@pdf-lib/fontkit';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 import { pdfSectionOrder } from '@lib/resume/section-order';
-import { convertToResumeData, generateWithFontFallback, RESUME_PDF_FONT } from '@/lib/services/resume.service';
+import { convertToResumeData, generateWithFontFallback, RESUME_PDF_FONT, type FontState } from '@/lib/services/resume.service';
 import type { ResumeForm } from '@lib/types';
 
 /** Raised before upload and charge when the final PDF could not show the resume's own text. */
@@ -69,6 +72,11 @@ export async function unsupportedStandardCharacters(data: ResumeData): Promise<s
   return unsupportedCharacters(data, await standardFontCharset());
 }
 
+/** Where the server fetches the app's own font files (`public/fonts`): this deployment, else the public site. */
+function appOrigin(): string {
+  return (process.env.NEXT_PUBLIC_BASE_URL?.trim() || siteOrigin()).replace(/\/$/, '');
+}
+
 export async function generateResumePdfBytes(
   data: ResumeForm,
   template: Template,
@@ -82,7 +90,7 @@ export async function generateResumePdfBytes(
     isPreview: false,
   });
   const resumeData = convertToResumeData(data);
-  const font = { fontUnavailable: false };
+  const font: FontState = { fallback: 'all' };
   const bytes = await generateWithFontFallback(service, {
     data: resumeData,
     template,
@@ -92,12 +100,15 @@ export async function generateResumePdfBytes(
       ...(options.colors ? { colors: options.colors } : {}),
     },
     sectionOrder: pdfSectionOrder(data.sectionOrder),
-  }, font);
+  }, font, resumeFonts(appOrigin()));
   // A paid PDF must show the resume's own text. 0.4.0 draws what the font lacks as "?" (standard font) or an empty box
   // (Inter) instead of failing as 0.2.3 did, so check the font the render used and fail before upload and charge.
   // With the font files, Inter's set stands for all three roles: Source Serif 4 and IBM Plex Mono cover the same
-  // Latin, Greek and Cyrillic ranges. After the fallback, the engine limits all text to the standard fonts' set.
-  const charset = font.fontUnavailable
+  // Latin, Greek and Cyrillic ranges. When any role the template uses fell back to a standard font, the engine limits
+  // all text to the standard fonts' set.
+  const standardOnly =
+    font.fallback === 'none' || (font.fallback === 'body' && templateFamilies(template).some((family) => family !== 'body'));
+  const charset = standardOnly
     ? await standardFontCharset()
     : await interFontCharset().catch(() => standardFontCharset());
   const missing = unsupportedCharacters(resumeData, charset);

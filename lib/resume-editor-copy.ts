@@ -64,12 +64,20 @@ export const DRAFT_BANNER = {
 /** The Design tab: template, accent colour and text size. */
 export const DESIGN_PANEL = {
   template: 'Template',
-  levelsLabel: 'Experience level',
-  levels: [
-    { value: 'entry', name: 'Entry level' },
-    { value: 'mid', name: 'Mid level' },
-    { value: 'senior', name: 'Senior level' },
-  ],
+  /** Beside the heading, announced: "14 templates", or "4 of 14" with a filter on. */
+  templateCount: (shown: number, total: number) => (shown === total ? `${total} templates` : `${shown} of ${total}`),
+  selected: (name: string) => `${name} is selected`,
+  summary: (description: string, bestFor: string) => `${description}. Best for ${bestFor}.`,
+  sectionOrder: (names: string, custom: boolean) =>
+    custom ? `Section order: your own (${names}).` : `Section order: ${names}.`,
+  optionalFields: (fields: string) => `Shows optional fields: ${fields}. Empty ones are left out.`,
+  fillThemIn: 'Fill them in',
+  /** The optional fields as the info box lists them. */
+  optionalFieldNames: {
+    headlineAchievements: 'headline achievements',
+    skillGroups: 'skill groups',
+    stack: 'a stack per role',
+  },
   accent: 'Accent colour',
   textSize: 'Text size',
   sizes: [
@@ -79,9 +87,8 @@ export const DESIGN_PANEL = {
   ],
 } as const;
 
-/** "Use the Modern template, senior level". */
-export const templateButtonLabel = (name: string, levelName: string) =>
-  `Use the ${name} template, ${levelName.toLowerCase()}`;
+/** A small template card: "Modern template", or "Modern template, selected". */
+export const templateButtonLabel = (name: string, selected: boolean) => `${name} template${selected ? ', selected' : ''}`;
 
 /** The resume accent colours by `RESUME_COLORS_MAP` key, in the order the Design tab shows them. */
 export const ACCENT_COLOURS = [

@@ -15,6 +15,7 @@ import {
 import { LanguageProficiency, TemplateKeyEnum } from "./schema/enums";
 import { resumeDraftSchema, resumeSchema } from "./schema/resume.schema";
 import { Template } from "@pdf-tlv/resume";
+import type { TemplateFilter, TemplateStyle } from "./templates-page-copy";
 
 export type User = {
   id: string;
@@ -76,10 +77,18 @@ export type TemplateKey = z.infer<typeof TemplateKeyEnum>;
 export type TemplateItem = {
   name: string;
   template: Template;
+  /** Default accent. */
   color: string;
   imageUrl: string;
   description: string;
   key: TemplateKey;
+  /** The gallery style this key shows, such as `mint` for every level of Mint. */
+  style: TemplateStyle;
+  /** Completes "Best for …". */
+  bestFor: string;
+  filters: readonly TemplateFilter[];
+  /** One of the ten templates added in MDI-660; tagged "New" for a while after launch. */
+  isNew: boolean;
 };
 
 export type TemplateList = Record<'entry' | 'mid' | 'senior', Array<TemplateItem>>;

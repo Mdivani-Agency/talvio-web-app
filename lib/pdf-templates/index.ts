@@ -13,3 +13,4 @@ export { sidebar } from "./sidebar";
 export { skillsFirst } from "./skills-first";
 export { technical } from "./technical";
 export { timeline } from "./timeline";
+export { RESUME_FONTS } from './fonts';

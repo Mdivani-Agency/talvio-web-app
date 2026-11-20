@@ -1,5 +1,5 @@
-import { ResumePDFService, Template, ResumeData, formatUrl, interFont, type RenderOptions } from '@pdf-tlv/resume';
-import { RESUME_FONTS } from '@lib/pdf-templates/fonts';
+import { ResumePDFService, Template, ResumeData, formatUrl, interFont, type FontFiles, type RenderOptions } from '@pdf-tlv/resume';
+import { FONT_FALLBACKS, fontsFor, RESUME_FONTS, type FontFallback } from '@lib/pdf-templates/fonts';
 import { pdfSectionOrder } from '@lib/resume/section-order';
 import { ResumeForm } from '@lib/types';
 import { capitalise, formatDate } from '@lib/utils';
@@ -17,31 +17,38 @@ export const RESUME_PDF_FONT = interFont;
 
 type GenerateParams = Parameters<ResumePDFService['generate']>[0];
 
+/** Which fonts a render ended up with; the next render starts from there instead of waiting on a failed file again. */
+export type FontState = { fallback: FontFallback };
+
 /**
- * Render with the template fonts (Inter, Source Serif 4, IBM Plex Mono; only the roles a template uses are fetched),
- * falling back to the standard fonts when a file cannot be downloaded (offline, or a network that blocks the font
- * hosts), as 0.2.3 did with Inter. 0.4.0 rejects the whole render instead. A failure is remembered on the service so
- * later renders don't wait on the download again. A render error that is not about the fonts fails the retry too.
+ * Render with the template fonts (Inter, Source Serif 4, IBM Plex Mono; the engine fetches only the roles a template
+ * uses). If a file cannot be downloaded (offline, or a network that blocks the font host) the render is tried with
+ * Inter only, then with the standard fonts, as 0.2.3 did with Inter. 0.4.0 rejects the whole render instead. A step is
+ * only taken when the same render works with fewer fonts, so an error that is not about the fonts still fails.
  */
 export async function generateWithFontFallback(
   service: ResumePDFService,
   params: GenerateParams,
-  state: { fontUnavailable: boolean },
+  state: FontState,
+  fonts: FontFiles = RESUME_FONTS,
 ): Promise<Uint8Array> {
-  if (state.fontUnavailable) {
-    return service.generate(params);
+  const steps = FONT_FALLBACKS.slice(FONT_FALLBACKS.indexOf(state.fallback));
+  let firstError: unknown;
+  for (const [index, step] of steps.entries()) {
+    const files = fontsFor(step, fonts);
+    try {
+      const bytes = await service.generate(files ? { ...params, options: { ...params.options, fonts: files } } : params);
+      if (index > 0) {
+        console.warn(`Resume fonts unavailable, using ${step === 'body' ? 'Inter only' : 'the standard fonts'}`, firstError);
+      }
+      state.fallback = step;
+      return bytes;
+    } catch (error) {
+      firstError ??= error;
+      if (index === steps.length - 1) throw error;
+    }
   }
-  let fontError: unknown;
-  try {
-    return await service.generate({ ...params, options: { ...params.options, fonts: RESUME_FONTS } });
-  } catch (error) {
-    fontError = error;
-  }
-  // Only blame the font when the same render works without it.
-  const bytes = await service.generate(params);
-  state.fontUnavailable = true;
-  console.warn('Resume font unavailable, using the standard font', fontError);
-  return bytes;
+  throw firstError;
 }
 
 /** The group that holds skills without a group when grouping is on. */
@@ -166,7 +173,7 @@ function optional<K extends string, V>(key: K, value: V | undefined): Partial<Re
 
 export class ResumeService {
   private readonly $resume: ResumePDFService;
-  private readonly $font = { fontUnavailable: false };
+  private readonly $font: FontState = { fallback: 'all' };
 
   constructor() {
     this.$resume = new ResumePDFService();

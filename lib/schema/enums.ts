@@ -50,4 +50,15 @@ export const TemplateKeyEnum = z.enum([
   'senior-level-ember',
   'senior-level-mint',
   'senior-level-talvio',
+  // MDI-660: one key per template, with no experience level.
+  'classic',
+  'compact',
+  'minimal',
+  'executive',
+  'skills-first',
+  'graduate',
+  'technical',
+  'sidebar',
+  'timeline',
+  'banner',
 ]);

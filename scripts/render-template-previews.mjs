@@ -1,16 +1,50 @@
-// Renders every template key with the real @pdf-tlv/resume engine and
-// rasterises page 1 to PNG for the template picker (public/templates/<key>.png).
-// Uses macOS Quick Look (qlmanage) for the PDF to PNG step. Run from the repo root:
-//   yarn templates:previews
+// Renders the template previews for the gallery (public/templates/<key>.png) with the real @pdf-tlv/resume engine
+// and the app's own template configs (lib/pdf-templates), then rasterises page 1 to a 706x1000 PNG.
+//
+//   yarn templates:previews                 the ten MDI-660 templates
+//   yarn templates:previews -- --all        also the 12 older level keys
+//
+// PNGs come from pdftoppm (poppler) when it is installed, else macOS Quick Look (qlmanage). Source Serif 4 and IBM Plex
+// Mono come from public/fonts, as in the app; Inter from Google Fonts.
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, renameSync, existsSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, renameSync, existsSync, rmSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { build } from 'vite';
 
 const require = createRequire(resolve(process.cwd(), 'package.json'));
 const { ResumePDFService, formatUrl, interFont } = require('@pdf-tlv/resume');
 const { ember, mint, talvio } = require('@pdf-tlv/resume/dist/templates');
 const { PDFDocument } = createRequire(require.resolve('@pdf-tlv/resume/package.json'))('pdf-lib');
+
+const args = process.argv.slice(2);
+const renderAll = args.includes('--all');
+const outArg = args.find((arg) => !arg.startsWith('--'));
+
+/** Bundles the app's TypeScript template configs so this script can import them. */
+async function loadAppTemplates(dir) {
+  const result = await build({
+    configFile: false,
+    logLevel: 'silent',
+    build: {
+      write: false,
+      lib: { entry: resolve('lib/pdf-templates/index.ts'), formats: ['es'], fileName: 'templates' },
+      rollupOptions: { external: [/^@pdf-tlv\/resume/] },
+    },
+  });
+  const output = (Array.isArray(result) ? result[0] : result).output[0];
+  const file = join(dir, 'templates.mjs');
+  writeFileSync(file, output.code);
+  return import(pathToFileURL(file).href);
+}
+
+/** The app's font files from public/fonts, as data: URLs, which the engine fetches like any other URL. */
+function localFonts(appFonts) {
+  const local = (url) => `data:font/ttf;base64,${readFileSync(resolve('public', url.replace(/^\//, ''))).toString('base64')}`;
+  const role = (font) => ({ name: font.name, fonts: Object.fromEntries(Object.entries(font.fonts).map(([type, url]) => [type, local(url)])) });
+  return { ...appFonts, serif: role(appFonts.serif), mono: role(appFonts.mono) };
+}
 
 const COLORS = { mint: '#015408', ember: '#670000', talvio: '#005BA2', grayLight: '#7A7A7A' };
 // Type scales to try, largest first. Each preview uses the largest scale that
@@ -198,41 +232,103 @@ const DATA = {
   },
 };
 
-const outDir = resolve(process.argv[2] ?? 'public/templates');
+/** The senior sample with the optional template fields, so Executive, Skills first and Technical show them. */
+const SENIOR_WITH_FIELDS = {
+  ...DATA.senior,
+  headlineAchievements: [
+    { value: '1.2 million', label: 'patients on the platform' },
+    { value: 'Zero downtime', label: 'monolith to six services' },
+    { value: '14', label: 'engineers hired in 18 months' },
+  ],
+  skillGroups: [
+    { name: 'Architecture', skills: ['Distributed systems', 'Technical strategy'] },
+    { name: 'Languages', skills: ['TypeScript', 'Go'] },
+    { name: 'Data', skills: ['PostgreSQL', 'Kafka'] },
+    { name: 'Leadership', skills: ['Hiring', 'Mentoring', 'Incident management'] },
+  ],
+  experience: DATA.senior.experience.map((entry, index) => ({
+    ...entry,
+    stack: [['TypeScript', 'Go', 'PostgreSQL', 'Kafka'], ['React', 'Node.js', 'GraphQL'], ['Node.js', 'PostgreSQL']][index] ?? [],
+  })),
+};
+
+/** The ten MDI-660 templates, with the accent of their design board. */
+const NEW_TEMPLATES = [
+  ['classic', 'classic', '#1B1B1B'],
+  ['compact', 'compact', '#005BA2'],
+  ['minimal', 'minimal', '#763900'],
+  ['executive', 'executive', '#670000'],
+  ['skills-first', 'skillsFirst', '#015408'],
+  ['graduate', 'graduate', '#005BA2'],
+  ['technical', 'technical', '#015408'],
+  ['sidebar', 'sidebar', '#005BA2'],
+  ['timeline', 'timeline', '#983805'],
+  ['banner', 'banner', '#005BA2'],
+];
+
+const outDir = resolve(outArg ?? 'public/templates');
 const tmp = join(outDir, '.render-tmp');
 mkdirSync(tmp, { recursive: true });
 
-async function render(level, style, type) {
+const appTemplates = await loadAppTemplates(tmp);
+const appFonts = localFonts(appTemplates.RESUME_FONTS);
+
+async function render(data, template, color, type, fonts) {
   const service = new ResumePDFService();
-  await service.create({ color: style.color, fontSize: type.fontSize, leading: type.leading, isPreview: false, customFont: interFont });
-  const bytes = await service.generate({
-    data: DATA[level],
-    template: style.template,
-    options: { color: style.color, fontSize: type.fontSize, leading: type.leading, isPreview: false },
-  });
+  await service.create({ color, fontSize: type.fontSize, leading: type.leading, isPreview: false, fonts });
+  const bytes = await service.generate({ data, template, options: { color, fontSize: type.fontSize, leading: type.leading } });
   const pages = (await PDFDocument.load(bytes)).getPageCount();
   return { bytes, pages };
 }
 
-for (const level of ['entry', 'mid', 'senior']) {
-  for (const style of STYLES) {
-    const key = `${level}-level-${style.suffix}`;
-    let chosen = null;
-    for (const type of TYPE_CANDIDATES) {
-      const result = await render(level, style, type);
-      if (result.pages === 1) {
-        chosen = { type, bytes: result.bytes };
-        break;
-      }
+const hasPdftoppm = (() => {
+  try {
+    execFileSync('pdftoppm', ['-v'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+function rasterise(key, pdfPath) {
+  const target = join(outDir, `${key}.png`);
+  if (hasPdftoppm) {
+    const prefix = join(tmp, key);
+    execFileSync('pdftoppm', ['-png', '-f', '1', '-l', '1', '-singlefile', '-scale-to-x', '706', '-scale-to-y', '1000', pdfPath, prefix]);
+    renameSync(`${prefix}.png`, target);
+    return;
+  }
+  execFileSync('qlmanage', ['-t', '-s', '1000', '-o', tmp, pdfPath], { stdio: 'ignore' });
+  const thumb = join(tmp, `${key}.pdf.png`);
+  if (!existsSync(thumb)) throw new Error(`No thumbnail for ${key}`);
+  renameSync(thumb, target);
+}
+
+async function renderPreview(key, data, template, color, fonts) {
+  let chosen = null;
+  for (const type of TYPE_CANDIDATES) {
+    const result = await render(data, template, color, type, fonts);
+    if (result.pages === 1) {
+      chosen = { type, bytes: result.bytes };
+      break;
     }
-    if (!chosen) throw new Error(`${key} does not fit on one page at any type scale; trim the sample data`);
-    const pdfPath = join(tmp, `${key}.pdf`);
-    writeFileSync(pdfPath, Buffer.from(chosen.bytes));
-    execFileSync('qlmanage', ['-t', '-s', '1000', '-o', tmp, pdfPath], { stdio: 'ignore' });
-    const thumb = join(tmp, `${key}.pdf.png`);
-    if (!existsSync(thumb)) throw new Error(`No thumbnail for ${key}`);
-    renameSync(thumb, join(outDir, `${key}.png`));
-    console.log('rendered', key, `(${chosen.type.fontSize}/${chosen.type.leading})`);
+  }
+  if (!chosen) throw new Error(`${key} does not fit on one page at any type scale; trim the sample data`);
+  const pdfPath = join(tmp, `${key}.pdf`);
+  writeFileSync(pdfPath, Buffer.from(chosen.bytes));
+  rasterise(key, pdfPath);
+  console.log('rendered', key, `(${chosen.type.fontSize}/${chosen.type.leading})`);
+}
+
+for (const [key, name, color] of NEW_TEMPLATES) {
+  await renderPreview(key, SENIOR_WITH_FIELDS, appTemplates[name], color, appFonts);
+}
+
+if (renderAll) {
+  for (const level of ['entry', 'mid', 'senior']) {
+    for (const style of STYLES) {
+      await renderPreview(`${level}-level-${style.suffix}`, DATA[level], style.template, style.color, { body: interFont });
+    }
   }
 }
 rmSync(tmp, { recursive: true, force: true });
