@@ -111,7 +111,7 @@ export const GENERATE_DIALOG = {
 
 /** The Content tab's accordion, in order. `prefixes` are the form paths each section owns. */
 export const RESUME_SECTIONS = [
-  { id: 'about', title: 'About you', prefixes: ['profile'] },
+  { id: 'about', title: 'About you', prefixes: ['profile', 'headlineAchievements'] },
   { id: 'contact', title: 'Contact information', prefixes: ['contacts', 'location'] },
   { id: 'highlights', title: 'Highlights', prefixes: ['skills', 'tools', 'languages', 'links'] },
   { id: 'experience', title: 'Experience', prefixes: ['experience'] },
@@ -146,6 +146,11 @@ export const RESUME_FIELD_LABELS: Record<string, string> = {
   locationType: 'Location type',
   degreeType: 'Degree type',
   additionalDetails: 'Description',
+  headlineAchievements: 'Headline achievements',
+  value: 'Achievement value',
+  label: 'What it measures',
+  stack: 'Stack',
+  group: 'Skill group',
 };
 
 export const SECTION_SUMMARY = {
@@ -155,6 +160,10 @@ export const SECTION_SUMMARY = {
   entries: (count: number) => `${count} ${count === 1 ? 'entry' : 'entries'}`,
   projects: (count: number) => `${count} ${count === 1 ? 'project' : 'projects'}`,
   skills: (count: number) => `${count} ${count === 1 ? 'skill' : 'skills'}`,
+  /** "4 skills in 3 groups", when Group skills is on. */
+  groupedSkills: (count: number, groups: number) =>
+    `${count} ${count === 1 ? 'skill' : 'skills'} in ${groups} ${groups === 1 ? 'group' : 'groups'}`,
+  achievements: (count: number) => `${count} ${count === 1 ? 'achievement' : 'achievements'}`,
   tools: (count: number) => `${count} ${count === 1 ? 'tool' : 'tools'}`,
   languages: (count: number) => `${count} ${count === 1 ? 'language' : 'languages'}`,
   /** "Fix 1 field: first name". */

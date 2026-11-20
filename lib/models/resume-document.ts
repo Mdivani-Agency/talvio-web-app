@@ -231,6 +231,7 @@ export function profileToResumeDocument(account: AccountDto): ResumeForm {
       ...(item.achievements ? { achievements: item.achievements } : {}),
       ...(item.responsibilities ? { responsibilities: item.responsibilities } : {}),
       ...(item.keyContributions ? { keyContributions: item.keyContributions } : {}),
+      ...(item.stack?.length ? { stack: item.stack } : {}),
       ...(description ? { description } : {}),
       id: item.id,
     });
@@ -242,14 +243,24 @@ export function profileToResumeDocument(account: AccountDto): ResumeForm {
       lastName: profile.lastName,
       role: profile.role,
       ...(profile.tagline ? { tagline: profile.tagline } : {}),
+      ...(profile.groupSkills ? { groupSkills: true } : {}),
     },
+    ...(account.headlineAchievements?.length
+      ? {
+        headlineAchievements: account.headlineAchievements.map((item) =>
+          withId({ value: item.value, label: item.label, id: item.id }),
+        ),
+      }
+      : {}),
     contacts: {
       email: profile.email,
       ...(profile.phone ? { phone: profile.phone } : {}),
       ...(profile.website ? { url: profile.website } : {}),
     },
     ...(city || country ? { location: { ...(city ? { city } : {}), ...(country ? { country } : {}) } } : {}),
-    skills: (account.skills ?? []).map((skill) => withId({ name: skill.name, id: skill.id })),
+    skills: (account.skills ?? []).map((skill) =>
+      withId({ name: skill.name, ...(skill.group ? { group: skill.group } : {}), id: skill.id }),
+    ),
     tools: (account.tools ?? []).map((tool) => withId({ name: tool.name, id: tool.id })),
     links: (account.links ?? []).map((link) => withId({ type: link.type, value: link.value, id: link.id })),
     languages: (account.languages ?? []).map((language) =>
@@ -308,7 +319,7 @@ export function normalizeResumeDocument<T>(document: T): T {
     });
   }
 
-  for (const key of ['recommendations', 'projects', 'skills', 'tools', 'links', 'languages'] as const) {
+  for (const key of ['recommendations', 'projects', 'skills', 'tools', 'links', 'languages', 'headlineAchievements'] as const) {
     if (!Array.isArray(root[key])) {
       continue;
     }

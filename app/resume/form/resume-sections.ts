@@ -31,6 +31,14 @@ export function resumeFieldLabel(path: string): string {
   return label;
 }
 
+function skillsSummary(values: ResumeForm): string {
+  const skills = values.skills ?? [];
+  const groups = new Set(skills.map((skill) => skill.group?.trim()).filter(Boolean));
+  return values.profile?.groupSkills && groups.size > 0
+    ? SECTION_SUMMARY.groupedSkills(skills.length, groups.size)
+    : SECTION_SUMMARY.skills(skills.length);
+}
+
 export type ResumeSectionState = {
   id: ResumeSectionId;
   title: string;
@@ -45,7 +53,10 @@ function contentSummary(id: ResumeSectionId, values: ResumeForm): { summary: str
   switch (id) {
     case 'about': {
       const name = [text(values.profile?.firstName), text(values.profile?.lastName)].filter(Boolean).join(' ');
-      const line = [name, text(values.profile?.role)].filter(Boolean).join(' · ');
+      const achievements = count(values.headlineAchievements);
+      const line = [name, text(values.profile?.role), achievements ? SECTION_SUMMARY.achievements(achievements) : '']
+        .filter(Boolean)
+        .join(' · ');
       return { summary: line || SECTION_SUMMARY.notStarted, done: Boolean(name) };
     }
     case 'contact': {
@@ -54,7 +65,7 @@ function contentSummary(id: ResumeSectionId, values: ResumeForm): { summary: str
     }
     case 'highlights': {
       const parts = [
-        count(values.skills) ? SECTION_SUMMARY.skills(count(values.skills)) : '',
+        count(values.skills) ? skillsSummary(values) : '',
         count(values.tools) ? SECTION_SUMMARY.tools(count(values.tools)) : '',
         count(values.languages) ? SECTION_SUMMARY.languages(count(values.languages)) : '',
       ].filter(Boolean);

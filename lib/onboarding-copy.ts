@@ -134,3 +134,50 @@ export const entryRemoveBody = (name: string) => `${name} will be removed. You c
 export const ENTRY_REORDER_HINT = 'Drag, or press the up or down arrow key to move it.';
 export const entryMovedAnnouncement = (name: string, position: number, total: number) =>
   `${name} moved to position ${position} of ${total}.`;
+
+/* Optional fields used by some templates (MDI-664). Each hint ends with whether the current template shows the field. */
+
+export const HEADLINE_ACHIEVEMENT_COPY = {
+  label: 'Headline achievements (optional)',
+  hint: 'A number and what it measures.',
+  value: { label: (n: number) => `Achievement ${n} value`, example: '40%' },
+  measure: { label: (n: number) => `Achievement ${n} label`, example: 'what it measures' },
+  count: (n: number, max: number) => `${n} of ${max}`,
+  remove: (n: number) => `Remove achievement ${n}`,
+  add: 'Add achievement',
+  limitReached: (max: number) => `You can add up to ${max}.`,
+} as const;
+
+export const SKILL_GROUP_COPY = {
+  switchLabel: 'Group skills',
+  offHint: 'Turn on Group skills to sort them under headings.',
+  onHint: 'Other templates list all your skills together.',
+  groupName: { label: (n: number) => `Group ${n} name`, example: 'Group name' },
+  addSkill: (group: string) => `Add a skill to ${group}`,
+  removeGroup: (group: string) => `Remove group ${group}`,
+  addGroup: 'Add group',
+  ungrouped: 'Other',
+  ungroupedHint: 'Skills without a group show under Other.',
+  untitledGroup: 'this group',
+  duplicateSkill: (name: string) => `${name} is already in your skills`,
+} as const;
+
+export const STACK_COPY = {
+  label: 'Stack (optional)',
+  example: 'Add a technology',
+  hint: (max: number) => `The main tools you used in this role, up to ${max}.`,
+  remove: (name: string) => `Remove ${name}`,
+} as const;
+
+export const TAG_REMOVE_LABEL = (name: string) => `Remove ${name}`;
+
+/** Which templates show each optional field, in words, for when the current template is not one of them. */
+export const OPTIONAL_FIELD_SHOWN_IN = {
+  headlineAchievements: { where: 'the Executive template', omitted: 'leaves them out' },
+  skillGroups: { where: 'Skills first and Technical', omitted: 'lists skills together' },
+  stack: { where: 'the Technical template', omitted: 'leaves it out' },
+} as const;
+
+export const shownInYourTemplate = (template: string) => `Shown in your template, ${template}.`;
+export const shownElsewhere = (where: string, template: string | undefined, omitted: string) =>
+  template ? `Shown in ${where}. Your template, ${template}, ${omitted}.` : `Shown in ${where}.`;

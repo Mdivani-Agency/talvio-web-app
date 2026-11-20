@@ -194,6 +194,8 @@ export type Mutation = {
   deleteFromeducationsCollection: EducationsDeleteResponse;
   /** Deletes zero or more records from the `experiences` collection */
   deleteFromexperiencesCollection: ExperiencesDeleteResponse;
+  /** Deletes zero or more records from the `headline_achievements` collection */
+  deleteFromheadline_achievementsCollection: Headline_AchievementsDeleteResponse;
   /** Deletes zero or more records from the `languages` collection */
   deleteFromlanguagesCollection: LanguagesDeleteResponse;
   /** Deletes zero or more records from the `links` collection */
@@ -218,6 +220,8 @@ export type Mutation = {
   insertIntoeducationsCollection?: Maybe<EducationsInsertResponse>;
   /** Adds one or more `experiences` records to the collection */
   insertIntoexperiencesCollection?: Maybe<ExperiencesInsertResponse>;
+  /** Adds one or more `headline_achievements` records to the collection */
+  insertIntoheadline_achievementsCollection?: Maybe<Headline_AchievementsInsertResponse>;
   /** Adds one or more `languages` records to the collection */
   insertIntolanguagesCollection?: Maybe<LanguagesInsertResponse>;
   /** Adds one or more `links` records to the collection */
@@ -242,6 +246,8 @@ export type Mutation = {
   updateeducationsCollection: EducationsUpdateResponse;
   /** Updates zero or more records in the `experiences` collection */
   updateexperiencesCollection: ExperiencesUpdateResponse;
+  /** Updates zero or more records in the `headline_achievements` collection */
+  updateheadline_achievementsCollection: Headline_AchievementsUpdateResponse;
   /** Updates zero or more records in the `languages` collection */
   updatelanguagesCollection: LanguagesUpdateResponse;
   /** Updates zero or more records in the `links` collection */
@@ -281,6 +287,12 @@ export type MutationDeleteFromeducationsCollectionArgs = {
 export type MutationDeleteFromexperiencesCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ExperiencesFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromheadline_AchievementsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Headline_AchievementsFilter>;
 };
 
 /** The root type for creating and mutating data */
@@ -359,6 +371,11 @@ export type MutationInsertIntoexperiencesCollectionArgs = {
 };
 
 /** The root type for creating and mutating data */
+export type MutationInsertIntoheadline_AchievementsCollectionArgs = {
+  objects: Array<Headline_AchievementsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationInsertIntolanguagesCollectionArgs = {
   objects: Array<LanguagesInsertInput>;
 };
@@ -427,6 +444,13 @@ export type MutationUpdateexperiencesCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ExperiencesFilter>;
   set: ExperiencesUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdateheadline_AchievementsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  set: Headline_AchievementsUpdateInput;
 };
 
 /** The root type for creating and mutating data */
@@ -530,6 +554,10 @@ export type Query = {
   experiencesByPk?: Maybe<Experiences>;
   /** A pagable collection of type `experiences` */
   experiencesCollection: ExperiencesConnection;
+  /** Retrieve a record of type `headline_achievements` by its primary key */
+  headline_achievementsByPk?: Maybe<Headline_Achievements>;
+  /** A pagable collection of type `headline_achievements` */
+  headline_achievementsCollection: Headline_AchievementsConnection;
   /** Retrieve a record of type `languages` by its primary key */
   languagesByPk?: Maybe<Languages>;
   /** A pagable collection of type `languages` */
@@ -620,6 +648,22 @@ export type QueryExperiencesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryHeadline_AchievementsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryHeadline_AchievementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Headline_AchievementsOrderBy>>;
 };
 
 /** The root type for querying data */
@@ -1123,6 +1167,7 @@ export type Experiences = Node & {
   profiles?: Maybe<Profiles>;
   responsibilities: Array<Maybe<Scalars['String']['output']>>;
   sort_order: Scalars['Int']['output'];
+  stack: Array<Maybe<Scalars['String']['output']>>;
   start_date: Scalars['Date']['output'];
   updated_at: Scalars['Datetime']['output'];
   user_id: Scalars['UUID']['output'];
@@ -1169,6 +1214,7 @@ export type ExperiencesFilter = {
   or?: InputMaybe<Array<ExperiencesFilter>>;
   responsibilities?: InputMaybe<StringListFilter>;
   sort_order?: InputMaybe<IntFilter>;
+  stack?: InputMaybe<StringListFilter>;
   start_date?: InputMaybe<DateFilter>;
   updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
@@ -1189,6 +1235,7 @@ export type ExperiencesInsertInput = {
   location_type?: InputMaybe<Location_Type>;
   responsibilities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
+  stack?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   start_date?: InputMaybe<Scalars['Date']['input']>;
   updated_at?: InputMaybe<Scalars['Datetime']['input']>;
   user_id?: InputMaybe<Scalars['UUID']['input']>;
@@ -1233,6 +1280,7 @@ export type ExperiencesUpdateInput = {
   location_type?: InputMaybe<Location_Type>;
   responsibilities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
+  stack?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   start_date?: InputMaybe<Scalars['Date']['input']>;
   updated_at?: InputMaybe<Scalars['Datetime']['input']>;
   user_id?: InputMaybe<Scalars['UUID']['input']>;
@@ -1244,6 +1292,98 @@ export type ExperiencesUpdateResponse = {
   affectedCount: Scalars['Int']['output'];
   /** Array of records impacted by the mutation */
   records: Array<Experiences>;
+};
+
+export type Headline_Achievements = Node & {
+  __typename?: 'headline_achievements';
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  label: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
+  sort_order: Scalars['Int']['output'];
+  user_id: Scalars['UUID']['output'];
+  value: Scalars['String']['output'];
+};
+
+export type Headline_AchievementsConnection = {
+  __typename?: 'headline_achievementsConnection';
+  edges: Array<Headline_AchievementsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Headline_AchievementsDeleteResponse = {
+  __typename?: 'headline_achievementsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
+};
+
+export type Headline_AchievementsEdge = {
+  __typename?: 'headline_achievementsEdge';
+  cursor: Scalars['String']['output'];
+  node: Headline_Achievements;
+};
+
+export type Headline_AchievementsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Headline_AchievementsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  label?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Headline_AchievementsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Headline_AchievementsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+  value?: InputMaybe<StringFilter>;
+};
+
+export type Headline_AchievementsInsertInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type Headline_AchievementsInsertResponse = {
+  __typename?: 'headline_achievementsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
+};
+
+export type Headline_AchievementsOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  label?: InputMaybe<OrderByDirection>;
+  sort_order?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+  value?: InputMaybe<OrderByDirection>;
+};
+
+export type Headline_AchievementsUpdateInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type Headline_AchievementsUpdateResponse = {
+  __typename?: 'headline_achievementsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
 };
 
 export type Language_Proficiency =
@@ -1539,6 +1679,8 @@ export type Profiles = Node & {
   educationsCollection?: Maybe<EducationsConnection>;
   experiencesCollection?: Maybe<ExperiencesConnection>;
   first_name: Scalars['String']['output'];
+  group_skills: Scalars['Boolean']['output'];
+  headline_achievementsCollection?: Maybe<Headline_AchievementsConnection>;
   languagesCollection?: Maybe<LanguagesConnection>;
   last_name: Scalars['String']['output'];
   linksCollection?: Maybe<LinksConnection>;
@@ -1583,6 +1725,16 @@ export type ProfilesExperiencesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
+};
+
+export type ProfilesHeadline_AchievementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Headline_AchievementsOrderBy>>;
 };
 
 export type ProfilesLanguagesCollectionArgs = {
@@ -1652,6 +1804,7 @@ export type ProfilesFilter = {
   country?: InputMaybe<StringFilter>;
   created_at?: InputMaybe<DatetimeFilter>;
   first_name?: InputMaybe<StringFilter>;
+  group_skills?: InputMaybe<BooleanFilter>;
   last_name?: InputMaybe<StringFilter>;
   nodeId?: InputMaybe<IdFilter>;
   /** Negates a filter */
@@ -1670,6 +1823,7 @@ export type ProfilesInsertInput = {
   country?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
   first_name?: InputMaybe<Scalars['String']['input']>;
+  group_skills?: InputMaybe<Scalars['Boolean']['input']>;
   last_name?: InputMaybe<Scalars['String']['input']>;
   role?: InputMaybe<Scalars['String']['input']>;
   seniority?: InputMaybe<Seniority_Level>;
@@ -1691,6 +1845,7 @@ export type ProfilesOrderBy = {
   country?: InputMaybe<OrderByDirection>;
   created_at?: InputMaybe<OrderByDirection>;
   first_name?: InputMaybe<OrderByDirection>;
+  group_skills?: InputMaybe<OrderByDirection>;
   last_name?: InputMaybe<OrderByDirection>;
   role?: InputMaybe<OrderByDirection>;
   seniority?: InputMaybe<OrderByDirection>;
@@ -1704,6 +1859,7 @@ export type ProfilesUpdateInput = {
   country?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
   first_name?: InputMaybe<Scalars['String']['input']>;
+  group_skills?: InputMaybe<Scalars['Boolean']['input']>;
   last_name?: InputMaybe<Scalars['String']['input']>;
   role?: InputMaybe<Scalars['String']['input']>;
   seniority?: InputMaybe<Seniority_Level>;
@@ -2124,6 +2280,7 @@ export type Seniority_LevelFilter = {
 export type Skills = Node & {
   __typename?: 'skills';
   created_at: Scalars['Datetime']['output'];
+  group_name?: Maybe<Scalars['String']['output']>;
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
   /** Globally Unique Record Identifier */
@@ -2157,6 +2314,7 @@ export type SkillsFilter = {
   /** Returns true only if all its inner filters are true, otherwise returns false */
   and?: InputMaybe<Array<SkillsFilter>>;
   created_at?: InputMaybe<DatetimeFilter>;
+  group_name?: InputMaybe<StringFilter>;
   id?: InputMaybe<UuidFilter>;
   name?: InputMaybe<StringFilter>;
   nodeId?: InputMaybe<IdFilter>;
@@ -2170,6 +2328,7 @@ export type SkillsFilter = {
 
 export type SkillsInsertInput = {
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  group_name?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['UUID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
@@ -2186,6 +2345,7 @@ export type SkillsInsertResponse = {
 
 export type SkillsOrderBy = {
   created_at?: InputMaybe<OrderByDirection>;
+  group_name?: InputMaybe<OrderByDirection>;
   id?: InputMaybe<OrderByDirection>;
   name?: InputMaybe<OrderByDirection>;
   sort_order?: InputMaybe<OrderByDirection>;
@@ -2194,6 +2354,7 @@ export type SkillsOrderBy = {
 
 export type SkillsUpdateInput = {
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  group_name?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['UUID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
@@ -2342,13 +2503,13 @@ export type CreditsQueryVariables = Exact<{
 
 export type CreditsQuery = { user_creditsCollection: { edges: Array<{ node: { balance: number } }> } };
 
-export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string };
+export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, group_skills: boolean, created_at: string, updated_at: string };
 
 export type ProfileByUserQueryVariables = Exact<{
   userId: string;
 }>;
 
-export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string } }> }, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } }> }, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string | null>, responsibilities: Array<string | null>, key_contributions: Array<string | null>, additional_details: string | null, sort_order: number } }> }, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } }> }, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } }> }, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } }> }, skillsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } }> }, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } }> } };
+export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, group_skills: boolean, created_at: string, updated_at: string } }> }, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } }> }, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string | null>, responsibilities: Array<string | null>, key_contributions: Array<string | null>, stack: Array<string | null>, additional_details: string | null, sort_order: number } }> }, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } }> }, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } }> }, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } }> }, skillsCollection: { edges: Array<{ node: { id: string, name: string, group_name: string | null, sort_order: number } }> }, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } }> }, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } }> }, headline_achievementsCollection: { edges: Array<{ node: { id: string, value: string, label: string, sort_order: number } }> } };
 
 export type ListResumeFragment = { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string };
 
@@ -2440,6 +2601,7 @@ export const ProfileFieldsFragmentDoc = gql`
   seniority
   city
   country
+  group_skills
   created_at
   updated_at
 }
@@ -2516,6 +2678,7 @@ export const ProfileByUserDocument = gql`
         achievements
         responsibilities
         key_contributions
+        stack
         additional_details
         sort_order
       }
@@ -2578,6 +2741,7 @@ export const ProfileByUserDocument = gql`
       node {
         id
         name
+        group_name
         sort_order
       }
     }
@@ -2619,6 +2783,20 @@ export const ProfileByUserDocument = gql`
         id
         language
         proficiency
+        sort_order
+      }
+    }
+  }
+  headline_achievementsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 3
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        value
+        label
         sort_order
       }
     }

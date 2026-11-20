@@ -7,7 +7,17 @@ import {
   TemplateKeyEnum,
 } from './enums';
 import { MarkType } from '@lib/types';
-import { languageSchema, linkSchema, persistedIdSchema, skillSchema, toolSchema } from './account.schema';
+import {
+  HEADLINE_ACHIEVEMENTS_MAX,
+  headlineAchievementDraftSchema,
+  headlineAchievementsSchema,
+  languageSchema,
+  linkSchema,
+  persistedIdSchema,
+  skillSchema,
+  stackSchema,
+  toolSchema,
+} from './account.schema';
 
 export const markValueSchema: z.ZodType<MarkType, MarkType> = z.looseObject({
   attrs: z.record(z.string(), z.unknown()).optional(),
@@ -35,6 +45,7 @@ const baseExperienceSchema = z.object({
   achievements: z.array(z.string()),
   responsibilities: z.array(z.string()),
   keyContributions: z.array(z.string()),
+  stack: stackSchema,
 });
 
 export const experienceSchema = baseExperienceSchema.partial({
@@ -45,6 +56,7 @@ export const experienceSchema = baseExperienceSchema.partial({
   achievements: true,
   responsibilities: true,
   keyContributions: true,
+  stack: true,
 });
 
 const educationSchema = z.object({
@@ -95,7 +107,9 @@ export const resumeFormSchema = z.object({
     lastName: z.string(),
     role: z.string(),
     tagline: z.string().optional(),
+    groupSkills: z.boolean().optional(),
   }),
+  headlineAchievements: headlineAchievementsSchema.optional(),
   contacts: z.object({
     email: z.email(),
     phone: z.string().optional(),
@@ -127,8 +141,12 @@ export const resumeFormSchema = z.object({
   projects: z.array(formProjectSchema.extend({ id: persistedIdSchema }).partial({ url: true })).optional(),
 });
 
-/** Load and edit schema. Email may be empty so an incomplete draft stays editable. */
+/**
+ * Load and edit schema. Email may be empty and a headline achievement row may be half filled, so an incomplete draft
+ * stays editable; the download checks `resumeFormSchema`.
+ */
 export const resumeDraftSchema = resumeFormSchema.extend({
+  headlineAchievements: z.array(headlineAchievementDraftSchema).max(HEADLINE_ACHIEVEMENTS_MAX).optional(),
   contacts: z.object({
     email: z.string(),
     phone: z.string().optional(),

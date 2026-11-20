@@ -41,6 +41,7 @@ function documentDefaults(values: ResumeForm): ResumeForm {
       city: values.location?.city ?? '',
       country: values.location?.country ?? '',
     },
+    headlineAchievements: values.headlineAchievements ?? [],
     skills: values.skills ?? [],
     tools: values.tools ?? [],
     links: values.links ?? [],
@@ -78,7 +79,7 @@ export const ResumeDocumentForm = ({ onSubmit, defaultValues, issues }: ResumeDo
 
   const errorMap = useStore(form.store, (state) => state.errorMap);
   const formErrors = new Set<ResumeSectionId>();
-  if (Boolean(errorMap) && hasFieldError(form, 'profile')) formErrors.add('about');
+  if (Boolean(errorMap) && (hasFieldError(form, 'profile') || hasFieldError(form, 'headlineAchievements'))) formErrors.add('about');
   if (hasFieldError(form, 'contacts') || hasFieldError(form, 'location')) formErrors.add('contact');
   if (['skills', 'languages', 'links', 'tools'].some((key) => hasFieldError(form, key))) formErrors.add('highlights');
   if (hasFieldError(form, 'experience')) formErrors.add('experience');

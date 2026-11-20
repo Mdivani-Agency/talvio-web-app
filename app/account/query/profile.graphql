@@ -7,6 +7,7 @@ fragment ProfileFields on profiles {
   seniority
   city
   country
+  group_skills
   created_at
   updated_at
 }
@@ -53,6 +54,7 @@ query ProfileByUser($userId: UUID!) {
         achievements
         responsibilities
         key_contributions
+        stack
         additional_details
         sort_order
       }
@@ -115,6 +117,7 @@ query ProfileByUser($userId: UUID!) {
       node {
         id
         name
+        group_name
         sort_order
       }
     }
@@ -156,6 +159,20 @@ query ProfileByUser($userId: UUID!) {
         id
         language
         proficiency
+        sort_order
+      }
+    }
+  }
+  headline_achievementsCollection(
+    filter: { user_id: { eq: $userId } }
+    first: 3
+    orderBy: [{ sort_order: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        value
+        label
         sort_order
       }
     }

@@ -102,6 +102,35 @@ describe('resume drafts', () => {
     expect(parseResumeDraft(draft!)?.content.template).toBe(DEFAULT_RESUME_TEMPLATE);
   });
 
+  it('restores drafts saved before the optional template fields, and keeps them once filled', () => {
+    const owner = { kind: 'guest' as const, guestId: FLOW_GUEST_ID };
+    const before = buildResumeDraft({ owner, document: { ...emptyDocument, resume: fullResumeContent }, step: 'resumePreview', documentId: 'new' });
+    expect(parseResumeDraft(before!)?.content.resume).toEqual(fullResumeContent);
+
+    const resume = {
+      ...fullResumeContent,
+      profile: { ...fullResumeContent.profile, groupSkills: true },
+      headlineAchievements: [{ value: '40%', label: 'faster releases' }],
+      skills: [{ name: 'Go', group: 'Backend' }],
+      experience: [{ ...fullResumeContent.experience![0]!, stack: ['Go', 'Kafka'] }],
+    };
+    const after = buildResumeDraft({ owner, document: { ...emptyDocument, resume }, step: 'resumePreview', documentId: 'new' });
+    const restored = parseResumeDraft(after!)?.content.resume;
+    expect(restored?.profile.groupSkills).toBe(true);
+    expect(restored?.headlineAchievements).toEqual([{ value: '40%', label: 'faster releases' }]);
+    expect(restored?.skills).toEqual([{ name: 'Go', group: 'Backend' }]);
+    expect(restored?.experience?.[0]?.stack).toEqual(['Go', 'Kafka']);
+
+    // A row still being typed restores too; the download is what asks for it to be finished.
+    const typing = buildResumeDraft({
+      owner,
+      document: { ...emptyDocument, resume: { ...resume, headlineAchievements: [{ value: '40%', label: '' }] } },
+      step: 'resumePreview',
+      documentId: 'new',
+    });
+    expect(parseResumeDraft(typing!)?.content.resume.headlineAchievements).toEqual([{ value: '40%', label: '' }]);
+  });
+
   it('builds a saved-document draft without machine context', () => {
     const draft = buildResumeDocumentDraft({
       owner: { kind: 'user', userId: FLOW_USER_ID },
