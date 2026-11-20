@@ -1,9 +1,9 @@
--- apply_llm_proposal smokes for MDI-222 (LLM 12/14).
+-- apply_llm_proposal smokes for MDI-222 (LLM 12/14) and MDI-644 (improve_profile).
 -- Run locally after `yarn db:reset`: `yarn db:test`
 
 begin;
 
-select plan(24);
+select plan(35);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -112,8 +112,38 @@ as $$
   );
 $$;
 
+-- An improve_profile request for profile p_profile from job p_job.
+create function pg_temp.improve_profile(p_proposal uuid, p_profile uuid, p_job uuid, p_tagline text)
+returns jsonb
+language sql
+as $$
+  select jsonb_build_object(
+    'proposalId', p_proposal,
+    'jobId', p_job,
+    'sessionId', 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2',
+    'idempotencyKey', 'apply:' || p_proposal,
+    'operation', 'improve_profile',
+    'source', jsonb_build_object('kind', 'profile', 'id', p_profile, 'revision', '2026-11-12T10:00:00.000Z'),
+    'target', jsonb_build_object('kind', 'profile', 'profileId', p_profile, 'baseRevision', '2026-11-12T10:00:00.000Z'),
+    'selectedChangeIds', jsonb_build_array('p1'),
+    'acceptedOmissionIds', '[]'::jsonb,
+    'confirmedClaimIds', jsonb_build_array('pk1'),
+    'profile', jsonb_build_object(
+      'profile', jsonb_build_object(
+        'firstName', 'Eve',
+        'lastName', 'Owner',
+        'role', 'Platform Engineer',
+        'tagline', p_tagline
+      )
+    )
+  );
+$$;
+
 select pg_temp.insert_auth_user('e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1', 'apply-owner@talvio.test');
 select pg_temp.insert_auth_user('e2e2e2e2-e2e2-4e2e-8e2e-e2e2e2e2e2e2', 'apply-other@talvio.test');
+
+insert into public.profiles (user_id, first_name, last_name, role, tagline) values
+  ('e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1', 'Eve', 'Owner', 'Platform Engineer', 'Before');
 
 insert into public.resumes (id, user_id, name, template_key, content, updated_at) values
   ('f1f1f1f1-f1f1-4f1f-8f1f-f1f1f1f1f1f1', 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1', 'Draft', 'senior-level-modern',
@@ -265,9 +295,89 @@ select is(
   'the receipt records the confirmed claims'
 );
 
+-- improve_profile.
+
+select throws_ok(
+  $$ select public.apply_llm_proposal(pg_temp.improve_profile('88888888-8888-4888-8888-888888888888', 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1', 'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2', 'Sharper')) $$,
+  'P0001',
+  'profile_improvement_not_used',
+  'a profile proposal is refused before the improvement is used'
+);
+
+select public.confirm_profile_improvement('improve:profile-run', 'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2');
+
+select throws_ok(
+  $$ select public.apply_llm_proposal(pg_temp.improve_profile('99999999-9999-4999-8999-999999999999', 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1', 'a3a3a3a3-a3a3-4a3a-8a3a-a3a3a3a3a3a3', 'Other run')) $$,
+  'P0001',
+  'profile_improvement_not_used',
+  'a profile proposal from another job is refused'
+);
+
+select is(
+  (public.apply_llm_proposal(pg_temp.improve_profile('88888888-8888-4888-8888-888888888888', 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1', 'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2', 'Sharper'))) #>> '{target,kind}',
+  'profile',
+  'an accepted profile proposal applies once the improvement is used'
+);
+
+select is(
+  (select tagline from public.profiles where user_id = 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1'),
+  'Sharper',
+  'the accepted content is saved on the profile'
+);
+
+select isnt(
+  (select applied_at from public.profile_ai_improvements where user_id = 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1'),
+  null,
+  'applying records applied_at'
+);
+
+select is(
+  (select base_revision from public.llm_proposal_applications where proposal_id = '88888888-8888-4888-8888-888888888888'),
+  '2026-11-12 10:00:00+00'::timestamptz,
+  'the receipt records the base revision the client sent'
+);
+
+select is(
+  (public.apply_llm_proposal(pg_temp.improve_profile('88888888-8888-4888-8888-888888888888', 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1', 'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2', 'Again'))) - 'resultingRevision',
+  jsonb_build_object(
+    'receiptId', (select id from public.llm_proposal_applications where proposal_id = '88888888-8888-4888-8888-888888888888'),
+    'proposalId', '88888888-8888-4888-8888-888888888888',
+    'target', jsonb_build_object('kind', 'profile', 'profileId', 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1'),
+    'appliedChangeIds', jsonb_build_array('p1'),
+    'acceptedOmissionIds', '[]'::jsonb,
+    'replayed', true
+  ),
+  'a repeated Accept returns the stored profile receipt'
+);
+
+select is(
+  (select tagline from public.profiles where user_id = 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1'),
+  'Sharper',
+  'a profile replay does not write again'
+);
+
+select is(
+  (select count(*)::int from public.llm_proposal_applications where operation = 'improve_profile'),
+  1,
+  'one receipt per profile proposal'
+);
+
+select isnt(
+  (select used_at from public.profile_ai_improvements where user_id = 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1'),
+  null,
+  'the improvement stays used after the apply'
+);
+
 -- Another user.
 
 select pg_temp.login('e2e2e2e2-e2e2-4e2e-8e2e-e2e2e2e2e2e2');
+
+select throws_ok(
+  $$ select public.apply_llm_proposal(pg_temp.improve_profile('aaaaaaaa-0000-4000-8000-000000000000', 'e1e1e1e1-e1e1-4e1e-8e1e-e1e1e1e1e1e1', 'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2', 'Taken')) $$,
+  'P0001',
+  'profile_not_found',
+  'another user cannot apply to the profile'
+);
 
 select is(
   (select count(*)::int from public.llm_proposal_applications),

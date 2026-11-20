@@ -6,10 +6,11 @@
 --   * end_date < start_date with is_present = false fails
 --   * duplicate React / react skill fails
 --   * user_credits.balance = -1 fails
+--   * profile_ai_improvements: applied_at needs used_at; request ids are 8-128 chars
 
 begin;
 
-select plan(17);
+select plan(19);
 
 insert into auth.users (
   instance_id,
@@ -375,6 +376,26 @@ select is(
     where client_draft_id = 'cdcdcdcd-cdcd-4cdc-8cdc-cdcdcdcdcdcd'),
   2,
   'the same client_draft_id can exist for two users'
+);
+
+select throws_ok(
+  $$
+    insert into public.profile_ai_improvements (user_id, client_request_id, applied_at)
+    values ('11111111-1111-4111-8111-111111111111', 'improve:constraint', now());
+  $$,
+  '23514',
+  null,
+  'a profile improvement cannot be applied before it is used'
+);
+
+select throws_ok(
+  $$
+    insert into public.profile_ai_improvements (user_id, client_request_id)
+    values ('11111111-1111-4111-8111-111111111111', 'short');
+  $$,
+  '23514',
+  null,
+  'a profile improvement request id is at least 8 characters'
 );
 
 select * from finish();
