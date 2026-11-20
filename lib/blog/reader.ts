@@ -5,6 +5,7 @@ import { cache } from 'react';
 
 import { siteOrigin } from '../site';
 
+import { resolveBlogCoverUrl } from './contract';
 import { createBlogReader, type BlogCacheEntry, type CachedLoad } from './cache';
 import type { BlogMarkdownOrigins } from './markdown-urls';
 import { fetchAllBlogPosts, fetchBlogPost, readBlogApiConfig } from './server';
@@ -43,12 +44,11 @@ export const getBlogPost = cache(reader.getBlogPost);
 export { blogCacheControl, BLOG_FRESHNESS_BUDGET_SECONDS, type BlogCachedResult } from './cache';
 
 /**
- * Absolute URL for a cover path. Covers are same-origin paths on the API origin (checked in `contract.ts`), so they
- * resolve against it, never against Talvio. `null` when the API is not configured.
+ * Absolute URL for a cover. Covers are paths on the API origin or media.talvio.co URLs (checked in `contract.ts`).
+ * Paths resolve against the API origin, never against Talvio, and are `null` when the API is not configured.
  */
 export function blogAssetUrl(path: string): string | null {
-  const config = readBlogApiConfig();
-  return config ? `${config.origin}${path}` : null;
+  return resolveBlogCoverUrl(path, readBlogApiConfig()?.origin ?? null);
 }
 
 /** Origins article Markdown may link to and load images from (see `markdown-urls.ts`). */
