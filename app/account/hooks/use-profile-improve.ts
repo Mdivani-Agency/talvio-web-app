@@ -485,10 +485,15 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
     const current = session.currentQuestionId;
     const previousId = current ? previousQuestionId(session.questions, current) : session.questions.at(-1)?.id ?? null;
     if (previousId) {
+      // Keep what was typed here, so going forward again finds it.
+      const answers = current && session.unsentAnswer.trim()
+        ? upsertAnswer(session.answers, { questionId: current, status: 'answered', value: session.unsentAnswer })
+        : session.answers;
       persist({
         ...session,
+        answers,
         currentQuestionId: previousId,
-        unsentAnswer: session.answers.find((answer) => answer.questionId === previousId)?.value ?? '',
+        unsentAnswer: answers.find((answer) => answer.questionId === previousId)?.value ?? '',
       });
     }
   }, [persist]);
@@ -643,6 +648,9 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
     questionDetails: stored?.questionDetails ?? {},
     /** The free improvement from the database flag; `used` is true once improve_profile was admitted. */
     improvement: improvement.data ?? null,
+    /** The flag could not be read: the page offers a retry instead of waiting. */
+    improvementError: improvement.isError && !improvement.data,
+    refetchImprovement: () => void improvement.refetch(),
     questions: stored?.questions ?? [],
     answers: stored?.answers ?? [],
     currentQuestionId: stored?.currentQuestionId ?? null,

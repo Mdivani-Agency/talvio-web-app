@@ -104,6 +104,13 @@ describe('ImprovePage', () => {
     expect(screen.queryByRole('button', { name: 'Start the questions' })).toBeNull();
   });
 
+  it('offers a retry when the improvement flag cannot be read', async () => {
+    const actions = hook({ improvement: null, improvementError: true, refetchImprovement: vi.fn() });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /try again/i }));
+    expect(actions.refetchImprovement).toHaveBeenCalledTimes(1);
+  });
+
   it('shows loading with live status and Cancel', async () => {
     const actions = hook({ step: 'loading', loadingStage: 'questions' });
     renderPage();

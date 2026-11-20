@@ -59,6 +59,9 @@ export default function ImprovePage() {
     }
     switch (improve.step) {
       case 'idle':
+        if (improve.improvementError) {
+          return <ErrorView reset={improve.refetchImprovement} />;
+        }
         if (!improve.improvement) {
           return <Loading message="Loading..." />;
         }

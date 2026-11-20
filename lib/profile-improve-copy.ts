@@ -79,6 +79,8 @@ export const SUGGESTED_PREFIX = 'Suggested: ';
 export const fromAnswer = (questionNumber: number) => `From your answer to question ${questionNumber}`;
 export const FROM_PROFILE = 'From your profile';
 export const CONFIRM_TRUE = 'Confirm it is true:';
+/** For an edit that needs confirming when the service named no fact. */
+export const CLAIM_FALLBACK = 'This edit is accurate.';
 export const CLAIM_MISSING = 'Confirm the highlighted fact or untick that edit to save.';
 export const saveEditsLabel = (n: number) => (n === 0 ? 'Save no edits' : `Save ${n} ${n === 1 ? 'edit' : 'edits'} to my profile`);
 export const KEEP_PROFILE_LABEL = 'Keep my profile as it is';

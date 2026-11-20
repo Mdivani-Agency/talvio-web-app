@@ -2,7 +2,7 @@ import type { ProfileQuestionDetail } from '@app/account/hooks/use-profile-impro
 import type { OnboardingQuestion } from '@lib/ai-improve/questions';
 import type { ProfileReviewChange } from '@lib/llm/profile-proposal';
 import type { AccountDto } from '@lib/types';
-import { FROM_PROFILE, fromAnswer, GENERAL_TARGET, SECTION_LABELS } from '@/lib/profile-improve-copy';
+import { CLAIM_FALLBACK, FROM_PROFILE, fromAnswer, GENERAL_TARGET, SECTION_LABELS } from '@/lib/profile-improve-copy';
 
 import type { ReviewCard } from './views/review';
 
@@ -57,7 +57,8 @@ export function reviewCards(changes: ProfileReviewChange[], questions: Onboardin
       after: change.after,
       from: index >= 0 ? fromAnswer(index + 1) : FROM_PROFILE,
       selected: change.selected,
-      claim: change.needsConfirmation ? (change.claims ?? []).join(' ') : '',
+      needsConfirmation: Boolean(change.needsConfirmation),
+      claim: change.needsConfirmation ? (change.claims ?? []).join(' ') || CLAIM_FALLBACK : '',
       confirmed: change.confirmed,
     };
   });

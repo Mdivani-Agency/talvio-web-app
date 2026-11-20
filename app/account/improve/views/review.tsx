@@ -25,7 +25,9 @@ export type ReviewCard = {
   after: string;
   from: string;
   selected: boolean;
-  /** The facts to confirm, when the change adds one; empty otherwise. */
+  /** True when the change applies only once the user confirms it. */
+  needsConfirmation: boolean;
+  /** The facts to confirm; a general line when the service named none. */
   claim: string;
   confirmed: boolean;
 };
@@ -56,7 +58,7 @@ export function ReviewView({ cards, skipped, claimMissing, saving, onToggle, onT
       </div>
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {cards.map((card) => {
-          const flagged = claimMissing && card.selected && card.claim !== '' && !card.confirmed;
+          const flagged = claimMissing && card.selected && card.needsConfirmation && !card.confirmed;
           return (
             <li
               key={card.id}
@@ -92,7 +94,7 @@ export function ReviewView({ cards, skipped, claimMissing, saving, onToggle, onT
                   <AlignLeft aria-hidden className="size-[1.4rem]" />
                   {card.from}
                 </p>
-                {card.claim && (
+                {card.needsConfirmation && (
                   <label
                     className={cn(
                       'flex items-start gap-2.5 rounded-[1rem] border bg-background px-3 py-2.5 text-sm leading-[1.5]',
