@@ -140,7 +140,8 @@ const PhoneBar = () => {
           <Plus aria-hidden="true" className="size-[1.8rem]" />
         </Link>
       </Button>
-      <Drawer direction="right" open={open} onOpenChange={setOpen}>
+      {/* autoFocus: vaul leaves focus on the trigger by default, so a Tab before the trap starts escapes the menu. */}
+      <Drawer direction="right" open={open} onOpenChange={setOpen} autoFocus>
         <DrawerTrigger asChild>
           <Button variant={'ghost'} size={'icon'} className="size-[4.4rem]" aria-label={ACCOUNT_MENU_OPEN_LABEL}>
             <MenuIcon aria-hidden="true" className="size-[2.2rem] text-primary" />
