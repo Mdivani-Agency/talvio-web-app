@@ -200,6 +200,18 @@ test('PUB-04 the homepage says what is free and mentions no credits or prices', 
   expect(await page.locator('body').innerText()).not.toMatch(/credit|\$\d|subscription/i);
 });
 
+test('PUB-12 with trustpilotReviews on and no listed reviews, the homepage has no reviews section or review data', async ({ page }) => {
+  // Local E2E builds turn NEXT_PUBLIC_FLAG_TRUSTPILOT_REVIEWS on (scripts/e2e-env.mjs); lib/reviews-copy.ts ships empty,
+  // and the section needs 3 quotes (MDI-653).
+  await page.goto('/home');
+  await expect(page.getByRole('heading', { name: 'Frequently asked questions' })).toBeVisible();
+  await expect(page.locator('#reviews')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'What people say about Talvio' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Read all reviews on Trustpilot/ })).toHaveCount(0);
+  const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(jsonLd.join('\n')).not.toMatch(/"(Review|AggregateRating)"/);
+});
+
 test('PUB-05c the homepage hero shows three templates, links without nested buttons, and paints the front template last', async ({ page }) => {
   for (const viewport of [
     { width: 1280, height: 800 },

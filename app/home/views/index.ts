@@ -4,3 +4,4 @@ export * from "./workflows";
 export * from "./nav-section";
 export * from "./whats-free";
 export * from "./faq";
+export * from "./reviews";

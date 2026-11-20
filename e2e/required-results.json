@@ -87,6 +87,7 @@
     "FB-01 a new PDF asks for a Trustpilot review, and a click stops every later ask",
     "FB-02 Tell us what went wrong stores the message and still offers Trustpilot",
     "FB-03 Not now counts as a prompt: no ask on the next PDF within 30 days",
-    "FB-04 Escape closes the prompt and a free re-download never asks"
+    "FB-04 Escape closes the prompt and a free re-download never asks",
+    "PUB-12 with trustpilotReviews on and no listed reviews, the homepage has no reviews section or review data"
   ]
 }
