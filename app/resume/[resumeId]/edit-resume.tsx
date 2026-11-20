@@ -38,6 +38,7 @@ import { shouldRetryGraphqlQuery } from '@/lib/graphql-client';
 import { useUserSession } from '@lib/providers';
 import type { PreviewDto, Resume } from '@lib/types';
 
+import { useFeedbackPrompt } from '../providers/feedback-prompt-provider';
 import { ResumeEditorShell } from '../views/resume-editor-shell';
 import { ResumeUnavailable } from '../views/resume-unavailable';
 import { WithResumeHeader } from '../views/resume-public-header';
@@ -77,7 +78,8 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     retry: shouldRetryGraphqlQuery,
   });
 
-  const generatePdf = useGenerateResumePdf(userId);
+  const feedbackPrompt = useFeedbackPrompt();
+  const generatePdf = useGenerateResumePdf(userId, { onNewPdf: feedbackPrompt.notifyNewPdf });
   const deleteResume = useDeleteResume(userId);
 
   const original = family?.original;

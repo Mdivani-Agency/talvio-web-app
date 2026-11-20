@@ -26,6 +26,11 @@ export type FeatureFlags = {
    * questions during setup can suggest edits; that is true only with this on.
    */
   profileAiImprove: boolean;
+  /**
+   * The Trustpilot review prompt after a new resume PDF, with "Tell us what went wrong" (MDI-652). Off by default.
+   * The cap (3 prompts, one per 30 days, never after a Trustpilot click) is enforced by the database (MDI-651).
+   */
+  feedbackPrompt: boolean;
 };
 
 export type FeatureFlagEnv = {
@@ -34,6 +39,7 @@ export type FeatureFlagEnv = {
   NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI?: string;
   NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE?: string;
   NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE?: string;
+  NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT?: string;
 };
 
 export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
@@ -42,6 +48,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   creditPurchaseUi: false,
   resumeAiImprove: false,
   profileAiImprove: false,
+  feedbackPrompt: false,
 };
 
 function parseFlag(value: string | undefined, fallback: boolean): boolean {
@@ -66,6 +73,7 @@ function processFlagEnv(): FeatureFlagEnv {
     NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI: process.env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI,
     NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE,
     NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: process.env.NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE,
+    NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT: process.env.NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT,
   };
 }
 
@@ -76,5 +84,6 @@ export function featureFlags(env: FeatureFlagEnv = processFlagEnv()): FeatureFla
     creditPurchaseUi: parseFlag(env.NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI, DEFAULT_FEATURE_FLAGS.creditPurchaseUi),
     resumeAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.resumeAiImprove),
     profileAiImprove: parseFlag(env.NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE, DEFAULT_FEATURE_FLAGS.profileAiImprove),
+    feedbackPrompt: parseFlag(env.NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT, DEFAULT_FEATURE_FLAGS.feedbackPrompt),
   };
 }
