@@ -51,11 +51,11 @@ export const Reviews = ({ reviews }: { reviews: readonly TrustpilotReview[] }) =
                   href={review.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-muted-foreground underline underline-offset-4"
+                  className="text-muted-foreground underline underline-offset-4"
                 >
                   {reviewedOnTrustpilot(formatReviewDate(review.date))}
                   <span className="sr-only"> {REVIEWS_NEW_TAB}</span>
-                  <ExternalLinkIcon aria-hidden="true" className="size-[1.3rem]" />
+                  <ExternalLinkIcon aria-hidden="true" className="ml-1.5 inline size-[1.3rem] align-[-0.1em]" />
                 </a>
               </figcaption>
             </figure>
