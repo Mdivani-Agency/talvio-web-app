@@ -59,61 +59,95 @@ function groupNamesOf(skills: Skill[]): string[] {
   return names;
 }
 
+/**
+ * A group card. `committed` is the name its skills carry; `name` is what the input shows while it is being edited. A
+ * rename reaches the skills on blur, and only when no other group already has that name, so typing never merges groups.
+ */
+type GroupCard = { key: string; name: string; committed: string };
+
 function SkillGroupsField({ form, toggle }: { form: AppForm; toggle: React.ReactNode }) {
   const skills = useStore(form.store, (state) => ((state.values as { skills?: Skill[] }).skills ?? []));
   const template = useCurrentTemplate();
   const titleId = useId();
   const hintId = useId();
-  // Groups without skills yet live only here: a group is stored on its skills.
-  const [emptyGroups, setEmptyGroups] = useState<string[]>([]);
-  const [error, setError] = useState<{ group: string; message: string } | null>(null);
+  // Cards being edited, and groups without skills yet: a group is stored only on its skills.
+  const [cards, setCards] = useState<GroupCard[]>(() =>
+    groupNamesOf(skills).map((name, index) => ({ key: `group-${index}`, name, committed: name })),
+  );
+  const [nextKey, setNextKey] = useState(() => cards.length);
+  const [error, setError] = useState<{ key: string; message: string } | null>(null);
 
-  const used = groupNamesOf(skills);
-  const groups = [...used, ...emptyGroups.filter((name) => !used.includes(name))];
+  // Groups that arrive with the skills (an import, a draft restore) and have no card yet.
+  const known = new Set(cards.map((card) => card.committed));
+  const groups: GroupCard[] = [
+    ...cards,
+    ...groupNamesOf(skills)
+      .filter((name) => !known.has(name))
+      .map((name) => ({ key: `skills-${name}`, name, committed: name })),
+  ];
   const ungrouped = skills.filter((skill) => skill.group === undefined);
 
   const setSkills = (next: Skill[]) => form.setFieldValue('skills', next);
+  const saveCard = (card: GroupCard) =>
+    setCards((current) =>
+      current.some((item) => item.key === card.key)
+        ? current.map((item) => (item.key === card.key ? card : item))
+        : [...current, card],
+    );
 
-  const addSkill = (group: string | undefined, name: string) => {
+  const addSkill = (card: GroupCard | null, name: string) => {
+    const key = card?.key ?? UNGROUPED_KEY;
+    const group = card?.committed;
     const parsed = skillSchema.safeParse({ name, group });
     if (!parsed.success) {
-      setError({ group: group ?? '', message: parsed.error.issues[0]?.message ?? '' });
+      setError({ key, message: parsed.error.issues[0]?.message ?? '' });
       return;
     }
     if (skills.some((skill) => skill.name.trim().toLowerCase() === name.toLowerCase())) {
-      setError({ group: group ?? '', message: COPY.duplicateSkill(name) });
+      setError({ key, message: COPY.duplicateSkill(name) });
       return;
     }
     setError(null);
     setSkills([...skills, { name, ...(group === undefined ? {} : { group }) }]);
-    setEmptyGroups((current) => current.filter((item) => item !== group));
+    if (card) saveCard(card);
   };
 
   const removeSkill = (skill: Skill) => setSkills(skills.filter((item) => item !== skill));
 
-  const renameGroup = (from: string, to: string) => {
-    const name = to.slice(0, SKILL_GROUP_NAME_MAX);
-    if (used.includes(from)) {
-      setSkills(skills.map((skill) => (skill.group === from ? { ...skill, group: name } : skill)));
+  const commitName = (card: GroupCard) => {
+    const name = card.name.trim();
+    if (name === card.committed) {
+      if (card.name !== name) saveCard({ ...card, name });
+      return;
     }
-    setEmptyGroups((current) => current.map((item) => (item === from ? name : item)));
+    const taken = groups.some(
+      (other) => other.key !== card.key && other.committed.trim().toLowerCase() === name.toLowerCase(),
+    );
+    if (taken && name) {
+      setError({ key: card.key, message: COPY.duplicateGroup(name) });
+      return;
+    }
+    setError(null);
+    setSkills(skills.map((skill) => (skill.group === card.committed ? { ...skill, group: name } : skill)));
+    saveCard({ ...card, name, committed: name });
   };
 
-  const removeGroup = (name: string) => {
+  const removeGroup = (card: GroupCard) => {
     // The skills stay, under Other.
     setSkills(skills.map((skill) => {
-      if (skill.group !== name) return skill;
+      if (skill.group !== card.committed) return skill;
       const next = { ...skill };
       delete next.group;
       return next;
     }));
-    setEmptyGroups((current) => current.filter((item) => item !== name));
+    setCards((current) => current.filter((item) => item.key !== card.key));
+    if (error?.key === card.key) setError(null);
   };
 
   const addGroup = () => {
-    if (!groups.includes('')) {
-      setEmptyGroups((current) => [...current, '']);
-    }
+    if (groups.some((card) => card.committed === '')) return;
+    setCards((current) => [...current, { key: `group-${nextKey}`, name: '', committed: '' }]);
+    setNextKey((value) => value + 1);
   };
 
   return (
@@ -130,44 +164,54 @@ function SkillGroupsField({ form, toggle }: { form: AppForm; toggle: React.React
         {!template || templateShowsField(template.key, 'skillGroups') ? ` ${COPY.onHint}` : null}
       </p>
       <ul className="flex flex-col gap-2">
-        {groups.map((group, index) => (
-          <li key={index} className="flex flex-col gap-2 rounded-md bg-background p-3">
-            <div className="flex items-center gap-2">
-              <Input
-                aria-label={COPY.groupName.label(index + 1)}
-                value={group}
-                maxLength={SKILL_GROUP_NAME_MAX}
-                placeholder={COPY.groupName.example}
-                onChange={(event) => renameGroup(group, event.target.value)}
+        {groups.map((card, index) => {
+          const label = card.committed || COPY.untitledGroup;
+          return (
+            <li key={card.key} className="flex flex-col gap-2 rounded-md bg-background p-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  aria-label={COPY.groupName.label(index + 1)}
+                  value={card.name}
+                  maxLength={SKILL_GROUP_NAME_MAX}
+                  placeholder={COPY.groupName.example}
+                  onChange={(event) => saveCard({ ...card, name: event.target.value })}
+                  onBlur={() => commitName(card)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      commitName(card);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={COPY.removeGroup(label)}
+                  onClick={() => removeGroup(card)}
+                  className="size-12 shrink-0 text-destructive hover:text-destructive"
+                >
+                  <Trash aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                </Button>
+              </div>
+              <GroupSkills
+                skills={skills.filter((skill) => skill.group === card.committed)}
+                inputLabel={COPY.addSkill(label)}
+                error={error?.key === card.key ? error.message : undefined}
+                onAdd={(name) => addSkill(card, name)}
+                onRemove={removeSkill}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={COPY.removeGroup(group || COPY.untitledGroup)}
-                onClick={() => removeGroup(group)}
-                className="size-12 shrink-0 text-destructive hover:text-destructive"
-              >
-                <Trash aria-hidden="true" className="size-4" strokeWidth={1.75} />
-              </Button>
-            </div>
-            <GroupSkills
-              skills={skills.filter((skill) => skill.group === group)}
-              inputLabel={COPY.addSkill(group || COPY.untitledGroup)}
-              error={error?.group === group ? error.message : undefined}
-              onAdd={(name) => addSkill(group, name)}
-              onRemove={removeSkill}
-            />
-          </li>
-        ))}
+            </li>
+          );
+        })}
         {ungrouped.length > 0 ? (
           <li className="flex flex-col gap-2 rounded-md bg-background p-3">
             <span className="text-sm font-medium text-foreground">{COPY.ungrouped}</span>
             <GroupSkills
               skills={ungrouped}
               inputLabel={COPY.addSkill(COPY.ungrouped)}
-              error={error?.group === '' && !groups.includes('') ? error.message : undefined}
-              onAdd={(name) => addSkill(undefined, name)}
+              error={error?.key === UNGROUPED_KEY ? error.message : undefined}
+              onAdd={(name) => addSkill(null, name)}
               onRemove={removeSkill}
             />
             <p data-allow-small-text className="text-[1.3rem] text-muted-foreground">
@@ -183,6 +227,8 @@ function SkillGroupsField({ form, toggle }: { form: AppForm; toggle: React.React
     </div>
   );
 }
+
+const UNGROUPED_KEY = 'ungrouped';
 
 function GroupSkills({
   skills,

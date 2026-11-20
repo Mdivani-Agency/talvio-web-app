@@ -160,6 +160,7 @@ export const SKILL_GROUP_COPY = {
   ungroupedHint: 'Skills without a group show under Other.',
   untitledGroup: 'this group',
   duplicateSkill: (name: string) => `${name} is already in your skills`,
+  duplicateGroup: (name: string) => `There is already a group called ${name}`,
 } as const;
 
 export const STACK_COPY = {

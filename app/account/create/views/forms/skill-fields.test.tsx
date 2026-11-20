@@ -60,6 +60,9 @@ describe('SkillFieldsForm skill groups', () => {
     await act(async () => {
       fireEvent.change(screen.getByLabelText('Group 1 name'), { target: { value: 'Languages' } });
     });
+    await act(async () => {
+      fireEvent.blur(screen.getByLabelText('Group 1 name'));
+    });
     await act(async () => addTag('Add a skill to Languages', 'TypeScript'));
     expect(skillsValue()).toEqual([{ name: 'Docker' }, { name: 'TypeScript', group: 'Languages' }]);
 
@@ -78,14 +81,52 @@ describe('SkillFieldsForm skill groups', () => {
     });
     expect((screen.getByLabelText('Group 1 name') as HTMLInputElement).value).toBe('Languages');
 
-    // Renaming a group renames it on its skills; removing it keeps them, under Other.
+    // Renaming a group renames it on its skills once the field is left; removing it keeps them, under Other.
     await act(async () => {
       fireEvent.change(screen.getByLabelText('Group 1 name'), { target: { value: 'Code' } });
+    });
+    expect(skillsValue()[1]).toEqual({ name: 'TypeScript', group: 'Languages' });
+    await act(async () => {
+      fireEvent.blur(screen.getByLabelText('Group 1 name'));
     });
     expect(skillsValue()[1]).toEqual({ name: 'TypeScript', group: 'Code' });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Remove group Code' }));
     });
     expect(skillsValue()).toEqual([{ name: 'Docker' }, { name: 'TypeScript' }]);
+  });
+
+  it('never merges two groups while a name is typed, and refuses a name already used', async () => {
+    render(
+      <Harness
+        initial={{
+          ...DEFAULT_ACCOUNT_DTO,
+          profile: { ...DEFAULT_ACCOUNT_DTO.profile, groupSkills: true },
+          skills: [{ name: 'Go', group: 'Backend' }, { name: 'Kafka', group: 'Data' }],
+        }}
+      />,
+    );
+
+    // Typing "Backend APIs" passes through "Backend": the groups stay apart.
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Group 2 name'), { target: { value: 'Backend' } });
+    });
+    expect(screen.getByLabelText('Group 2 name')).toBeTruthy();
+    expect(skillsValue()).toEqual([{ name: 'Go', group: 'Backend' }, { name: 'Kafka', group: 'Data' }]);
+
+    // Leaving the field on a taken name keeps the old group and says why.
+    await act(async () => {
+      fireEvent.blur(screen.getByLabelText('Group 2 name'));
+    });
+    expect(screen.getByText('There is already a group called Backend')).toBeTruthy();
+    expect(skillsValue()[1]).toEqual({ name: 'Kafka', group: 'Data' });
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Group 2 name'), { target: { value: 'Backend APIs' } });
+    });
+    await act(async () => {
+      fireEvent.blur(screen.getByLabelText('Group 2 name'));
+    });
+    expect(skillsValue()).toEqual([{ name: 'Go', group: 'Backend' }, { name: 'Kafka', group: 'Backend APIs' }]);
   });
 });

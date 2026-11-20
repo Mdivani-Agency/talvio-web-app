@@ -33,7 +33,9 @@ Added by `20261120000200_template_optional_fields.sql` (MDI-664). Both are
   constraint `experiences_stack_count_ck`.
 - `headline_achievements_enforce_limit` — `BEFORE INSERT OR UPDATE OF user_id`
   on `headline_achievements`. At most 3 rows per user, through `save_profile`
-  or the collection mutations (`check_violation`).
+  or the collection mutations (`check_violation`). It takes a per-user
+  transaction advisory lock before counting, so concurrent inserts for the
+  same user run one after the other.
 
 ## `handle_new_user`
 

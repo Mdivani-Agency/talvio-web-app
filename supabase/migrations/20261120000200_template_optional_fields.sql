@@ -83,13 +83,17 @@ end;
 $$;
 
 -- At most three headline achievements per user, whether they are written
--- through save_profile or the collection mutations.
+-- through save_profile or the collection mutations. A per-user transaction
+-- advisory lock makes concurrent inserts wait for each other before counting.
 create or replace function public.headline_achievements_enforce_limit()
 returns trigger
 language plpgsql
 set search_path = public
 as $$
 begin
+  -- Serialize writes for one user, so two concurrent inserts cannot both count
+  -- two rows and pass. Held until the transaction ends.
+  perform pg_advisory_xact_lock(hashtextextended('headline_achievements:' || new.user_id::text, 0));
   if (
     select count(*)
     from public.headline_achievements
