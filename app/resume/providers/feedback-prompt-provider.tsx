@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, createElement, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 
 import { submitWrapper } from '@app/actions/action.utils';
@@ -79,7 +80,22 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id;
   const queryClient = useQueryClient();
   const [openFor, setOpenFor] = useState<{ resumeId: string } | null>(null);
-  const [trackerFor, setTrackerFor] = useState<Pick<Resume, 'id' | 'sourceResumeId'> | null>(null);
+  const pathname = usePathname();
+  // The bar belongs to the page it appeared on, and to the generated resume's own page (the editor moves there after a
+  // draft or a new resume is generated). Leaving for anywhere else clears it, so it never offers a resume that is not
+  // the one being viewed.
+  const [tracker, setTracker] = useState<{ resume: Pick<Resume, 'id' | 'sourceResumeId'>; path: string | null } | null>(
+    null,
+  );
+  if (tracker && pathname !== tracker.path && pathname !== `/resume/${tracker.resume.id}`) {
+    setTracker(null);
+  }
+  const trackerFor = tracker?.resume ?? null;
+  // The bar opens from an async flow; it records the page that is current when it appears.
+  const currentPath = useRef(pathname);
+  useEffect(() => {
+    currentPath.current = pathname;
+  }, [pathname]);
   const [addOpen, setAddOpen] = useState(false);
   const createApplication = useCreateApplication(userId);
   const busy = useRef(false);
@@ -131,7 +147,7 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
           }
           await generateDialogClosed();
           if (prompt === 'tracker') {
-            setTrackerFor(resume);
+            setTracker({ resume, path: currentPath.current });
             busy.current = false;
             return;
           }
@@ -193,7 +209,7 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
             if (userId) {
               dismissTrackerPrompt(userId, trackerFor.id);
             }
-            setTrackerFor(null);
+            setTracker(null);
           }}
         />
       ) : null}
@@ -205,7 +221,7 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
           onOpenChange={setAddOpen}
           onCreate={createCard}
           onAdded={(id) => {
-            setTrackerFor(null);
+            setTracker(null);
             toast.success(APPLICATION_ADDED_MESSAGE, {
               action: createElement(Link, { href: cardHref(id), className: 'font-semibold underline' }, VIEW_IN_TRACKER_LABEL),
             });
