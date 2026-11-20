@@ -85,4 +85,28 @@ describe('ResumeDocumentForm', () => {
     expect(screen.getByRole('heading', { name: /^Edit / })).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByLabelText('Company'));
   });
+
+  it('focuses the date picker a date issue names, not the first field of the entry', async () => {
+    const values = {
+      ...EMPTY_RESUME_DOCUMENT,
+      experience: [{ id: 'e1', company: 'Northwind Health', jobTitle: 'Engineer', isPresent: false }],
+    } as typeof EMPTY_RESUME_DOCUMENT;
+    render(
+      <TooltipProvider>
+        <ResumeDocumentForm
+          defaultValues={values}
+          issues={[{ path: 'experience.0.startDate', message: 'Choose a start date' }]}
+          onSubmit={vi.fn()}
+        />
+      </TooltipProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('link', { name: 'Experience 1, Start date: Choose a start date' }));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    });
+    const startMonth = screen.getByRole('button', { name: 'Start date, month: not chosen' });
+    expect(document.activeElement).toBe(startMonth);
+    expect(screen.getByRole('button', { name: 'Start date, year: not chosen' })).toBeTruthy();
+  });
 });

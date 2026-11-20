@@ -1,8 +1,7 @@
 import { cn } from '@lib/utils';
-import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from './checkbox';
 import { DatePicker } from './date-picker';
-import { useMemo } from 'react';
+import { useId } from 'react';
 import { Label } from './label';
 import { ErrorBadge } from './error-badge';
 
@@ -30,32 +29,37 @@ type ExperienceRangePickerProps = {
 export function ExperienceRangePicker({
   range = {},
   className,
-  id = uuidv4(),
+  id,
   startDateError,
   endDateError,
   isPresentError,
   onChange,
 }: ExperienceRangePickerProps) {
-  const itemId = useMemo(() => id || uuidv4(), [id]);
+  const autoId = useId();
+  const itemId = id || autoId;
 
   return (
     <div className={cn('grid md:grid-cols-2 gap-4', className)}>
       <div className="flex flex-col gap-2">
-        <Label className='flex items-center gap-2'>
+        <Label htmlFor={`${itemId}-start`} className='flex items-center gap-2'>
           Start date
           {startDateError && <ErrorBadge error={startDateError} />}
         </Label>
         <DatePicker
+          id={`${itemId}-start`}
+          label="Start date"
           value={range.startDate}
           onChange={(startDate) => startDate && onChange({ field: 'startDate', value: startDate })}
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label className='flex items-center gap-2'>
+        <Label htmlFor={`${itemId}-end`} className='flex items-center gap-2'>
           End date
           {endDateError && <ErrorBadge error={endDateError} />}
         </Label>
         <DatePicker
+          id={`${itemId}-end`}
+          label="End date"
           value={range.isPresent ? undefined : range.endDate}
           disabled={range.isPresent}
           onChange={(endDate) => endDate && onChange({ field: 'endDate', value: endDate })}
