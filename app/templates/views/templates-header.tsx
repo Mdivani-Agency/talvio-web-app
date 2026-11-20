@@ -17,7 +17,7 @@ export function TemplatesHeader({ filter, counts, shown, onChangeFilter }: Templ
       </h1>
       <p className="text-md leading-[1.556] text-muted-foreground lg:text-lg">{TEMPLATES_PAGE_INTRO}</p>
       <TemplateFilterChips value={filter} counts={counts} onChange={onChangeFilter} className="mt-3 lg:mt-4" />
-      <p aria-live="polite" className="text-left text-sm text-muted-foreground md:text-center">
+      <p aria-live="polite" className="text-left text-md text-muted-foreground md:text-center">
         {templatesShowingLabel(shown, counts.all)}
       </p>
     </div>

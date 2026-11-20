@@ -68,7 +68,7 @@ test('RES-04 edits a draft once and keeps rapid acknowledged saves', async ({ pa
   const rows = await listResumes(draft.userId);
   expect(rows).toHaveLength(1);
   expect(rows[0]?.id).toBe(draft.resumeId);
-  expect(rows[0]?.templateKey).toBe('mid-level-talvio');
+  expect(rows[0]?.templateKey).toBe('timeline');
   expect(rows[0]?.color).toBe('#005BA2');
   expect(rows[0]?.fontSize).toBe('lg');
   expect(rows[0]?.pdfUrl).toBeNull();

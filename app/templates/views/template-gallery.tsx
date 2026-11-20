@@ -132,13 +132,13 @@ export function TemplateGallery({ templates, onSelect }: TemplateGalleryProps) {
                 <span className="flex items-center gap-2">
                   <span className="text-lg leading-[1.4] font-semibold text-primary">{name}</span>
                   {showsNewTag({ isNew }) ? (
-                    <span className="rounded-md bg-popover px-2 py-0.5 text-xs font-semibold text-foreground">
+                    <span data-allow-small-text className="rounded-md bg-popover px-2 py-0.5 text-xs font-semibold text-foreground">
                       {TEMPLATE_NEW_TAG}
                     </span>
                   ) : null}
                 </span>
-                <span className="text-sm leading-[1.4286] text-foreground">{description}</span>
-                <span className="text-sm leading-[1.4286] text-muted-foreground">{templateBestFor(bestFor)}</span>
+                <span className="text-md leading-[1.5] text-foreground">{description}</span>
+                <span className="text-md leading-[1.5] text-muted-foreground">{templateBestFor(bestFor)}</span>
               </span>
               <span aria-hidden="true" className={cn(pillClassName, 'flex h-[4.4rem] w-full justify-center md:hidden')}>
                 {TEMPLATES_USE_LABEL}
@@ -159,7 +159,7 @@ export function TemplateGallery({ templates, onSelect }: TemplateGalleryProps) {
         >
           <ChevronLeft aria-hidden="true" className="size-[1.8rem]" />
         </Button>
-        <p aria-live="polite" className="text-sm font-medium text-foreground">
+        <p aria-live="polite" className="text-md font-medium text-foreground">
           {templatesSlideLabel(slide + 1, templates.length)}
         </p>
         <Button

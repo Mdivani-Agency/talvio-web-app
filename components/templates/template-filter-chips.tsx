@@ -40,7 +40,7 @@ export function TemplateFilterChips({ value, counts, onChange, variant = 'page',
             className={cn(
               'shrink-0 rounded-full border whitespace-nowrap outline-none hover:cursor-pointer focus-visible:ring-[3px] focus-visible:ring-ring/50',
               // 44px on a phone. The spacing scale has no 11, so h-11 would be 27.5px.
-              variant === 'page' ? 'h-[4.4rem] px-[1.4rem] text-sm md:h-10' : 'h-[4.4rem] px-3 text-[1.3rem] md:h-9',
+              variant === 'page' ? 'h-[4.4rem] px-[1.4rem] text-md md:h-10' : 'h-[4.4rem] px-3 text-[1.3rem] md:h-9',
               selected
                 ? 'border-primary bg-primary font-semibold text-background'
                 : 'border-border bg-transparent font-medium text-foreground hover:border-foreground/40',
