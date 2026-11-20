@@ -114,3 +114,13 @@ export type PreviewDto = Omit<ResumeDto, 'metadata'> & {
 // Enums
 export type LanguageProficiency = z.infer<typeof LanguageProficiency>;
 
+// Application tracker (MDI-654)
+export type {
+  ApplicationLabel,
+  ApplicationLink,
+  ApplicationStage,
+  BoardColumn,
+  ClosedStage,
+  JobApplication,
+  LabelColor,
+} from './schema/application.schema';
