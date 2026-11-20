@@ -308,6 +308,7 @@ type Mutation {
     """Restricts the mutation's impact to records matching the criteria"""
     filter: toolsFilter
   ): toolsDeleteResponse!
+  feedback_prompt_due: String
   finalize_pdf(p_pdf_media_key: String!, p_pdf_url: String!, p_resume_id: UUID!): String
   generate_pdf(p_resume_id: UUID!): String
   """Adds one or more `contacts` records to the collection"""
@@ -333,9 +334,12 @@ type Mutation {
   """Adds one or more `tools` records to the collection"""
   insertIntotoolsCollection(objects: [toolsInsertInput!]!): toolsInsertResponse
   mark_profile_improvement_used(p_job_id: UUID): Opaque
+  record_feedback_prompt: String
+  record_trustpilot_click: Opaque
   release_profile_improvement(p_client_request_id: String!): Opaque
   release_resume_generation(p_resume_id: UUID!): Opaque
   save_profile(p_payload: JSON!): String
+  submit_feedback(p_comment: String!, p_resume_id: UUID): String
   """Updates zero or more records in the `contacts` collection"""
   updatecontactsCollection(
     """
@@ -590,6 +594,30 @@ type Query {
     """Sort order to apply to the collection"""
     orderBy: [experiencesOrderBy!]
   ): experiencesConnection!
+  """Retrieve a record of type `feedback_prompt_state` by its primary key"""
+  feedback_prompt_stateByPk(
+    """The record's `user_id` value"""
+    user_id: UUID!
+  ): feedback_prompt_state
+  """A pagable collection of type `feedback_prompt_state`"""
+  feedback_prompt_stateCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: feedback_prompt_stateFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [feedback_prompt_stateOrderBy!]
+  ): feedback_prompt_stateConnection!
   """Retrieve a record of type `languages` by its primary key"""
   languagesByPk(
     """The record's `id` value"""
@@ -861,6 +889,30 @@ type Query {
     """Sort order to apply to the collection"""
     orderBy: [user_creditsOrderBy!]
   ): user_creditsConnection!
+  """Retrieve a record of type `user_feedback` by its primary key"""
+  user_feedbackByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): user_feedback
+  """A pagable collection of type `user_feedback`"""
+  user_feedbackCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: user_feedbackFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [user_feedbackOrderBy!]
+  ): user_feedbackConnection!
 }
 
 """
@@ -1338,6 +1390,56 @@ type experiencesUpdateResponse {
   affectedCount: Int!
   """Array of records impacted by the mutation"""
   records: [experiences!]!
+}
+
+type feedback_prompt_state implements Node {
+  created_at: Datetime!
+  last_prompted_at: Datetime
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  prompts_shown: Int!
+  trustpilot_clicked_at: Datetime
+  updated_at: Datetime!
+  user_id: UUID!
+}
+
+type feedback_prompt_stateConnection {
+  edges: [feedback_prompt_stateEdge!]!
+  pageInfo: PageInfo!
+}
+
+type feedback_prompt_stateEdge {
+  cursor: String!
+  node: feedback_prompt_state!
+}
+
+input feedback_prompt_stateFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [feedback_prompt_stateFilter!]
+  created_at: DatetimeFilter
+  last_prompted_at: DatetimeFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: feedback_prompt_stateFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [feedback_prompt_stateFilter!]
+  prompts_shown: IntFilter
+  trustpilot_clicked_at: DatetimeFilter
+  updated_at: DatetimeFilter
+  user_id: UUIDFilter
+}
+
+input feedback_prompt_stateOrderBy {
+  created_at: OrderByDirection
+  last_prompted_at: OrderByDirection
+  prompts_shown: OrderByDirection
+  trustpilot_clicked_at: OrderByDirection
+  updated_at: OrderByDirection
+  user_id: OrderByDirection
 }
 
 enum language_proficiency {
@@ -2210,6 +2312,24 @@ type resumes implements Node {
   template_key: String!
   type: resume_type!
   updated_at: Datetime!
+  user_feedbackCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: user_feedbackFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [user_feedbackOrderBy!]
+  ): user_feedbackConnection
   user_id: UUID!
 }
 
@@ -2543,5 +2663,53 @@ input user_creditsFilter {
 input user_creditsOrderBy {
   balance: OrderByDirection
   updated_at: OrderByDirection
+  user_id: OrderByDirection
+}
+
+type user_feedback implements Node {
+  comment: String!
+  created_at: Datetime!
+  id: UUID!
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  resume_id: UUID
+  resumes: resumes
+  user_id: UUID!
+}
+
+type user_feedbackConnection {
+  edges: [user_feedbackEdge!]!
+  pageInfo: PageInfo!
+}
+
+type user_feedbackEdge {
+  cursor: String!
+  node: user_feedback!
+}
+
+input user_feedbackFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [user_feedbackFilter!]
+  comment: StringFilter
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: user_feedbackFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [user_feedbackFilter!]
+  resume_id: UUIDFilter
+  user_id: UUIDFilter
+}
+
+input user_feedbackOrderBy {
+  comment: OrderByDirection
+  created_at: OrderByDirection
+  id: OrderByDirection
+  resume_id: OrderByDirection
   user_id: OrderByDirection
 }
