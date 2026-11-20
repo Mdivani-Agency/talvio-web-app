@@ -10,13 +10,15 @@ import { AddApplicationForm } from './add-application.form';
 
 type AddApplicationDialogProps = {
   open: boolean;
+  defaults?: Partial<AddApplicationFormValues>;
+  onAdded?: (id: string) => void;
   userId: string;
   onOpenChange: (open: boolean) => void;
   onCreate: (values: AddApplicationFormValues, stage: ApplicationStage) => Promise<{ id: string }>;
 };
 
 /** "Add an application". The resume picker lists every resume the user has, loaded when the dialog opens. */
-export function AddApplicationDialog({ open, userId, onOpenChange, onCreate }: AddApplicationDialogProps) {
+export function AddApplicationDialog({ open, userId, defaults, onAdded, onOpenChange, onCreate }: AddApplicationDialogProps) {
   const resumesQuery = useResumeOptions(userId, open);
 
   return (
@@ -26,6 +28,8 @@ export function AddApplicationDialog({ open, userId, onOpenChange, onCreate }: A
         <DialogDescription className="sr-only">{ADD_DIALOG_DESCRIPTION}</DialogDescription>
         {open ? (
           <AddApplicationForm
+            defaults={defaults}
+            onAdded={onAdded}
             resumes={resumesQuery.data ?? []}
             resumesLoading={resumesQuery.isLoading}
             resumesFailed={resumesQuery.isError}

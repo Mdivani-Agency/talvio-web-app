@@ -18,6 +18,9 @@ import {
   LOAD_MORE_LABEL,
 } from '@/lib/account-copy';
 
+import { useMediaKeyCards } from '@app/account/applications/query/use-resume-cards';
+import { featureFlags } from '@/lib/flags';
+
 import { DocumentGrid } from './views/document-grid';
 import { DocumentsPanel } from './views/documents-panel';
 
@@ -34,6 +37,10 @@ export default function DocumentsPage() {
     enabled: !!userId,
     retry: false,
   });
+
+  const documentKeys = documentsQuery.data?.pages.flatMap((page) => page.items.map((item) => item.key)) ?? [];
+  // "In tracker" links (MDI-658); a failed lookup just shows no links.
+  const trackerCards = useMediaKeyCards(userId, documentKeys, featureFlags().applicationTracker);
 
   if (!userId || documentsQuery.isLoading) {
     return <Loading message={DOCUMENTS_LOADING} />;
@@ -60,7 +67,7 @@ export default function DocumentsPage() {
         <DocumentsPanel kind="empty" />
       ) : (
         <div className="flex flex-col gap-5">
-          <DocumentGrid documents={documents} />
+          <DocumentGrid documents={documents} trackerCards={trackerCards.data} />
           {documentsQuery.isFetchNextPageError ? (
             <div
               role="alert"

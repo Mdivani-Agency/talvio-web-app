@@ -41,6 +41,8 @@
     "APP-04 on a phone, stages are tabs and cards move with the menu",
     "APP-05 the detail panel edits every field, links a resume, adds a link, a label and notes, and shows history",
     "APP-06 the panel returns focus to the card and Delete removes the card and its notes but keeps the resume",
+    "APP-07 after a new PDF only the tracker bar shows, and Add to tracker makes a card with the resume linked",
+    "APP-08 a resume already on a card gets no tracker bar, and the review prompt shows instead",
     "RES-01 a signed-in user without a profile is sent to onboarding, then creates a resume",
     "RES-01 Save resume stores a new resume without a PDF or a credit",
     "RES-01 prefills a resume from the profile and saves the edited draft",

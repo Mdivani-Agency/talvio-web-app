@@ -32,6 +32,9 @@ import {
   updatedLine,
 } from '@/lib/account-copy';
 import { useAllowance } from '@app/account/hooks/use-allowance';
+import { useResumeCards } from '@app/account/applications/query/use-resume-cards';
+import { InTrackerLink } from '@app/account/applications/views/in-tracker-link';
+import { featureFlags } from '@/lib/flags';
 
 const badgeClassName = 'rounded-md px-2 py-0.5 font-semibold';
 const iconButtonClassName = 'size-[3.6rem]';
@@ -74,6 +77,12 @@ export const ResumeCard = ({
   const pendingId = generatePdf.isPending ? generatePdf.variables?.id : undefined;
   const families = groupResumeFamilies(resumes);
   const empty = families.length === 0;
+  // "In tracker" links (MDI-658): a card may link the generated original or its open draft.
+  const trackerCards = useResumeCards(
+    userId,
+    families.flatMap((family) => [family.original?.id, family.draft?.id].filter((id): id is string => Boolean(id))),
+    featureFlags().applicationTracker,
+  );
 
   return (
     <>
@@ -134,6 +143,12 @@ export const ResumeCard = ({
                         <span className={cn(badgeClassName, 'border border-input text-foreground')}>{UNPUBLISHED_DRAFT_BADGE}</span>
                       ) : null}
                       <span>{updatedLine(new Date(display.updatedAt))}</span>
+                      {(() => {
+                        const cardId =
+                          (family.original && trackerCards.data?.[family.original.id]) ??
+                          (family.draft && trackerCards.data?.[family.draft.id]);
+                        return cardId ? <InTrackerLink applicationId={cardId} name={title} /> : null;
+                      })()}
                     </span>
                   </span>
                   <span className="ml-auto flex items-center gap-1">

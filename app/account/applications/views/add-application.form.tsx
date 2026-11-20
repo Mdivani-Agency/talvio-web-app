@@ -23,6 +23,10 @@ export const ADD_APPLICATION_DEFAULTS: AddApplicationFormValues = {
 };
 
 type AddApplicationFormProps = {
+  /** Pre-filled values, such as the resume and stage when the form opens from "Add to tracker". */
+  defaults?: Partial<AddApplicationFormValues>;
+  /** Called with the new card's id once it is saved; replaces the default success toast when given. */
+  onAdded?: (id: string) => void;
   resumes: Resume[];
   resumesLoading: boolean;
   resumesFailed?: boolean;
@@ -34,6 +38,8 @@ type AddApplicationFormProps = {
 };
 
 export function AddApplicationForm({
+  defaults,
+  onAdded,
   resumes,
   resumesLoading,
   resumesFailed,
@@ -43,7 +49,7 @@ export function AddApplicationForm({
   onCancel,
 }: AddApplicationFormProps) {
   const form = useAppForm<AddApplicationFormValues>({
-    defaultValues: ADD_APPLICATION_DEFAULTS,
+    defaultValues: { ...ADD_APPLICATION_DEFAULTS, ...defaults },
     schema: addApplicationFormSchema,
   });
   const [isSubmitting, setSubmitting] = useState(false);
@@ -59,9 +65,10 @@ export function AddApplicationForm({
     setSubmitting(true);
     await submitWrapper({
       fn: () => onCreate(values, values.stage as ApplicationStage),
-      successMessage: APPLICATION_ADDED_MESSAGE,
-      onSuccess: () => {
+      successMessage: onAdded ? undefined : APPLICATION_ADDED_MESSAGE,
+      onSuccess: (result) => {
         form.reset(ADD_APPLICATION_DEFAULTS);
+        onAdded?.(result.id);
         onDone();
       },
     });

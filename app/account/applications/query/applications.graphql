@@ -155,3 +155,36 @@ mutation DeleteApplicationNote($id: UUID!, $atMost: Int!) {
     }
   }
 }
+
+# Cards that link any of these resumes ("is this resume already on a card", the "In tracker" links).
+query ApplicationsByResumes($resumeIds: [UUID!]!, $first: Int!, $after: Cursor) {
+  job_applicationsCollection(
+    filter: { resume_id: { in: $resumeIds } }
+    orderBy: [{ created_at: AscNullsLast }, { id: AscNullsLast }]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        id
+        resume_id
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# The resumes behind generated PDFs in Documents, matched by media key.
+query ResumesByMediaKeys($keys: [String!]!, $first: Int!) {
+  resumesCollection(filter: { pdf_media_key: { in: $keys } }, first: $first) {
+    edges {
+      node {
+        id
+        pdf_media_key
+      }
+    }
+  }
+}

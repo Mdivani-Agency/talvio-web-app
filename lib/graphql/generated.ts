@@ -3260,6 +3260,21 @@ export type DeleteApplicationNoteMutationVariables = Exact<{
 
 export type DeleteApplicationNoteMutation = { deleteFromjob_application_notesCollection: { affectedCount: number, records: Array<{ id: string }> } };
 
+export type ApplicationsByResumesQueryVariables = Exact<{
+  resumeIds: Array<string> | string;
+  first: number;
+  after?: string | null | undefined;
+}>;
+
+export type ApplicationsByResumesQuery = { job_applicationsCollection: { edges: Array<{ node: { id: string, resume_id: string | null } }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } };
+
+export type ResumesByMediaKeysQueryVariables = Exact<{
+  keys: Array<string> | string;
+  first: number;
+}>;
+
+export type ResumesByMediaKeysQuery = { resumesCollection: { edges: Array<{ node: { id: string, pdf_media_key: string | null } }> } };
+
 export type CreditsQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
@@ -3615,6 +3630,39 @@ export const DeleteApplicationNoteDocument = gql`
     affectedCount
     records {
       id
+    }
+  }
+}
+    `;
+export const ApplicationsByResumesDocument = gql`
+    query ApplicationsByResumes($resumeIds: [UUID!]!, $first: Int!, $after: Cursor) {
+  job_applicationsCollection(
+    filter: {resume_id: {in: $resumeIds}}
+    orderBy: [{created_at: AscNullsLast}, {id: AscNullsLast}]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        id
+        resume_id
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    `;
+export const ResumesByMediaKeysDocument = gql`
+    query ResumesByMediaKeys($keys: [String!]!, $first: Int!) {
+  resumesCollection(filter: {pdf_media_key: {in: $keys}}, first: $first) {
+    edges {
+      node {
+        id
+        pdf_media_key
+      }
     }
   }
 }
@@ -4033,6 +4081,12 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     DeleteApplicationNote(variables: DeleteApplicationNoteMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteApplicationNoteMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<DeleteApplicationNoteMutation>({ document: DeleteApplicationNoteDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteApplicationNote', 'mutation', variables);
+    },
+    ApplicationsByResumes(variables: ApplicationsByResumesQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ApplicationsByResumesQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ApplicationsByResumesQuery>({ document: ApplicationsByResumesDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ApplicationsByResumes', 'query', variables);
+    },
+    ResumesByMediaKeys(variables: ResumesByMediaKeysQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesByMediaKeysQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ResumesByMediaKeysQuery>({ document: ResumesByMediaKeysDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesByMediaKeys', 'query', variables);
     },
     Credits(variables?: CreditsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<CreditsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<CreditsQuery>({ document: CreditsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Credits', 'query', variables);

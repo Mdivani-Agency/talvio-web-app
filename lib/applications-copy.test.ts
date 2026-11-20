@@ -13,6 +13,7 @@ import {
   OUTCOME_NAMES,
   STAGE_NAMES,
   applicationsSummary,
+  cardHref,
   cardDate,
   filteredSummary,
   moveCardLabel,
@@ -55,5 +56,9 @@ describe('applications copy', () => {
     const today = new Date('2026-11-20T00:00:00.000Z');
     expect(cardDate(new Date('2026-11-14T00:00:00.000Z'), today)).toBe('14 Nov');
     expect(cardDate(new Date('2025-12-30T00:00:00.000Z'), today)).toBe('30 Dec 2025');
+  });
+
+  it('links a card by id', () => {
+    expect(cardHref('a1')).toBe('/account/applications?card=a1');
   });
 });
