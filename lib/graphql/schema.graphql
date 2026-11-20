@@ -247,6 +247,26 @@ type Mutation {
     """Restricts the mutation's impact to records matching the criteria"""
     filter: headline_achievementsFilter
   ): headline_achievementsDeleteResponse!
+  """
+  Deletes zero or more records from the `job_application_notes` collection
+  """
+  deleteFromjob_application_notesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: job_application_notesFilter
+  ): job_application_notesDeleteResponse!
+  """Deletes zero or more records from the `job_applications` collection"""
+  deleteFromjob_applicationsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: job_applicationsFilter
+  ): job_applicationsDeleteResponse!
   """Deletes zero or more records from the `languages` collection"""
   deleteFromlanguagesCollection(
     """
@@ -330,6 +350,10 @@ type Mutation {
   insertIntoexperiencesCollection(objects: [experiencesInsertInput!]!): experiencesInsertResponse
   """Adds one or more `headline_achievements` records to the collection"""
   insertIntoheadline_achievementsCollection(objects: [headline_achievementsInsertInput!]!): headline_achievementsInsertResponse
+  """Adds one or more `job_application_notes` records to the collection"""
+  insertIntojob_application_notesCollection(objects: [job_application_notesInsertInput!]!): job_application_notesInsertResponse
+  """Adds one or more `job_applications` records to the collection"""
+  insertIntojob_applicationsCollection(objects: [job_applicationsInsertInput!]!): job_applicationsInsertResponse
   """Adds one or more `languages` records to the collection"""
   insertIntolanguagesCollection(objects: [languagesInsertInput!]!): languagesInsertResponse
   """Adds one or more `links` records to the collection"""
@@ -405,6 +429,32 @@ type Mutation {
     """
     set: headline_achievementsUpdateInput!
   ): headline_achievementsUpdateResponse!
+  """Updates zero or more records in the `job_application_notes` collection"""
+  updatejob_application_notesCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: job_application_notesFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: job_application_notesUpdateInput!
+  ): job_application_notesUpdateResponse!
+  """Updates zero or more records in the `job_applications` collection"""
+  updatejob_applicationsCollection(
+    """
+    The maximum number of records in the collection permitted to be affected
+    """
+    atMost: Int! = 1
+    """Restricts the mutation's impact to records matching the criteria"""
+    filter: job_applicationsFilter
+    """
+    Fields that are set will be updated for all records matching the `filter`
+    """
+    set: job_applicationsUpdateInput!
+  ): job_applicationsUpdateResponse!
   """Updates zero or more records in the `languages` collection"""
   updatelanguagesCollection(
     """
@@ -668,6 +718,78 @@ type Query {
     """Sort order to apply to the collection"""
     orderBy: [headline_achievementsOrderBy!]
   ): headline_achievementsConnection!
+  """Retrieve a record of type `job_application_events` by its primary key"""
+  job_application_eventsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): job_application_events
+  """A pagable collection of type `job_application_events`"""
+  job_application_eventsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: job_application_eventsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [job_application_eventsOrderBy!]
+  ): job_application_eventsConnection!
+  """Retrieve a record of type `job_application_notes` by its primary key"""
+  job_application_notesByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): job_application_notes
+  """A pagable collection of type `job_application_notes`"""
+  job_application_notesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: job_application_notesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [job_application_notesOrderBy!]
+  ): job_application_notesConnection!
+  """Retrieve a record of type `job_applications` by its primary key"""
+  job_applicationsByPk(
+    """The record's `id` value"""
+    id: UUID!
+  ): job_applications
+  """A pagable collection of type `job_applications`"""
+  job_applicationsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: job_applicationsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [job_applicationsOrderBy!]
+  ): job_applicationsConnection!
   """Retrieve a record of type `languages` by its primary key"""
   languagesByPk(
     """The record's `id` value"""
@@ -1586,6 +1708,329 @@ type headline_achievementsUpdateResponse {
   records: [headline_achievements!]!
 }
 
+type job_application_events implements Node {
+  application_id: UUID!
+  created_at: Datetime!
+  from_stage: String
+  id: UUID!
+  job_applications: job_applications
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  to_stage: String!
+  user_id: UUID!
+}
+
+type job_application_eventsConnection {
+  edges: [job_application_eventsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type job_application_eventsEdge {
+  cursor: String!
+  node: job_application_events!
+}
+
+input job_application_eventsFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [job_application_eventsFilter!]
+  application_id: UUIDFilter
+  created_at: DatetimeFilter
+  from_stage: StringFilter
+  id: UUIDFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: job_application_eventsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [job_application_eventsFilter!]
+  to_stage: StringFilter
+  user_id: UUIDFilter
+}
+
+input job_application_eventsOrderBy {
+  application_id: OrderByDirection
+  created_at: OrderByDirection
+  from_stage: OrderByDirection
+  id: OrderByDirection
+  to_stage: OrderByDirection
+  user_id: OrderByDirection
+}
+
+type job_application_notes implements Node {
+  application_id: UUID!
+  content: String!
+  created_at: Datetime!
+  id: UUID!
+  job_applications: job_applications
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  updated_at: Datetime!
+  user_id: UUID!
+}
+
+type job_application_notesConnection {
+  edges: [job_application_notesEdge!]!
+  pageInfo: PageInfo!
+}
+
+type job_application_notesDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [job_application_notes!]!
+}
+
+type job_application_notesEdge {
+  cursor: String!
+  node: job_application_notes!
+}
+
+input job_application_notesFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [job_application_notesFilter!]
+  application_id: UUIDFilter
+  content: StringFilter
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: job_application_notesFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [job_application_notesFilter!]
+  updated_at: DatetimeFilter
+  user_id: UUIDFilter
+}
+
+input job_application_notesInsertInput {
+  application_id: UUID
+  content: String
+  created_at: Datetime
+  id: UUID
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type job_application_notesInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [job_application_notes!]!
+}
+
+input job_application_notesOrderBy {
+  application_id: OrderByDirection
+  content: OrderByDirection
+  created_at: OrderByDirection
+  id: OrderByDirection
+  updated_at: OrderByDirection
+  user_id: OrderByDirection
+}
+
+input job_application_notesUpdateInput {
+  application_id: UUID
+  content: String
+  created_at: Datetime
+  id: UUID
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type job_application_notesUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [job_application_notes!]!
+}
+
+type job_applications implements Node {
+  applied_on: Date
+  company: String!
+  contact: String
+  created_at: Datetime!
+  id: UUID!
+  job_application_eventsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: job_application_eventsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [job_application_eventsOrderBy!]
+  ): job_application_eventsConnection
+  job_application_notesCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: job_application_notesFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [job_application_notesOrderBy!]
+  ): job_application_notesConnection
+  labels: JSON!
+  links: JSON!
+  location: String
+  next_step: String
+  next_step_on: Date
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  position: String!
+  resume_id: UUID
+  resumes: resumes
+  salary: String
+  sort_order: Float!
+  stage: String!
+  stage_changed_at: Datetime!
+  updated_at: Datetime!
+  user_id: UUID!
+}
+
+type job_applicationsConnection {
+  edges: [job_applicationsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type job_applicationsDeleteResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [job_applications!]!
+}
+
+type job_applicationsEdge {
+  cursor: String!
+  node: job_applications!
+}
+
+input job_applicationsFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [job_applicationsFilter!]
+  applied_on: DateFilter
+  company: StringFilter
+  contact: StringFilter
+  created_at: DatetimeFilter
+  id: UUIDFilter
+  location: StringFilter
+  next_step: StringFilter
+  next_step_on: DateFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: job_applicationsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [job_applicationsFilter!]
+  position: StringFilter
+  resume_id: UUIDFilter
+  salary: StringFilter
+  sort_order: FloatFilter
+  stage: StringFilter
+  stage_changed_at: DatetimeFilter
+  updated_at: DatetimeFilter
+  user_id: UUIDFilter
+}
+
+input job_applicationsInsertInput {
+  applied_on: Date
+  company: String
+  contact: String
+  created_at: Datetime
+  id: UUID
+  labels: JSON
+  links: JSON
+  location: String
+  next_step: String
+  next_step_on: Date
+  position: String
+  resume_id: UUID
+  salary: String
+  sort_order: Float
+  stage: String
+  stage_changed_at: Datetime
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type job_applicationsInsertResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [job_applications!]!
+}
+
+input job_applicationsOrderBy {
+  applied_on: OrderByDirection
+  company: OrderByDirection
+  contact: OrderByDirection
+  created_at: OrderByDirection
+  id: OrderByDirection
+  location: OrderByDirection
+  next_step: OrderByDirection
+  next_step_on: OrderByDirection
+  position: OrderByDirection
+  resume_id: OrderByDirection
+  salary: OrderByDirection
+  sort_order: OrderByDirection
+  stage: OrderByDirection
+  stage_changed_at: OrderByDirection
+  updated_at: OrderByDirection
+  user_id: OrderByDirection
+}
+
+input job_applicationsUpdateInput {
+  applied_on: Date
+  company: String
+  contact: String
+  created_at: Datetime
+  id: UUID
+  labels: JSON
+  links: JSON
+  location: String
+  next_step: String
+  next_step_on: Date
+  position: String
+  resume_id: UUID
+  salary: String
+  sort_order: Float
+  stage: String
+  stage_changed_at: Datetime
+  updated_at: Datetime
+  user_id: UUID
+}
+
+type job_applicationsUpdateResponse {
+  """Count of the records impacted by the mutation"""
+  affectedCount: Int!
+  """Array of records impacted by the mutation"""
+  records: [job_applications!]!
+}
+
 enum language_proficiency {
   beginner
   fluent
@@ -2432,6 +2877,24 @@ type resumes implements Node {
   font_size: resume_font_size!
   generation_updated_at: Datetime
   id: UUID!
+  job_applicationsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: job_applicationsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [job_applicationsOrderBy!]
+  ): job_applicationsConnection
   label: String
   llm_proposal_applicationsCollection(
     """Query values in the collection after the provided cursor"""

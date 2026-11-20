@@ -32,6 +32,21 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;
 -- anon: none
 ```
 
+### Application tracker (MDI-655)
+
+`job_applications` and `job_application_notes` use the owner CRUD tier above.
+`job_application_events` (stage history) uses the append-only audit tier for
+clients: `SELECT` only, written by the `SECURITY DEFINER` trigger
+`job_applications_record_stage`.
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_applications TO authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_application_notes TO authenticated, service_role;
+REVOKE ALL ON TABLE public.job_application_events FROM public, anon, authenticated, service_role;
+GRANT SELECT ON public.job_application_events TO authenticated, service_role;
+-- anon: none
+```
+
 ### Credits (balance only)
 
 `user_credits` — authenticated can read their own balance (RLS). Writes go
@@ -176,6 +191,9 @@ the GraphQL `JSON` scalar (serialized string).
 | `credit_prices` | none | none | none | `20261008000300_resumes_credits.sql` (server-side) |
 | `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
 | `llm_proposal_applications` | none | SELECT | all | `20261112000100_llm_proposal_applications.sql` (rows written only by `apply_llm_proposal`) |
+| `job_applications` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261120000400_job_applications.sql` |
+| `job_application_notes` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261120000400_job_applications.sql` |
+| `job_application_events` | none | SELECT | SELECT | `20261120000400_job_applications.sql` (rows written only by the `job_applications_record_stage` trigger) |
 | `profile_ai_improvements` | none | SELECT | all | `20261120000100_profile_ai_improvement.sql` (rows written only by the profile improvement RPCs and `apply_llm_proposal`) |
 | `user_feedback` | none | SELECT | all | `20261120000300_user_feedback.sql` (rows written only by `submit_feedback`) |
 | `feedback_prompt_state` | none | SELECT | all | `20261120000300_user_feedback.sql` (rows written only by `record_feedback_prompt` and `record_trustpilot_click`) |
