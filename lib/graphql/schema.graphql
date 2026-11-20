@@ -207,6 +207,8 @@ scalar JSON
 """The root type for creating and mutating data"""
 type Mutation {
   apply_llm_proposal(p_request: JSON!): JSON
+  claim_profile_improvement(p_client_request_id: String!): String
+  confirm_profile_improvement(p_client_request_id: String!, p_job_id: UUID!): Opaque
   """Deletes zero or more records from the `contacts` collection"""
   deleteFromcontactsCollection(
     """
@@ -330,6 +332,8 @@ type Mutation {
   insertIntoskillsCollection(objects: [skillsInsertInput!]!): skillsInsertResponse
   """Adds one or more `tools` records to the collection"""
   insertIntotoolsCollection(objects: [toolsInsertInput!]!): toolsInsertResponse
+  mark_profile_improvement_used(p_job_id: UUID): Opaque
+  release_profile_improvement(p_client_request_id: String!): Opaque
   release_resume_generation(p_resume_id: UUID!): Opaque
   save_profile(p_payload: JSON!): String
   """Updates zero or more records in the `contacts` collection"""
@@ -665,6 +669,32 @@ type Query {
     """The record's `ID`"""
     nodeId: ID!
   ): Node
+  """
+  Retrieve a record of type `profile_ai_improvements` by its primary key
+  """
+  profile_ai_improvementsByPk(
+    """The record's `user_id` value"""
+    user_id: UUID!
+  ): profile_ai_improvements
+  """A pagable collection of type `profile_ai_improvements`"""
+  profile_ai_improvementsCollection(
+    """Query values in the collection after the provided cursor"""
+    after: Cursor
+    """Query values in the collection before the provided cursor"""
+    before: Cursor
+    """Filters to apply to the results set when querying from the collection"""
+    filter: profile_ai_improvementsFilter
+    """Query the first `n` records in the collection"""
+    first: Int
+    """Query the last `n` records in the collection"""
+    last: Int
+    """
+    Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported.
+    """
+    offset: Int
+    """Sort order to apply to the collection"""
+    orderBy: [profile_ai_improvementsOrderBy!]
+  ): profile_ai_improvementsConnection!
   """Retrieve a record of type `profiles` by its primary key"""
   profilesByPk(
     """The record's `user_id` value"""
@@ -1597,6 +1627,59 @@ input location_typeFilter {
   in: [location_type!]
   is: FilterIs
   neq: location_type
+}
+
+type profile_ai_improvements implements Node {
+  applied_at: Datetime
+  claimed_at: Datetime!
+  client_request_id: String!
+  job_id: UUID
+  """Globally Unique Record Identifier"""
+  nodeId: ID!
+  updated_at: Datetime!
+  used_at: Datetime
+  user_id: UUID!
+}
+
+type profile_ai_improvementsConnection {
+  edges: [profile_ai_improvementsEdge!]!
+  pageInfo: PageInfo!
+}
+
+type profile_ai_improvementsEdge {
+  cursor: String!
+  node: profile_ai_improvements!
+}
+
+input profile_ai_improvementsFilter {
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [profile_ai_improvementsFilter!]
+  applied_at: DatetimeFilter
+  claimed_at: DatetimeFilter
+  client_request_id: StringFilter
+  job_id: UUIDFilter
+  nodeId: IDFilter
+  """Negates a filter"""
+  not: profile_ai_improvementsFilter
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [profile_ai_improvementsFilter!]
+  updated_at: DatetimeFilter
+  used_at: DatetimeFilter
+  user_id: UUIDFilter
+}
+
+input profile_ai_improvementsOrderBy {
+  applied_at: OrderByDirection
+  claimed_at: OrderByDirection
+  client_request_id: OrderByDirection
+  job_id: OrderByDirection
+  updated_at: OrderByDirection
+  used_at: OrderByDirection
+  user_id: OrderByDirection
 }
 
 type profiles implements Node {

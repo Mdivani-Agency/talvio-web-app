@@ -367,6 +367,6 @@ user; `invalid_profile_improvement_request` for a missing or malformed id):
   already used is left as it is. Idempotent.
 - `release_profile_improvement(p_client_request_id text) returns void`:
   deletes the caller's row only while it is unused and holds that request id.
-- `mark_profile_improvement_used(p_job_id uuid) returns void`: reconciliation
+- `mark_profile_improvement_used(p_job_id uuid default null) returns void`: reconciliation
   when the LLM service reports the improvement already used; sets `used_at`
   (and `job_id` when none is stored). `p_job_id` may be null.

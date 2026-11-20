@@ -230,9 +230,10 @@ $$;
 
 -- Reconciliation: the LLM service says the caller already used improve_profile
 -- (for example a job admitted before this database knew about it). Sets
--- used_at, and job_id when it is known and none is stored yet. p_job_id may be
--- null when the service did not say which job it was.
-create or replace function public.mark_profile_improvement_used(p_job_id uuid)
+-- used_at, and job_id when it is known and none is stored yet. p_job_id defaults
+-- to null (an optional GraphQL argument) for when the service did not say which
+-- job it was.
+create or replace function public.mark_profile_improvement_used(p_job_id uuid default null)
 returns void
 language plpgsql
 volatile

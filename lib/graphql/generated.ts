@@ -188,6 +188,8 @@ export type IntListFilter = {
 export type Mutation = {
   __typename?: 'Mutation';
   apply_llm_proposal?: Maybe<Scalars['JSON']['output']>;
+  claim_profile_improvement?: Maybe<Scalars['String']['output']>;
+  confirm_profile_improvement?: Maybe<Scalars['Opaque']['output']>;
   /** Deletes zero or more records from the `contacts` collection */
   deleteFromcontactsCollection: ContactsDeleteResponse;
   /** Deletes zero or more records from the `educations` collection */
@@ -234,6 +236,8 @@ export type Mutation = {
   insertIntoskillsCollection?: Maybe<SkillsInsertResponse>;
   /** Adds one or more `tools` records to the collection */
   insertIntotoolsCollection?: Maybe<ToolsInsertResponse>;
+  mark_profile_improvement_used?: Maybe<Scalars['Opaque']['output']>;
+  release_profile_improvement?: Maybe<Scalars['Opaque']['output']>;
   release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
   /** Updates zero or more records in the `contacts` collection */
@@ -263,6 +267,17 @@ export type Mutation = {
 /** The root type for creating and mutating data */
 export type MutationApply_Llm_ProposalArgs = {
   p_request: Scalars['JSON']['input'];
+};
+
+/** The root type for creating and mutating data */
+export type MutationClaim_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
+};
+
+/** The root type for creating and mutating data */
+export type MutationConfirm_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
+  p_job_id: Scalars['UUID']['input'];
 };
 
 /** The root type for creating and mutating data */
@@ -396,6 +411,16 @@ export type MutationInsertIntoskillsCollectionArgs = {
 /** The root type for creating and mutating data */
 export type MutationInsertIntotoolsCollectionArgs = {
   objects: Array<ToolsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationMark_Profile_Improvement_UsedArgs = {
+  p_job_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationRelease_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
 };
 
 /** The root type for creating and mutating data */
@@ -544,6 +569,10 @@ export type Query = {
   llm_proposal_applicationsCollection: Llm_Proposal_ApplicationsConnection;
   /** Retrieve a record by its `ID` */
   node?: Maybe<Node>;
+  /** Retrieve a record of type `profile_ai_improvements` by its primary key */
+  profile_ai_improvementsByPk?: Maybe<Profile_Ai_Improvements>;
+  /** A pagable collection of type `profile_ai_improvements` */
+  profile_ai_improvementsCollection: Profile_Ai_ImprovementsConnection;
   /** Retrieve a record of type `profiles` by its primary key */
   profilesByPk?: Maybe<Profiles>;
   /** A pagable collection of type `profiles` */
@@ -673,6 +702,22 @@ export type QueryLlm_Proposal_ApplicationsCollectionArgs = {
 /** The root type for querying data */
 export type QueryNodeArgs = {
   nodeId: Scalars['ID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryProfile_Ai_ImprovementsByPkArgs = {
+  user_id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryProfile_Ai_ImprovementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Profile_Ai_ImprovementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Profile_Ai_ImprovementsOrderBy>>;
 };
 
 /** The root type for querying data */
@@ -1528,6 +1573,58 @@ export type Location_TypeFilter = {
   in?: InputMaybe<Array<Location_Type>>;
   is?: InputMaybe<FilterIs>;
   neq?: InputMaybe<Location_Type>;
+};
+
+export type Profile_Ai_Improvements = Node & {
+  __typename?: 'profile_ai_improvements';
+  applied_at?: Maybe<Scalars['Datetime']['output']>;
+  claimed_at: Scalars['Datetime']['output'];
+  client_request_id: Scalars['String']['output'];
+  job_id?: Maybe<Scalars['UUID']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  updated_at: Scalars['Datetime']['output'];
+  used_at?: Maybe<Scalars['Datetime']['output']>;
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Profile_Ai_ImprovementsConnection = {
+  __typename?: 'profile_ai_improvementsConnection';
+  edges: Array<Profile_Ai_ImprovementsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Profile_Ai_ImprovementsEdge = {
+  __typename?: 'profile_ai_improvementsEdge';
+  cursor: Scalars['String']['output'];
+  node: Profile_Ai_Improvements;
+};
+
+export type Profile_Ai_ImprovementsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Profile_Ai_ImprovementsFilter>>;
+  applied_at?: InputMaybe<DatetimeFilter>;
+  claimed_at?: InputMaybe<DatetimeFilter>;
+  client_request_id?: InputMaybe<StringFilter>;
+  job_id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Profile_Ai_ImprovementsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Profile_Ai_ImprovementsFilter>>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  used_at?: InputMaybe<DatetimeFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Profile_Ai_ImprovementsOrderBy = {
+  applied_at?: InputMaybe<OrderByDirection>;
+  claimed_at?: InputMaybe<OrderByDirection>;
+  client_request_id?: InputMaybe<OrderByDirection>;
+  job_id?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  used_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
 };
 
 export type Profiles = Node & {
