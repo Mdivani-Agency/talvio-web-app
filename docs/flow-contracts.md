@@ -89,6 +89,15 @@ Shown only when `NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE` is on (`featureFlags().resu
 Every AI feature runs on the Talvio LLM service (talvio-llm-service, contract in its `docs/contracts.md`). The OpenAI routes under `/api/resume`, `NEXT_PUBLIC_FLAG_LLM_SERVICE` and the calls to the web app's own AI daily cap were removed in MDI-224.
 
 - Adapter: `app/api/llm/[...path]/route.ts` → `proxyLlmRequest` (`lib/services/llm-proxy.server.ts`). It forwards only the service's routes (documents, sessions, jobs) to `${LLM_SERVICE_URL}/v1/...` with the caller's bearer token and `Idempotency-Key`, and returns the answer unchanged (only `Content-Type` and `Retry-After` headers). No provider SDK, prompts or long-running work: one request, 25 s timeout, 1 MB body cap. The service verifies the token, account status and plan itself. Errors the adapter makes use the service's error body.
+- Profile improvement after Save profile (MDI-645, epic MDI-643): `useProfileImprove` (`app/account/hooks/use-profile-improve.ts`) is client logic only; the screens come in MDI-646. One run makes these calls:
+  1. One `POST /sessions`, with the saved profile from `profileToCareerDocument` (entity ids are row UUIDs) and source `{ kind: 'profile', id: userId, revision: updatedAt }`.
+  2. An `analyze_resume` job.
+  3. A `generate_questions` job (round 1, up to 5, with `analysisJobId`). Zero questions goes to "nothing to ask".
+  4. One `POST /sessions/{id}/answers`, with answered and skipped items.
+  5. An `improve_profile` job, with `targetRole` set to the profile role. It keeps one Idempotency-Key across repeats.
+  6. One `DELETE /sessions/{id}` on done, skip or stop.
+
+  The run, its questions, answers and typed answer are kept under `talvio-llm-improve:v1:profile:user:<id>`, so a reload resumes at the same step. The review (`lib/llm/profile-proposal.ts`) starts with every change selected and claims unconfirmed, drops changes that no longer match the saved profile, and blocks Save while a selected change has an unconfirmed claim. Save calls `apply_llm_proposal` with `improve_profile`; the `save_profile` payload is the saved profile with only the selected changes written in. `useProfileImprovement` reads `profile_ai_improvementsCollection`; once `used_at` is set, a new run is not started.
 - Once-per-account profile improvement (MDI-648, epic MDI-643): `POST v1/jobs` with `operation: "improve_profile"` is the one route that is not plain pass-through. Before forwarding, the adapter calls `claim_profile_improvement(Idempotency-Key)` as the user (`lib/services/profile-improvement.server.ts`, server GraphQL client):
   - `used` → `403 profile_improvement_used` without calling the service. The exception is a repeat of the request that used it, which is forwarded so its job comes back.
   - `busy` → `409 profile_improvement_busy`, which is retryable.

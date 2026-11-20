@@ -5,7 +5,8 @@ import {
   LanguageProficiency,
   locationTypeEnum,
 } from '@lib/schema/enums';
-import type { ResumeForm } from '@lib/types';
+import { profileToResumeDocument } from '@lib/models/resume-document';
+import type { AccountDto, ResumeForm } from '@lib/types';
 
 /*
  * A resume document as the LLM service's CareerDocument (MDI-221), for an improve session.
@@ -102,13 +103,17 @@ function oneOf(options: readonly string[], value: unknown): string | null {
   return typeof value === 'string' && options.includes(value) ? value : null;
 }
 
-/** The form's ISO date at month precision (the editor picks months), or null. */
+/** The form's ISO date at month precision (the editor picks months), a bare year, or null. */
 export function isoToPartialDate(value: unknown): string | null {
   if (typeof value !== 'string') {
     return null;
   }
   const match = value.match(/^(\d{4})-(\d{2})/);
-  return match ? `${match[1]}-${match[2]}` : null;
+  if (match) {
+    return `${match[1]}-${match[2]}`;
+  }
+  const year = value.match(/^(\d{4})$/);
+  return year ? year[1]! : null;
 }
 
 /** Plain details, one paragraph per line, as a content document; null when empty. */
@@ -250,4 +255,31 @@ export function resumeToCareerDocument(resume: ResumeForm): ResumeCareerDocument
   });
 
   return { document, entities };
+}
+
+/**
+ * The saved profile as a CareerDocument, for a profile improve session (MDI-645). The profile goes
+ * through the same resume-shaped view the editor starts from, so entries carry their row UUIDs as
+ * entity ids and a proposal's targets map back to profile rows.
+ */
+export function profileToCareerDocument(account: AccountDto): ResumeCareerDocument {
+  const converted = resumeToCareerDocument(profileToResumeDocument(account));
+  // Dates come from the profile rows as they are: the resume view normalizes them to full dates,
+  // which would turn a bare year into January.
+  const datesOf = (rows: { id?: string; startDate?: string; endDate?: string }[] | undefined) =>
+    new Map((rows ?? []).filter((row) => row.id).map((row) => [row.id as string, row]));
+  const experience = datesOf(account.experience);
+  const education = datesOf(account.education);
+  const redate = <T extends { id: string; startDate: string | null; endDate: string | null }>(entry: T, rows: typeof experience): T => {
+    const row = rows.get(entry.id);
+    return row ? { ...entry, startDate: isoToPartialDate(row.startDate), endDate: isoToPartialDate(row.endDate) } : entry;
+  };
+  return {
+    ...converted,
+    document: {
+      ...converted.document,
+      experience: converted.document.experience.map((entry) => redate(entry, experience)),
+      education: converted.document.education.map((entry) => redate(entry, education)),
+    },
+  };
 }
