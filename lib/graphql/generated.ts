@@ -2468,6 +2468,10 @@ export type ProfileImprovementRequestQueryVariables = Exact<{ [key: string]: nev
 
 export type ProfileImprovementRequestQuery = { profile_ai_improvementsCollection: { edges: Array<{ node: { client_request_id: string, used_at: string | null } }> } };
 
+export type ProfileImprovementQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type ProfileImprovementQuery = { profile_ai_improvementsCollection: { edges: Array<{ node: { used_at: string | null, applied_at: string | null } }> } };
+
 export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string };
 
 export type ProfileByUserQueryVariables = Exact<{
@@ -2629,6 +2633,18 @@ export const ProfileImprovementRequestDocument = gql`
       node {
         client_request_id
         used_at
+      }
+    }
+  }
+}
+    `;
+export const ProfileImprovementDocument = gql`
+    query ProfileImprovement {
+  profile_ai_improvementsCollection(first: 1) {
+    edges {
+      node {
+        used_at
+        applied_at
       }
     }
   }
@@ -2942,6 +2958,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     ProfileImprovementRequest(variables?: ProfileImprovementRequestQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileImprovementRequestQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProfileImprovementRequestQuery>({ document: ProfileImprovementRequestDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileImprovementRequest', 'query', variables);
+    },
+    ProfileImprovement(variables?: ProfileImprovementQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileImprovementQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ProfileImprovementQuery>({ document: ProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileImprovement', 'query', variables);
     },
     ProfileByUser(variables: ProfileByUserQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileByUserQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProfileByUserQuery>({ document: ProfileByUserDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileByUser', 'query', variables);

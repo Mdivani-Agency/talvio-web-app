@@ -72,6 +72,36 @@ export function uiStateFor(code: string): LlmUiState {
   }
 }
 
+/** How the profile improvement after Save profile (MDI-645) shows a failure. */
+export type ProfileImproveErrorState = 'limit' | 'used' | 'unavailable' | 'signIn' | 'expired' | 'retry';
+
+export function profileImproveErrorState(error: unknown): ProfileImproveErrorState {
+  if (!(error instanceof LlmError)) {
+    return 'retry';
+  }
+  switch (error.code) {
+    // The daily job limit, and a request too large to run at all.
+    case 'quota_exceeded':
+    case 'budget_exceeded_preflight':
+    case 'budget_exceeded':
+      return 'limit';
+    // The web's once-per-account flag (the /api/llm adapter) and the service's own.
+    case 'profile_improvement_used':
+    case 'operation_limit_reached':
+      return 'used';
+    case 'unauthorized':
+      return error.message === ACCOUNT_UNAVAILABLE_MESSAGE ? 'unavailable' : 'signIn';
+    case 'not_found':
+    case 'deadline_exceeded':
+    case 'revoked':
+    case 'stale_context':
+      return 'expired';
+    // dependency_unavailable, profile_improvement_busy, network errors and the rest: Try again.
+    default:
+      return 'retry';
+  }
+}
+
 /** Retry-After in seconds or as an HTTP date. */
 export function parseRetryAfter(value: string | null, now = new Date()): Date | null {
   if (!value) {

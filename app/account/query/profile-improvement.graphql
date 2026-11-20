@@ -27,3 +27,14 @@ query ProfileImprovementRequest {
     }
   }
 }
+
+query ProfileImprovement {
+  profile_ai_improvementsCollection(first: 1) {
+    edges {
+      node {
+        used_at
+        applied_at
+      }
+    }
+  }
+}
