@@ -63,6 +63,7 @@ function fakeClient() {
     retryJob: vi.fn(),
     createSession: vi.fn(),
     submitAnswers: vi.fn(),
+    getSession: vi.fn(),
     deleteSession: vi.fn(),
   } satisfies Record<keyof LlmClient, unknown>;
 }

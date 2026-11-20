@@ -531,7 +531,7 @@ export function handleLlmApi(request, url, body, send) {
 }
 
 function contextView(session) {
-  return { contextRevisionId: session.contextRevisionId, sessionId: session.sessionId, contextHash: '3'.repeat(64), sourceHash: '4'.repeat(64), jobDescriptionHash: null, answerRevisionId: null, createdAt: session.createdAt };
+  return { contextRevisionId: session.contextRevisionId, sessionId: session.sessionId, contextHash: '3'.repeat(64), sourceHash: '4'.repeat(64), jobDescriptionHash: null, answerRevisionId: session.answerRevisionId ?? null, createdAt: session.createdAt };
 }
 
 function sessionView(session) {
@@ -592,8 +592,13 @@ function handleSession(request, match, owner, body, send) {
       return true;
     }
     session.contextRevisionId = crypto.randomUUID();
+    session.answerRevisionId = crypto.randomUUID();
     llm.stats.answers += 1;
     send(201, contextView(session));
+    return true;
+  }
+  if (request.method === 'GET' && !answers) {
+    send(200, sessionView(session));
     return true;
   }
   if (request.method === 'DELETE' && !answers) {

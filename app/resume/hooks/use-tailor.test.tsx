@@ -69,6 +69,7 @@ function fakeClient() {
       latestContext: { contextRevisionId: CONTEXT_1, sessionId: SESSION_ID },
     })),
     submitAnswers: vi.fn(async () => ({ contextRevisionId: CONTEXT_2, sessionId: SESSION_ID })),
+    getSession: vi.fn(),
     deleteSession: vi.fn(async () => undefined),
     createJob: vi.fn(async (request: { operation: string }) => ({
       jobId: request.operation === 'tailor_resume' ? TAILOR_JOB : QUESTIONS_JOB,

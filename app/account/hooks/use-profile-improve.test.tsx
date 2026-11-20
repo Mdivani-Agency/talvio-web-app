@@ -96,6 +96,12 @@ function fakeClient(questions = questionSet()) {
       latestContext: { contextRevisionId: CONTEXT_1, sessionId: SESSION_ID },
     })),
     submitAnswers: vi.fn(async () => ({ contextRevisionId: CONTEXT_2, sessionId: SESSION_ID })),
+    getSession: vi.fn(async () => ({
+      sessionId: SESSION_ID,
+      purpose: 'improve',
+      status: 'open',
+      latestContext: { contextRevisionId: CONTEXT_1, sessionId: SESSION_ID, answerRevisionId: null as string | null },
+    })),
     deleteSession: vi.fn(async () => undefined),
     createJob: vi.fn(async (request: { operation: string }) => ({
       jobId: JOB_FOR[request.operation],
@@ -297,6 +303,63 @@ describe('useProfileImprove', () => {
     await waitFor(() => expect(second.result.current.step).toBe('review'), WAIT);
     expect(client.submitAnswers).toHaveBeenCalledTimes(2);
     expect(operations(client).filter((operation) => operation === 'improve_profile')).toHaveLength(1);
+    second.unmount();
+  });
+
+  it('carries on from the stored answers when they arrived before a reload', async () => {
+    const client = fakeClient();
+    // The first submission reaches the service but its reply is lost; a repeat is stale.
+    client.submitAnswers.mockImplementationOnce(() => new Promise(() => undefined));
+    client.submitAnswers.mockRejectedValueOnce(
+      new LlmError({ code: 'stale_context', message: 'This changed since you started. Start again.', status: 409 }),
+    );
+    client.getSession.mockResolvedValueOnce({
+      sessionId: SESSION_ID,
+      purpose: 'improve',
+      status: 'open',
+      latestContext: { contextRevisionId: CONTEXT_2, sessionId: SESSION_ID, answerRevisionId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d' },
+    });
+    const first = setup(client);
+    act(() => first.result.current.start());
+    await waitFor(() => expect(first.result.current.step).toBe('questions'), WAIT);
+    act(() => first.result.current.skipRemaining());
+    first.unmount();
+
+    const second = setup(client);
+    await waitFor(() => expect(second.result.current.step).toBe('review'), WAIT);
+    expect(client.getSession).toHaveBeenCalledWith(SESSION_ID);
+    const improve = client.createJob.mock.calls.find(([request]) => request.operation === 'improve_profile');
+    expect(improve?.[0]).toMatchObject({ contextRevisionId: CONTEXT_2 });
+    second.unmount();
+  });
+
+  it('shows the error when the answers are stale and the service has none of them', async () => {
+    const client = fakeClient();
+    client.submitAnswers.mockRejectedValueOnce(
+      new LlmError({ code: 'stale_context', message: 'This changed since you started. Start again.', status: 409 }),
+    );
+    const view = setup(client);
+    act(() => view.result.current.start());
+    await waitFor(() => expect(view.result.current.step).toBe('questions'), WAIT);
+    act(() => view.result.current.skipRemaining());
+    await waitFor(() => expect(view.result.current.failure?.message).toBe('This changed since you started. Start again.'), WAIT);
+    expect(operations(client)).not.toContain('improve_profile');
+    view.unmount();
+  });
+
+  it('restarts the analysis after a reload while the session was being created', async () => {
+    const client = fakeClient();
+    client.createSession.mockImplementationOnce(() => new Promise(() => undefined));
+    const first = setup(client);
+    act(() => first.result.current.start());
+    expect(first.result.current.step).toBe('loading');
+    first.unmount();
+
+    const second = setup(client);
+    await waitFor(() => expect(second.result.current.step).toBe('questions'), WAIT);
+    expect(client.createSession).toHaveBeenCalledTimes(2);
+    const [[firstRequest], [secondRequest]] = client.createSession.mock.calls as unknown as [[{ clientRequestId: string }], [{ clientRequestId: string }]];
+    expect(secondRequest.clientRequestId).toBe(firstRequest.clientRequestId);
     second.unmount();
   });
 

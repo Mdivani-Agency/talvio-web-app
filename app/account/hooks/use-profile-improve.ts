@@ -10,7 +10,7 @@ import { AI_IMPROVE_SESSION_PREFIX, aiImproveJobStorageKey, profileImproveStorag
 import { profileToCareerDocument } from '@lib/llm/career-document';
 import { createLlmClient, type LlmClient } from '@lib/llm/client';
 import { LLM_SCHEMA_VERSION, type JobRequestBody, type SessionAnswer, type SourceRef } from '@lib/llm/contract';
-import { profileImproveErrorState, type ProfileImproveErrorState } from '@lib/llm/errors';
+import { LlmError, profileImproveErrorState, type ProfileImproveErrorState } from '@lib/llm/errors';
 import { proposalFromEnvelope, type ServiceProposal } from '@lib/llm/improve-proposal';
 import type { LlmJobState } from '@lib/llm/job-runner';
 import { profileApplyRequest, reviewProfileProposal } from '@lib/llm/profile-proposal';
@@ -371,11 +371,25 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
       const answers = sessionAnswers(current.answers);
       const signature = JSON.stringify(answers);
       if (answers.length && current.questionSetId && current.answersSent !== signature) {
-        const revision = await llm.submitAnswers(current.sessionId as string, {
-          baseContextRevisionId: current.contextRevisionId as string,
-          questionSetId: current.questionSetId,
-          answers,
-        });
+        const sessionId = current.sessionId as string;
+        const revision = await llm
+          .submitAnswers(sessionId, {
+            baseContextRevisionId: current.contextRevisionId as string,
+            questionSetId: current.questionSetId,
+            answers,
+          })
+          .catch(async (error: unknown) => {
+            // The answers may have arrived before a lost reply or a reload. This run sends answers
+            // only once, so a newer revision made by answers is that submission: carry on from it.
+            if (!(error instanceof LlmError) || error.code !== 'stale_context') {
+              throw error;
+            }
+            const { latestContext } = await llm.getSession(sessionId);
+            if (latestContext.contextRevisionId === current.contextRevisionId || !latestContext.answerRevisionId) {
+              throw error;
+            }
+            return latestContext;
+          });
         if (run !== runRef.current) {
           return;
         }
@@ -404,6 +418,28 @@ export function useProfileImprove({ userId, account, locale = 'en-US', client }:
       void runProposal();
     }
   }, [answeredWithoutProposal, done, failure, pending, runProposal]);
+
+  /**
+   * On load, a stored run with no questions, no job and no proposal was reloaded while the session
+   * was being created or the analysis requested. Start it again: the stored clientRequestId returns
+   * the same session if it was created. Checked once per account, so a later state is left alone.
+   */
+  const loadChecked = useRef<string | null>(null);
+  useEffect(() => {
+    if (!storageKey || loadChecked.current === storageKey) {
+      return;
+    }
+    const notStarted = stored && !stored.questions && !stored.running && !stored.proposal;
+    if (notStarted && !stored.sessionId && !account) {
+      // A new session needs the saved profile: check again once it loads.
+      return;
+    }
+    loadChecked.current = storageKey;
+    if (notStarted) {
+      const session = stored;
+      queueMicrotask(() => void runAnalysis(session));
+    }
+  }, [account, runAnalysis, storageKey, stored]);
 
   /** Starts a run, or picks up the stored one. Does nothing once the improvement is used. */
   const start = useCallback(() => {
