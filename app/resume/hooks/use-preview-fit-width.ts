@@ -6,8 +6,13 @@ import { useCallback, useSyncExternalStore } from 'react';
 export const PREVIEW_FIT_WIDTH_KEY = 'talvio:resume-preview-fit-width';
 
 const listeners = new Set<() => void>();
+/** The last choice made on this page. Wins over storage, so the toggle still works when storage is blocked or full. */
+let memory: boolean | null = null;
 
 export function readPreviewFitWidth(): boolean {
+  if (memory !== null) {
+    return memory;
+  }
   if (typeof window === 'undefined') {
     return false;
   }
@@ -19,6 +24,7 @@ export function readPreviewFitWidth(): boolean {
 }
 
 export function writePreviewFitWidth(on: boolean) {
+  memory = on;
   try {
     if (on) {
       window.localStorage.setItem(PREVIEW_FIT_WIDTH_KEY, '1');
@@ -31,10 +37,17 @@ export function writePreviewFitWidth(on: boolean) {
   listeners.forEach((listener) => listener());
 }
 
+/** Tests only: forget the in-memory choice. */
+export function resetPreviewFitWidthMemory() {
+  memory = null;
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
   const onStorage = (event: StorageEvent) => {
     if (event.key === PREVIEW_FIT_WIDTH_KEY) {
+      // Another tab changed it: storage is the source again.
+      memory = null;
       listener();
     }
   };

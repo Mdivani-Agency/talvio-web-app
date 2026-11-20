@@ -1,13 +1,20 @@
 import { act, cleanup } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHook } from '@/test/utils/render';
 
-import { PREVIEW_FIT_WIDTH_KEY, readPreviewFitWidth, usePreviewFitWidth } from './use-preview-fit-width';
+import {
+  PREVIEW_FIT_WIDTH_KEY,
+  readPreviewFitWidth,
+  resetPreviewFitWidthMemory,
+  usePreviewFitWidth,
+} from './use-preview-fit-width';
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   window.localStorage.clear();
+  resetPreviewFitWidthMemory();
 });
 
 describe('usePreviewFitWidth', () => {
@@ -32,6 +39,33 @@ describe('usePreviewFitWidth', () => {
   it('reads a stored choice on mount', () => {
     window.localStorage.setItem(PREVIEW_FIT_WIDTH_KEY, '1');
     const { result } = renderHook(() => usePreviewFitWidth());
+    expect(result.current.fitWidth).toBe(true);
+  });
+
+  it.each([
+    ['blocked', new DOMException('The operation is insecure.', 'SecurityError')],
+    ['full', new DOMException('Quota exceeded', 'QuotaExceededError')],
+  ])('still toggles when storage is %s', (_case, error) => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw error;
+    });
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw error;
+    });
+    const { result } = renderHook(() => usePreviewFitWidth());
+    act(() => result.current.setFitWidth(true));
+    expect(result.current.fitWidth).toBe(true);
+    act(() => result.current.setFitWidth(false));
+    expect(result.current.fitWidth).toBe(false);
+  });
+
+  it('follows a change made in another tab', () => {
+    const { result } = renderHook(() => usePreviewFitWidth());
+    act(() => result.current.setFitWidth(false));
+    act(() => {
+      window.localStorage.setItem(PREVIEW_FIT_WIDTH_KEY, '1');
+      window.dispatchEvent(new StorageEvent('storage', { key: PREVIEW_FIT_WIDTH_KEY, newValue: '1' }));
+    });
     expect(result.current.fitWidth).toBe(true);
   });
 });
