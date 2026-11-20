@@ -56,6 +56,7 @@ export function localE2EEnv(status) {
     BLOG_API_TOKEN: BLOG_E2E_TOKEN,
     NEXT_PUBLIC_FLAG_RESUME_AI_IMPROVE: 'true',
     NEXT_PUBLIC_FLAG_PROFILE_AI_IMPROVE: 'true',
+    NEXT_PUBLIC_FLAG_APPLICATION_TRACKER: 'true',
     // Every persona starts as already clicked through, so only e2e/feedback.spec.ts sees the review prompt.
     NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT: 'true',
     // The reviews list ships empty, so the homepage stays unchanged with this on (MDI-653).

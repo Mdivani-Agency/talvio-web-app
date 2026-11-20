@@ -159,6 +159,29 @@ Preserved from MDI-174. Do not rebuild them.
 
 `app/account/documents` download of an existing media URL is unchanged. The empty `onDownload` noted in the pre-MDI-174 review is fixed in `edit-resume.tsx`.
 
+## Application tracker (MDI-656, epic MDI-654)
+
+`/account/applications` is behind `NEXT_PUBLIC_FLAG_APPLICATION_TRACKER` (`featureFlags().applicationTracker`, default off; local E2E builds turn it on). Off, the route is the 404 page and the sidebar has no Applications entry.
+
+- The board loads every card (`useApplications`, pages of `APPLICATION_PAGE_SIZE` = 100 while `hasNextPage`) and searches, filters by label and counts on the client. Picked labels are in the URL (`?labels=Remote&labels=Top%20choice`); a card must carry every picked label. Labels no card carries are ignored.
+- Five columns: Saved, Applied, Interview, Offer, Closed. Closed holds accepted, rejected and withdrawn, with the outcome as a badge.
+- A move updates the cached board first (`useUpdateApplication` `onMutate`), then saves `stage`, `sort_order` and, when moving into Applied with no date, `applied_on`. A failed save puts the card back and toasts through `submitWrapper`. `sort_order` is the midpoint between the shown neighbours, so a card dropped while filtered keeps its place among the cards on screen.
+- Drag and drop (`@dnd-kit`, pointer only) works on the md+ board. Every card also has a **Move to…** menu with all seven stages: the keyboard and phone route. Dropping a card on Closed asks for the outcome. Below md the board is one stage at a time, as tabs.
+- **Add application** inserts a card at the end of its column. A job post link is saved as a link named "Job post".
+- Stage history and `stage_changed_at` are written by the database (MDI-655), never by the client.
+- **Card detail** (MDI-657): a card's title opens a dialog panel on the right (480px; full screen on phone). The open card is in the URL (`?card=<id>`); an id that is not on the board is ignored. The panel traps focus, closes on Escape and gives focus back to the card's title.
+  - `ApplicationById` loads the card; `NotesByApplication` and `EventsByApplication` load every page of its notes and stage history, newest first. Note mutations invalidate `['application', id]`; card edits go through `useUpdateApplication`, which also invalidates it.
+  - Fields save as you go: text on blur, dates and selects on change, only when valid and changed; a failed save keeps the typed value and offers Retry. Stage from the panel moves the card to the end of its new column, like the Move to… menu.
+  - Resume sent shows the linked resume with Open and, for a generated one, Download PDF (the free re-download path). Links open in a new tab with `rel="noopener noreferrer"`. Labels and links are capped at 10.
+  - Notes use a minimal TipTap editor (paragraphs, bulleted and numbered lists) and store its HTML (at most 5,000 characters). `NoteContent` (`lib/rich-text/note-content.tsx`) renders that HTML by rebuilding only paragraphs, lists and line breaks as React elements, with no attributes; it never uses `dangerouslySetInnerHTML`.
+  - Delete removes the card, its notes and its history (cascade); the linked resume is kept.
+- **Add to tracker after a new PDF** (MDI-658): `FeedbackPromptProvider` (`/resume` layout) decides what follows a new PDF with `choosePostGeneratePrompt` (`lib/post-generate-prompts.ts`): the "Applying with this resume?" bar or the Trustpilot review prompt, never both.
+  - The bar is due when `applicationTracker` is on, no card links the resume or its generated original (`ApplicationsByResumes`), and it was not dismissed for that resume on this device (`talvio-tracker-prompt:v1:<userId>`). A failed check shows no bar.
+  - When the bar is due, `feedback_prompt_due` is not called and `record_feedback_prompt` is not, so the review prompt waits for the next PDF. When it is not due, the review prompt works as before.
+  - Like the review prompt, the bar waits for the Generate dialog to close; the download has already started. It is `role="status"`, takes no focus and stays until dismissed, used or the page is left.
+  - **Add to tracker** opens the Add dialog with the resume linked, Stage Applied and Applied on today. A resume made by "Tailor to a job" also pre-fills Position and Company, kept on this device with the resume (`talvio-tailored-job:v1:<userId>`; the tailor intake has no job post link). The new card goes to the end of its column; the toast offers **View in tracker** (`/account/applications?card=<id>`).
+  - The dashboard's resume rows and the Documents cards show **In tracker** when a card links the resume (Documents matches by `pdf_media_key`).
+
 ## Review prompt after a new PDF (MDI-652)
 
 Behind `NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT` (`featureFlags().feedbackPrompt`, default off; local E2E builds turn it on). Epic [MDI-650](https://linear.app/mdivani/issue/MDI-650); the database side is MDI-651 (`user_feedback`, `feedback_prompt_state`).

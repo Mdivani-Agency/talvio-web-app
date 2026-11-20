@@ -445,3 +445,71 @@ without a session):
   resume is not the caller's). Does not change the prompt state.
 - `record_trustpilot_click() returns void`: sets `trustpilot_clicked_at` if it
   is null, inserting the row if needed. Later clicks keep the first time.
+
+## `job_applications`
+
+Application tracker cards (`20261120000400_job_applications.sql`,
+[MDI-655](https://linear.app/mdivani/issue/MDI-655), epic
+[MDI-654](https://linear.app/mdivani/issue/MDI-654)). One row per job
+application, shown as "Position at Company". Owner CRUD; hard delete.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK, `gen_random_uuid()` |
+| `user_id` | `uuid not null default auth.uid()` | FK → `auth.users(id)` on delete cascade |
+| `position` | `text not null` | 1–300 characters, not blank |
+| `company` | `text not null` | 1–300 characters, not blank |
+| `stage` | `text not null default 'saved'` | `saved`, `applied`, `interview`, `offer`, `accepted`, `rejected`, `withdrawn` (check; text, not an enum). The board shows the last three in one Closed column |
+| `sort_order` | `double precision not null default 0` | Place within the card's board column |
+| `location`, `salary`, `contact` | `text` | Free text, at most 300 characters each |
+| `applied_on`, `next_step_on` | `date` | |
+| `next_step` | `text` | At most 300 characters |
+| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; must be the caller's resume (RLS) |
+| `labels` | `jsonb not null default '[]'` | Array of `{ "name", "color" }`, at most 10. `name` 1–40 characters, unique per card ignoring case and outer spaces; `color` one of `gray`, `blue`, `green`, `amber`, `red`, `pink`, `purple`, `teal`. No other keys |
+| `links` | `jsonb not null default '[]'` | Array of `{ "name", "url" }`, at most 10. `name` 1–100 characters; `url` starts with `http://` or `https://`, no spaces, at most 2,048 characters. No other keys |
+| `stage_changed_at` | `timestamptz not null default now()` | Set by `job_applications_stage_clock`: on insert, and when `stage` changes. Clients cannot set it |
+| `created_at` | `timestamptz not null default now()` | |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+A malformed `labels` or `links` value raises `invalid_job_application_labels`
+or `invalid_job_application_links` (SQLSTATE `23514`).
+
+Indexes: `(user_id, stage, sort_order)` (the board),
+`(user_id, resume_id)` ("is this resume already on a card"), and a partial
+`(resume_id) where resume_id is not null` for the foreign key.
+
+GraphQL: `job_applicationsCollection`; forward field `resumes`; reverse
+`resumes.job_applicationsCollection`.
+
+## `job_application_notes`
+
+Dated notes on a card. Owner CRUD; deleted with their card.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK |
+| `application_id` | `uuid not null` | FK → `job_applications(id)` on delete cascade; must be the caller's card (RLS) |
+| `user_id` | `uuid not null default auth.uid()` | FK → `auth.users(id)` on delete cascade |
+| `content` | `text not null` | The rich-text editor's HTML (paragraphs, bullets, numbered lists, as for experience details); 1–5,000 characters as stored |
+| `created_at` | `timestamptz not null default now()` | |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+Index: `(application_id, created_at desc)`.
+
+## `job_application_events`
+
+A card's stage history. Written only by the `job_applications_record_stage`
+trigger; clients read their own rows and cannot write them. Deleted with
+their card.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK |
+| `application_id` | `uuid not null` | FK → `job_applications(id)` on delete cascade |
+| `user_id` | `uuid not null` | FK → `auth.users(id)` on delete cascade; the card's owner |
+| `from_stage` | `text` | Null for the event written when the card is added |
+| `to_stage` | `text not null` | |
+| `created_at` | `timestamptz not null default now()` | |
+
+Both stage columns use the `job_applications.stage` check. Index:
+`(application_id, created_at desc)`.

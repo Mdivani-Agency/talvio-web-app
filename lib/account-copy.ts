@@ -8,6 +8,14 @@ export const ACCOUNT_NAV_LINKS: AccountNavLink[] = [
   { name: 'Documents', href: '/account/documents' },
 ];
 
+/** The application tracker's page (MDI-656), listed under Documents while `applicationTracker` is on. */
+export const APPLICATIONS_NAV_LINK: AccountNavLink = { name: 'Applications', href: '/account/applications' };
+
+/** The sidebar's account pages, with Applications when the tracker is on. */
+export function accountNavLinks(applicationTracker: boolean): AccountNavLink[] {
+  return applicationTracker ? [...ACCOUNT_NAV_LINKS, APPLICATIONS_NAV_LINK] : ACCOUNT_NAV_LINKS;
+}
+
 export const CREATE_RESUME_LABEL = 'Create resume';
 export const CREATE_RESUME_HREF = '/resume';
 
@@ -41,7 +49,13 @@ export function accountInitials(name: string | null | undefined, email: string):
 
 /** The account page that a path belongs to; onboarding (`/account/create`) belongs to Account. */
 export function activeAccountHref(pathname: string): string {
-  return pathname.startsWith('/account/documents') ? '/account/documents' : '/account';
+  if (pathname.startsWith('/account/documents')) {
+    return '/account/documents';
+  }
+  if (pathname.startsWith(APPLICATIONS_NAV_LINK.href)) {
+    return APPLICATIONS_NAV_LINK.href;
+  }
+  return '/account';
 }
 
 /** The dashboard's resume list (MDI-591). */

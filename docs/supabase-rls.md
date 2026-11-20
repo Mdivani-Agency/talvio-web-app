@@ -36,6 +36,9 @@ Every table below except `user_credits` has four policies:
 | `credit_prices` | none (no grants, no policies) |
 | `monthly_allowance_runs` | none (no grants, no policies) |
 | `llm_proposal_applications` | `llm_proposal_applications_select_own` only; written by `apply_llm_proposal` |
+| `job_applications` | select / insert / update / delete own; insert and update also require `resume_id` to be null or the caller's resume |
+| `job_application_notes` | select / insert / update / delete own; insert and update also require `application_id` to be the caller's card |
+| `job_application_events` | `job_application_events_select_own` only; written by the `job_applications_record_stage` trigger |
 | `profile_ai_improvements` | `profile_ai_improvements_select_own` only; written by `claim_` / `confirm_` / `release_profile_improvement`, `mark_profile_improvement_used` and `apply_llm_proposal` |
 | `user_feedback` | `user_feedback_select_own` only; written by `submit_feedback` |
 | `feedback_prompt_state` | `feedback_prompt_state_select_own` only; written by `record_feedback_prompt` and `record_trustpilot_click` |
@@ -95,6 +98,13 @@ The LLM service keeps its own once-per-user record (MDI-649); reset it there
 too, or the next `improve_profile` job is refused and the web marks the flag
 used again.
 
+The application tracker ([MDI-655](https://linear.app/mdivani/issue/MDI-655))
+uses `(select auth.uid())` in its policies. A card cannot point at another
+user's resume and a note cannot sit on another user's card: those
+`INSERT` / `UPDATE` attempts fail the `WITH CHECK` (`42501`). Stage history
+has no write policies and no write grants; the `SECURITY DEFINER` trigger
+`job_applications_record_stage` writes it.
+
 `user_feedback` and `feedback_prompt_state` ([MDI-651](https://linear.app/mdivani/issue/MDI-651))
 hold "Tell us what went wrong" messages and the Trustpilot review prompt cap.
 Clients read their own rows and cannot insert, update or delete them. The four
@@ -113,7 +123,8 @@ Query: `profilesCollection`, `contactsCollection`, `experiencesCollection`,
 `skillsCollection`, `toolsCollection`, `linksCollection`,
 `languagesCollection`, `headline_achievementsCollection`, `resumesCollection`, `user_creditsCollection`,
 `llm_proposal_applicationsCollection`, `profile_ai_improvementsCollection`,
-`user_feedbackCollection`, `feedback_prompt_stateCollection`.
+`user_feedbackCollection`, `feedback_prompt_stateCollection`, `job_applicationsCollection`,
+`job_application_notesCollection`, `job_application_eventsCollection`.
 
 Mutation: `save_profile`, `generate_pdf`, `finalize_pdf`, `release_resume_generation`,
 `apply_llm_proposal`, `claim_profile_improvement`, `confirm_profile_improvement`,
@@ -122,7 +133,8 @@ Mutation: `save_profile`, `generate_pdf`, `finalize_pdf`, `release_resume_genera
 `record_trustpilot_click`,
 `insertIntoresumesCollection`,
 `updateresumesCollection`, `deleteFromresumesCollection` (and the matching
-profile-child collection mutations). `consume_credits` is **not** a Mutation
+profile-child and application tracker collection mutations; there are none
+for `job_application_events`). `consume_credits` is **not** a Mutation
 field — authenticated has no `EXECUTE`. `credit_pricesCollection` is absent.
 `release_resume_generation` returns `void` (`Opaque`). It clears
 `generation_updated_at` only when `pdf_url` is still null.
