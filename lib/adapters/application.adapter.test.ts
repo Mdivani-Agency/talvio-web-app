@@ -5,6 +5,8 @@ import {
   applyApplicationPatch,
   toApplication,
   toApplicationInsert,
+  toApplicationEvent,
+  toApplicationNote,
   toApplicationUpdate,
   type ApplicationRow,
 } from './application.adapter';
@@ -100,6 +102,50 @@ describe('application adapter', () => {
     expect(toApplicationUpdate({ stage: 'interview', sortOrder: 1.5 })).toEqual({ stage: 'interview', sort_order: 1.5 });
     expect(toApplicationUpdate({ appliedOn: '2026-11-20' })).toEqual({ applied_on: '2026-11-20' });
     expect(toApplicationUpdate({})).toEqual({});
+  });
+
+  it('maps every editable field and serializes labels and links', () => {
+    expect(
+      toApplicationUpdate({
+        position: 'Lead',
+        company: 'Acme',
+        location: null,
+        salary: '100k',
+        contact: 'Ingrid',
+        nextStepOn: '2026-11-24',
+        nextStep: 'Panel',
+        resumeId: null,
+        labels: [{ name: 'Remote', color: 'green' }],
+        links: [{ name: 'Job post', url: 'https://example.com' }],
+      }),
+    ).toEqual({
+      position: 'Lead',
+      company: 'Acme',
+      location: null,
+      salary: '100k',
+      contact: 'Ingrid',
+      next_step_on: '2026-11-24',
+      next_step: 'Panel',
+      resume_id: null,
+      labels: '[{"name":"Remote","color":"green"}]',
+      links: '[{"name":"Job post","url":"https://example.com"}]',
+    });
+  });
+
+  it('maps notes and history rows, dropping rows with an unknown stage', () => {
+    expect(toApplicationNote({ id: 'n1', content: '<p>Hi</p>', created_at: 'c', updated_at: 'u' })).toEqual({
+      id: 'n1',
+      content: '<p>Hi</p>',
+      createdAt: 'c',
+      updatedAt: 'u',
+    });
+    expect(toApplicationEvent({ id: 'e1', from_stage: null, to_stage: 'saved', created_at: 'c' })).toEqual({
+      id: 'e1',
+      fromStage: null,
+      toStage: 'saved',
+      createdAt: 'c',
+    });
+    expect(toApplicationEvent({ id: 'e2', from_stage: 'saved', to_stage: 'hired', created_at: 'c' })).toBeNull();
   });
 
   it('moves stageChangedAt only when the stage changes in an optimistic patch', () => {

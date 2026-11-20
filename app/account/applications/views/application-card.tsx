@@ -17,6 +17,8 @@ type ApplicationCardProps = {
   application: JobApplication;
   now: Date;
   onMove: (stage: ApplicationStage) => void;
+  /** Opens the card's detail panel. */
+  onOpen?: () => void;
   /** The phone list puts cards on the page background, so they use the card colour; the board's columns already do. */
   surface?: 'board' | 'list';
   dragging?: boolean;
@@ -27,6 +29,7 @@ export function ApplicationCard({
   application,
   now,
   onMove,
+  onOpen,
   surface = 'board',
   dragging = false,
   cardRef,
@@ -50,7 +53,20 @@ export function ApplicationCard({
     >
       <div className="flex items-start gap-1">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <h3 className="text-sm leading-[1.4] font-semibold break-words text-primary">{application.position}</h3>
+          <h3 className="text-sm leading-[1.4] font-semibold break-words text-primary">
+            {onOpen ? (
+              <button
+                type="button"
+                data-card-open={application.id}
+                onClick={onOpen}
+                className="rounded-sm text-left outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                {application.position}
+              </button>
+            ) : (
+              application.position
+            )}
+          </h3>
           <p className="text-[1.3rem] break-words text-muted-foreground">{application.company}</p>
         </div>
         <MoveMenu application={application} onMove={onMove} />

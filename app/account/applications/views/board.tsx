@@ -36,6 +36,7 @@ type BoardProps = {
   /** A card dropped in a column at a new place. */
   onDrop: (application: JobApplication, column: BoardColumn, sortOrder: number) => void;
   onMove: (application: JobApplication, stage: ApplicationStage) => void;
+  onOpen: (application: JobApplication) => void;
 };
 
 function layoutOf(columns: BoardColumns): Layout {
@@ -54,11 +55,13 @@ function SortableCard({
   column,
   now,
   onMove,
+  onOpen,
 }: {
   application: JobApplication;
   column: BoardColumn;
   now: Date;
   onMove: BoardProps['onMove'];
+  onOpen: BoardProps['onOpen'];
 }) {
   const { setNodeRef, listeners, transform, transition, isDragging } = useSortable({
     id: application.id,
@@ -72,6 +75,7 @@ function SortableCard({
         application={application}
         now={now}
         onMove={(stage) => onMove(application, stage)}
+        onOpen={() => onOpen(application)}
         cardRef={setNodeRef}
         dragging={isDragging}
         style={{ transform: CSS.Translate.toString(transform), transition }}
@@ -88,12 +92,14 @@ function Column({
   now,
   emptyHint,
   onMove,
+  onOpen,
 }: {
   column: BoardColumn;
   cards: JobApplication[];
   now: Date;
   emptyHint?: string;
   onMove: BoardProps['onMove'];
+  onOpen: BoardProps['onOpen'];
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column });
   const headingId = `column-${column}`;
@@ -115,7 +121,7 @@ function Column({
       <SortableContext id={column} items={cards.map((card) => card.id)} strategy={verticalListSortingStrategy}>
         <ul className="flex flex-col gap-2">
           {cards.map((card) => (
-            <SortableCard key={card.id} application={card} column={column} now={now} onMove={onMove} />
+            <SortableCard key={card.id} application={card} column={column} now={now} onMove={onMove} onOpen={onOpen} />
           ))}
         </ul>
       </SortableContext>
@@ -129,7 +135,7 @@ function Column({
 }
 
 /** The desktop board (md and up): five columns, drag and drop between and within them. */
-export function Board({ columns, now, emptyHint, onDrop, onMove }: BoardProps) {
+export function Board({ columns, now, emptyHint, onDrop, onMove, onOpen }: BoardProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   // While a card is dragged, the board follows this layout so the card can move between columns; otherwise it
   // follows the cards it is given.
@@ -210,6 +216,7 @@ export function Board({ columns, now, emptyHint, onDrop, onMove }: BoardProps) {
             now={now}
             emptyHint={emptyHint}
             onMove={onMove}
+            onOpen={onOpen}
           />
         ))}
       </div>

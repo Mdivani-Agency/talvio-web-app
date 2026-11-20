@@ -1,12 +1,11 @@
 'use client';
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@components/ui';
-import { fetchAllResumes } from '@app/resume/query/use-resumes';
 import { ADD_DIALOG_DESCRIPTION, ADD_DIALOG_TITLE } from '@/lib/applications-copy';
-import { useGraphqlQuery } from '@/lib/query/base-query';
 import type { AddApplicationFormValues } from '@lib/schema/application.schema';
 import type { ApplicationStage } from '@lib/types';
 
+import { useResumeOptions } from '../query/use-resume-options';
 import { AddApplicationForm } from './add-application.form';
 
 type AddApplicationDialogProps = {
@@ -18,17 +17,7 @@ type AddApplicationDialogProps = {
 
 /** "Add an application". The resume picker lists every resume the user has, loaded when the dialog opens. */
 export function AddApplicationDialog({ open, userId, onOpenChange, onCreate }: AddApplicationDialogProps) {
-  const resumesQuery = useGraphqlQuery(
-    ['resumes', userId, 'application-picker'],
-    async () => {
-      const [general, tailored] = await Promise.all([
-        fetchAllResumes(userId, 'GENERAL'),
-        fetchAllResumes(userId, 'JOB_SPECIFIC'),
-      ]);
-      return [...general, ...tailored];
-    },
-    { enabled: open },
-  );
+  const resumesQuery = useResumeOptions(userId, open);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
