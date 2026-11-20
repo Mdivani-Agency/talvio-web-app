@@ -3,6 +3,7 @@ import { cn } from '@lib/utils';
 import type { AppForm } from '@lib/forms/use-form';
 import { PROFILE_FIELDS } from '@/lib/onboarding-copy';
 
+import { HeadlineAchievementsField } from './headline-achievements.field';
 import { TextFormField } from './text-form-field';
 
 type ProfileFormProps = {
@@ -19,6 +20,7 @@ export const ProfileForm = ({ className, form }: ProfileFormProps) => {
       </div>
       <TextFormField form={form} name="profile.role" copy={PROFILE_FIELDS.role} autoComplete="organization-title" />
       <TextFormField form={form} name="profile.tagline" copy={PROFILE_FIELDS.summary} multiline />
+      <HeadlineAchievementsField form={form} />
     </Form>
   );
 };

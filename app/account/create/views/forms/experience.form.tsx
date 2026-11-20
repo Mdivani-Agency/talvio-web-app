@@ -17,6 +17,7 @@ const DEFAULT_VALUES: ExperienceFormValues = {
   achievements: [],
   responsibilities: [],
   keyContributions: [],
+  stack: [],
   employmentType: '',
   locationType: '',
 };
@@ -65,6 +66,7 @@ export const ExperienceForm = ({ className, defaultValues = DEFAULT_VALUES, subm
       achievements: values.achievements.length > 0 ? values.achievements : [],
       responsibilities: values.responsibilities.length > 0 ? values.responsibilities : [],
       keyContributions: values.keyContributions.length > 0 ? values.keyContributions : [],
+      stack: values.stack ?? [],
     });
 
     if (success) {

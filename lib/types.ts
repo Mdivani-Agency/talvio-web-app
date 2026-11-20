@@ -3,6 +3,7 @@ import {
   accountSchema,
   educationFormSchema,
   experienceSchema,
+  headlineAchievementSchema,
   languageSchema,
   linkSchema,
   profileSchema,
@@ -52,6 +53,7 @@ export type DeepPartial<T> = {
 export type MarkType = { type: string; attrs?: Record<string, any>; [key: string]: any };
 
 export type Skill = z.infer<typeof skillSchema>;
+export type HeadlineAchievement = z.infer<typeof headlineAchievementSchema>;
 export type Tool = z.infer<typeof toolSchema>;
 export type Link = z.infer<typeof linkSchema>;
 export type Language = z.infer<typeof languageSchema>;

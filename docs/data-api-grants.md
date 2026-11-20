@@ -20,7 +20,8 @@ Copied from Notion *Data API / GraphQL (pg_graphql)* and locked for v1.
 ### Owner CRUD (profile, children, resumes)
 
 `profiles`, `contacts`, `experiences`, `educations`, `projects`,
-`recommendations`, `skills`, `tools`, `links`, `languages`, `resumes`.
+`recommendations`, `skills`, `tools`, `links`, `languages`,
+`headline_achievements`, `resumes`.
 
 Owner hard-deletes their own rows in v1 (no `deleted_at`), so `authenticated`
 gets `DELETE`. No `anon` grants — there is no public resume sharing.

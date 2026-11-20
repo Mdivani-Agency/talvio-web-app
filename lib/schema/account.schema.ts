@@ -27,6 +27,8 @@ const baseProfileSchema = z.object({
   city: z.string(),
   country: z.string(),
   seniority: SeniorityEnum,
+  /** The "Group skills" switch. Off keeps each skill's group, hidden, so switching it on again restores them. */
+  groupSkills: z.boolean(),
 });
 
 export const profileSchema = baseProfileSchema.partial({
@@ -36,7 +38,51 @@ export const profileSchema = baseProfileSchema.partial({
   city: true,
   country: true,
   seniority: true,
+  groupSkills: true,
 });
+
+/** Limits shared with the database checks in `20261120000200_template_optional_fields.sql`. */
+export const HEADLINE_ACHIEVEMENTS_MAX = 3;
+export const HEADLINE_VALUE_MAX = 24;
+export const HEADLINE_LABEL_MAX = 60;
+export const SKILL_GROUP_NAME_MAX = 40;
+export const STACK_MAX = 8;
+export const STACK_ITEM_MAX = 30;
+
+export const headlineAchievementSchema = z.object({
+  id: persistedIdSchema,
+  value: z
+    .string()
+    .trim()
+    .min(1, { message: 'Add the number, such as 40%' })
+    .max(HEADLINE_VALUE_MAX, { message: `Keep the number to ${HEADLINE_VALUE_MAX} characters` }),
+  label: z
+    .string()
+    .trim()
+    .min(1, { message: 'Say what the number measures' })
+    .max(HEADLINE_LABEL_MAX, { message: `Keep what it measures to ${HEADLINE_LABEL_MAX} characters` }),
+});
+
+/** While editing: a row may still be empty. Drafts and stored resume content load with this. */
+export const headlineAchievementDraftSchema = z.object({
+  id: persistedIdSchema,
+  value: z.string().max(HEADLINE_VALUE_MAX, { message: `Keep the number to ${HEADLINE_VALUE_MAX} characters` }),
+  label: z.string().max(HEADLINE_LABEL_MAX, { message: `Keep what it measures to ${HEADLINE_LABEL_MAX} characters` }),
+});
+
+export const headlineAchievementsSchema = z
+  .array(headlineAchievementSchema)
+  .max(HEADLINE_ACHIEVEMENTS_MAX, { message: `Add up to ${HEADLINE_ACHIEVEMENTS_MAX} headline achievements` });
+
+export const stackItemSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'Add a technology' })
+  .max(STACK_ITEM_MAX, { message: `Keep each technology to ${STACK_ITEM_MAX} characters` });
+
+export const stackSchema = z
+  .array(stackItemSchema)
+  .max(STACK_MAX, { message: `Add up to ${STACK_MAX} technologies` });
 
 const baseExperienceSchema = z.object({
   id: persistedIdSchema,
@@ -51,6 +97,7 @@ const baseExperienceSchema = z.object({
   achievements: z.array(z.string()),
   responsibilities: z.array(z.string()),
   keyContributions: z.array(z.string()),
+  stack: stackSchema,
 });
 
 export const experienceSchema = baseExperienceSchema.partial({
@@ -63,6 +110,7 @@ export const experienceSchema = baseExperienceSchema.partial({
   achievements: true,
   responsibilities: true,
   keyContributions: true,
+  stack: true,
 });
 
 const educationSchema = z.object({
@@ -109,9 +157,17 @@ export const linkSchema = z.object({
   type: z.string(),
 });
 
+/** Empty while a new group is being named; an empty group is saved as no group, so its skills show under "Other". */
+export const skillGroupNameSchema = z
+  .string()
+  .trim()
+  .max(SKILL_GROUP_NAME_MAX, { message: `Keep the group name to ${SKILL_GROUP_NAME_MAX} characters` });
+
 export const skillSchema = z.object({
   id: persistedIdSchema,
   name: z.string().max(50, { message: 'Skill name must be less than 50 characters' }),
+  /** The skill's group, such as "Architecture". Shown by templates with skill groups. */
+  group: skillGroupNameSchema.optional(),
 });
 
 export const toolSchema = z.object({
@@ -127,6 +183,7 @@ export const languageSchema = z.object({
 
 export const accountSchema = z.object({
   profile: profileSchema,
+  headlineAchievements: headlineAchievementsSchema.optional(),
   experience: z.array(experienceSchema).optional(),
   education: z.array(educationFormSchema).optional(),
   recommendations: z.array(recommendationSchema).optional(),

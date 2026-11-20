@@ -12,6 +12,7 @@ import type { ResumeFieldIssue } from '@lib/models/resume-document';
 import { resolveAvailableTemplate, templateLevelFromKey, type TemplateLevel } from '@lib/resume/resolve-editor';
 import type { SaveStatus } from '@lib/resume/save-queue';
 import { listResumeTemplates } from '@lib/templates';
+import { CurrentTemplateProvider } from '@app/account/create/views/forms/template-context';
 import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
 
@@ -218,13 +219,15 @@ export function ResumeEditorShell({
                 onFontSize={(fontSize) => onChange({ fontSize })}
               />
             ) : (
-              <EditResumeView
-                key={`${formKey}:ai${aiRevision}`}
-                className="h-full min-h-0"
-                issues={issues}
-                defaultValues={document.resume}
-                onSubmit={(resume) => onChange({ resume })}
-              />
+              <CurrentTemplateProvider template={{ key: templateItem.key, name: templateItem.name }}>
+                <EditResumeView
+                  key={`${formKey}:ai${aiRevision}`}
+                  className="h-full min-h-0"
+                  issues={issues}
+                  defaultValues={document.resume}
+                  onSubmit={(resume) => onChange({ resume })}
+                />
+              </CurrentTemplateProvider>
             )}
           </div>
         </div>
