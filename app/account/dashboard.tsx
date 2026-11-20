@@ -16,6 +16,7 @@ import {
 import { useResumes } from '@app/resume/query/use-resumes';
 import { ResumeCard } from './views/resume-card';
 import { AllowanceCard } from './views/allowance-card';
+import { ImproveCard } from './views/improve-card';
 import { accountHeading } from '@/lib/account-copy';
 import { PageContainer } from '@components/views';
 
@@ -33,6 +34,7 @@ export const Dashboard = ({ account, sessionUser }: DashboardProps) => {
   return (
     <PageContainer as="section" className="flex flex-col gap-8 py-6 md:py-10">
       <AccountUser name={accountHeading(profileName, sessionUser.name, sessionUser.email)} email={sessionUser.email} />
+      <ImproveCard userId={sessionUser.id} />
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <ResumeCard
           resumes={data?.resumes ?? []}

@@ -36,6 +36,7 @@ Every table below except `user_credits` has four policies:
 | `credit_prices` | none (no grants, no policies) |
 | `monthly_allowance_runs` | none (no grants, no policies) |
 | `llm_proposal_applications` | `llm_proposal_applications_select_own` only; written by `apply_llm_proposal` |
+| `profile_ai_improvements` | `profile_ai_improvements_select_own` only; written by `claim_` / `confirm_` / `release_profile_improvement`, `mark_profile_improvement_used` and `apply_llm_proposal` |
 
 `user_credits` has no insert / update / delete policies. Authenticated clients
 cannot write the balance through GraphQL; `handle_new_user` and
@@ -74,6 +75,24 @@ URL is never cleared. A draft cannot point at another draft.
 `p_payload` is `jsonb`, exposed as the GraphQL `JSON` scalar (a serialized
 string). Pass `'{"profile":{...}}'`, not an inline object.
 
+`profile_ai_improvements` ([MDI-644](https://linear.app/mdivani/issue/MDI-644))
+holds the once-per-account free profile improvement. Clients read their own
+row and cannot insert, update or delete it. The four RPCs are
+`SECURITY DEFINER` and act only on `auth.uid()`'s row; none of them clears
+`used_at`. `apply_llm_proposal` refuses an `improve_profile` proposal unless
+the caller's `used_at` is set.
+
+Support reset (manual, service role or SQL editor only), when a user must be
+given the free improvement again:
+
+```sql
+delete from public.profile_ai_improvements where user_id = '<user uuid>';
+```
+
+The LLM service keeps its own once-per-user record (MDI-649); reset it there
+too, or the next `improve_profile` job is refused and the web marks the flag
+used again.
+
 ## GraphQL exposure
 
 After grants + RLS, an **authenticated** JWT should see these collections and
@@ -82,9 +101,12 @@ mutations on `/graphql/v1` (`inflect_names` off):
 Query: `profilesCollection`, `contactsCollection`, `experiencesCollection`,
 `educationsCollection`, `projectsCollection`, `recommendationsCollection`,
 `skillsCollection`, `toolsCollection`, `linksCollection`,
-`languagesCollection`, `headline_achievementsCollection`, `resumesCollection`, `user_creditsCollection`.
+`languagesCollection`, `headline_achievementsCollection`, `resumesCollection`, `user_creditsCollection`,
+`llm_proposal_applicationsCollection`, `profile_ai_improvementsCollection`.
 
 Mutation: `save_profile`, `generate_pdf`, `finalize_pdf`, `release_resume_generation`,
+`apply_llm_proposal`, `claim_profile_improvement`, `confirm_profile_improvement`,
+`release_profile_improvement`, `mark_profile_improvement_used`,
 `insertIntoresumesCollection`,
 `updateresumesCollection`, `deleteFromresumesCollection` (and the matching
 profile-child collection mutations). `consume_credits` is **not** a Mutation

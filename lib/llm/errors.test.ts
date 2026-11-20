@@ -4,8 +4,10 @@ import {
   ACCOUNT_UNAVAILABLE_MESSAGE,
   errorFromJob,
   errorFromResponse,
+  LlmError,
   LlmNetworkError,
   parseRetryAfter,
+  profileImproveErrorState,
   SIGN_IN_MESSAGE,
   UNAVAILABLE_MESSAGE,
   uiStateFor,
@@ -65,5 +67,25 @@ describe('LLM errors', () => {
     expect(parseRetryAfter('Thu, 12 Nov 2026 11:00:00 GMT', now)).toEqual(new Date('2026-11-12T11:00:00Z'));
     expect(parseRetryAfter(null, now)).toBeNull();
     expect(parseRetryAfter('soon', now)).toBeNull();
+  });
+});
+
+describe('profileImproveErrorState', () => {
+  it.each([
+    ['quota_exceeded', 'limit'],
+    ['budget_exceeded_preflight', 'limit'],
+    ['profile_improvement_used', 'used'],
+    ['operation_limit_reached', 'used'],
+    ['dependency_unavailable', 'retry'],
+    ['profile_improvement_busy', 'retry'],
+    ['not_found', 'expired'],
+  ])('%s → %s', (code, state) => {
+    expect(profileImproveErrorState(new LlmError({ code, message: 'x' }))).toBe(state);
+  });
+
+  it('tells an account without AI from a signed-out user', () => {
+    expect(profileImproveErrorState(new LlmError({ code: 'unauthorized', message: ACCOUNT_UNAVAILABLE_MESSAGE }))).toBe('unavailable');
+    expect(profileImproveErrorState(new LlmError({ code: 'unauthorized', message: 'Please sign in' }))).toBe('signIn');
+    expect(profileImproveErrorState(new Error('boom'))).toBe('retry');
   });
 });

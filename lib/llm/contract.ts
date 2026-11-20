@@ -139,6 +139,8 @@ export function isTerminal(status: string): status is TerminalJobStatus {
 export const contextRevisionSchema = z.looseObject({
   contextRevisionId: z.string(),
   sessionId: z.string(),
+  /** Set once answers made this revision. */
+  answerRevisionId: z.string().nullable().optional(),
 });
 export type ContextRevision = z.infer<typeof contextRevisionSchema>;
 

@@ -20,7 +20,8 @@
  *
  * Sessions (`POST /llm/v1/sessions`, `/answers`, `DELETE`) keep the submitted source, so the canned
  * improve_resume proposal rewrites the source's own tagline (original value as the precondition) and
- * adds one skill that needs confirmation. The canned tailor_resume result rewrites the tagline, leaves out
+ * adds one skill that needs confirmation. The improve_profile proposal (MDI-646) rewrites the tagline from the
+ * answer to r1-q1, adds the skill "Mentoring" (needs confirmation) and the tool "Kubernetes" (does not). The canned tailor_resume result rewrites the tagline, leaves out
  * the first skill, and reports one covered and one missing requirement.
  */
 
@@ -176,6 +177,75 @@ function cannedResult(job) {
           omissions: [],
           document: null,
           summary: 'Two suggestions: a clearer summary and one skill from your answers.',
+        },
+      };
+    }
+    case 'analyze_resume':
+      return { findings: [], priorities: [] };
+    case 'improve_profile': {
+      // Profile improvement after Save profile (MDI-646): a tagline from the answer to r1-q1, an added skill
+      // that needs its claim confirmed, and an added tool that does not.
+      const session = llm.sessions.get(request.sessionId);
+      const source = session?.source ?? { source: { kind: 'profile', id: crypto.randomUUID(), revision: 'unsaved' }, document: { person: {} } };
+      const answerEvidence = {
+        sourceKind: 'answer',
+        sourceHash: '4'.repeat(64),
+        entityId: null,
+        field: null,
+        page: null,
+        block: null,
+        start: 0,
+        end: 1,
+        originalStart: null,
+        originalEnd: null,
+        excerpt: 'answer',
+        clientSupplied: false,
+        questionId: 'r1-q1',
+        answerRevisionId: crypto.randomUUID(),
+      };
+      return {
+        proposal: {
+          proposalId: crypto.randomUUID(),
+          source: source.source,
+          sourceHash: '5'.repeat(64),
+          applyTarget: { kind: 'profile', profileId: source.source.id, baseRevision: source.source.revision },
+          changes: [
+            {
+              type: 'field',
+              changeKind: 'rewrite',
+              id: 'profile-tagline',
+              target: { section: 'person', entityId: null, field: 'tagline' },
+              originalValue: source.document.person?.tagline ?? null,
+              proposedValue: 'Engineer whose tools reach thousands of people.',
+              reason: 'Your answer says how many people used your work.',
+              factIds: [],
+              evidence: [answerEvidence],
+              confirmation: { required: false, claims: [] },
+            },
+            {
+              type: 'add_entity',
+              changeKind: 'factual_addition',
+              id: 'profile-skill',
+              addition: { section: 'skills', entity: { id: 'new:skills:0', name: 'Mentoring' } },
+              reason: 'You mentioned coaching new engineers.',
+              factIds: [],
+              evidence: [answerEvidence],
+              confirmation: { required: true, claims: [{ id: 'claim-mentoring', text: 'You mentor engineers.' }] },
+            },
+            {
+              type: 'add_entity',
+              changeKind: 'factual_addition',
+              id: 'profile-tool',
+              addition: { section: 'tools', entity: { id: 'new:tools:0', name: 'Kubernetes' } },
+              reason: 'Your role mentions running services.',
+              factIds: [],
+              evidence: [],
+              confirmation: { required: false, claims: [] },
+            },
+          ],
+          omissions: [],
+          document: null,
+          summary: 'Three suggestions for your profile.',
         },
       };
     }
@@ -461,7 +531,7 @@ export function handleLlmApi(request, url, body, send) {
 }
 
 function contextView(session) {
-  return { contextRevisionId: session.contextRevisionId, sessionId: session.sessionId, contextHash: '3'.repeat(64), sourceHash: '4'.repeat(64), jobDescriptionHash: null, answerRevisionId: null, createdAt: session.createdAt };
+  return { contextRevisionId: session.contextRevisionId, sessionId: session.sessionId, contextHash: '3'.repeat(64), sourceHash: '4'.repeat(64), jobDescriptionHash: null, answerRevisionId: session.answerRevisionId ?? null, createdAt: session.createdAt };
 }
 
 function sessionView(session) {
@@ -522,8 +592,13 @@ function handleSession(request, match, owner, body, send) {
       return true;
     }
     session.contextRevisionId = crypto.randomUUID();
+    session.answerRevisionId = crypto.randomUUID();
     llm.stats.answers += 1;
     send(201, contextView(session));
+    return true;
+  }
+  if (request.method === 'GET' && !answers) {
+    send(200, sessionView(session));
     return true;
   }
   if (request.method === 'DELETE' && !answers) {

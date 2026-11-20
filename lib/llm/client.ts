@@ -100,6 +100,12 @@ export function createLlmClient(fetcher: LlmFetch = authedFetch) {
       return read(response, sessionSchema);
     },
 
+    /** GET /sessions/{id}: the session with its latest context revision. */
+    async getSession(sessionId: string): Promise<LlmSession> {
+      const response = await send(fetcher, `/sessions/${encodeURIComponent(sessionId)}`, { method: 'GET' });
+      return read(response, sessionSchema);
+    },
+
     /** POST /sessions/{id}/answers: the answers to one question set, as a new context revision. */
     async submitAnswers(
       sessionId: string,

@@ -44,6 +44,22 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_credits TO service_role;
 -- anon: none
 ```
 
+### Flags (read only)
+
+`profile_ai_improvements` (MDI-644) — the same tier as `user_credits`:
+authenticated reads its own row (RLS) so the account page can show or hide
+the "Make your profile stronger" card. Writes go only through the
+`SECURITY DEFINER` RPCs `claim_profile_improvement`,
+`confirm_profile_improvement`, `release_profile_improvement`,
+`mark_profile_improvement_used` and `apply_llm_proposal`.
+
+```sql
+REVOKE ALL ON TABLE public.profile_ai_improvements FROM public, anon, authenticated;
+GRANT SELECT ON public.profile_ai_improvements TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profile_ai_improvements TO service_role;
+-- anon: none
+```
+
 ### Server-side only (`credit_prices`)
 
 Price catalog for paid actions. No Data API grants — invisible to
@@ -74,12 +90,22 @@ GRANT EXECUTE ON FUNCTION public.generate_pdf(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.finalize_pdf(uuid, text, text) TO authenticated;
 REVOKE ALL ON FUNCTION public.apply_llm_proposal(jsonb) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.apply_llm_proposal(jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.claim_profile_improvement(text) FROM public, anon;
+REVOKE ALL ON FUNCTION public.confirm_profile_improvement(text, uuid) FROM public, anon;
+REVOKE ALL ON FUNCTION public.release_profile_improvement(text) FROM public, anon;
+REVOKE ALL ON FUNCTION public.mark_profile_improvement_used(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.claim_profile_improvement(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.confirm_profile_improvement(text, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.release_profile_improvement(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mark_profile_improvement_used(uuid) TO authenticated;
 ```
 
 `apply_llm_proposal(p_request jsonb)` (MDI-222) is `SECURITY DEFINER`. It
 saves an accepted LLM proposal for `auth.uid()` and its receipt in one
 transaction, and returns the receipt as `JSON`. A second call for the same
 proposal returns the first receipt (`replayed: true`) and writes nothing.
+Since MDI-644 it also applies `improve_profile`, only after the caller's
+free profile improvement is used.
 
 Auth hook (MDI-440). Only Supabase Auth runs it; clients cannot call it
 or read a user's plan:
@@ -126,6 +152,7 @@ the GraphQL `JSON` scalar (serialized string).
 | `credit_prices` | none | none | none | `20261008000300_resumes_credits.sql` (server-side) |
 | `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
 | `llm_proposal_applications` | none | SELECT | all | `20261112000100_llm_proposal_applications.sql` (rows written only by `apply_llm_proposal`) |
+| `profile_ai_improvements` | none | SELECT | all | `20261120000100_profile_ai_improvement.sql` (rows written only by the profile improvement RPCs and `apply_llm_proposal`) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

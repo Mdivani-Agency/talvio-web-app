@@ -324,12 +324,12 @@ link). The row outlives the LLM service's own retention.
 | `job_id` | `uuid` | The improve or tailor job |
 | `session_id` | `uuid` | The LLM session |
 | `idempotency_key` | `text not null` | 8–128 characters |
-| `operation` | `text not null` | `improve_resume` or `tailor_resume` |
+| `operation` | `text not null` | `improve_profile`, `improve_resume` or `tailor_resume` |
 | `source` | `jsonb not null` | Contract `SourceRef` the proposal was made from |
-| `target` | `jsonb not null` | Contract apply target (`resume_draft` or `new_resume`) |
-| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; the resume written |
-| `base_revision` | `timestamptz` | `resumes.updated_at` checked before an improve; null for a new resume |
-| `resulting_revision` | `timestamptz not null` | `resumes.updated_at` after the write |
+| `target` | `jsonb not null` | Contract apply target (`profile`, `resume_draft` or `new_resume`) |
+| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; the resume written; null for a profile |
+| `base_revision` | `timestamptz` | `resumes.updated_at` checked before an improve; for a profile, the target's `baseRevision` as sent (recorded, not enforced); null for a new resume |
+| `resulting_revision` | `timestamptz not null` | `resumes.updated_at` (or `profiles.updated_at`) after the write |
 | `applied_change_ids` | `text[] not null default '{}'` | Accepted change ids |
 | `accepted_omission_ids` | `text[] not null default '{}'` | Tailoring omissions the user did not keep |
 | `confirmed_claim_ids` | `text[] not null default '{}'` | Claims the user confirmed |
@@ -343,5 +343,50 @@ returns the earlier receipt when there is one. `improve_resume` writes
 generated, and its `updated_at` still equals `resume.expectedRevision`
 (errors `resume_not_found`, `resume_generated`,
 `resume_generation_in_progress`, `resume_changed`). `tailor_resume` inserts a
-`job_specific` resume with `resume.clientDraftId`. Anything malformed raises
-`invalid_apply_request`. Credits are not touched.
+`job_specific` resume with `resume.clientDraftId`. `improve_profile`
+([MDI-644](https://linear.app/mdivani/issue/MDI-644)) takes
+`target: { kind: 'profile', profileId, baseRevision }` and `profile`, a
+`save_profile` payload: it writes it through `save_profile` in the same
+transaction, last-write-wins (profiles have no revision token in v1), and sets
+`profile_ai_improvements.applied_at`. It raises `profile_not_found` when
+`profileId` is not the caller's profile, and `profile_improvement_not_used`
+when the caller's improvement is not used or the request's `jobId` is not the
+admitted job. The receipt's target is `{ kind: 'profile', profileId }`.
+Anything malformed raises `invalid_apply_request`. Credits are not touched.
+
+## `profile_ai_improvements`
+
+The once-per-account free profile improvement
+(`20261120000100_profile_ai_improvement.sql`,
+[MDI-644](https://linear.app/mdivani/issue/MDI-644), epic
+[MDI-643](https://linear.app/mdivani/issue/MDI-643)). At most one row per
+user. `used_at` is the flag: it is set when the LLM service admits the
+`improve_profile` job and is never cleared by any function. Owner `SELECT`
+only (`profile_ai_improvementsCollection`, for the account page entry card);
+rows are written only by the RPCs below and `apply_llm_proposal`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `user_id` | `uuid` | PK, FK → `auth.users(id)` on delete cascade |
+| `client_request_id` | `text not null` | The `improve_profile` job's `Idempotency-Key`; 8–128 characters |
+| `job_id` | `uuid` | The admitted `improve_profile` job |
+| `claimed_at` | `timestamptz not null default now()` | When the current request claimed it |
+| `used_at` | `timestamptz` | Set with `job_id`; the flag |
+| `applied_at` | `timestamptz` | Set when accepted edits are saved; requires `used_at` (check) |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+RPCs (all `SECURITY DEFINER`, `VOLATILE`, for `auth.uid()`, serialized per
+user; `invalid_profile_improvement_request` for a missing or malformed id):
+
+- `claim_profile_improvement(p_client_request_id text) returns text`:
+  `claimed` (no row; or an unconfirmed claim older than 2 minutes, taken
+  over), `replay` (same request id, not used), `used`, or `busy` (another
+  request holds a claim younger than 2 minutes).
+- `confirm_profile_improvement(p_client_request_id text, p_job_id uuid) returns void`:
+  sets `job_id` and `used_at`, inserting or taking over the row. A row that is
+  already used is left as it is. Idempotent.
+- `release_profile_improvement(p_client_request_id text) returns void`:
+  deletes the caller's row only while it is unused and holds that request id.
+- `mark_profile_improvement_used(p_job_id uuid default null) returns void`: reconciliation
+  when the LLM service reports the improvement already used; sets `used_at`
+  (and `job_id` when none is stored). `p_job_id` may be null.
