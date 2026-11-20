@@ -236,7 +236,9 @@ type Mutation {
     """Restricts the mutation's impact to records matching the criteria"""
     filter: experiencesFilter
   ): experiencesDeleteResponse!
-  """Deletes zero or more records from the `headline_achievements` collection"""
+  """
+  Deletes zero or more records from the `headline_achievements` collection
+  """
   deleteFromheadline_achievementsCollection(
     """
     The maximum number of records in the collection permitted to be affected
