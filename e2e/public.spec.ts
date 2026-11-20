@@ -81,6 +81,7 @@ test('PUB-01 public pages have headings, navigation, and a not-found state', asy
   expect(privacyText).toContain('Amazon Bedrock in the United States');
   expect(privacyText).toContain('sent to Anthropic');
   expect(privacyText).toContain('uploaded files within 24 hours');
+  expect(privacyText).toContain('a record that your account has used it');
   expect(privacyText).not.toContain('OpenAI');
 
   const missing = await page.goto('/this-page-does-not-exist');

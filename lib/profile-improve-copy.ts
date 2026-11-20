@@ -11,6 +11,11 @@ export const RESUME_HREF = '/resume';
 
 export const IMPROVE_EYEBROW = 'Make your profile stronger';
 
+/* Account page card (OBA-card), shown until the improvement is used */
+export const CARD_BODY = 'Answer up to 5 questions and get suggested edits. Free, once per account.';
+export const CARD_START_LABEL = 'Answer a few questions';
+export const CARD_CONTINUE_LABEL = 'Continue the questions';
+
 /* Offer */
 export const PROFILE_SAVED_BANNER = 'Profile saved. Every resume you create starts from it.';
 export const FREE_ONCE_TAG = 'Free, once per account';

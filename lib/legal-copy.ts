@@ -18,7 +18,7 @@ export const PRIVACY_LAST_UPDATED = 'November 2026';
 
 /** Sitemap dates (ISO). Change them with the text and the "Last updated" lines above. */
 export const TERMS_LAST_MODIFIED = '2026-11-19';
-export const PRIVACY_LAST_MODIFIED = '2026-11-19';
+export const PRIVACY_LAST_MODIFIED = '2026-11-20';
 
 /** Page labels around the documents. They are not part of the legal text. */
 export const LEGAL_ON_THIS_PAGE = 'On this page';

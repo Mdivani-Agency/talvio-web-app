@@ -96,6 +96,8 @@ test('PAI-02 Skip for now leaves the profile as saved and the improvement unused
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByText('Builds internal tools.')).toBeVisible();
   expect(await improvement(person.userId)).toBeNull();
+  // The account page keeps the way back in until the improvement is used (MDI-647).
+  await expect(page.getByTestId('improve-card').getByRole('link', { name: 'Answer a few questions' })).toBeVisible();
 
   // Stopping mid-questions also leaves it unused.
   await page.goto('/account/improve');
@@ -106,7 +108,7 @@ test('PAI-02 Skip for now leaves the profile as saved and the improvement unused
   expect(await improvement(person.userId)).toBeNull();
 });
 
-test('PAI-03 after one run, /account/improve shows the used screen', async ({ page, personas }) => {
+test('PAI-03 after one run, the account card is gone and /account/improve shows the used screen', async ({ page, personas }) => {
   const person = persona(personas, 'empty');
   await saveNewProfile(page, person);
 
@@ -117,6 +119,7 @@ test('PAI-03 after one run, /account/improve shows the used screen', async ({ pa
   await page.getByRole('button', { name: 'Keep my profile as it is' }).click();
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByText('Builds internal tools.')).toBeVisible();
+  await expect(page.getByTestId('improve-card')).toHaveCount(0);
 
   await page.goto('/account/improve');
   await expect(page.getByRole('heading', { name: 'You have used your free profile improvement' })).toBeVisible();
