@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { submitWrapper } from '@app/actions/action.utils';
 import { createResume } from '@app/resume/query/use-create-resume';
-import { triggerBrowserDownload, useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { resumePdfFile, useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { downloadPdf } from '@/lib/pdf/pdf-actions';
 import { fetchResume } from '@app/resume/query/use-resume';
 import { saveResumeEdit } from '@app/resume/query/use-save-resume-edit';
 import { ResumeConflictError, updateResume } from '@app/resume/query/use-update-resume';
@@ -56,7 +57,11 @@ export function ResumePreviewPage() {
   // Retry repeats the action that failed: a failed Save must not turn into a paid download.
   const lastAction = useRef<'save' | 'download'>('download');
   const feedbackPrompt = useFeedbackPrompt();
-  const generatePdf = useGenerateResumePdf(session?.user.id, { onNewPdf: feedbackPrompt.notifyNewPdf });
+  const generatePdf = useGenerateResumePdf(session?.user.id, {
+    onNewPdf: feedbackPrompt.notifyNewPdf,
+    // The dialog offers Download and Open once the PDF exists.
+    save: false,
+  });
 
   const signInReturn = useCallback(() => {
     const template = searchParams.get('template');
@@ -160,7 +165,6 @@ export function ResumePreviewPage() {
           try {
             const fresh = await fetchResume(saved.id);
             if (isGeneratedResume(fresh) && fresh.media?.url) {
-              triggerBrowserDownload(fresh.media.url, fresh.name);
               createdRef.current = fresh;
               generatedKeyRef.current = previewRevisionKey(body);
               setSaveStatus('saved');
@@ -249,7 +253,13 @@ export function ResumePreviewPage() {
           saveToAccount();
           return;
         }
-        void createAndDownload({ ...resume });
+        // A retry is not the Generate dialog, so the new PDF is saved right away (it no longer opens a tab).
+        void createAndDownload({ ...resume }).then((generated) => {
+          const file = resumePdfFile(generated);
+          if (file) {
+            void downloadPdf(file);
+          }
+        }).catch(() => undefined);
       }}
       improve={{
         storageKey: session
@@ -275,8 +285,8 @@ export function ResumePreviewPage() {
         lastAction.current = 'download';
         changeResume(body);
         try {
-          await createAndDownload(body);
-          return true;
+          const generated = await createAndDownload(body);
+          return resumePdfFile(generated) ?? true;
         } catch {
           return false;
         }

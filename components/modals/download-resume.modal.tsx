@@ -1,10 +1,11 @@
 import type { AllowanceStatus } from '@/lib/allowance';
 import { allowanceExhaustedLine, generateDialogLine, REDOWNLOAD_DIALOG_LINE } from '@/lib/allowance-copy';
-import { SparklesIcon } from 'lucide-react';
+import { Download, ExternalLink, SparklesIcon } from 'lucide-react';
 import { useId } from 'react';
 
 import { Button, Input, Label } from '@components/ui';
-import { GENERATE_DIALOG } from '@/lib/resume-editor-copy';
+import { GENERATE_DIALOG, PDF_READY_DIALOG } from '@/lib/resume-editor-copy';
+import { pdfFilename } from '@/lib/pdf/save-pdf';
 import { Modal } from '@components/views';
 
 export const DownloadResumeModal = ({
@@ -19,6 +20,7 @@ export const DownloadResumeModal = ({
   label,
   setLabel,
   onImprove,
+  ready,
 }: {
   isOpen: boolean;
   filename: string;
@@ -33,6 +35,11 @@ export const DownloadResumeModal = ({
   setLabel?: (label: string) => void;
   /** Renders Improve with AI first above the generate button (MDI-426). */
   onImprove?: () => void;
+  /**
+   * The PDF exists: the dialog offers Download and Open in new tab instead of the form. Each is its own click, so the
+   * save dialog and the new tab are not blocked after a generation that took seconds.
+   */
+  ready?: { name: string; onDownload: () => void; onOpen: () => void };
 }) => {
   const fileId = useId();
   const labelId = useId();
@@ -42,6 +49,28 @@ export const DownloadResumeModal = ({
     : allowance?.exhausted
       ? allowanceExhaustedLine(allowance.total, allowance.renewsOn)
       : generateDialogLine(allowance?.remaining, allowance?.total);
+
+  if (ready) {
+    return (
+      <Modal title={PDF_READY_DIALOG.title} open={isOpen} onOpenChange={onClose}>
+        <div className="flex flex-col gap-4 text-left">
+          <p className="text-sm text-foreground">{PDF_READY_DIALOG.body(pdfFilename(ready.name))}</p>
+          {/* Stacked full width, Download first: two labels with icons do not fit side by side in this dialog. It
+              closes with X, Escape or a click outside. */}
+          <div className="flex flex-col gap-2">
+            <Button type="button" className="h-[4.4rem] w-full" onClick={ready.onDownload}>
+              <Download aria-hidden="true" className="size-4" />
+              {PDF_READY_DIALOG.download}
+            </Button>
+            <Button type="button" variant="outline" className="h-[4.4rem] w-full" onClick={ready.onOpen}>
+              <ExternalLink aria-hidden="true" className="size-4" />
+              {PDF_READY_DIALOG.open}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal title={GENERATE_DIALOG.title} open={isOpen} onOpenChange={onClose}>

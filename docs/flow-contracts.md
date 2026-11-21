@@ -157,7 +157,19 @@ Preserved from MDI-174. Do not rebuild them.
 - Autosave does not exist. `/resume/[resumeId]` writes on editor change and label blur, and only through `saveResumeEdit`. `/resume` writes when the user downloads.
 - Save and export are separate on a saved resume (edit mutation vs generate route). They are one action on `/resume`: `createAndDownload` inserts or updates, then generates.
 
-`app/account/documents` download of an existing media URL is unchanged. The empty `onDownload` noted in the pre-MDI-174 review is fixed in `edit-resume.tsx`.
+The empty `onDownload` noted in the pre-MDI-174 review is fixed in `edit-resume.tsx`.
+
+### Download and Open
+
+A PDF lives on the media domain, so `<a download>` cannot name or save it (the browser opens a cross-origin file), and a tab opened seconds after the click is blocked. `lib/pdf/save-pdf.ts` and `lib/pdf/pdf-actions.ts` hold the two actions, which every surface uses:
+
+- **Download** (`downloadPdf`, `savePdf`): Chrome and Edge show the native save dialog (`showSaveFilePicker`) when called during a click, before any other `await`; closing it does nothing. Other browsers, or a call that is no longer part of a click, fetch the file and save the same-origin copy under its name (Downloads, or the browser's own "ask where" prompt).
+- **Open** (`openPdfInTab`, `openPdf`): opens the tab during the click, then shows the fetched copy in it (a stored file is an attachment, so its URL would download). A tab the browser still blocks gets a toast with **Open PDF**, a new click.
+- A file the page cannot fetch (network or CORS) falls back to its own URL in a new tab: an attachment downloads under its stored name, an older file opens.
+- The editor's Generate dialog (`DownloadResumeModal`) turns into **Your PDF is ready** with **Download PDF** and **Open in new tab** once the PDF exists, so both are fresh clicks. A generated resume opens that state straight away from the stored `pdf` (`ResumeEditorShell`). `useGenerateResumePdf(..., { save: false })` on both editor pages; a draft that got its PDF moves to its own URL when the dialog closes.
+- The account page and the tracker's Download PDF use `useGenerateResumePdf`'s default `save`: a re-download saves from the click (save dialog where supported); a new PDF from the dashboard saves under its name once generated.
+- `/account/documents`: the first page (Open) and Download are buttons calling the same actions.
+- New PDFs are stored with `Content-Disposition: attachment` and the file name: `createServerPresignedUpload` asks the media service for `disposition: 'attachment'` and the upload sends the `headers` it signed. A direct link to the file therefore saves it. PDFs from before this keep no disposition.
 
 ## Application tracker (MDI-656, epic MDI-654)
 
@@ -186,7 +198,7 @@ Preserved from MDI-174. Do not rebuild them.
 
 Behind `NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT` (`featureFlags().feedbackPrompt`, default off; local E2E builds turn it on). Epic [MDI-650](https://linear.app/mdivani/issue/MDI-650); the database side is MDI-651 (`user_feedback`, `feedback_prompt_state`).
 
-- **Trigger:** only a newly generated PDF. `/api/resume/generate-pdf` returns `generated: true` only when `finalize_pdf` ran. A stored URL, a free re-download and a file recovered after a lost response return `generated: false`. `useGenerateResumePdf(userId, { onNewPdf })` calls `onNewPdf` after the browser download has started. The new-resume page (`resume-page.tsx`) and the saved-resume editor (`edit-resume.tsx`) pass it. The dashboard's Generate PDF does not.
+- **Trigger:** only a newly generated PDF. `/api/resume/generate-pdf` returns `generated: true` only when `finalize_pdf` ran. A stored URL, a free re-download and a file recovered after a lost response return `generated: false`. `useGenerateResumePdf(userId, { onNewPdf })` calls `onNewPdf` once the new PDF exists (after it is saved, when the hook saves). The new-resume page (`resume-page.tsx`) and the saved-resume editor (`edit-resume.tsx`) pass it. The dashboard's Generate PDF does not.
 - **Order:** `FeedbackPromptProvider` (in `app/resume/layout.tsx`, so it survives the editor moving to a new resume id) calls `feedback_prompt_due`. When the answer is `due`, it waits for the Generate dialog to close (`ResumeEditorShell` reports it), calls `record_feedback_prompt`, and opens the prompt only when that returns `recorded`. The prompt is counted when it opens, so Close, Escape, "Not now" and sending a message all count.
 - **Never in the way:** the download has already started before the check. A failed check or record call shows nothing.
 - **One prompt for everyone** (`components/modals/feedback.modal.tsx`, copy in `lib/feedback-copy.ts`). It offers "Write a review on Trustpilot" (`TRUSTPILOT_REVIEW_URL`, new tab, then `record_trustpilot_click`), "Tell us what went wrong" (a form in place: `submit_feedback` through `submitWrapper`, with the resume id) and "Not now". It has no rating, and nothing changes who sees the Trustpilot button. After a message is sent, the prompt thanks the user and still offers the Trustpilot link.

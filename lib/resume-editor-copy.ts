@@ -117,9 +117,24 @@ export const GENERATE_DIALOG = {
   labelHint: 'Only you see it, in your documents list.',
   redownloadsFree: 'Re-downloads of a generated PDF are always free.',
   cancel: 'Cancel',
-  generate: 'Generate and download',
+  generate: 'Generate PDF',
   download: 'Download',
   improve: 'Improve with AI first',
+} as const;
+
+/** The Generate dialog once the PDF exists (a new one, or a resume that already has one). */
+export const PDF_READY_DIALOG = {
+  title: 'Your PDF is ready',
+  body: (fileName: string) => `${fileName} is saved in your account. Download it, or open it in a new tab.`,
+  download: 'Download PDF',
+  open: 'Open in new tab',
+} as const;
+
+/** Toasts for Download and Open on any generated PDF (editor, account page, documents, applications). */
+export const PDF_ACTION_MESSAGES = {
+  failed: 'Could not load the PDF. Check your connection and try again.',
+  tabBlocked: 'Your browser blocked the new tab.',
+  openAnyway: 'Open PDF',
 } as const;
 
 /** The Content tab's accordion, in order. `prefixes` are the form paths each section owns. */

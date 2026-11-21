@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const preview = vi.hoisted(() => ({ current: { status: 'loading' } as import('../hooks/use-pdf-preview').PdfPreview }));
 vi.mock('../hooks/use-pdf-preview', () => ({ usePdfPreview: () => preview.current }));
+const pdf = vi.hoisted(() => ({ download: vi.fn(), open: vi.fn() }));
+vi.mock('@/lib/pdf/pdf-actions', () => ({ downloadPdf: pdf.download, openPdfInTab: pdf.open }));
 
 import { DocumentGrid } from './document-grid';
 import { DocumentPreview } from './document-preview';
@@ -23,6 +25,7 @@ const DOCUMENTS = [
 describe('documents views', () => {
   afterEach(() => {
     cleanup();
+    vi.clearAllMocks();
     preview.current = { status: 'loading' };
   });
 
@@ -36,13 +39,20 @@ describe('documents views', () => {
     }
 
     const first = within(cards[0]);
-    expect(first.getByRole('link', { name: 'Open Library resume' }).getAttribute('href')).toBe(DOCUMENTS[0].publicUrl);
+    const file = { url: DOCUMENTS[0].publicUrl, name: 'Library resume.pdf' };
+    // Buttons, not links: a link to the stored attachment would download on Open and lose the name on Download.
+    expect(first.queryAllByRole('link', { name: /Library resume$/ })).toEqual([]);
+    fireEvent.click(first.getByRole('button', { name: 'Open Library resume' }));
+    expect(pdf.open).toHaveBeenCalledWith(file);
     expect(first.getByText('Library resume.pdf')).toBeTruthy();
     expect(first.getByText('Added Nov 6, 2026')).toBeTruthy();
-    for (const download of first.getAllByRole('link', { name: 'Download Library resume' })) {
-      expect(download.getAttribute('href')).toBe(DOCUMENTS[0].publicUrl);
-      expect(download.getAttribute('target')).toBe('_blank');
+    const downloads = first.getAllByRole('button', { name: 'Download Library resume' });
+    expect(downloads).toHaveLength(2);
+    for (const download of downloads) {
+      fireEvent.click(download);
     }
+    expect(pdf.download).toHaveBeenCalledTimes(2);
+    expect(pdf.download).toHaveBeenCalledWith(file);
 
     // No date from the media service: the card says "PDF".
     expect(within(cards[1]).getByText('PDF')).toBeTruthy();
@@ -72,10 +82,11 @@ describe('documents views', () => {
     preview.current = { status: 'failed' };
     render(<DocumentGrid documents={[DOCUMENTS[0]]} />);
     expect(screen.getByText('Preview not available')).toBeTruthy();
-    // The desktop button and the phone icon link both download; CSS shows one of them per breakpoint.
-    const downloads = screen.getAllByRole('link', { name: 'Download Library resume' });
+    // The desktop button and the phone icon button both download; CSS shows one of them per breakpoint.
+    const downloads = screen.getAllByRole('button', { name: 'Download Library resume' });
     expect(downloads).toHaveLength(2);
-    for (const link of downloads) expect(link.getAttribute('href')).toBe(DOCUMENTS[0].publicUrl);
+    fireEvent.click(downloads[0]!);
+    expect(pdf.download).toHaveBeenCalledWith({ url: DOCUMENTS[0].publicUrl, name: 'Library resume.pdf' });
   });
 
   it('names the first page on the card and keeps the phone thumbnail decorative', () => {
