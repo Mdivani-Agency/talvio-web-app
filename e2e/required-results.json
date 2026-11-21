@@ -1,5 +1,7 @@
 {
-  "projects": ["chromium"],
+  "projects": [
+    "chromium"
+  ],
   "focused": [
     {
       "project": "mobile-chromium",
@@ -30,7 +32,19 @@
     "PROF-04 provider failures recover without stranding the profile",
     "PROF-04 a failed save keeps the form and does not duplicate the profile",
     "PROF-05 pasted resume text imports within the 2,000-character limit",
-    "RES-01 creates a resume without a profile and keeps it after reload",
+    "PAI-01 answers one question, keeps the chosen edits, confirms a claim and saves them to the profile",
+    "PAI-02 Skip for now leaves the profile as saved and the improvement unused",
+    "PAI-03 after one run, the account card is gone and /account/improve shows the used screen",
+    "APP-01 adds a card, moves it with the menu to Interview and then Closed as Rejected, and keeps it after reload",
+    "APP-02 label filters keep cards with every picked label, survive a reload and clear; search combines",
+    "APP-03 dragging moves a card between columns, asks for the outcome on Closed, and keeps the order",
+    "APP-04 on a phone, stages are tabs and cards move with the menu",
+    "APP-05 the detail panel edits every field, links a resume, adds a link, a label and notes, and shows history",
+    "APP-06 the panel returns focus to the card and Delete removes the card and its notes but keeps the resume",
+    "APP-07 after a new PDF only the tracker bar shows, and Add to tracker makes a card with the resume linked",
+    "APP-08 a resume already on a card gets no tracker bar, and the review prompt shows instead",
+    "RES-01 a signed-in user without a profile is sent to onboarding, then creates a resume",
+    "RES-01 Save resume stores a new resume without a PDF or a credit",
     "RES-01 prefills a resume from the profile and saves the edited draft",
     "RES-01 guest download returns to the resume and can keep the draft",
     "RES-01 guest download keeps a template return path",
@@ -50,6 +64,10 @@
     "RES-12 a guest is sent to sign-in and gets the draft back",
     "RES-13 a generated resume forks a draft first, and the draft takes the edit",
     "RES-14 reload keeps the session, and an edit made since drops the suggestion it would overwrite",
+    "RES-15 reorders sections by keyboard, re-renders the preview, keeps the order after reload and resets it",
+    "RES-16 scales the form panel and the preview with the screen",
+    "RES-17 Fit width scrolls the page, keeps the controls pinned and survives a reload",
+    "RES-18 keeps Fit width off the layout below lg",
     "PDF-01 generates a final PDF from the editor and the dashboard",
     "PDF-02 charges exactly 30, blocks 29 and 0 with the renewal date, and rejects a stale click",
     "PDF-03 re-downloads the stored file without a new charge or upload",
@@ -71,13 +89,19 @@
     "BLOG-08 the API token never reaches the browser: bundles, pages, RSC payloads or requests",
     "BLOG-09 the blog works without JavaScript and long titles fit a phone",
     "BLOG-10 Talvio calls the blog API only with its token and valid list windows",
-    "TPL-01 level tabs and every template open the matching resume preview",
+    "TPL-01 filters and every template open the matching resume preview",
     "TPL-01 a restored editor draft uses the newly selected template once",
     "TPL-01 a restored import draft uses the newly selected template",
     "TPL-02 a missing or invalid template falls back without getting stuck",
+    "TPL-03 an older level key still opens, and shows as its style in the Design tab",
     "DOC-01 documents show an empty library, a failed list, and a downloadable file",
     "UX-01 named controls, keyboard entry, and dialog escape",
     "UX-02 mobile sign-in, editing, download, and delete stay on screen",
-    "UX-03 failed profile, resume, and document reads recover, and a pending generate stays disabled"
+    "UX-03 failed profile, resume, and document reads recover, and a pending generate stays disabled",
+    "FB-01 a new PDF asks for a Trustpilot review, and a click stops every later ask",
+    "FB-02 Tell us what went wrong stores the message and still offers Trustpilot",
+    "FB-03 Not now counts as a prompt: no ask on the next PDF within 30 days",
+    "FB-04 Escape closes the prompt and a free re-download never asks",
+    "PUB-12 with trustpilotReviews on and no listed reviews, the homepage has no reviews section or review data"
   ]
 }

@@ -8,6 +8,5 @@ export async function generateResumePreview(input: PreviewRenderInputs) {
   return resumeService.generate(input.resume, template.template, {
     color: input.color,
     fontSize: input.fontSize,
-    isPreview: true,
   });
 }

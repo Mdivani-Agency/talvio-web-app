@@ -9,9 +9,12 @@ import { DownloadResumeModal } from '@components/modals';
 import { normalizeResumeLabel } from '@lib/adapters/resume.adapter';
 import { featureFlags } from '@lib/flags';
 import type { ResumeFieldIssue } from '@lib/models/resume-document';
-import { resolveAvailableTemplate, templateLevelFromKey, type TemplateLevel } from '@lib/resume/resolve-editor';
+import { resolveAvailableTemplate } from '@lib/resume/resolve-editor';
+import type { OptionalTemplateField } from '@lib/template-fields';
+import type { ResumeSectionId } from '@/lib/resume-editor-copy';
 import type { SaveStatus } from '@lib/resume/save-queue';
-import { listResumeTemplates } from '@lib/templates';
+import { colorAfterTemplateChange, listResumeTemplates } from '@lib/templates';
+import { CurrentTemplateProvider } from '@app/account/create/views/forms/template-context';
 import type { PreviewDto } from '@lib/types';
 import { cn } from '@lib/utils';
 
@@ -19,6 +22,7 @@ import { DraftBanner } from '../components/draft-banner';
 import { EditorTabs, type EditorView } from '../components/editor-tabs';
 import { EditorTopBar } from '../components/editor-top-bar';
 import { ResumePreview } from '../components/resume-preview';
+import { useFeedbackPrompt } from '../providers/feedback-prompt-provider';
 import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../hooks/use-service-improve';
 import { DesignPanel } from './design-panel';
 import { EditResumeView } from './edit-resume-view';
@@ -50,7 +54,6 @@ export type ResumeImproveControls = {
 type ResumeEditorShellProps = {
   document: PreviewDto;
   formKey: string;
-  level?: TemplateLevel;
   issues?: ResumeFieldIssue[];
   readOnly?: boolean;
   family?: ResumeFamilyControls | null;
@@ -61,6 +64,9 @@ type ResumeEditorShellProps = {
   onRetrySave?: () => void;
   onChange: (patch: Partial<PreviewDto>) => void;
   onDownload: (filename: string, label?: string) => boolean | void | Promise<boolean | void>;
+  /** Save to the account without a PDF. Only a new resume passes it: a saved one saves as you edit. */
+  onSave?: () => void;
+  savePending?: boolean;
   improve?: ResumeImproveControls | null;
   /** A visitor without a session: the top bar links home and offers Sign in. */
   guest?: boolean;
@@ -71,7 +77,6 @@ type ResumeEditorShellProps = {
 export function ResumeEditorShell({
   document,
   formKey,
-  level,
   issues,
   readOnly = false,
   family,
@@ -82,6 +87,8 @@ export function ResumeEditorShell({
   onRetrySave,
   onChange,
   onDownload,
+  onSave,
+  savePending = false,
   improve,
   guest = false,
   signInHref,
@@ -91,6 +98,11 @@ export function ResumeEditorShell({
   // The AI overlay sits in the panel, so a session started from the phone's Preview tab brings the panel back.
   const showPanel = () => setView((current) => (current === 'preview' ? 'content' : current));
   const [downloadOpen, setDownloadOpen] = useState(false);
+  // The review prompt (MDI-652) waits for this dialog to close.
+  const { setGenerateDialogOpen } = useFeedbackPrompt();
+  useEffect(() => {
+    setGenerateDialogOpen(downloadOpen);
+  }, [downloadOpen, setGenerateDialogOpen]);
   const [downloadName, setDownloadName] = useState(document.name);
   const [downloadLabel, setDownloadLabel] = useState(document.label ?? '');
   const { allowance } = useAllowance();
@@ -143,7 +155,15 @@ export function ResumeEditorShell({
   });
 
   const templateItem = resolveAvailableTemplate(document.template);
-  const galleryLevel = level ?? templateLevelFromKey(templateItem.key);
+  // Fill them in: the Content tab opens on the section that holds the field.
+  const [openSection, setOpenSection] = useState<ResumeSectionId | undefined>(undefined);
+  const fillOptionalField = (field: OptionalTemplateField) => {
+    if (field === 'skillGroups' && !document.resume.profile.groupSkills) {
+      onChange({ resume: { ...document.resume, profile: { ...document.resume.profile, groupSkills: true } } });
+    }
+    setOpenSection(field === 'headlineAchievements' ? 'about' : field === 'skillGroups' ? 'highlights' : 'experience');
+    setView('content');
+  };
 
   const requestDownload = () => {
     if (isGenerated) {
@@ -176,13 +196,16 @@ export function ResumeEditorShell({
           }
         }}
         onDownload={requestDownload}
+        onSave={readOnly ? undefined : onSave}
+        savePending={savePending}
         onImprove={improveEnabled ? requestImprove : undefined}
         improveDisabled={ai.active}
       />
       {family ? <DraftBanner family={family} /> : null}
       <EditorTabs view={view} onView={setView} hasIssues={hasIssues} variant="phone" className="px-4 pt-3 pb-2 md:hidden" />
-      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,40rem)_minmax(0,1fr)] lg:grid-cols-[48rem_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,40rem)_minmax(0,1fr)] lg:grid-cols-[clamp(51.2rem,42vw,88rem)_minmax(0,1fr)]">
         <div
+          data-testid="editor-panel"
           className={cn(
             'relative min-h-0 flex-col md:flex md:border-r md:border-border',
             view === 'preview' ? 'hidden' : 'flex',
@@ -208,23 +231,27 @@ export function ResumeEditorShell({
             {view === 'design' ? (
               <DesignPanel
                 templates={templates}
-                level={galleryLevel}
+                sectionOrder={document.resume.sectionOrder}
+                onFillOptionalField={readOnly ? undefined : fillOptionalField}
                 template={document.template}
                 color={document.color}
                 fontSize={document.fontSize}
                 disabled={readOnly}
-                onTemplate={(key) => onChange({ template: key })}
+                onTemplate={(key) => onChange({ template: key, color: colorAfterTemplateChange(document, key) })}
                 onColor={(color) => onChange({ color })}
                 onFontSize={(fontSize) => onChange({ fontSize })}
               />
             ) : (
-              <EditResumeView
-                key={`${formKey}:ai${aiRevision}`}
-                className="h-full min-h-0"
-                issues={issues}
-                defaultValues={document.resume}
-                onSubmit={(resume) => onChange({ resume })}
-              />
+              <CurrentTemplateProvider template={{ key: templateItem.key, name: templateItem.name }}>
+                <EditResumeView
+                  key={`${formKey}:ai${aiRevision}`}
+                  className="h-full min-h-0"
+                  issues={issues}
+                  openSection={openSection}
+                  defaultValues={document.resume}
+                  onSubmit={(resume) => onChange({ resume })}
+                />
+              </CurrentTemplateProvider>
             )}
           </div>
         </div>

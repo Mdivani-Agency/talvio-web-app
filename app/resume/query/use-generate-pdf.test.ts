@@ -15,7 +15,7 @@ vi.mock('./use-resume', () => ({
   fetchResume,
 }));
 
-import { generateAndPersistPdf } from './use-generate-pdf';
+import { generateAndPersistPdf, generatePdfFile } from './use-generate-pdf';
 
 const draft: Resume = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -90,5 +90,32 @@ describe('generateAndPersistPdf', () => {
       url: 'https://media.talvio.co/stored.pdf',
       key: 'stored.pdf',
     });
+  });
+
+  it('reports a new PDF only when the server generated one', async () => {
+    authedFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ url: 'https://media.talvio.co/new.pdf', key: 'resume/new.pdf', generated: true }),
+    });
+    await expect(generatePdfFile(draft)).resolves.toMatchObject({ generated: true });
+
+    authedFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ url: 'https://media.talvio.co/old.pdf', key: '', generated: false }),
+    });
+    await expect(generatePdfFile(draft)).resolves.toMatchObject({ generated: false });
+
+    await expect(
+      generatePdfFile({ ...draft, media: { url: 'https://media.talvio.co/ann.pdf', key: 'ann.pdf' } }),
+    ).resolves.toMatchObject({ generated: false });
+  });
+
+  it('does not report a new PDF when the file is recovered after a lost response', async () => {
+    authedFetch.mockRejectedValueOnce(new Error('network'));
+    fetchResume.mockResolvedValueOnce({
+      ...draft,
+      media: { url: 'https://media.talvio.co/new.pdf', key: 'resume/new.pdf' },
+    });
+    await expect(generatePdfFile(draft)).resolves.toMatchObject({ generated: false });
   });
 });

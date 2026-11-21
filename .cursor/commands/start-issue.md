@@ -8,7 +8,7 @@ Do this before writing any code, and always before starting an epic or its first
 
 1. Read the Linear ticket: description, acceptance criteria, comments, dependencies and linked documents.
 2. If it has a parent, read the parent epic. If it is an epic, read every sub-issue and its order and dependencies.
-3. Explore Notion docs when they exist: pages linked from the ticket or epic, and the relevant domain pages under the Notion page titled “Talvio” (see “Documentation organization”). If no Notion docs exist, say so and continue.
+3. Explore Notion docs when they exist: pages linked from the ticket or epic, and the relevant pages in the groups under the Notion page titled “Talvio” (see “Documentation organization”). Architecture describes how the system is built today. If no Notion docs exist, say so and continue.
 4. Read the repository instructions (`AGENTS.md`) and inspect the current implementation.
 5. Resolve differences between the ticket, the docs and the code. Do not assume older documentation describes current behavior. Ask only when a material ambiguity cannot be resolved from available evidence.
 6. Move the ticket to **In Progress** when implementation begins. Do not change **Done**, **Canceled** or **Duplicate** tickets without an explicit request.
@@ -82,7 +82,8 @@ Local:
 
 After the work is ready for review, check whether the relevant Talvio documentation is missing, stale or affected by the change.
 
-- Update an existing domain page when possible. Create a new child page under Talvio only when the topic needs its own scope.
+- Update an existing page when possible. Create a new page only when the topic needs its own scope, in the group that fits (see “Documentation organization”). Never create a page directly under Talvio.
+- When the change alters how the system is built, update the matching sub-page under Architecture as well.
 - Document the resulting behavior and architecture, not a chronological account of implementation.
 - Clearly distinguish proposed designs, changes merged into a feature branch but not yet into `development`, and behavior merged into `development`.
 - Link the Linear ticket and pull request. For documentation written before the feature branch reaches `development`, label it “Implemented in PR — pending merge to development”.
@@ -91,16 +92,23 @@ After the work is ready for review, check whether the relevant Talvio documentat
 
 ## Documentation organization
 
-This is the authoritative domain list for Talvio Notion pages. Other commands should link here instead of restating it.
+This is the authoritative structure for Talvio Notion pages. Other commands should link here instead of restating it.
 
-- Use the Talvio parent page as a concise index.
-- Organize child pages by domain:
-  - Account and onboarding
-  - Resume editing and PDF generation
-  - LLM orchestration
-  - Data and authentication
-  - Media and email
-  - Infrastructure and deployment
+- The Talvio parent page describes the product and indexes the groups below. Do not add plans, diagrams or architecture notes to it.
+- Every other page lives in one of these groups under Talvio:
+
+| Group | Holds |
+| -- | -- |
+| Architecture | How the system is built today: components, data model, security, APIs, flows, delivery and known limitations. It describes shipped behaviour, not plans |
+| Features | Plans for new or existing product features, and how shipped features behave |
+| Blog | Blog posts and social media posts |
+| Marketing | Positioning, approved public claims, SEO and page copy |
+| Testing and release | Test plans and suites, CI and the deployment gate |
+| Platform and infrastructure | Designs and plans for the database, backend services and cloud infrastructure |
+| Agent workflows | How agents plan, review and implement work |
+
+- If a page fits no group, ask before creating a new group.
+- When you add a page to a group, add a row for it to the “Pages” table on the group page.
 - Give each page a clear purpose and boundary. Split large pages into focused subpages when needed.
 - Use consistent sections where relevant: purpose, current behavior, architecture, contracts, operational guidance, limitations and related links.
 - Maintain one authoritative location for each topic; link to it instead of duplicating content.

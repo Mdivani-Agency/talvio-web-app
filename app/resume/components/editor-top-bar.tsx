@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, Cloud, Download, HardDrive, Pencil, SparklesIcon } from 'lucide-react';
+import { ChevronLeft, Cloud, Download, HardDrive, Pencil, Save, SparklesIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -14,6 +14,8 @@ import {
   IMPROVE_WITH_AI_LABEL,
   RESUME_LABEL_FIELD,
   RETRY_SAVE_LABEL,
+  SAVE_RESUME_LABEL,
+  SAVING_RESUME_LABEL,
   renameResumeLabel,
   saveStatusText,
 } from '@/lib/resume-editor-copy';
@@ -31,13 +33,17 @@ type EditorTopBarProps = {
   onRetrySave?: () => void;
   onRename: (label: string) => void;
   onDownload: () => void;
+  /** Save to the account without a PDF; the button shows only when this is passed. */
+  onSave?: () => void;
+  savePending?: boolean;
   onImprove?: () => void;
   improveDisabled?: boolean;
 };
 
 /**
- * The editor's own top bar: the logo and back link, the resume name (click to rename), the save state in words, and
- * Download PDF. 64px from `md`; 56px on phones, with only back, the title and a Download icon.
+ * The editor's own top bar: the logo and back link, the resume name (click to rename), the save state in words,
+ * Save resume (a new resume only) and Download PDF. 64px from `md`; 56px on phones, with only back, the title and the
+ * Save and Download icons.
  */
 export function EditorTopBar({
   title,
@@ -51,6 +57,8 @@ export function EditorTopBar({
   onRetrySave,
   onRename,
   onDownload,
+  onSave,
+  savePending = false,
   onImprove,
   improveDisabled = false,
 }: EditorTopBarProps) {
@@ -143,6 +151,19 @@ export function EditorTopBar({
           </Button>
         ) : null}
       </div>
+      {onSave ? (
+        <Button
+          type="button"
+          variant="outline"
+          aria-label={SAVE_RESUME_LABEL}
+          onClick={onSave}
+          disabled={savePending}
+          className="h-[4.4rem] min-w-[4.4rem] flex-none px-0 font-semibold md:px-4"
+        >
+          <Save aria-hidden="true" className="size-4" />
+          <span className="hidden md:inline">{savePending ? SAVING_RESUME_LABEL : SAVE_RESUME_LABEL}</span>
+        </Button>
+      ) : null}
       <Button
         type="button"
         aria-label={DOWNLOAD_PDF_LABEL}

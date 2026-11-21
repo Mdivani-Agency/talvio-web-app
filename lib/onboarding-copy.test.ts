@@ -89,8 +89,14 @@ describe('onboarding copy', () => {
       'Remove experience',
       'Remove education',
       'Remove project',
+      'Remove recommendation',
     ]);
-    expect(Object.values(ENTRY_LISTS).map((list) => list.addLabel)).toEqual(['Add experience', 'Add education', 'Add project']);
+    expect(Object.values(ENTRY_LISTS).map((list) => list.addLabel)).toEqual([
+      'Add experience',
+      'Add education',
+      'Add project',
+      'Add recommendation',
+    ]);
     expect(entryRemoveBody('Signal Board')).toBe('Signal Board will be removed. You can add it again later.');
   });
 });

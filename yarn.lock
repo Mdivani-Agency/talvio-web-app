@@ -1580,6 +1580,55 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@dnd-kit/accessibility@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@dnd-kit/accessibility@npm:3.1.1"
+  dependencies:
+    tslib: "npm:^2.0.0"
+  peerDependencies:
+    react: ">=16.8.0"
+  checksum: 10c0/be0bf41716dc58f9386bc36906ec1ce72b7b42b6d1d0e631d347afe9bd8714a829bd6f58a346dd089b1519e93918ae2f94497411a61a4f5e4d9247c6cfd1fef8
+  languageName: node
+  linkType: hard
+
+"@dnd-kit/core@npm:6.3.1":
+  version: 6.3.1
+  resolution: "@dnd-kit/core@npm:6.3.1"
+  dependencies:
+    "@dnd-kit/accessibility": "npm:^3.1.1"
+    "@dnd-kit/utilities": "npm:^3.2.2"
+    tslib: "npm:^2.0.0"
+  peerDependencies:
+    react: ">=16.8.0"
+    react-dom: ">=16.8.0"
+  checksum: 10c0/196db95d81096d9dc248983533eab91ba83591770fa5c894b1ac776f42af0d99522b3fd5bb3923411470e4733fcfa103e6ee17adc17b9b7eb54c7fbec5ff7c52
+  languageName: node
+  linkType: hard
+
+"@dnd-kit/sortable@npm:10.0.0":
+  version: 10.0.0
+  resolution: "@dnd-kit/sortable@npm:10.0.0"
+  dependencies:
+    "@dnd-kit/utilities": "npm:^3.2.2"
+    tslib: "npm:^2.0.0"
+  peerDependencies:
+    "@dnd-kit/core": ^6.3.0
+    react: ">=16.8.0"
+  checksum: 10c0/37ee48bc6789fb512dc0e4c374a96d19abe5b2b76dc34856a5883aaa96c3297891b94cc77bbc409e074dcce70967ebcb9feb40cd9abadb8716fc280b4c7f99af
+  languageName: node
+  linkType: hard
+
+"@dnd-kit/utilities@npm:3.2.2, @dnd-kit/utilities@npm:^3.2.2":
+  version: 3.2.2
+  resolution: "@dnd-kit/utilities@npm:3.2.2"
+  dependencies:
+    tslib: "npm:^2.0.0"
+  peerDependencies:
+    react: ">=16.8.0"
+  checksum: 10c0/9aa90526f3e3fd567b5acc1b625a63177b9e8d00e7e50b2bd0e08fa2bf4dba7e19529777e001fdb8f89a7ce69f30b190c8364d390212634e0afdfa8c395e85a0
+  languageName: node
+  linkType: hard
+
 "@emnapi/core@npm:^1.11.1":
   version: 1.11.3
   resolution: "@emnapi/core@npm:1.11.3"
@@ -3704,13 +3753,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pdf-tlv/resume@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@pdf-tlv/resume@npm:0.2.3"
+"@pdf-tlv/resume@npm:0.4.0":
+  version: 0.4.0
+  resolution: "@pdf-tlv/resume@npm:0.4.0"
   dependencies:
     "@pdf-lib/fontkit": "npm:1.1.1"
     pdf-lib: "npm:1.17.1"
-  checksum: 10c0/5f0848c05a7395cc9011e5d1e33ca53919a3185bf5fd4dd948c17d658a5bcc5ee191bf879297ac8c4f997fe7b599dfec9f4bc52aa0b405fdda0729a0bf743329
+  checksum: 10c0/676e11e1369b5b1190efae5fcc9977efa27cc8de819bff5cd75537cd5d51bc4cf3274b7172e70a2ad2769414109c51905bb6d0c23fb0e31b1148be58d70da109
   languageName: node
   linkType: hard
 
@@ -12537,6 +12586,9 @@ __metadata:
   resolution: "talvio-web@workspace:."
   dependencies:
     "@axe-core/playwright": "npm:4.10.2"
+    "@dnd-kit/core": "npm:6.3.1"
+    "@dnd-kit/sortable": "npm:10.0.0"
+    "@dnd-kit/utilities": "npm:3.2.2"
     "@graphql-codegen/cli": "npm:7.4.1"
     "@graphql-codegen/schema-ast": "npm:6.1.0"
     "@graphql-codegen/typescript": "npm:6.1.0"
@@ -12544,7 +12596,8 @@ __metadata:
     "@graphql-codegen/typescript-operations": "npm:6.1.6"
     "@headlessui/react": "npm:2.2.10"
     "@parcel/watcher": "npm:2.6.0"
-    "@pdf-tlv/resume": "npm:0.2.3"
+    "@pdf-lib/fontkit": "npm:1.1.1"
+    "@pdf-tlv/resume": "npm:0.4.0"
     "@playwright/test": "npm:1.55.1"
     "@radix-ui/react-aspect-ratio": "npm:1.1.15"
     "@radix-ui/react-avatar": "npm:1.2.6"
@@ -12602,6 +12655,7 @@ __metadata:
     markdown-it: "npm:14.1.0"
     next: "npm:16.3.5"
     next-themes: "npm:0.4.6"
+    pdf-lib: "npm:1.17.1"
     pdfjs-dist: "npm:4.10.38"
     react: "npm:19.3.0"
     react-colorful: "npm:5.8.1"

@@ -7,7 +7,7 @@ Planning without implementation uses `/plan` (or read `.cursor/commands/plan.md`
 ## Gather context
 
 1. Read the target, its parent/sub-issues, dependencies, and linked documents.
-2. Check the Notion page titled “Talvio” and the relevant domain documentation.
+2. Check the Notion page titled “Talvio” and the relevant pages in its groups. Architecture describes how the system is built today.
 3. Inspect affected code and current application flows where useful.
 4. Search for overlapping work and completed changes that the proposal must preserve.
 

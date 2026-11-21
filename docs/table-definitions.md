@@ -41,6 +41,7 @@ There is **no intentional drift** from the Notion SQL.
 | `seniority` | `seniority_level not null default 'entry'` | Template tier |
 | `city` | `text` | |
 | `country` | `text` | |
+| `group_skills` | `boolean not null default false` | The "Group skills" switch. Off keeps `skills.group_name`, hidden. `20261120000200` |
 | `created_at` | `timestamptz not null default now()` | |
 | `updated_at` | `timestamptz not null default now()` | trigger `profiles_set_updated_at` |
 
@@ -84,6 +85,7 @@ Indexes:
 | `achievements` | `text[] not null default '{}'` | |
 | `responsibilities` | `text[] not null default '{}'` | |
 | `key_contributions` | `text[] not null default '{}'` | |
+| `stack` | `text[] not null default '{}'` | Technologies of the role, shown by the Technical template. `20261120000200` |
 | `additional_details` | `text` | plain, profile side |
 | `description` | `jsonb` | TipTap |
 | `sort_order` | `int not null default 0` | |
@@ -93,6 +95,8 @@ Indexes:
 Constraints / indexes:
 
 - `experiences_dates_ck`: `is_present = true or end_date is null or end_date >= start_date`
+- `experiences_stack_count_ck`: `cardinality(stack) <= 8`
+- trigger `experiences_validate_stack`: each stack item is 1–30 characters after trimming (a check constraint cannot look inside an array without a helper function, and a public helper would be exposed on GraphQL `Query`)
 - `experiences_user_id_idx (user_id, sort_order)`
 
 ## `educations`
@@ -153,14 +157,30 @@ Index: `recommendations_user_id_idx (user_id, sort_order)`.
 | `id` | `uuid` | PK |
 | `user_id` | `uuid not null` | `references profiles (user_id) on delete cascade` |
 | `name` | `text not null` | |
+| `group_name` | `text` | Optional group, such as "Architecture". `skills_group_name_length_ck`: null or 1–40 characters. `20261120000200` |
 | `sort_order` | `int not null default 0` | |
 | `created_at` | `timestamptz not null default now()` | no `updated_at` |
 
 Index: unique `skills_user_name_uq (user_id, lower(name))`.
 
+## `headline_achievements`
+
+Up to three results shown at the top of the Executive template, such as "1.2 million" / "patients on the platform". Added by `20261120000200_template_optional_fields.sql` ([MDI-664](https://linear.app/mdivani/issue/MDI-664)).
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK, `gen_random_uuid()` |
+| `user_id` | `uuid not null` | `references profiles (user_id) on delete cascade` |
+| `value` | `text not null` | `headline_achievements_value_length_ck`: 1–24 characters after trimming |
+| `label` | `text not null` | `headline_achievements_label_length_ck`: 1–60 characters after trimming |
+| `sort_order` | `int not null default 0` | |
+| `created_at` | `timestamptz not null default now()` | no `updated_at` |
+
+Index: `headline_achievements_user_id_idx (user_id, sort_order)`. Trigger `headline_achievements_enforce_limit` rejects a fourth row per user (SQLSTATE `23514`).
+
 ## `tools`
 
-Same shape as `skills`. Unique `tools_user_name_uq (user_id, lower(name))`.
+Same shape as `skills` (without `group_name`). Unique `tools_user_name_uq (user_id, lower(name))`.
 
 ## `links`
 
@@ -304,12 +324,12 @@ link). The row outlives the LLM service's own retention.
 | `job_id` | `uuid` | The improve or tailor job |
 | `session_id` | `uuid` | The LLM session |
 | `idempotency_key` | `text not null` | 8–128 characters |
-| `operation` | `text not null` | `improve_resume` or `tailor_resume` |
+| `operation` | `text not null` | `improve_profile`, `improve_resume` or `tailor_resume` |
 | `source` | `jsonb not null` | Contract `SourceRef` the proposal was made from |
-| `target` | `jsonb not null` | Contract apply target (`resume_draft` or `new_resume`) |
-| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; the resume written |
-| `base_revision` | `timestamptz` | `resumes.updated_at` checked before an improve; null for a new resume |
-| `resulting_revision` | `timestamptz not null` | `resumes.updated_at` after the write |
+| `target` | `jsonb not null` | Contract apply target (`profile`, `resume_draft` or `new_resume`) |
+| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; the resume written; null for a profile |
+| `base_revision` | `timestamptz` | `resumes.updated_at` checked before an improve; for a profile, the target's `baseRevision` as sent (recorded, not enforced); null for a new resume |
+| `resulting_revision` | `timestamptz not null` | `resumes.updated_at` (or `profiles.updated_at`) after the write |
 | `applied_change_ids` | `text[] not null default '{}'` | Accepted change ids |
 | `accepted_omission_ids` | `text[] not null default '{}'` | Tailoring omissions the user did not keep |
 | `confirmed_claim_ids` | `text[] not null default '{}'` | Claims the user confirmed |
@@ -323,5 +343,173 @@ returns the earlier receipt when there is one. `improve_resume` writes
 generated, and its `updated_at` still equals `resume.expectedRevision`
 (errors `resume_not_found`, `resume_generated`,
 `resume_generation_in_progress`, `resume_changed`). `tailor_resume` inserts a
-`job_specific` resume with `resume.clientDraftId`. Anything malformed raises
-`invalid_apply_request`. Credits are not touched.
+`job_specific` resume with `resume.clientDraftId`. `improve_profile`
+([MDI-644](https://linear.app/mdivani/issue/MDI-644)) takes
+`target: { kind: 'profile', profileId, baseRevision }` and `profile`, a
+`save_profile` payload: it writes it through `save_profile` in the same
+transaction, last-write-wins (profiles have no revision token in v1), and sets
+`profile_ai_improvements.applied_at`. It raises `profile_not_found` when
+`profileId` is not the caller's profile, and `profile_improvement_not_used`
+when the caller's improvement is not used or the request's `jobId` is not the
+admitted job. The receipt's target is `{ kind: 'profile', profileId }`.
+Anything malformed raises `invalid_apply_request`. Credits are not touched.
+
+## `profile_ai_improvements`
+
+The once-per-account free profile improvement
+(`20261120000100_profile_ai_improvement.sql`,
+[MDI-644](https://linear.app/mdivani/issue/MDI-644), epic
+[MDI-643](https://linear.app/mdivani/issue/MDI-643)). At most one row per
+user. `used_at` is the flag: it is set when the LLM service admits the
+`improve_profile` job and is never cleared by any function. Owner `SELECT`
+only (`profile_ai_improvementsCollection`, for the account page entry card);
+rows are written only by the RPCs below and `apply_llm_proposal`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `user_id` | `uuid` | PK, FK → `auth.users(id)` on delete cascade |
+| `client_request_id` | `text not null` | The `improve_profile` job's `Idempotency-Key`; 8–128 characters |
+| `job_id` | `uuid` | The admitted `improve_profile` job |
+| `claimed_at` | `timestamptz not null default now()` | When the current request claimed it |
+| `used_at` | `timestamptz` | Set with `job_id`; the flag |
+| `applied_at` | `timestamptz` | Set when accepted edits are saved; requires `used_at` (check) |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+RPCs (all `SECURITY DEFINER`, `VOLATILE`, for `auth.uid()`, serialized per
+user; `invalid_profile_improvement_request` for a missing or malformed id):
+
+- `claim_profile_improvement(p_client_request_id text) returns text`:
+  `claimed` (no row; or an unconfirmed claim older than 2 minutes, taken
+  over), `replay` (same request id, not used), `used`, or `busy` (another
+  request holds a claim younger than 2 minutes).
+- `confirm_profile_improvement(p_client_request_id text, p_job_id uuid) returns void`:
+  sets `job_id` and `used_at`, inserting or taking over the row. A row that is
+  already used is left as it is. Idempotent.
+- `release_profile_improvement(p_client_request_id text) returns void`:
+  deletes the caller's row only while it is unused and holds that request id.
+- `mark_profile_improvement_used(p_job_id uuid default null) returns void`: reconciliation
+  when the LLM service reports the improvement already used; sets `used_at`
+  (and `job_id` when none is stored). `p_job_id` may be null.
+
+## `user_feedback`
+
+Messages sent through "Tell us what went wrong" in the review prompt shown
+after a new resume PDF (`20261120000300_user_feedback.sql`,
+[MDI-651](https://linear.app/mdivani/issue/MDI-651), epic
+[MDI-650](https://linear.app/mdivani/issue/MDI-650)). One row per message.
+There is no rating column: the prompt has no star rating of its own. Owner
+`SELECT` only (`user_feedbackCollection`); rows are written only by
+`submit_feedback`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK, `gen_random_uuid()` |
+| `user_id` | `uuid not null` | FK → `auth.users(id)` on delete cascade |
+| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; the resume the PDF was generated from |
+| `comment` | `text not null` | Check: 1–2,000 characters after `btrim` |
+| `created_at` | `timestamptz not null default now()` | |
+
+Indexes: `(user_id, created_at desc)`; `(resume_id)` where not null.
+
+## `feedback_prompt_state`
+
+The review prompt cap per user (same migration). At most one row per user,
+created by the first `record_feedback_prompt` or `record_trustpilot_click`.
+Owner `SELECT` only (`feedback_prompt_stateCollection`).
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `user_id` | `uuid` | PK, FK → `auth.users(id)` on delete cascade |
+| `prompts_shown` | `int not null default 0` | Check: `>= 0` |
+| `last_prompted_at` | `timestamptz` | When the prompt last opened |
+| `trustpilot_clicked_at` | `timestamptz` | First click through to Trustpilot; the "never ask again" flag. Never cleared |
+| `created_at` | `timestamptz not null default now()` | |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+The prompt is due when `trustpilot_clicked_at` is null, `prompts_shown < 3`
+and `last_prompted_at` is null or at least 30 days old. The rule lives in the
+private `feedback_prompt_rule(int, timestamptz, timestamptz)` and is mirrored
+in `lib/feedback.ts`.
+
+RPCs (all `SECURITY DEFINER`, `VOLATILE`, for `auth.uid()`; `not authenticated`
+without a session):
+
+- `feedback_prompt_due() returns text`: `due` or `no`. A user with no row is due.
+- `record_feedback_prompt() returns text`: called when the prompt opens. Re-checks
+  the rule under a row lock, then increments `prompts_shown` and sets
+  `last_prompted_at`. `recorded` or `no`. Close, "Not now" and sending a message
+  all count, because the prompt is recorded when it opens.
+- `submit_feedback(p_comment text, p_resume_id uuid default null) returns text`:
+  stores the trimmed message and returns its id. Raises `invalid_feedback`
+  (empty or over 2,000 characters after trimming) or `resume_not_found` (the
+  resume is not the caller's). Does not change the prompt state.
+- `record_trustpilot_click() returns void`: sets `trustpilot_clicked_at` if it
+  is null, inserting the row if needed. Later clicks keep the first time.
+
+## `job_applications`
+
+Application tracker cards (`20261120000400_job_applications.sql`,
+[MDI-655](https://linear.app/mdivani/issue/MDI-655), epic
+[MDI-654](https://linear.app/mdivani/issue/MDI-654)). One row per job
+application, shown as "Position at Company". Owner CRUD; hard delete.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK, `gen_random_uuid()` |
+| `user_id` | `uuid not null default auth.uid()` | FK → `auth.users(id)` on delete cascade |
+| `position` | `text not null` | 1–300 characters, not blank |
+| `company` | `text not null` | 1–300 characters, not blank |
+| `stage` | `text not null default 'saved'` | `saved`, `applied`, `interview`, `offer`, `accepted`, `rejected`, `withdrawn` (check; text, not an enum). The board shows the last three in one Closed column |
+| `sort_order` | `double precision not null default 0` | Place within the card's board column |
+| `location`, `salary`, `contact` | `text` | Free text, at most 300 characters each |
+| `applied_on`, `next_step_on` | `date` | |
+| `next_step` | `text` | At most 300 characters |
+| `resume_id` | `uuid` | FK → `resumes(id)` on delete set null; must be the caller's resume (RLS) |
+| `labels` | `jsonb not null default '[]'` | Array of `{ "name", "color" }`, at most 10. `name` 1–40 characters, unique per card ignoring case and outer spaces; `color` one of `gray`, `blue`, `green`, `amber`, `red`, `pink`, `purple`, `teal`. No other keys |
+| `links` | `jsonb not null default '[]'` | Array of `{ "name", "url" }`, at most 10. `name` 1–100 characters; `url` starts with `http://` or `https://`, no spaces, at most 2,048 characters. No other keys |
+| `stage_changed_at` | `timestamptz not null default now()` | Set by `job_applications_stage_clock`: on insert, and when `stage` changes. Clients cannot set it |
+| `created_at` | `timestamptz not null default now()` | |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+A malformed `labels` or `links` value raises `invalid_job_application_labels`
+or `invalid_job_application_links` (SQLSTATE `23514`).
+
+Indexes: `(user_id, stage, sort_order)` (the board),
+`(user_id, resume_id)` ("is this resume already on a card"), and a partial
+`(resume_id) where resume_id is not null` for the foreign key.
+
+GraphQL: `job_applicationsCollection`; forward field `resumes`; reverse
+`resumes.job_applicationsCollection`.
+
+## `job_application_notes`
+
+Dated notes on a card. Owner CRUD; deleted with their card.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK |
+| `application_id` | `uuid not null` | FK → `job_applications(id)` on delete cascade; must be the caller's card (RLS) |
+| `user_id` | `uuid not null default auth.uid()` | FK → `auth.users(id)` on delete cascade |
+| `content` | `text not null` | The rich-text editor's HTML (paragraphs, bullets, numbered lists, as for experience details); 1–5,000 characters as stored |
+| `created_at` | `timestamptz not null default now()` | |
+| `updated_at` | `timestamptz not null default now()` | `set_updated_at` trigger |
+
+Index: `(application_id, created_at desc)`.
+
+## `job_application_events`
+
+A card's stage history. Written only by the `job_applications_record_stage`
+trigger; clients read their own rows and cannot write them. Deleted with
+their card.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | PK |
+| `application_id` | `uuid not null` | FK → `job_applications(id)` on delete cascade |
+| `user_id` | `uuid not null` | FK → `auth.users(id)` on delete cascade; the card's owner |
+| `from_stage` | `text` | Null for the event written when the card is added |
+| `to_stage` | `text not null` | |
+| `created_at` | `timestamptz not null default now()` | |
+
+Both stage columns use the `job_applications.stage` check. Index:
+`(application_id, created_at desc)`.

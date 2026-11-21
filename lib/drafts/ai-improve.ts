@@ -23,3 +23,8 @@ export function clearAiImproveSession(storage: DraftStorage | null, key: string)
     // Private mode: nothing was stored.
   }
 }
+
+/** The profile improvement session after Save profile (MDI-645), one per user. */
+export function profileImproveStorageKey(userId: string) {
+  return `profile:user:${userId}`;
+}

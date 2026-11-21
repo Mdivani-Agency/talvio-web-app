@@ -18,8 +18,28 @@ has an `updated_at` column:
 | `resumes` | `resumes_set_updated_at` |
 | `user_credits` | `user_credits_set_updated_at` |
 | `credit_prices` | `credit_prices_set_updated_at` |
+| `feedback_prompt_state` | `feedback_prompt_state_set_updated_at` |
+| `profile_ai_improvements` | `profile_ai_improvements_set_updated_at` |
+| `job_applications` | `job_applications_set_updated_at` |
+| `job_application_notes` | `job_application_notes_set_updated_at` |
 
-`contacts`, `skills`, `tools`, `links`, and `languages` have `created_at` only.
+`contacts`, `skills`, `tools`, `links`, `languages` and `headline_achievements` have `created_at` only.
+
+## Optional template field checks
+
+Added by `20261120000200_template_optional_fields.sql` (MDI-664). Both are
+`SECURITY INVOKER` trigger functions with `EXECUTE` revoked from `public`,
+`anon` and `authenticated`; pg_graphql does not expose trigger functions.
+
+- `experiences_validate_stack` — `BEFORE INSERT OR UPDATE OF stack` on
+  `experiences`. Each stack item must be 1–30 characters after trimming
+  (`check_violation`, SQLSTATE `23514`). The count limit (8) is the check
+  constraint `experiences_stack_count_ck`.
+- `headline_achievements_enforce_limit` — `BEFORE INSERT OR UPDATE OF user_id`
+  on `headline_achievements`. At most 3 rows per user, through `save_profile`
+  or the collection mutations (`check_violation`). It takes a per-user
+  transaction advisory lock before counting, so concurrent inserts for the
+  same user run one after the other.
 
 ## `handle_new_user`
 
@@ -68,6 +88,31 @@ that same timestamp. Content, template, color, font, or type changes while
 
 Defined in `20261008000300_resumes_credits.sql`. Execute is revoked
 from `public` / `anon` / `authenticated` — trigger-only.
+
+## Application tracker triggers
+
+Defined in `20261120000400_job_applications.sql`
+([MDI-655](https://linear.app/mdivani/issue/MDI-655)). Execute is revoked
+from `public` / `anon` / `authenticated` on all three functions —
+trigger-only. `BEFORE` triggers on `job_applications` run in name order:
+`job_applications_set_updated_at`, `job_applications_stage_clock`,
+`job_applications_validate`.
+
+- `job_applications_validate` (`public.job_applications_validate()`) —
+  `BEFORE INSERT OR UPDATE`. Checks every `labels` and `links` element (shape,
+  lengths, colour key, unique label names, http or https URLs) and raises
+  `invalid_job_application_labels` / `invalid_job_application_links` with
+  SQLSTATE `23514`. It is a trigger, not a `CHECK`, because a `CHECK` helper
+  function would need `EXECUTE` for `authenticated` and pg_graphql would then
+  expose it.
+- `job_applications_stage_clock` (`public.job_applications_stage_clock()`) —
+  `BEFORE INSERT OR UPDATE`. Sets `stage_changed_at` to `now()` on insert and
+  when `stage` changes. For `authenticated` callers any other change to it is
+  undone; `service_role` and `postgres` (seeds, tests) may set it.
+- `job_applications_record_stage` (`public.job_applications_record_stage()`) —
+  `AFTER INSERT OR UPDATE OF stage`, `SECURITY DEFINER`. Inserts one
+  `job_application_events` row on insert (`from_stage` null) and one when
+  `stage` actually changes. Clients have no write access to that table.
 
 ## Scheduled job: `monthly-allowance-reset`
 

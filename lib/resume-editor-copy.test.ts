@@ -8,6 +8,8 @@ import {
   SECTION_SUMMARY,
   downloadErrorSummaryTitle,
   EDITOR_BACK,
+  FIT_WIDTH_LABEL,
+  FULL_SIZE_LABEL,
   pageCountText,
   pageOfText,
   previewCaption,
@@ -16,6 +18,11 @@ import {
 } from './resume-editor-copy';
 
 describe('resume editor copy', () => {
+  it('names the preview view toggles', () => {
+    expect(FIT_WIDTH_LABEL).toBe('Fit width');
+    expect(FULL_SIZE_LABEL).toBe('Full size');
+  });
+
   it('says where the resume is saved, for guests, accounts and drafts', () => {
     expect(saveStatusText('saved', { guest: false, draft: false })).toBe('Saved to your account');
     expect(saveStatusText('saved', { guest: false, draft: true })).toBe('Draft saved to your account');
@@ -51,6 +58,7 @@ describe('resume editor copy', () => {
       'Experience',
       'Education',
       'Projects',
+      'Recommendations',
     ]);
     expect(SECTION_SUMMARY.fix(['First name'])).toBe('Fix 1 field: first name');
     expect(SECTION_SUMMARY.fix(['Email', 'City'])).toBe('Fix 2 fields: email, city');

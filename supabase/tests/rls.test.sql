@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(48);
+select plan(121);
 
 create function pg_temp.insert_auth_user(p_id uuid, p_email text)
 returns void
@@ -575,6 +575,646 @@ select is(
    where id = 'ffffffff-ffff-4fff-8fff-ffffffffffff'),
   (select updated_at from revision_capture),
   'release keeps the revision clock'
+);
+
+-- MDI-644: the once-per-account profile improvement flag.
+
+select ok(
+  not has_function_privilege('anon', 'public.claim_profile_improvement(text)', 'execute'),
+  'anon cannot claim a profile improvement'
+);
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select throws_ok(
+  $$
+    insert into public.profile_ai_improvements (user_id, client_request_id, used_at)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'improve:self-insert', now());
+  $$,
+  '42501',
+  null,
+  'a user cannot write the profile improvement flag'
+);
+
+select is(
+  public.claim_profile_improvement('improve:request-1'),
+  'claimed',
+  'the first request claims the profile improvement'
+);
+
+select is(
+  public.claim_profile_improvement('improve:request-1'),
+  'replay',
+  'the same request id is a replay'
+);
+
+select is(
+  public.claim_profile_improvement('improve:request-2'),
+  'busy',
+  'another request waits while a fresh claim is held'
+);
+
+select throws_ok(
+  $$ update public.profile_ai_improvements set used_at = null, claimed_at = now() - interval '1 hour'; $$,
+  '42501',
+  null,
+  'a user cannot update the profile improvement flag'
+);
+
+select throws_ok(
+  $$ delete from public.profile_ai_improvements; $$,
+  '42501',
+  null,
+  'a user cannot delete the profile improvement flag'
+);
+
+select pg_temp.logout();
+update public.profile_ai_improvements
+set claimed_at = now() - interval '3 minutes'
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.claim_profile_improvement('improve:request-2'),
+  'claimed',
+  'an unconfirmed claim older than 2 minutes is taken over'
+);
+
+select public.confirm_profile_improvement('improve:request-2', 'c4c4c4c4-c4c4-4c4c-8c4c-c4c4c4c4c4c4');
+
+select is(
+  public.claim_profile_improvement('improve:request-3'),
+  'used',
+  'after confirm the profile improvement is used'
+);
+
+select public.release_profile_improvement('improve:request-2');
+
+select isnt(
+  (select used_at from public.profile_ai_improvements),
+  null,
+  'release never clears a used flag'
+);
+
+select public.confirm_profile_improvement('improve:request-4', 'c5c5c5c5-c5c5-4c5c-8c5c-c5c5c5c5c5c5');
+select public.mark_profile_improvement_used(null);
+
+select is(
+  (select job_id from public.profile_ai_improvements),
+  'c4c4c4c4-c4c4-4c4c-8c4c-c4c4c4c4c4c4'::uuid,
+  'a used flag keeps its job through confirm and mark'
+);
+
+select is(
+  public.claim_profile_improvement('improve:request-2'),
+  'used',
+  'the flag stays used for the request that set it'
+);
+
+select is(
+  (select count(*)::int from public.profile_ai_improvements),
+  1,
+  'a user reads their own profile improvement'
+);
+
+select pg_temp.login('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+select is(
+  (select count(*)::int from public.profile_ai_improvements),
+  0,
+  'a user cannot read another user''s profile improvement'
+);
+
+select public.mark_profile_improvement_used(null);
+
+select isnt(
+  (select used_at from public.profile_ai_improvements),
+  null,
+  'mark_profile_improvement_used sets the flag when no row exists'
+);
+
+select pg_temp.logout();
+
+-- MDI-651: feedback messages and the Trustpilot review prompt cap.
+
+select ok(
+  not has_function_privilege('anon', 'public.submit_feedback(text, uuid)', 'execute'),
+  'anon cannot send feedback'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.feedback_prompt_due()', 'execute'),
+  'anon cannot check the feedback prompt'
+);
+
+select ok(
+  not has_function_privilege('authenticated', 'public.feedback_prompt_rule(int, timestamptz, timestamptz)', 'execute'),
+  'the feedback prompt rule is private'
+);
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select throws_ok(
+  $$
+    insert into public.user_feedback (user_id, comment)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Direct write');
+  $$,
+  '42501',
+  null,
+  'a user cannot insert feedback directly'
+);
+
+select throws_ok(
+  $$
+    insert into public.feedback_prompt_state (user_id, trustpilot_clicked_at)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', now());
+  $$,
+  '42501',
+  null,
+  'a user cannot insert the feedback prompt state directly'
+);
+
+select is(
+  public.feedback_prompt_due(),
+  'due',
+  'a user who was never prompted is due'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'recorded',
+  'the first prompt is recorded'
+);
+
+select is(
+  public.feedback_prompt_due(),
+  'no',
+  'the prompt is not due right after a prompt'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'no',
+  'a second prompt within 30 days is not recorded'
+);
+
+select throws_ok(
+  $$ update public.feedback_prompt_state set prompts_shown = 0, last_prompted_at = null; $$,
+  '42501',
+  null,
+  'a user cannot reset the feedback prompt state'
+);
+
+select throws_ok(
+  $$ delete from public.feedback_prompt_state; $$,
+  '42501',
+  null,
+  'a user cannot delete the feedback prompt state'
+);
+
+select isnt(
+  public.submit_feedback('  The PDF cut off my last job.  ', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+  null,
+  'a user sends feedback about their own resume'
+);
+
+select is(
+  (select comment from public.user_feedback
+   where resume_id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+  'The PDF cut off my last job.',
+  'feedback is stored trimmed, with its resume'
+);
+
+select throws_ok(
+  $$ select public.submit_feedback('   ', null); $$,
+  'P0001',
+  'invalid_feedback',
+  'an empty message is refused'
+);
+
+select throws_ok(
+  $$ select public.submit_feedback(repeat('x', 2001), null); $$,
+  'P0001',
+  'invalid_feedback',
+  'a message over 2,000 characters is refused'
+);
+
+select throws_ok(
+  $$ select public.submit_feedback('Not my resume', 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'); $$,
+  'P0001',
+  'resume_not_found',
+  'feedback about another user''s resume is refused'
+);
+
+select isnt(
+  public.submit_feedback(repeat('y', 2000), null),
+  null,
+  'a 2,000 character message without a resume is stored'
+);
+
+select throws_ok(
+  $$ delete from public.user_feedback; $$,
+  '42501',
+  null,
+  'a user cannot delete feedback'
+);
+
+select is(
+  (select count(*)::int from public.user_feedback),
+  2,
+  'a user reads their own feedback'
+);
+
+select pg_temp.logout();
+update public.feedback_prompt_state
+set last_prompted_at = now() - interval '31 days'
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.feedback_prompt_due(),
+  'due',
+  'the prompt is due again after 30 days, even after sending a message'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'recorded',
+  'the second prompt is recorded'
+);
+
+select pg_temp.logout();
+update public.feedback_prompt_state
+set last_prompted_at = now() - interval '31 days'
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.record_feedback_prompt(),
+  'recorded',
+  'the third prompt is recorded'
+);
+
+select pg_temp.logout();
+update public.feedback_prompt_state
+set last_prompted_at = now() - interval '365 days'
+where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select is(
+  public.feedback_prompt_due(),
+  'no',
+  'the prompt is never due after 3 prompts'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'no',
+  'a fourth prompt is not recorded'
+);
+
+select is(
+  (select prompts_shown from public.feedback_prompt_state),
+  3,
+  'a user reads their own prompt count'
+);
+
+select pg_temp.login('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+select is(
+  (select count(*)::int from public.user_feedback),
+  0,
+  'a user cannot read another user''s feedback'
+);
+
+select is(
+  (select count(*)::int from public.feedback_prompt_state),
+  0,
+  'a user cannot read another user''s prompt state'
+);
+
+select public.record_trustpilot_click();
+
+select is(
+  public.feedback_prompt_due(),
+  'no',
+  'the prompt is never due after a Trustpilot click'
+);
+
+select is(
+  public.record_feedback_prompt(),
+  'no',
+  'no prompt is recorded after a Trustpilot click'
+);
+
+select pg_temp.logout();
+update public.feedback_prompt_state
+set trustpilot_clicked_at = now() - interval '400 days'
+where user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+select pg_temp.login('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+select public.record_trustpilot_click();
+
+select is(
+  (select trustpilot_clicked_at from public.feedback_prompt_state),
+  now() - interval '400 days',
+  'a later click keeps the first click time'
+);
+
+select is(
+  public.feedback_prompt_due(),
+  'no',
+  'a Trustpilot click is never undone by time'
+);
+
+select pg_temp.logout();
+
+-- Application tracker (MDI-655): owner-only cards, notes and stage history.
+insert into public.resumes (id, user_id, name, template_key)
+values (
+  'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  'Ann tracker CV',
+  'mid-level-modern'
+);
+
+insert into public.job_applications (id, user_id, position, company, stage)
+values (
+  'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  'Designer',
+  'Bob Co',
+  'applied'
+);
+
+insert into public.job_application_notes (id, application_id, user_id, content)
+values (
+  'b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3',
+  'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  '<p>Bob''s note</p>'
+);
+
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+select lives_ok(
+  $$
+    insert into public.job_applications (id, position, company, resume_id, stage_changed_at)
+    values (
+      'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1',
+      'Staff Engineer',
+      'Northwind',
+      'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0',
+      '2000-01-01'
+    );
+  $$,
+  'a user adds a card with their own resume'
+);
+
+select is(
+  (select user_id from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
+  'a new card belongs to the caller by default'
+);
+
+select is(
+  (select stage_changed_at from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  now(),
+  'a client cannot set stage_changed_at on insert'
+);
+
+select results_eq(
+  $$
+    select from_stage, to_stage from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'
+  $$,
+  $$ values (null::text, 'saved'::text) $$,
+  'inserting a card writes one event'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_applications (position, company, resume_id)
+    values ('Engineer', 'Evil Co', 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+  $$,
+  '42501',
+  null,
+  'a user cannot add a card with another user''s resume'
+);
+
+select throws_ok(
+  $$
+    update public.job_applications
+    set resume_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+    where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+  $$,
+  '42501',
+  null,
+  'a user cannot attach another user''s resume to a card'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_applications (user_id, position, company)
+    values ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Engineer', 'Evil Co');
+  $$,
+  '42501',
+  null,
+  'a user cannot add a card for another user'
+);
+
+update public.job_applications
+set company = 'Northwind Health', stage_changed_at = '2000-01-01'
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+
+select is(
+  (select count(*)::int from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  1,
+  'an edit that keeps the stage writes no event'
+);
+
+select is(
+  (select stage_changed_at from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  now(),
+  'a client cannot move stage_changed_at without a stage change'
+);
+
+select pg_temp.logout();
+update public.job_applications
+set stage_changed_at = '2000-01-01'
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+select pg_temp.login('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+update public.job_applications
+set stage = 'applied'
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+
+select results_eq(
+  $$
+    select from_stage, to_stage from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'
+    order by from_stage nulls first
+  $$,
+  $$ values (null::text, 'saved'::text), ('saved'::text, 'applied'::text) $$,
+  'changing the stage writes a second event'
+);
+
+select is(
+  (select stage_changed_at from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  now(),
+  'changing the stage updates stage_changed_at'
+);
+
+update public.job_applications
+set stage = 'applied', position = 'Staff Engineer, Platform'
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+
+select is(
+  (select count(*)::int from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  2,
+  'setting the same stage again writes no event'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_application_events (application_id, user_id, to_stage)
+    values (
+      'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1',
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'offer'
+    );
+  $$,
+  '42501',
+  null,
+  'a client cannot write stage history'
+);
+
+select throws_ok(
+  $$ update public.job_application_events set to_stage = 'offer'; $$,
+  '42501',
+  null,
+  'a client cannot change stage history'
+);
+
+select throws_ok(
+  $$ delete from public.job_application_events; $$,
+  '42501',
+  null,
+  'a client cannot delete stage history'
+);
+
+select lives_ok(
+  $$
+    insert into public.job_application_notes (id, application_id, content)
+    values (
+      'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2',
+      'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1',
+      '<p>Recruiter call on Monday</p>'
+    );
+  $$,
+  'a user adds a note to their own card'
+);
+
+select throws_ok(
+  $$
+    insert into public.job_application_notes (application_id, content)
+    values ('b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2', '<p>Sneaky</p>');
+  $$,
+  '42501',
+  null,
+  'a user cannot add a note to another user''s card'
+);
+
+select throws_ok(
+  $$
+    update public.job_application_notes
+    set application_id = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2'
+    where id = 'a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2';
+  $$,
+  '42501',
+  null,
+  'a user cannot move a note onto another user''s card'
+);
+
+select is(
+  (select count(*)::int from public.job_applications),
+  1,
+  'a user sees only their own cards'
+);
+
+select is(
+  (select count(*)::int from public.job_application_notes),
+  1,
+  'a user sees only their own notes'
+);
+
+select is(
+  (select count(*)::int from public.job_application_events),
+  2,
+  'a user sees only their own stage history'
+);
+
+update public.job_applications
+set position = 'Hacked'
+where id = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2';
+
+delete from public.job_applications
+where id = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2';
+
+update public.job_application_notes
+set content = '<p>Hacked</p>'
+where id = 'b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3';
+
+delete from public.job_application_notes
+where id = 'b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3';
+
+delete from public.resumes
+where id = 'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0';
+
+select is(
+  (select resume_id from public.job_applications where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  null,
+  'deleting a resume keeps the card with resume_id null'
+);
+
+delete from public.job_applications
+where id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1';
+
+select pg_temp.logout();
+
+select is(
+  (select position from public.job_applications where id = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2'),
+  'Designer',
+  'a user cannot change or delete another user''s card'
+);
+
+select is(
+  (select content from public.job_application_notes where id = 'b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3'),
+  '<p>Bob''s note</p>',
+  'a user cannot change or delete another user''s note'
+);
+
+select is(
+  (select count(*)::int from public.job_application_notes
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  0,
+  'deleting a card deletes its notes'
+);
+
+select is(
+  (select count(*)::int from public.job_application_events
+    where application_id = 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'),
+  0,
+  'deleting a card deletes its stage history'
+);
+
+select throws_ok(
+  $$ set local role anon; select count(*) from public.job_applications; $$,
+  '42501',
+  null,
+  'anon cannot read job_applications'
 );
 
 select * from finish();

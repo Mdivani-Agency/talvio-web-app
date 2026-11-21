@@ -5,7 +5,7 @@ Research requirements and publish an actionable technical plan. Write the plan i
 ## Before planning
 
 1. Read the user’s request and any referenced Linear tickets, parent epics, sub-issues, and dependencies.
-2. Find the Notion page titled “Talvio”. Read its overview and the relevant domain pages.
+2. Find the Notion page titled “Talvio”. Read its overview, the Architecture pages for the affected area, and the relevant pages in its groups.
 3. Inspect the current code and, when useful and accessible, the application’s current flows.
 4. Search Notion and Linear for existing plans or overlapping work before creating anything.
 5. Distinguish verified behavior, proposed changes, assumptions, and unresolved questions. Do not treat an existing document or completed ticket as proof of deployed behavior.
@@ -28,8 +28,8 @@ Resolve routine choices from available evidence. Ask only when a material ambigu
 
 Before creating implementation issues in Linear:
 
-1. Write the proposed plan in Notion under Talvio.
-2. Update the existing authoritative domain page when an appropriate plan already exists.
+1. Write the proposed plan in Notion in the group that fits under Talvio (see “Documentation organization”). A product feature plan goes in Features. Never create a page directly under Talvio.
+2. Update the existing authoritative page when an appropriate plan already exists.
 3. Create a new page only when the work needs a distinct scope.
 4. Mark the plan as **Proposed**, with a last-reviewed date and any unresolved decisions.
 5. Verify that the page was saved successfully and has the correct parent.
@@ -38,7 +38,7 @@ Do not label a plan **Approved**, **Implemented**, or **Deployed** without evide
 
 ## Documentation organization
 
-Use the authoritative domain list and page-structure rules in `.cursor/commands/start-issue.md` (Documentation organization). Do not maintain a second domain list here.
+Use the authoritative group list and page-structure rules in `.cursor/commands/start-issue.md` (Documentation organization). Do not maintain a second list here.
 
 When writing a plan, use sections appropriate to the work: problem and goals; current behavior and evidence; proposed behavior and architecture; contracts and data ownership; failure and recovery; delivery plan and dependencies; acceptance criteria and validation; risks, open decisions, and references.
 

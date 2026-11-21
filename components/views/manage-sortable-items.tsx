@@ -1,6 +1,6 @@
 'use client';
 import { CircleAlert } from 'lucide-react';
-import { memo, useId, useState } from 'react';
+import { memo, useId, useState, type ReactNode } from 'react';
 import { Button, Label, MultiInput } from '@components/ui';
 import { SortModal } from '@components/modals';
 import { cn } from '@lib/utils';
@@ -11,6 +11,8 @@ export type SortableItem = { name: string; id: string };
 type ManageSortableItemsProps = {
   /** The visible label above the input; it also names the input for screen readers. */
   label: string;
+  /** Sits at the end of the label row, such as a switch that changes how the list works. */
+  labelAside?: ReactNode;
   items?: Array<SortableItem>;
   errorsMessage?: string;
   currentOption: string;
@@ -24,6 +26,7 @@ type ManageSortableItemsProps = {
 
 export const ManageSortableItems = memo(function ManageSortableItems({
   label,
+  labelAside,
   items = [],
   errorsMessage,
   modalLabel = 'Reorder your skills and select up to 6 to display on your resume',
@@ -40,9 +43,18 @@ export const ManageSortableItems = memo(function ManageSortableItems({
 
   return (
     <div className="grid min-w-0 content-start gap-1.5">
-      <Label htmlFor={inputId} size="sm" className="leading-[1.4286] font-medium text-foreground">
-        {label}
-      </Label>
+      {labelAside ? (
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor={inputId} size="sm" className="leading-[1.4286] font-medium text-foreground">
+            {label}
+          </Label>
+          {labelAside}
+        </div>
+      ) : (
+        <Label htmlFor={inputId} size="sm" className="leading-[1.4286] font-medium text-foreground">
+          {label}
+        </Label>
+      )}
       <MultiInput
         id={inputId}
         describedBy={errorsMessage ? messageId : undefined}

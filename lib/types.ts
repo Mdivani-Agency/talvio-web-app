@@ -3,6 +3,7 @@ import {
   accountSchema,
   educationFormSchema,
   experienceSchema,
+  headlineAchievementSchema,
   languageSchema,
   linkSchema,
   profileSchema,
@@ -14,6 +15,7 @@ import {
 import { LanguageProficiency, TemplateKeyEnum } from "./schema/enums";
 import { resumeDraftSchema, resumeSchema } from "./schema/resume.schema";
 import { Template } from "@pdf-tlv/resume";
+import type { TemplateFilter, TemplateStyle } from "./templates-page-copy";
 
 export type User = {
   id: string;
@@ -52,6 +54,7 @@ export type DeepPartial<T> = {
 export type MarkType = { type: string; attrs?: Record<string, any>; [key: string]: any };
 
 export type Skill = z.infer<typeof skillSchema>;
+export type HeadlineAchievement = z.infer<typeof headlineAchievementSchema>;
 export type Tool = z.infer<typeof toolSchema>;
 export type Link = z.infer<typeof linkSchema>;
 export type Language = z.infer<typeof languageSchema>;
@@ -74,10 +77,18 @@ export type TemplateKey = z.infer<typeof TemplateKeyEnum>;
 export type TemplateItem = {
   name: string;
   template: Template;
+  /** Default accent. */
   color: string;
   imageUrl: string;
   description: string;
   key: TemplateKey;
+  /** The gallery style this key shows, such as `mint` for every level of Mint. */
+  style: TemplateStyle;
+  /** Completes "Best for …". */
+  bestFor: string;
+  filters: readonly TemplateFilter[];
+  /** One of the ten templates added in MDI-660; tagged "New" for a while after launch. */
+  isNew: boolean;
 };
 
 export type TemplateList = Record<'entry' | 'mid' | 'senior', Array<TemplateItem>>;
@@ -103,3 +114,13 @@ export type PreviewDto = Omit<ResumeDto, 'metadata'> & {
 // Enums
 export type LanguageProficiency = z.infer<typeof LanguageProficiency>;
 
+// Application tracker (MDI-654)
+export type {
+  ApplicationLabel,
+  ApplicationLink,
+  ApplicationStage,
+  BoardColumn,
+  ClosedStage,
+  JobApplication,
+  LabelColor,
+} from './schema/application.schema';

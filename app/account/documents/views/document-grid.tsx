@@ -13,6 +13,8 @@ import {
   openDocumentLabel,
 } from '@/lib/account-copy';
 
+import { InTrackerLink } from '@app/account/applications/views/in-tracker-link';
+
 import { usePdfPreview } from '../hooks/use-pdf-preview';
 import { DocumentPreview } from './document-preview';
 
@@ -22,7 +24,7 @@ const PAPER_CLASS = 'overflow-hidden bg-white shadow-sm';
  * One generated PDF. From `md` it is a card (the first page opens the PDF, then the name and a Download button);
  * below `md` it is a row (a decorative thumbnail, the name, and a 44px download icon). The preview is drawn once.
  */
-function DocumentCard({ document }: { document: MediaItem }) {
+function DocumentCard({ document, trackerCardId }: { document: MediaItem; trackerCardId?: string }) {
   const preview = usePdfPreview(document.publicUrl);
   const fileName = documentFileName(document.name, document.type);
   const downloadLabel = downloadDocumentLabel(document.name);
@@ -46,7 +48,10 @@ function DocumentCard({ document }: { document: MediaItem }) {
           <span className="truncate text-sm font-semibold text-primary" title={fileName}>
             {fileName}
           </span>
-          <span className="text-xs text-muted-foreground">{documentMetaLine(document.createdAt)}</span>
+          <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            {documentMetaLine(document.createdAt)}
+            {trackerCardId ? <InTrackerLink applicationId={trackerCardId} name={fileName} /> : null}
+          </span>
         </div>
         <a
           href={document.publicUrl}
@@ -73,11 +78,12 @@ function DocumentCard({ document }: { document: MediaItem }) {
 }
 
 /** Rows on phones, a fluid card grid from `md`. */
-export function DocumentGrid({ documents }: { documents: MediaItem[] }) {
+/** `trackerCards` maps a document's media key to the tracker card that links its resume (MDI-658). */
+export function DocumentGrid({ documents, trackerCards = {} }: { documents: MediaItem[]; trackerCards?: Record<string, string> }) {
   return (
     <ul className="grid grid-cols-1 gap-2 md:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] md:gap-5">
       {documents.map((document) => (
-        <DocumentCard key={document.key} document={document} />
+        <DocumentCard key={document.key} document={document} trackerCardId={trackerCards[document.key]} />
       ))}
     </ul>
   );

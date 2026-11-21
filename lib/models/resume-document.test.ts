@@ -24,6 +24,29 @@ import {
 } from './resume-document';
 
 describe('profileToResumeDocument', () => {
+  it('carries the optional template fields into a new resume', () => {
+    const converted = profileToResumeDocument({
+      ...fullAccountDto,
+      profile: { ...fullAccountDto.profile, groupSkills: true },
+      headlineAchievements: [{ id: 'not-a-uuid', value: '40%', label: 'faster releases' }],
+      skills: [{ id: SKILL_ID, name: 'TypeScript', group: 'Languages' }],
+      experience: [{ ...fullAccountDto.experience![0]!, stack: ['TypeScript', 'Go'] }],
+    });
+
+    expect(converted.profile.groupSkills).toBe(true);
+    expect(converted.headlineAchievements).toEqual([{ value: '40%', label: 'faster releases' }]);
+    expect(converted.skills).toEqual([{ id: SKILL_ID, name: 'TypeScript', group: 'Languages' }]);
+    expect(converted.experience?.[0]?.stack).toEqual(['TypeScript', 'Go']);
+  });
+
+  it('leaves the optional template fields out when the profile has none', () => {
+    const converted = profileToResumeDocument(fullAccountDto);
+
+    expect(converted).not.toHaveProperty('headlineAchievements');
+    expect(converted.profile).not.toHaveProperty('groupSkills');
+    expect(converted.experience?.[0]).not.toHaveProperty('stack');
+  });
+
   it('keeps contacts, location, ids, categorized experience, and rich text', () => {
     const converted = profileToResumeDocument(fullAccountDto);
 

@@ -16,7 +16,7 @@ export {
   GUEST_ID_KEY,
   resumeDraftStorageKey,
 } from './keys';
-export { AI_IMPROVE_SESSION_PREFIX, aiImproveJobStorageKey, clearAiImproveSession } from './ai-improve';
+export { AI_IMPROVE_SESSION_PREFIX, aiImproveJobStorageKey, clearAiImproveSession, profileImproveStorageKey } from './ai-improve';
 export { getOrCreateGuestId, readGuestId } from './guest';
 export {
   adoptDraft,

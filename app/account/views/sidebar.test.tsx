@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const signOut = vi.fn();
@@ -22,12 +22,14 @@ const sidebar = () => within(document.querySelector('aside')!);
 describe('Sidebar', () => {
   beforeEach(() => {
     vi.stubEnv('NEXT_PUBLIC_FLAG_CREDIT_PURCHASE_UI', '');
+    vi.stubEnv('NEXT_PUBLIC_FLAG_APPLICATION_TRACKER', '');
     pathname = '/account';
     session = { user: { name: 'Maya Lindqvist', email: 'maya@example.com' } };
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
     vi.unstubAllEnvs();
     vi.clearAllMocks();
   });
@@ -39,6 +41,20 @@ describe('Sidebar', () => {
     const nav = within(sidebar().getByRole('navigation', { name: 'Account' }));
     expect(nav.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/account', '/account/documents']);
     expect(sidebar().queryByRole('link', { name: 'Upgrade now' })).toBeNull();
+  });
+
+  it('lists Applications under Documents and marks it current only while the tracker is on', () => {
+    vi.stubEnv('NEXT_PUBLIC_FLAG_APPLICATION_TRACKER', 'true');
+    pathname = '/account/applications';
+    render(<Sidebar />);
+
+    const nav = within(sidebar().getByRole('navigation', { name: 'Account' }));
+    expect(nav.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
+      '/account',
+      '/account/documents',
+      '/account/applications',
+    ]);
+    expect(nav.getByRole('link', { name: 'Applications' }).getAttribute('aria-current')).toBe('page');
   });
 
   it.each([
@@ -94,5 +110,15 @@ describe('Sidebar', () => {
     const bar = within(document.querySelector('header')!);
     expect(bar.getByRole('link', { name: 'Create resume' }).getAttribute('href')).toBe('/resume');
     expect(bar.getByRole('button', { name: 'Open menu' })).toBeTruthy();
+  });
+
+  it('moves focus into the phone menu when it opens', async () => {
+    // vaul reads matchMedia, which jsdom lacks.
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {} }));
+    render(<Sidebar />);
+
+    fireEvent.click(within(document.querySelector('header')!).getByRole('button', { name: 'Open menu' }));
+    const menu = await screen.findByRole('dialog', { name: 'Account menu' });
+    await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
   });
 });

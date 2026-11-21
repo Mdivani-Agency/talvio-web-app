@@ -40,6 +40,8 @@ describe('privacy policy copy', () => {
     expect(retention).toContain('within 7 days');
     expect(retention).toContain('within 30 days');
     expect(retention).toContain('not deleted the moment you delete your account');
+    // The once-per-account profile improvement record (MDI-647) has no retention limit.
+    expect(retention).toContain('a record that your account has used it');
   });
 
   it('discloses Vercel Web Analytics', () => {
@@ -53,6 +55,14 @@ describe('privacy policy copy', () => {
     expect(text).toContain('Error and session reports.');
     expect(text).toContain('session replay');
     expect(text).toContain('masks the text you type');
+  });
+
+  it('says feedback messages are stored with the account and Trustpilot is a separate site (MDI-652)', () => {
+    const collected = section('2. What we collect');
+    expect(collected).toContain('we store your message with your account and the resume it is about');
+    expect(collected).toContain('whether you followed the link to Trustpilot');
+    expect(collected).toContain('Trustpilot is a separate website that you choose to open');
+    expect(section('8. How long we keep your data')).toContain('feedback messages for as long as you have an account');
   });
 
   it('says an imported PDF is read in the browser and only its text is sent', () => {

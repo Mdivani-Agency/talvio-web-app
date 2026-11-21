@@ -60,3 +60,11 @@ describe('clampPreviewPage', () => {
     expect(clampPreviewPage(3, 0)).toBe(0);
   });
 });
+
+describe('previewInputKey and section order', () => {
+  it('changes when the sections move, so the preview renders again', () => {
+    expect(previewInputKey({ ...base, resume: { ...base.resume, sectionOrder: ['education', 'experience'] } })).not.toBe(
+      previewInputKey(base),
+    );
+  });
+});

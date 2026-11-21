@@ -44,10 +44,10 @@ export const SHARE_IMAGE: ShareImage = {
 
 /** `/templates`: four sample resumes in different templates. */
 export const SHARE_IMAGE_TEMPLATES: ShareImage = {
-  url: '/share-templates-v1.png',
+  url: '/share-templates-v2.png',
   width: 1200,
   height: 630,
-  alt: 'Talvio resume templates: 12 templates for 3 experience levels. Pick a layout for your career stage and preview it before you download. Four sample resumes beside the text.',
+  alt: 'Talvio resume templates: 14 templates, from classic to bold. Four sample resumes beside the text.',
 };
 
 /** `/blog`, and blog posts without a cover image. */

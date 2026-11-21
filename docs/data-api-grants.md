@@ -20,7 +20,8 @@ Copied from Notion *Data API / GraphQL (pg_graphql)* and locked for v1.
 ### Owner CRUD (profile, children, resumes)
 
 `profiles`, `contacts`, `experiences`, `educations`, `projects`,
-`recommendations`, `skills`, `tools`, `links`, `languages`, `resumes`.
+`recommendations`, `skills`, `tools`, `links`, `languages`,
+`headline_achievements`, `resumes`.
 
 Owner hard-deletes their own rows in v1 (no `deleted_at`), so `authenticated`
 gets `DELETE`. No `anon` grants — there is no public resume sharing.
@@ -28,6 +29,21 @@ gets `DELETE`. No `anon` grants — there is no public resume sharing.
 ```sql
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;
+-- anon: none
+```
+
+### Application tracker (MDI-655)
+
+`job_applications` and `job_application_notes` use the owner CRUD tier above.
+`job_application_events` (stage history) uses the append-only audit tier for
+clients: `SELECT` only, written by the `SECURITY DEFINER` trigger
+`job_applications_record_stage`.
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_applications TO authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_application_notes TO authenticated, service_role;
+REVOKE ALL ON TABLE public.job_application_events FROM public, anon, authenticated, service_role;
+GRANT SELECT ON public.job_application_events TO authenticated, service_role;
 -- anon: none
 ```
 
@@ -40,6 +56,37 @@ through `SECURITY DEFINER` functions (`handle_new_user`, the monthly reset
 ```sql
 GRANT SELECT ON public.user_credits TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_credits TO service_role;
+-- anon: none
+```
+
+### Flags (read only)
+
+`profile_ai_improvements` (MDI-644) — the same tier as `user_credits`:
+authenticated reads its own row (RLS) so the account page can show or hide
+the "Make your profile stronger" card. Writes go only through the
+`SECURITY DEFINER` RPCs `claim_profile_improvement`,
+`confirm_profile_improvement`, `release_profile_improvement`,
+`mark_profile_improvement_used` and `apply_llm_proposal`.
+
+```sql
+REVOKE ALL ON TABLE public.profile_ai_improvements FROM public, anon, authenticated;
+GRANT SELECT ON public.profile_ai_improvements TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profile_ai_improvements TO service_role;
+-- anon: none
+```
+
+`user_feedback` and `feedback_prompt_state` (MDI-651) use the same tier:
+authenticated reads its own rows; writes go only through the
+`SECURITY DEFINER` RPCs `submit_feedback`, `record_feedback_prompt` and
+`record_trustpilot_click`.
+
+```sql
+REVOKE ALL ON TABLE public.user_feedback FROM public, anon, authenticated;
+GRANT SELECT ON public.user_feedback TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_feedback TO service_role;
+REVOKE ALL ON TABLE public.feedback_prompt_state FROM public, anon, authenticated;
+GRANT SELECT ON public.feedback_prompt_state TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.feedback_prompt_state TO service_role;
 -- anon: none
 ```
 
@@ -73,12 +120,31 @@ GRANT EXECUTE ON FUNCTION public.generate_pdf(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.finalize_pdf(uuid, text, text) TO authenticated;
 REVOKE ALL ON FUNCTION public.apply_llm_proposal(jsonb) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.apply_llm_proposal(jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.claim_profile_improvement(text) FROM public, anon;
+REVOKE ALL ON FUNCTION public.confirm_profile_improvement(text, uuid) FROM public, anon;
+REVOKE ALL ON FUNCTION public.release_profile_improvement(text) FROM public, anon;
+REVOKE ALL ON FUNCTION public.mark_profile_improvement_used(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.claim_profile_improvement(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.confirm_profile_improvement(text, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.release_profile_improvement(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mark_profile_improvement_used(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.feedback_prompt_rule(int, timestamptz, timestamptz) FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.feedback_prompt_due() FROM public, anon;
+REVOKE ALL ON FUNCTION public.record_feedback_prompt() FROM public, anon;
+REVOKE ALL ON FUNCTION public.submit_feedback(text, uuid) FROM public, anon;
+REVOKE ALL ON FUNCTION public.record_trustpilot_click() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.feedback_prompt_due() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.record_feedback_prompt() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.submit_feedback(text, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.record_trustpilot_click() TO authenticated;
 ```
 
 `apply_llm_proposal(p_request jsonb)` (MDI-222) is `SECURITY DEFINER`. It
 saves an accepted LLM proposal for `auth.uid()` and its receipt in one
 transaction, and returns the receipt as `JSON`. A second call for the same
 proposal returns the first receipt (`replayed: true`) and writes nothing.
+Since MDI-644 it also applies `improve_profile`, only after the caller's
+free profile improvement is used.
 
 Auth hook (MDI-440). Only Supabase Auth runs it; clients cannot call it
 or read a user's plan:
@@ -125,6 +191,12 @@ the GraphQL `JSON` scalar (serialized string).
 | `credit_prices` | none | none | none | `20261008000300_resumes_credits.sql` (server-side) |
 | `monthly_allowance_runs` | none | none | none | `20261008000400_monthly_allowance.sql` (server-side) |
 | `llm_proposal_applications` | none | SELECT | all | `20261112000100_llm_proposal_applications.sql` (rows written only by `apply_llm_proposal`) |
+| `job_applications` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261120000400_job_applications.sql` |
+| `job_application_notes` | none | SELECT, INSERT, UPDATE, DELETE | all | `20261120000400_job_applications.sql` |
+| `job_application_events` | none | SELECT | SELECT | `20261120000400_job_applications.sql` (rows written only by the `job_applications_record_stage` trigger) |
+| `profile_ai_improvements` | none | SELECT | all | `20261120000100_profile_ai_improvement.sql` (rows written only by the profile improvement RPCs and `apply_llm_proposal`) |
+| `user_feedback` | none | SELECT | all | `20261120000300_user_feedback.sql` (rows written only by `submit_feedback`) |
+| `feedback_prompt_state` | none | SELECT | all | `20261120000300_user_feedback.sql` (rows written only by `record_feedback_prompt` and `record_trustpilot_click`) |
 
 Enums: `GRANT USAGE` on all seven types to `authenticated` and `service_role`
 (not `anon`).

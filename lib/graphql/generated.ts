@@ -188,12 +188,20 @@ export type IntListFilter = {
 export type Mutation = {
   __typename?: 'Mutation';
   apply_llm_proposal?: Maybe<Scalars['JSON']['output']>;
+  claim_profile_improvement?: Maybe<Scalars['String']['output']>;
+  confirm_profile_improvement?: Maybe<Scalars['Opaque']['output']>;
   /** Deletes zero or more records from the `contacts` collection */
   deleteFromcontactsCollection: ContactsDeleteResponse;
   /** Deletes zero or more records from the `educations` collection */
   deleteFromeducationsCollection: EducationsDeleteResponse;
   /** Deletes zero or more records from the `experiences` collection */
   deleteFromexperiencesCollection: ExperiencesDeleteResponse;
+  /** Deletes zero or more records from the `headline_achievements` collection */
+  deleteFromheadline_achievementsCollection: Headline_AchievementsDeleteResponse;
+  /** Deletes zero or more records from the `job_application_notes` collection */
+  deleteFromjob_application_notesCollection: Job_Application_NotesDeleteResponse;
+  /** Deletes zero or more records from the `job_applications` collection */
+  deleteFromjob_applicationsCollection: Job_ApplicationsDeleteResponse;
   /** Deletes zero or more records from the `languages` collection */
   deleteFromlanguagesCollection: LanguagesDeleteResponse;
   /** Deletes zero or more records from the `links` collection */
@@ -210,6 +218,7 @@ export type Mutation = {
   deleteFromskillsCollection: SkillsDeleteResponse;
   /** Deletes zero or more records from the `tools` collection */
   deleteFromtoolsCollection: ToolsDeleteResponse;
+  feedback_prompt_due?: Maybe<Scalars['String']['output']>;
   finalize_pdf?: Maybe<Scalars['String']['output']>;
   generate_pdf?: Maybe<Scalars['String']['output']>;
   /** Adds one or more `contacts` records to the collection */
@@ -218,6 +227,12 @@ export type Mutation = {
   insertIntoeducationsCollection?: Maybe<EducationsInsertResponse>;
   /** Adds one or more `experiences` records to the collection */
   insertIntoexperiencesCollection?: Maybe<ExperiencesInsertResponse>;
+  /** Adds one or more `headline_achievements` records to the collection */
+  insertIntoheadline_achievementsCollection?: Maybe<Headline_AchievementsInsertResponse>;
+  /** Adds one or more `job_application_notes` records to the collection */
+  insertIntojob_application_notesCollection?: Maybe<Job_Application_NotesInsertResponse>;
+  /** Adds one or more `job_applications` records to the collection */
+  insertIntojob_applicationsCollection?: Maybe<Job_ApplicationsInsertResponse>;
   /** Adds one or more `languages` records to the collection */
   insertIntolanguagesCollection?: Maybe<LanguagesInsertResponse>;
   /** Adds one or more `links` records to the collection */
@@ -234,14 +249,25 @@ export type Mutation = {
   insertIntoskillsCollection?: Maybe<SkillsInsertResponse>;
   /** Adds one or more `tools` records to the collection */
   insertIntotoolsCollection?: Maybe<ToolsInsertResponse>;
+  mark_profile_improvement_used?: Maybe<Scalars['Opaque']['output']>;
+  record_feedback_prompt?: Maybe<Scalars['String']['output']>;
+  record_trustpilot_click?: Maybe<Scalars['Opaque']['output']>;
+  release_profile_improvement?: Maybe<Scalars['Opaque']['output']>;
   release_resume_generation?: Maybe<Scalars['Opaque']['output']>;
   save_profile?: Maybe<Scalars['String']['output']>;
+  submit_feedback?: Maybe<Scalars['String']['output']>;
   /** Updates zero or more records in the `contacts` collection */
   updatecontactsCollection: ContactsUpdateResponse;
   /** Updates zero or more records in the `educations` collection */
   updateeducationsCollection: EducationsUpdateResponse;
   /** Updates zero or more records in the `experiences` collection */
   updateexperiencesCollection: ExperiencesUpdateResponse;
+  /** Updates zero or more records in the `headline_achievements` collection */
+  updateheadline_achievementsCollection: Headline_AchievementsUpdateResponse;
+  /** Updates zero or more records in the `job_application_notes` collection */
+  updatejob_application_notesCollection: Job_Application_NotesUpdateResponse;
+  /** Updates zero or more records in the `job_applications` collection */
+  updatejob_applicationsCollection: Job_ApplicationsUpdateResponse;
   /** Updates zero or more records in the `languages` collection */
   updatelanguagesCollection: LanguagesUpdateResponse;
   /** Updates zero or more records in the `links` collection */
@@ -266,6 +292,17 @@ export type MutationApply_Llm_ProposalArgs = {
 };
 
 /** The root type for creating and mutating data */
+export type MutationClaim_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
+};
+
+/** The root type for creating and mutating data */
+export type MutationConfirm_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
+  p_job_id: Scalars['UUID']['input'];
+};
+
+/** The root type for creating and mutating data */
 export type MutationDeleteFromcontactsCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ContactsFilter>;
@@ -281,6 +318,24 @@ export type MutationDeleteFromeducationsCollectionArgs = {
 export type MutationDeleteFromexperiencesCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ExperiencesFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromheadline_AchievementsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromjob_Application_NotesCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Job_Application_NotesFilter>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationDeleteFromjob_ApplicationsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Job_ApplicationsFilter>;
 };
 
 /** The root type for creating and mutating data */
@@ -359,6 +414,21 @@ export type MutationInsertIntoexperiencesCollectionArgs = {
 };
 
 /** The root type for creating and mutating data */
+export type MutationInsertIntoheadline_AchievementsCollectionArgs = {
+  objects: Array<Headline_AchievementsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntojob_Application_NotesCollectionArgs = {
+  objects: Array<Job_Application_NotesInsertInput>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationInsertIntojob_ApplicationsCollectionArgs = {
+  objects: Array<Job_ApplicationsInsertInput>;
+};
+
+/** The root type for creating and mutating data */
 export type MutationInsertIntolanguagesCollectionArgs = {
   objects: Array<LanguagesInsertInput>;
 };
@@ -399,6 +469,16 @@ export type MutationInsertIntotoolsCollectionArgs = {
 };
 
 /** The root type for creating and mutating data */
+export type MutationMark_Profile_Improvement_UsedArgs = {
+  p_job_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+/** The root type for creating and mutating data */
+export type MutationRelease_Profile_ImprovementArgs = {
+  p_client_request_id: Scalars['String']['input'];
+};
+
+/** The root type for creating and mutating data */
 export type MutationRelease_Resume_GenerationArgs = {
   p_resume_id: Scalars['UUID']['input'];
 };
@@ -406,6 +486,12 @@ export type MutationRelease_Resume_GenerationArgs = {
 /** The root type for creating and mutating data */
 export type MutationSave_ProfileArgs = {
   p_payload: Scalars['JSON']['input'];
+};
+
+/** The root type for creating and mutating data */
+export type MutationSubmit_FeedbackArgs = {
+  p_comment: Scalars['String']['input'];
+  p_resume_id?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 /** The root type for creating and mutating data */
@@ -427,6 +513,27 @@ export type MutationUpdateexperiencesCollectionArgs = {
   atMost?: Scalars['Int']['input'];
   filter?: InputMaybe<ExperiencesFilter>;
   set: ExperiencesUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdateheadline_AchievementsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  set: Headline_AchievementsUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdatejob_Application_NotesCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Job_Application_NotesFilter>;
+  set: Job_Application_NotesUpdateInput;
+};
+
+/** The root type for creating and mutating data */
+export type MutationUpdatejob_ApplicationsCollectionArgs = {
+  atMost?: Scalars['Int']['input'];
+  filter?: InputMaybe<Job_ApplicationsFilter>;
+  set: Job_ApplicationsUpdateInput;
 };
 
 /** The root type for creating and mutating data */
@@ -530,6 +637,26 @@ export type Query = {
   experiencesByPk?: Maybe<Experiences>;
   /** A pagable collection of type `experiences` */
   experiencesCollection: ExperiencesConnection;
+  /** Retrieve a record of type `feedback_prompt_state` by its primary key */
+  feedback_prompt_stateByPk?: Maybe<Feedback_Prompt_State>;
+  /** A pagable collection of type `feedback_prompt_state` */
+  feedback_prompt_stateCollection: Feedback_Prompt_StateConnection;
+  /** Retrieve a record of type `headline_achievements` by its primary key */
+  headline_achievementsByPk?: Maybe<Headline_Achievements>;
+  /** A pagable collection of type `headline_achievements` */
+  headline_achievementsCollection: Headline_AchievementsConnection;
+  /** Retrieve a record of type `job_application_events` by its primary key */
+  job_application_eventsByPk?: Maybe<Job_Application_Events>;
+  /** A pagable collection of type `job_application_events` */
+  job_application_eventsCollection: Job_Application_EventsConnection;
+  /** Retrieve a record of type `job_application_notes` by its primary key */
+  job_application_notesByPk?: Maybe<Job_Application_Notes>;
+  /** A pagable collection of type `job_application_notes` */
+  job_application_notesCollection: Job_Application_NotesConnection;
+  /** Retrieve a record of type `job_applications` by its primary key */
+  job_applicationsByPk?: Maybe<Job_Applications>;
+  /** A pagable collection of type `job_applications` */
+  job_applicationsCollection: Job_ApplicationsConnection;
   /** Retrieve a record of type `languages` by its primary key */
   languagesByPk?: Maybe<Languages>;
   /** A pagable collection of type `languages` */
@@ -544,6 +671,10 @@ export type Query = {
   llm_proposal_applicationsCollection: Llm_Proposal_ApplicationsConnection;
   /** Retrieve a record by its `ID` */
   node?: Maybe<Node>;
+  /** Retrieve a record of type `profile_ai_improvements` by its primary key */
+  profile_ai_improvementsByPk?: Maybe<Profile_Ai_Improvements>;
+  /** A pagable collection of type `profile_ai_improvements` */
+  profile_ai_improvementsCollection: Profile_Ai_ImprovementsConnection;
   /** Retrieve a record of type `profiles` by its primary key */
   profilesByPk?: Maybe<Profiles>;
   /** A pagable collection of type `profiles` */
@@ -572,6 +703,10 @@ export type Query = {
   user_creditsByPk?: Maybe<User_Credits>;
   /** A pagable collection of type `user_credits` */
   user_creditsCollection: User_CreditsConnection;
+  /** Retrieve a record of type `user_feedback` by its primary key */
+  user_feedbackByPk?: Maybe<User_Feedback>;
+  /** A pagable collection of type `user_feedback` */
+  user_feedbackCollection: User_FeedbackConnection;
 };
 
 /** The root type for querying data */
@@ -620,6 +755,86 @@ export type QueryExperiencesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryFeedback_Prompt_StateByPkArgs = {
+  user_id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryFeedback_Prompt_StateCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Feedback_Prompt_StateFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Feedback_Prompt_StateOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryHeadline_AchievementsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryHeadline_AchievementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Headline_AchievementsOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryJob_Application_EventsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryJob_Application_EventsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Job_Application_EventsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Job_Application_EventsOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryJob_Application_NotesByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryJob_Application_NotesCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Job_Application_NotesFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Job_Application_NotesOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryJob_ApplicationsByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryJob_ApplicationsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Job_ApplicationsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Job_ApplicationsOrderBy>>;
 };
 
 /** The root type for querying data */
@@ -673,6 +888,22 @@ export type QueryLlm_Proposal_ApplicationsCollectionArgs = {
 /** The root type for querying data */
 export type QueryNodeArgs = {
   nodeId: Scalars['ID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryProfile_Ai_ImprovementsByPkArgs = {
+  user_id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryProfile_Ai_ImprovementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Profile_Ai_ImprovementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Profile_Ai_ImprovementsOrderBy>>;
 };
 
 /** The root type for querying data */
@@ -785,6 +1016,22 @@ export type QueryUser_CreditsCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<User_CreditsOrderBy>>;
+};
+
+/** The root type for querying data */
+export type QueryUser_FeedbackByPkArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+/** The root type for querying data */
+export type QueryUser_FeedbackCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<User_FeedbackFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<User_FeedbackOrderBy>>;
 };
 
 /** Boolean expression comparing fields on type "String" */
@@ -1123,6 +1370,7 @@ export type Experiences = Node & {
   profiles?: Maybe<Profiles>;
   responsibilities: Array<Maybe<Scalars['String']['output']>>;
   sort_order: Scalars['Int']['output'];
+  stack: Array<Maybe<Scalars['String']['output']>>;
   start_date: Scalars['Date']['output'];
   updated_at: Scalars['Datetime']['output'];
   user_id: Scalars['UUID']['output'];
@@ -1169,6 +1417,7 @@ export type ExperiencesFilter = {
   or?: InputMaybe<Array<ExperiencesFilter>>;
   responsibilities?: InputMaybe<StringListFilter>;
   sort_order?: InputMaybe<IntFilter>;
+  stack?: InputMaybe<StringListFilter>;
   start_date?: InputMaybe<DateFilter>;
   updated_at?: InputMaybe<DatetimeFilter>;
   user_id?: InputMaybe<UuidFilter>;
@@ -1189,6 +1438,7 @@ export type ExperiencesInsertInput = {
   location_type?: InputMaybe<Location_Type>;
   responsibilities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
+  stack?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   start_date?: InputMaybe<Scalars['Date']['input']>;
   updated_at?: InputMaybe<Scalars['Datetime']['input']>;
   user_id?: InputMaybe<Scalars['UUID']['input']>;
@@ -1233,6 +1483,7 @@ export type ExperiencesUpdateInput = {
   location_type?: InputMaybe<Location_Type>;
   responsibilities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
+  stack?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   start_date?: InputMaybe<Scalars['Date']['input']>;
   updated_at?: InputMaybe<Scalars['Datetime']['input']>;
   user_id?: InputMaybe<Scalars['UUID']['input']>;
@@ -1244,6 +1495,459 @@ export type ExperiencesUpdateResponse = {
   affectedCount: Scalars['Int']['output'];
   /** Array of records impacted by the mutation */
   records: Array<Experiences>;
+};
+
+export type Feedback_Prompt_State = Node & {
+  __typename?: 'feedback_prompt_state';
+  created_at: Scalars['Datetime']['output'];
+  last_prompted_at?: Maybe<Scalars['Datetime']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  prompts_shown: Scalars['Int']['output'];
+  trustpilot_clicked_at?: Maybe<Scalars['Datetime']['output']>;
+  updated_at: Scalars['Datetime']['output'];
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Feedback_Prompt_StateConnection = {
+  __typename?: 'feedback_prompt_stateConnection';
+  edges: Array<Feedback_Prompt_StateEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Feedback_Prompt_StateEdge = {
+  __typename?: 'feedback_prompt_stateEdge';
+  cursor: Scalars['String']['output'];
+  node: Feedback_Prompt_State;
+};
+
+export type Feedback_Prompt_StateFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Feedback_Prompt_StateFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  last_prompted_at?: InputMaybe<DatetimeFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Feedback_Prompt_StateFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Feedback_Prompt_StateFilter>>;
+  prompts_shown?: InputMaybe<IntFilter>;
+  trustpilot_clicked_at?: InputMaybe<DatetimeFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Feedback_Prompt_StateOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  last_prompted_at?: InputMaybe<OrderByDirection>;
+  prompts_shown?: InputMaybe<OrderByDirection>;
+  trustpilot_clicked_at?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type Headline_Achievements = Node & {
+  __typename?: 'headline_achievements';
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  label: Scalars['String']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  profiles?: Maybe<Profiles>;
+  sort_order: Scalars['Int']['output'];
+  user_id: Scalars['UUID']['output'];
+  value: Scalars['String']['output'];
+};
+
+export type Headline_AchievementsConnection = {
+  __typename?: 'headline_achievementsConnection';
+  edges: Array<Headline_AchievementsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Headline_AchievementsDeleteResponse = {
+  __typename?: 'headline_achievementsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
+};
+
+export type Headline_AchievementsEdge = {
+  __typename?: 'headline_achievementsEdge';
+  cursor: Scalars['String']['output'];
+  node: Headline_Achievements;
+};
+
+export type Headline_AchievementsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Headline_AchievementsFilter>>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  label?: InputMaybe<StringFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Headline_AchievementsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Headline_AchievementsFilter>>;
+  sort_order?: InputMaybe<IntFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+  value?: InputMaybe<StringFilter>;
+};
+
+export type Headline_AchievementsInsertInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type Headline_AchievementsInsertResponse = {
+  __typename?: 'headline_achievementsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
+};
+
+export type Headline_AchievementsOrderBy = {
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  label?: InputMaybe<OrderByDirection>;
+  sort_order?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+  value?: InputMaybe<OrderByDirection>;
+};
+
+export type Headline_AchievementsUpdateInput = {
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Int']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type Headline_AchievementsUpdateResponse = {
+  __typename?: 'headline_achievementsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Headline_Achievements>;
+};
+
+export type Job_Application_Events = Node & {
+  __typename?: 'job_application_events';
+  application_id: Scalars['UUID']['output'];
+  created_at: Scalars['Datetime']['output'];
+  from_stage?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  job_applications?: Maybe<Job_Applications>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  to_stage: Scalars['String']['output'];
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Job_Application_EventsConnection = {
+  __typename?: 'job_application_eventsConnection';
+  edges: Array<Job_Application_EventsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Job_Application_EventsEdge = {
+  __typename?: 'job_application_eventsEdge';
+  cursor: Scalars['String']['output'];
+  node: Job_Application_Events;
+};
+
+export type Job_Application_EventsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Job_Application_EventsFilter>>;
+  application_id?: InputMaybe<UuidFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  from_stage?: InputMaybe<StringFilter>;
+  id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Job_Application_EventsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Job_Application_EventsFilter>>;
+  to_stage?: InputMaybe<StringFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Job_Application_EventsOrderBy = {
+  application_id?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  from_stage?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  to_stage?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type Job_Application_Notes = Node & {
+  __typename?: 'job_application_notes';
+  application_id: Scalars['UUID']['output'];
+  content: Scalars['String']['output'];
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  job_applications?: Maybe<Job_Applications>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  updated_at: Scalars['Datetime']['output'];
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Job_Application_NotesConnection = {
+  __typename?: 'job_application_notesConnection';
+  edges: Array<Job_Application_NotesEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Job_Application_NotesDeleteResponse = {
+  __typename?: 'job_application_notesDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Job_Application_Notes>;
+};
+
+export type Job_Application_NotesEdge = {
+  __typename?: 'job_application_notesEdge';
+  cursor: Scalars['String']['output'];
+  node: Job_Application_Notes;
+};
+
+export type Job_Application_NotesFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Job_Application_NotesFilter>>;
+  application_id?: InputMaybe<UuidFilter>;
+  content?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Job_Application_NotesFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Job_Application_NotesFilter>>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Job_Application_NotesInsertInput = {
+  application_id?: InputMaybe<Scalars['UUID']['input']>;
+  content?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type Job_Application_NotesInsertResponse = {
+  __typename?: 'job_application_notesInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Job_Application_Notes>;
+};
+
+export type Job_Application_NotesOrderBy = {
+  application_id?: InputMaybe<OrderByDirection>;
+  content?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type Job_Application_NotesUpdateInput = {
+  application_id?: InputMaybe<Scalars['UUID']['input']>;
+  content?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type Job_Application_NotesUpdateResponse = {
+  __typename?: 'job_application_notesUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Job_Application_Notes>;
+};
+
+export type Job_Applications = Node & {
+  __typename?: 'job_applications';
+  applied_on?: Maybe<Scalars['Date']['output']>;
+  company: Scalars['String']['output'];
+  contact?: Maybe<Scalars['String']['output']>;
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  job_application_eventsCollection?: Maybe<Job_Application_EventsConnection>;
+  job_application_notesCollection?: Maybe<Job_Application_NotesConnection>;
+  labels: Scalars['JSON']['output'];
+  links: Scalars['JSON']['output'];
+  location?: Maybe<Scalars['String']['output']>;
+  next_step?: Maybe<Scalars['String']['output']>;
+  next_step_on?: Maybe<Scalars['Date']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  position: Scalars['String']['output'];
+  resume_id?: Maybe<Scalars['UUID']['output']>;
+  resumes?: Maybe<Resumes>;
+  salary?: Maybe<Scalars['String']['output']>;
+  sort_order: Scalars['Float']['output'];
+  stage: Scalars['String']['output'];
+  stage_changed_at: Scalars['Datetime']['output'];
+  updated_at: Scalars['Datetime']['output'];
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Job_ApplicationsJob_Application_EventsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Job_Application_EventsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Job_Application_EventsOrderBy>>;
+};
+
+export type Job_ApplicationsJob_Application_NotesCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Job_Application_NotesFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Job_Application_NotesOrderBy>>;
+};
+
+export type Job_ApplicationsConnection = {
+  __typename?: 'job_applicationsConnection';
+  edges: Array<Job_ApplicationsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Job_ApplicationsDeleteResponse = {
+  __typename?: 'job_applicationsDeleteResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Job_Applications>;
+};
+
+export type Job_ApplicationsEdge = {
+  __typename?: 'job_applicationsEdge';
+  cursor: Scalars['String']['output'];
+  node: Job_Applications;
+};
+
+export type Job_ApplicationsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Job_ApplicationsFilter>>;
+  applied_on?: InputMaybe<DateFilter>;
+  company?: InputMaybe<StringFilter>;
+  contact?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  location?: InputMaybe<StringFilter>;
+  next_step?: InputMaybe<StringFilter>;
+  next_step_on?: InputMaybe<DateFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Job_ApplicationsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Job_ApplicationsFilter>>;
+  position?: InputMaybe<StringFilter>;
+  resume_id?: InputMaybe<UuidFilter>;
+  salary?: InputMaybe<StringFilter>;
+  sort_order?: InputMaybe<FloatFilter>;
+  stage?: InputMaybe<StringFilter>;
+  stage_changed_at?: InputMaybe<DatetimeFilter>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Job_ApplicationsInsertInput = {
+  applied_on?: InputMaybe<Scalars['Date']['input']>;
+  company?: InputMaybe<Scalars['String']['input']>;
+  contact?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  labels?: InputMaybe<Scalars['JSON']['input']>;
+  links?: InputMaybe<Scalars['JSON']['input']>;
+  location?: InputMaybe<Scalars['String']['input']>;
+  next_step?: InputMaybe<Scalars['String']['input']>;
+  next_step_on?: InputMaybe<Scalars['Date']['input']>;
+  position?: InputMaybe<Scalars['String']['input']>;
+  resume_id?: InputMaybe<Scalars['UUID']['input']>;
+  salary?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Float']['input']>;
+  stage?: InputMaybe<Scalars['String']['input']>;
+  stage_changed_at?: InputMaybe<Scalars['Datetime']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type Job_ApplicationsInsertResponse = {
+  __typename?: 'job_applicationsInsertResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Job_Applications>;
+};
+
+export type Job_ApplicationsOrderBy = {
+  applied_on?: InputMaybe<OrderByDirection>;
+  company?: InputMaybe<OrderByDirection>;
+  contact?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  location?: InputMaybe<OrderByDirection>;
+  next_step?: InputMaybe<OrderByDirection>;
+  next_step_on?: InputMaybe<OrderByDirection>;
+  position?: InputMaybe<OrderByDirection>;
+  resume_id?: InputMaybe<OrderByDirection>;
+  salary?: InputMaybe<OrderByDirection>;
+  sort_order?: InputMaybe<OrderByDirection>;
+  stage?: InputMaybe<OrderByDirection>;
+  stage_changed_at?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
+export type Job_ApplicationsUpdateInput = {
+  applied_on?: InputMaybe<Scalars['Date']['input']>;
+  company?: InputMaybe<Scalars['String']['input']>;
+  contact?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  labels?: InputMaybe<Scalars['JSON']['input']>;
+  links?: InputMaybe<Scalars['JSON']['input']>;
+  location?: InputMaybe<Scalars['String']['input']>;
+  next_step?: InputMaybe<Scalars['String']['input']>;
+  next_step_on?: InputMaybe<Scalars['Date']['input']>;
+  position?: InputMaybe<Scalars['String']['input']>;
+  resume_id?: InputMaybe<Scalars['UUID']['input']>;
+  salary?: InputMaybe<Scalars['String']['input']>;
+  sort_order?: InputMaybe<Scalars['Float']['input']>;
+  stage?: InputMaybe<Scalars['String']['input']>;
+  stage_changed_at?: InputMaybe<Scalars['Datetime']['input']>;
+  updated_at?: InputMaybe<Scalars['Datetime']['input']>;
+  user_id?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type Job_ApplicationsUpdateResponse = {
+  __typename?: 'job_applicationsUpdateResponse';
+  /** Count of the records impacted by the mutation */
+  affectedCount: Scalars['Int']['output'];
+  /** Array of records impacted by the mutation */
+  records: Array<Job_Applications>;
 };
 
 export type Language_Proficiency =
@@ -1530,6 +2234,58 @@ export type Location_TypeFilter = {
   neq?: InputMaybe<Location_Type>;
 };
 
+export type Profile_Ai_Improvements = Node & {
+  __typename?: 'profile_ai_improvements';
+  applied_at?: Maybe<Scalars['Datetime']['output']>;
+  claimed_at: Scalars['Datetime']['output'];
+  client_request_id: Scalars['String']['output'];
+  job_id?: Maybe<Scalars['UUID']['output']>;
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  updated_at: Scalars['Datetime']['output'];
+  used_at?: Maybe<Scalars['Datetime']['output']>;
+  user_id: Scalars['UUID']['output'];
+};
+
+export type Profile_Ai_ImprovementsConnection = {
+  __typename?: 'profile_ai_improvementsConnection';
+  edges: Array<Profile_Ai_ImprovementsEdge>;
+  pageInfo: PageInfo;
+};
+
+export type Profile_Ai_ImprovementsEdge = {
+  __typename?: 'profile_ai_improvementsEdge';
+  cursor: Scalars['String']['output'];
+  node: Profile_Ai_Improvements;
+};
+
+export type Profile_Ai_ImprovementsFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<Profile_Ai_ImprovementsFilter>>;
+  applied_at?: InputMaybe<DatetimeFilter>;
+  claimed_at?: InputMaybe<DatetimeFilter>;
+  client_request_id?: InputMaybe<StringFilter>;
+  job_id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<Profile_Ai_ImprovementsFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<Profile_Ai_ImprovementsFilter>>;
+  updated_at?: InputMaybe<DatetimeFilter>;
+  used_at?: InputMaybe<DatetimeFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type Profile_Ai_ImprovementsOrderBy = {
+  applied_at?: InputMaybe<OrderByDirection>;
+  claimed_at?: InputMaybe<OrderByDirection>;
+  client_request_id?: InputMaybe<OrderByDirection>;
+  job_id?: InputMaybe<OrderByDirection>;
+  updated_at?: InputMaybe<OrderByDirection>;
+  used_at?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
 export type Profiles = Node & {
   __typename?: 'profiles';
   city?: Maybe<Scalars['String']['output']>;
@@ -1539,6 +2295,8 @@ export type Profiles = Node & {
   educationsCollection?: Maybe<EducationsConnection>;
   experiencesCollection?: Maybe<ExperiencesConnection>;
   first_name: Scalars['String']['output'];
+  group_skills: Scalars['Boolean']['output'];
+  headline_achievementsCollection?: Maybe<Headline_AchievementsConnection>;
   languagesCollection?: Maybe<LanguagesConnection>;
   last_name: Scalars['String']['output'];
   linksCollection?: Maybe<LinksConnection>;
@@ -1583,6 +2341,16 @@ export type ProfilesExperiencesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ExperiencesOrderBy>>;
+};
+
+export type ProfilesHeadline_AchievementsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Headline_AchievementsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Headline_AchievementsOrderBy>>;
 };
 
 export type ProfilesLanguagesCollectionArgs = {
@@ -1652,6 +2420,7 @@ export type ProfilesFilter = {
   country?: InputMaybe<StringFilter>;
   created_at?: InputMaybe<DatetimeFilter>;
   first_name?: InputMaybe<StringFilter>;
+  group_skills?: InputMaybe<BooleanFilter>;
   last_name?: InputMaybe<StringFilter>;
   nodeId?: InputMaybe<IdFilter>;
   /** Negates a filter */
@@ -1670,6 +2439,7 @@ export type ProfilesInsertInput = {
   country?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
   first_name?: InputMaybe<Scalars['String']['input']>;
+  group_skills?: InputMaybe<Scalars['Boolean']['input']>;
   last_name?: InputMaybe<Scalars['String']['input']>;
   role?: InputMaybe<Scalars['String']['input']>;
   seniority?: InputMaybe<Seniority_Level>;
@@ -1691,6 +2461,7 @@ export type ProfilesOrderBy = {
   country?: InputMaybe<OrderByDirection>;
   created_at?: InputMaybe<OrderByDirection>;
   first_name?: InputMaybe<OrderByDirection>;
+  group_skills?: InputMaybe<OrderByDirection>;
   last_name?: InputMaybe<OrderByDirection>;
   role?: InputMaybe<OrderByDirection>;
   seniority?: InputMaybe<OrderByDirection>;
@@ -1704,6 +2475,7 @@ export type ProfilesUpdateInput = {
   country?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
   first_name?: InputMaybe<Scalars['String']['input']>;
+  group_skills?: InputMaybe<Scalars['Boolean']['input']>;
   last_name?: InputMaybe<Scalars['String']['input']>;
   role?: InputMaybe<Scalars['String']['input']>;
   seniority?: InputMaybe<Seniority_Level>;
@@ -1965,6 +2737,7 @@ export type Resumes = Node & {
   font_size: Resume_Font_Size;
   generation_updated_at?: Maybe<Scalars['Datetime']['output']>;
   id: Scalars['UUID']['output'];
+  job_applicationsCollection?: Maybe<Job_ApplicationsConnection>;
   label?: Maybe<Scalars['String']['output']>;
   llm_proposal_applicationsCollection?: Maybe<Llm_Proposal_ApplicationsConnection>;
   name: Scalars['String']['output'];
@@ -1978,7 +2751,18 @@ export type Resumes = Node & {
   template_key: Scalars['String']['output'];
   type: Resume_Type;
   updated_at: Scalars['Datetime']['output'];
+  user_feedbackCollection?: Maybe<User_FeedbackConnection>;
   user_id: Scalars['UUID']['output'];
+};
+
+export type ResumesJob_ApplicationsCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<Job_ApplicationsFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<Job_ApplicationsOrderBy>>;
 };
 
 export type ResumesLlm_Proposal_ApplicationsCollectionArgs = {
@@ -1999,6 +2783,16 @@ export type ResumesResumesCollectionArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<ResumesOrderBy>>;
+};
+
+export type ResumesUser_FeedbackCollectionArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<User_FeedbackFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<User_FeedbackOrderBy>>;
 };
 
 export type ResumesConnection = {
@@ -2124,6 +2918,7 @@ export type Seniority_LevelFilter = {
 export type Skills = Node & {
   __typename?: 'skills';
   created_at: Scalars['Datetime']['output'];
+  group_name?: Maybe<Scalars['String']['output']>;
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
   /** Globally Unique Record Identifier */
@@ -2157,6 +2952,7 @@ export type SkillsFilter = {
   /** Returns true only if all its inner filters are true, otherwise returns false */
   and?: InputMaybe<Array<SkillsFilter>>;
   created_at?: InputMaybe<DatetimeFilter>;
+  group_name?: InputMaybe<StringFilter>;
   id?: InputMaybe<UuidFilter>;
   name?: InputMaybe<StringFilter>;
   nodeId?: InputMaybe<IdFilter>;
@@ -2170,6 +2966,7 @@ export type SkillsFilter = {
 
 export type SkillsInsertInput = {
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  group_name?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['UUID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
@@ -2186,6 +2983,7 @@ export type SkillsInsertResponse = {
 
 export type SkillsOrderBy = {
   created_at?: InputMaybe<OrderByDirection>;
+  group_name?: InputMaybe<OrderByDirection>;
   id?: InputMaybe<OrderByDirection>;
   name?: InputMaybe<OrderByDirection>;
   sort_order?: InputMaybe<OrderByDirection>;
@@ -2194,6 +2992,7 @@ export type SkillsOrderBy = {
 
 export type SkillsUpdateInput = {
   created_at?: InputMaybe<Scalars['Datetime']['input']>;
+  group_name?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['UUID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   sort_order?: InputMaybe<Scalars['Int']['input']>;
@@ -2335,20 +3134,193 @@ export type User_CreditsOrderBy = {
   user_id?: InputMaybe<OrderByDirection>;
 };
 
+export type User_Feedback = Node & {
+  __typename?: 'user_feedback';
+  comment: Scalars['String']['output'];
+  created_at: Scalars['Datetime']['output'];
+  id: Scalars['UUID']['output'];
+  /** Globally Unique Record Identifier */
+  nodeId: Scalars['ID']['output'];
+  resume_id?: Maybe<Scalars['UUID']['output']>;
+  resumes?: Maybe<Resumes>;
+  user_id: Scalars['UUID']['output'];
+};
+
+export type User_FeedbackConnection = {
+  __typename?: 'user_feedbackConnection';
+  edges: Array<User_FeedbackEdge>;
+  pageInfo: PageInfo;
+};
+
+export type User_FeedbackEdge = {
+  __typename?: 'user_feedbackEdge';
+  cursor: Scalars['String']['output'];
+  node: User_Feedback;
+};
+
+export type User_FeedbackFilter = {
+  /** Returns true only if all its inner filters are true, otherwise returns false */
+  and?: InputMaybe<Array<User_FeedbackFilter>>;
+  comment?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<UuidFilter>;
+  nodeId?: InputMaybe<IdFilter>;
+  /** Negates a filter */
+  not?: InputMaybe<User_FeedbackFilter>;
+  /** Returns true if at least one of its inner filters is true, otherwise returns false */
+  or?: InputMaybe<Array<User_FeedbackFilter>>;
+  resume_id?: InputMaybe<UuidFilter>;
+  user_id?: InputMaybe<UuidFilter>;
+};
+
+export type User_FeedbackOrderBy = {
+  comment?: InputMaybe<OrderByDirection>;
+  created_at?: InputMaybe<OrderByDirection>;
+  id?: InputMaybe<OrderByDirection>;
+  resume_id?: InputMaybe<OrderByDirection>;
+  user_id?: InputMaybe<OrderByDirection>;
+};
+
 /** Boolean expression comparing fields on type "Datetime" */
+export type ListApplicationFragment = { id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string };
+
+export type ApplicationsByUserQueryVariables = Exact<{
+  userId: string;
+  first: number;
+  after?: string | null | undefined;
+}>;
+
+export type ApplicationsByUserQuery = { job_applicationsCollection: { edges: Array<{ node: { id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string } }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } };
+
+export type InsertApplicationMutationVariables = Exact<{
+  objects: Array<Job_ApplicationsInsertInput> | Job_ApplicationsInsertInput;
+}>;
+
+export type InsertApplicationMutation = { insertIntojob_applicationsCollection: { affectedCount: number, records: Array<{ id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string }> } | null };
+
+export type UpdateApplicationMutationVariables = Exact<{
+  id: string;
+  set: Job_ApplicationsUpdateInput;
+  atMost: number;
+}>;
+
+export type UpdateApplicationMutation = { updatejob_applicationsCollection: { affectedCount: number, records: Array<{ id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string }> } };
+
+export type DeleteApplicationMutationVariables = Exact<{
+  id: string;
+  atMost: number;
+}>;
+
+export type DeleteApplicationMutation = { deleteFromjob_applicationsCollection: { affectedCount: number, records: Array<{ id: string }> } };
+
+export type ApplicationNoteFragment = { id: string, content: string, created_at: string, updated_at: string };
+
+export type ApplicationEventFragment = { id: string, from_stage: string | null, to_stage: string, created_at: string };
+
+export type ApplicationByIdQueryVariables = Exact<{
+  id: string;
+}>;
+
+export type ApplicationByIdQuery = { job_applicationsCollection: { edges: Array<{ node: { id: string, user_id: string, position: string, company: string, stage: string, sort_order: number, location: string | null, salary: string | null, contact: string | null, applied_on: string | null, next_step_on: string | null, next_step: string | null, resume_id: string | null, labels: string, links: string, stage_changed_at: string, created_at: string, updated_at: string } }> } };
+
+export type NotesByApplicationQueryVariables = Exact<{
+  applicationId: string;
+  first: number;
+  after?: string | null | undefined;
+}>;
+
+export type NotesByApplicationQuery = { job_application_notesCollection: { edges: Array<{ node: { id: string, content: string, created_at: string, updated_at: string } }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } };
+
+export type EventsByApplicationQueryVariables = Exact<{
+  applicationId: string;
+  first: number;
+  after?: string | null | undefined;
+}>;
+
+export type EventsByApplicationQuery = { job_application_eventsCollection: { edges: Array<{ node: { id: string, from_stage: string | null, to_stage: string, created_at: string } }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } };
+
+export type InsertApplicationNoteMutationVariables = Exact<{
+  objects: Array<Job_Application_NotesInsertInput> | Job_Application_NotesInsertInput;
+}>;
+
+export type InsertApplicationNoteMutation = { insertIntojob_application_notesCollection: { affectedCount: number, records: Array<{ id: string, content: string, created_at: string, updated_at: string }> } | null };
+
+export type UpdateApplicationNoteMutationVariables = Exact<{
+  id: string;
+  content: string;
+  atMost: number;
+}>;
+
+export type UpdateApplicationNoteMutation = { updatejob_application_notesCollection: { affectedCount: number, records: Array<{ id: string, content: string, created_at: string, updated_at: string }> } };
+
+export type DeleteApplicationNoteMutationVariables = Exact<{
+  id: string;
+  atMost: number;
+}>;
+
+export type DeleteApplicationNoteMutation = { deleteFromjob_application_notesCollection: { affectedCount: number, records: Array<{ id: string }> } };
+
+export type ApplicationsByResumesQueryVariables = Exact<{
+  resumeIds: Array<string> | string;
+  first: number;
+  after?: string | null | undefined;
+}>;
+
+export type ApplicationsByResumesQuery = { job_applicationsCollection: { edges: Array<{ node: { id: string, resume_id: string | null } }>, pageInfo: { hasNextPage: boolean, endCursor: string | null } } };
+
+export type ResumesByMediaKeysQueryVariables = Exact<{
+  keys: Array<string> | string;
+  first: number;
+}>;
+
+export type ResumesByMediaKeysQuery = { resumesCollection: { edges: Array<{ node: { id: string, pdf_media_key: string | null } }> } };
+
 export type CreditsQueryVariables = Exact<{
   first?: number | null | undefined;
 }>;
 
 export type CreditsQuery = { user_creditsCollection: { edges: Array<{ node: { balance: number } }> } };
 
-export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string };
+export type ClaimProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+}>;
+
+export type ClaimProfileImprovementMutation = { claim_profile_improvement: string | null };
+
+export type ConfirmProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+  p_job_id: string;
+}>;
+
+export type ConfirmProfileImprovementMutation = { confirm_profile_improvement: unknown };
+
+export type ReleaseProfileImprovementMutationVariables = Exact<{
+  p_client_request_id: string;
+}>;
+
+export type ReleaseProfileImprovementMutation = { release_profile_improvement: unknown };
+
+export type MarkProfileImprovementUsedMutationVariables = Exact<{
+  p_job_id?: string | null | undefined;
+}>;
+
+export type MarkProfileImprovementUsedMutation = { mark_profile_improvement_used: unknown };
+
+export type ProfileImprovementRequestQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type ProfileImprovementRequestQuery = { profile_ai_improvementsCollection: { edges: Array<{ node: { client_request_id: string, used_at: string | null } }> } };
+
+export type ProfileImprovementQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type ProfileImprovementQuery = { profile_ai_improvementsCollection: { edges: Array<{ node: { used_at: string | null, applied_at: string | null } }> } };
+
+export type ProfileFieldsFragment = { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, group_skills: boolean, created_at: string, updated_at: string };
 
 export type ProfileByUserQueryVariables = Exact<{
   userId: string;
 }>;
 
-export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, created_at: string, updated_at: string } }> }, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } }> }, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string | null>, responsibilities: Array<string | null>, key_contributions: Array<string | null>, additional_details: string | null, sort_order: number } }> }, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } }> }, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } }> }, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } }> }, skillsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } }> }, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } }> } };
+export type ProfileByUserQuery = { profilesCollection: { edges: Array<{ node: { user_id: string, first_name: string, last_name: string, role: string, tagline: string | null, seniority: Seniority_Level, city: string | null, country: string | null, group_skills: boolean, created_at: string, updated_at: string } }> }, contactsCollection: { edges: Array<{ node: { id: string, kind: Contact_Kind, value: string, label: string | null, is_primary: boolean, sort_order: number } }> }, experiencesCollection: { edges: Array<{ node: { id: string, company: string, job_title: string, employment_type: Employment_Type | null, location_type: Location_Type | null, start_date: string, end_date: string | null, is_present: boolean, achievements: Array<string | null>, responsibilities: Array<string | null>, key_contributions: Array<string | null>, stack: Array<string | null>, additional_details: string | null, sort_order: number } }> }, educationsCollection: { edges: Array<{ node: { id: string, name: string, degree_type: string, start_date: string, end_date: string | null, is_present: boolean, additional_details: string | null, sort_order: number } }> }, projectsCollection: { edges: Array<{ node: { id: string, name: string, url: string | null, additional_details: string, sort_order: number } }> }, recommendationsCollection: { edges: Array<{ node: { id: string, name: string, url: string, additional_details: string, sort_order: number } }> }, skillsCollection: { edges: Array<{ node: { id: string, name: string, group_name: string | null, sort_order: number } }> }, toolsCollection: { edges: Array<{ node: { id: string, name: string, sort_order: number } }> }, linksCollection: { edges: Array<{ node: { id: string, type: string, value: string, sort_order: number } }> }, languagesCollection: { edges: Array<{ node: { id: string, language: string, proficiency: Language_Proficiency, sort_order: number } }> }, headline_achievementsCollection: { edges: Array<{ node: { id: string, value: string, label: string, sort_order: number } }> } };
 
 export type ListResumeFragment = { id: string, user_id: string, name: string, label: string | null, type: Resume_Type, template_key: string, color: string, font_size: Resume_Font_Size, font_family: string | null, pdf_url: string | null, pdf_media_key: string | null, source_resume_id: string | null, created_at: string, updated_at: string };
 
@@ -2408,6 +3380,25 @@ export type Apply_Llm_ProposalMutationVariables = Exact<{
 
 export type Apply_Llm_ProposalMutation = { apply_llm_proposal: string | null };
 
+export type Feedback_Prompt_DueMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Feedback_Prompt_DueMutation = { feedback_prompt_due: string | null };
+
+export type Record_Feedback_PromptMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Record_Feedback_PromptMutation = { record_feedback_prompt: string | null };
+
+export type Submit_FeedbackMutationVariables = Exact<{
+  p_comment: string;
+  p_resume_id?: string | null | undefined;
+}>;
+
+export type Submit_FeedbackMutation = { submit_feedback: string | null };
+
+export type Record_Trustpilot_ClickMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type Record_Trustpilot_ClickMutation = { record_trustpilot_click: unknown };
+
 export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type HealthQuery = { __typename: 'Query' };
@@ -2430,6 +3421,44 @@ export type Save_ProfileMutationVariables = Exact<{
 
 export type Save_ProfileMutation = { save_profile: string | null };
 
+export const ListApplicationFragmentDoc = gql`
+    fragment ListApplication on job_applications {
+  id
+  user_id
+  position
+  company
+  stage
+  sort_order
+  location
+  salary
+  contact
+  applied_on
+  next_step_on
+  next_step
+  resume_id
+  labels
+  links
+  stage_changed_at
+  created_at
+  updated_at
+}
+    `;
+export const ApplicationNoteFragmentDoc = gql`
+    fragment ApplicationNote on job_application_notes {
+  id
+  content
+  created_at
+  updated_at
+}
+    `;
+export const ApplicationEventFragmentDoc = gql`
+    fragment ApplicationEvent on job_application_events {
+  id
+  from_stage
+  to_stage
+  created_at
+}
+    `;
 export const ProfileFieldsFragmentDoc = gql`
     fragment ProfileFields on profiles {
   user_id
@@ -2440,6 +3469,7 @@ export const ProfileFieldsFragmentDoc = gql`
   seniority
   city
   country
+  group_skills
   created_at
   updated_at
 }
@@ -2462,12 +3492,234 @@ export const ListResumeFragmentDoc = gql`
   updated_at
 }
     `;
+export const ApplicationsByUserDocument = gql`
+    query ApplicationsByUser($userId: UUID!, $first: Int!, $after: Cursor) {
+  job_applicationsCollection(
+    filter: {user_id: {eq: $userId}}
+    orderBy: [{sort_order: AscNullsLast}, {created_at: AscNullsLast}, {id: AscNullsLast}]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ListApplication
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    ${ListApplicationFragmentDoc}`;
+export const InsertApplicationDocument = gql`
+    mutation InsertApplication($objects: [job_applicationsInsertInput!]!) {
+  insertIntojob_applicationsCollection(objects: $objects) {
+    affectedCount
+    records {
+      ...ListApplication
+    }
+  }
+}
+    ${ListApplicationFragmentDoc}`;
+export const UpdateApplicationDocument = gql`
+    mutation UpdateApplication($id: UUID!, $set: job_applicationsUpdateInput!, $atMost: Int!) {
+  updatejob_applicationsCollection(
+    set: $set
+    filter: {id: {eq: $id}}
+    atMost: $atMost
+  ) {
+    affectedCount
+    records {
+      ...ListApplication
+    }
+  }
+}
+    ${ListApplicationFragmentDoc}`;
+export const DeleteApplicationDocument = gql`
+    mutation DeleteApplication($id: UUID!, $atMost: Int!) {
+  deleteFromjob_applicationsCollection(filter: {id: {eq: $id}}, atMost: $atMost) {
+    affectedCount
+    records {
+      id
+    }
+  }
+}
+    `;
+export const ApplicationByIdDocument = gql`
+    query ApplicationById($id: UUID!) {
+  job_applicationsCollection(filter: {id: {eq: $id}}, first: 1) {
+    edges {
+      node {
+        ...ListApplication
+      }
+    }
+  }
+}
+    ${ListApplicationFragmentDoc}`;
+export const NotesByApplicationDocument = gql`
+    query NotesByApplication($applicationId: UUID!, $first: Int!, $after: Cursor) {
+  job_application_notesCollection(
+    filter: {application_id: {eq: $applicationId}}
+    orderBy: [{created_at: DescNullsLast}, {id: DescNullsLast}]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ApplicationNote
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    ${ApplicationNoteFragmentDoc}`;
+export const EventsByApplicationDocument = gql`
+    query EventsByApplication($applicationId: UUID!, $first: Int!, $after: Cursor) {
+  job_application_eventsCollection(
+    filter: {application_id: {eq: $applicationId}}
+    orderBy: [{created_at: DescNullsLast}, {id: DescNullsLast}]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        ...ApplicationEvent
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    ${ApplicationEventFragmentDoc}`;
+export const InsertApplicationNoteDocument = gql`
+    mutation InsertApplicationNote($objects: [job_application_notesInsertInput!]!) {
+  insertIntojob_application_notesCollection(objects: $objects) {
+    affectedCount
+    records {
+      ...ApplicationNote
+    }
+  }
+}
+    ${ApplicationNoteFragmentDoc}`;
+export const UpdateApplicationNoteDocument = gql`
+    mutation UpdateApplicationNote($id: UUID!, $content: String!, $atMost: Int!) {
+  updatejob_application_notesCollection(
+    set: {content: $content}
+    filter: {id: {eq: $id}}
+    atMost: $atMost
+  ) {
+    affectedCount
+    records {
+      ...ApplicationNote
+    }
+  }
+}
+    ${ApplicationNoteFragmentDoc}`;
+export const DeleteApplicationNoteDocument = gql`
+    mutation DeleteApplicationNote($id: UUID!, $atMost: Int!) {
+  deleteFromjob_application_notesCollection(
+    filter: {id: {eq: $id}}
+    atMost: $atMost
+  ) {
+    affectedCount
+    records {
+      id
+    }
+  }
+}
+    `;
+export const ApplicationsByResumesDocument = gql`
+    query ApplicationsByResumes($resumeIds: [UUID!]!, $first: Int!, $after: Cursor) {
+  job_applicationsCollection(
+    filter: {resume_id: {in: $resumeIds}}
+    orderBy: [{created_at: AscNullsLast}, {id: AscNullsLast}]
+    first: $first
+    after: $after
+  ) {
+    edges {
+      node {
+        id
+        resume_id
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    `;
+export const ResumesByMediaKeysDocument = gql`
+    query ResumesByMediaKeys($keys: [String!]!, $first: Int!) {
+  resumesCollection(filter: {pdf_media_key: {in: $keys}}, first: $first) {
+    edges {
+      node {
+        id
+        pdf_media_key
+      }
+    }
+  }
+}
+    `;
 export const CreditsDocument = gql`
     query Credits($first: Int) {
   user_creditsCollection(first: $first) {
     edges {
       node {
         balance
+      }
+    }
+  }
+}
+    `;
+export const ClaimProfileImprovementDocument = gql`
+    mutation ClaimProfileImprovement($p_client_request_id: String!) {
+  claim_profile_improvement(p_client_request_id: $p_client_request_id)
+}
+    `;
+export const ConfirmProfileImprovementDocument = gql`
+    mutation ConfirmProfileImprovement($p_client_request_id: String!, $p_job_id: UUID!) {
+  confirm_profile_improvement(
+    p_client_request_id: $p_client_request_id
+    p_job_id: $p_job_id
+  )
+}
+    `;
+export const ReleaseProfileImprovementDocument = gql`
+    mutation ReleaseProfileImprovement($p_client_request_id: String!) {
+  release_profile_improvement(p_client_request_id: $p_client_request_id)
+}
+    `;
+export const MarkProfileImprovementUsedDocument = gql`
+    mutation MarkProfileImprovementUsed($p_job_id: UUID) {
+  mark_profile_improvement_used(p_job_id: $p_job_id)
+}
+    `;
+export const ProfileImprovementRequestDocument = gql`
+    query ProfileImprovementRequest {
+  profile_ai_improvementsCollection(first: 1) {
+    edges {
+      node {
+        client_request_id
+        used_at
+      }
+    }
+  }
+}
+    `;
+export const ProfileImprovementDocument = gql`
+    query ProfileImprovement {
+  profile_ai_improvementsCollection(first: 1) {
+    edges {
+      node {
+        used_at
+        applied_at
       }
     }
   }
@@ -2516,6 +3768,7 @@ export const ProfileByUserDocument = gql`
         achievements
         responsibilities
         key_contributions
+        stack
         additional_details
         sort_order
       }
@@ -2578,6 +3831,7 @@ export const ProfileByUserDocument = gql`
       node {
         id
         name
+        group_name
         sort_order
       }
     }
@@ -2619,6 +3873,20 @@ export const ProfileByUserDocument = gql`
         id
         language
         proficiency
+        sort_order
+      }
+    }
+  }
+  headline_achievementsCollection(
+    filter: {user_id: {eq: $userId}}
+    first: 3
+    orderBy: [{sort_order: AscNullsLast}]
+  ) {
+    edges {
+      node {
+        id
+        value
+        label
         sort_order
       }
     }
@@ -2725,6 +3993,26 @@ export const Apply_Llm_ProposalDocument = gql`
   apply_llm_proposal(p_request: $p_request)
 }
     `;
+export const Feedback_Prompt_DueDocument = gql`
+    mutation Feedback_Prompt_Due {
+  feedback_prompt_due
+}
+    `;
+export const Record_Feedback_PromptDocument = gql`
+    mutation Record_Feedback_Prompt {
+  record_feedback_prompt
+}
+    `;
+export const Submit_FeedbackDocument = gql`
+    mutation Submit_Feedback($p_comment: String!, $p_resume_id: UUID) {
+  submit_feedback(p_comment: $p_comment, p_resume_id: $p_resume_id)
+}
+    `;
+export const Record_Trustpilot_ClickDocument = gql`
+    mutation Record_Trustpilot_Click {
+  record_trustpilot_click
+}
+    `;
 export const HealthDocument = gql`
     query Health {
   __typename
@@ -2764,8 +4052,62 @@ const defaultWrapper: SdkFunctionWrapper = (action, _operationName, _operationTy
 
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
+    ApplicationsByUser(variables: ApplicationsByUserQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ApplicationsByUserQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ApplicationsByUserQuery>({ document: ApplicationsByUserDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ApplicationsByUser', 'query', variables);
+    },
+    InsertApplication(variables: InsertApplicationMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<InsertApplicationMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<InsertApplicationMutation>({ document: InsertApplicationDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'InsertApplication', 'mutation', variables);
+    },
+    UpdateApplication(variables: UpdateApplicationMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<UpdateApplicationMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<UpdateApplicationMutation>({ document: UpdateApplicationDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'UpdateApplication', 'mutation', variables);
+    },
+    DeleteApplication(variables: DeleteApplicationMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteApplicationMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<DeleteApplicationMutation>({ document: DeleteApplicationDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteApplication', 'mutation', variables);
+    },
+    ApplicationById(variables: ApplicationByIdQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ApplicationByIdQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ApplicationByIdQuery>({ document: ApplicationByIdDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ApplicationById', 'query', variables);
+    },
+    NotesByApplication(variables: NotesByApplicationQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<NotesByApplicationQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<NotesByApplicationQuery>({ document: NotesByApplicationDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'NotesByApplication', 'query', variables);
+    },
+    EventsByApplication(variables: EventsByApplicationQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<EventsByApplicationQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<EventsByApplicationQuery>({ document: EventsByApplicationDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'EventsByApplication', 'query', variables);
+    },
+    InsertApplicationNote(variables: InsertApplicationNoteMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<InsertApplicationNoteMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<InsertApplicationNoteMutation>({ document: InsertApplicationNoteDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'InsertApplicationNote', 'mutation', variables);
+    },
+    UpdateApplicationNote(variables: UpdateApplicationNoteMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<UpdateApplicationNoteMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<UpdateApplicationNoteMutation>({ document: UpdateApplicationNoteDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'UpdateApplicationNote', 'mutation', variables);
+    },
+    DeleteApplicationNote(variables: DeleteApplicationNoteMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<DeleteApplicationNoteMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<DeleteApplicationNoteMutation>({ document: DeleteApplicationNoteDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'DeleteApplicationNote', 'mutation', variables);
+    },
+    ApplicationsByResumes(variables: ApplicationsByResumesQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ApplicationsByResumesQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ApplicationsByResumesQuery>({ document: ApplicationsByResumesDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ApplicationsByResumes', 'query', variables);
+    },
+    ResumesByMediaKeys(variables: ResumesByMediaKeysQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ResumesByMediaKeysQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ResumesByMediaKeysQuery>({ document: ResumesByMediaKeysDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ResumesByMediaKeys', 'query', variables);
+    },
     Credits(variables?: CreditsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<CreditsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<CreditsQuery>({ document: CreditsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Credits', 'query', variables);
+    },
+    ClaimProfileImprovement(variables: ClaimProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ClaimProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ClaimProfileImprovementMutation>({ document: ClaimProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ClaimProfileImprovement', 'mutation', variables);
+    },
+    ConfirmProfileImprovement(variables: ConfirmProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ConfirmProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ConfirmProfileImprovementMutation>({ document: ConfirmProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ConfirmProfileImprovement', 'mutation', variables);
+    },
+    ReleaseProfileImprovement(variables: ReleaseProfileImprovementMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ReleaseProfileImprovementMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ReleaseProfileImprovementMutation>({ document: ReleaseProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ReleaseProfileImprovement', 'mutation', variables);
+    },
+    MarkProfileImprovementUsed(variables?: MarkProfileImprovementUsedMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<MarkProfileImprovementUsedMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<MarkProfileImprovementUsedMutation>({ document: MarkProfileImprovementUsedDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'MarkProfileImprovementUsed', 'mutation', variables);
+    },
+    ProfileImprovementRequest(variables?: ProfileImprovementRequestQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileImprovementRequestQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ProfileImprovementRequestQuery>({ document: ProfileImprovementRequestDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileImprovementRequest', 'query', variables);
+    },
+    ProfileImprovement(variables?: ProfileImprovementQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileImprovementQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ProfileImprovementQuery>({ document: ProfileImprovementDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileImprovement', 'query', variables);
     },
     ProfileByUser(variables: ProfileByUserQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProfileByUserQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProfileByUserQuery>({ document: ProfileByUserDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProfileByUser', 'query', variables);
@@ -2793,6 +4135,18 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Apply_Llm_Proposal(variables: Apply_Llm_ProposalMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Apply_Llm_ProposalMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<Apply_Llm_ProposalMutation>({ document: Apply_Llm_ProposalDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Apply_Llm_Proposal', 'mutation', variables);
+    },
+    Feedback_Prompt_Due(variables?: Feedback_Prompt_DueMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Feedback_Prompt_DueMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Feedback_Prompt_DueMutation>({ document: Feedback_Prompt_DueDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Feedback_Prompt_Due', 'mutation', variables);
+    },
+    Record_Feedback_Prompt(variables?: Record_Feedback_PromptMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Record_Feedback_PromptMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Record_Feedback_PromptMutation>({ document: Record_Feedback_PromptDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Record_Feedback_Prompt', 'mutation', variables);
+    },
+    Submit_Feedback(variables: Submit_FeedbackMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Submit_FeedbackMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Submit_FeedbackMutation>({ document: Submit_FeedbackDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Submit_Feedback', 'mutation', variables);
+    },
+    Record_Trustpilot_Click(variables?: Record_Trustpilot_ClickMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<Record_Trustpilot_ClickMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Record_Trustpilot_ClickMutation>({ document: Record_Trustpilot_ClickDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Record_Trustpilot_Click', 'mutation', variables);
     },
     Health(variables?: HealthQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<HealthQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<HealthQuery>({ document: HealthDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Health', 'query', variables);

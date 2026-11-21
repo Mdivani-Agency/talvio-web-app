@@ -29,6 +29,19 @@ describe('EditorTopBar', () => {
     expect(screen.queryByRole('link', { name: 'Sign in' })).toBeNull();
   });
 
+  it('offers Save resume only when the page can save without a PDF', () => {
+    const onSave = vi.fn();
+    const { rerender } = render(<EditorTopBar {...base} saveStatus="saved-locally" onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save resume' }));
+    expect(onSave).toHaveBeenCalledTimes(1);
+
+    rerender(<EditorTopBar {...base} saveStatus="saving" onSave={onSave} savePending />);
+    expect(screen.getByRole('button', { name: 'Save resume' }).hasAttribute('disabled')).toBe(true);
+
+    rerender(<EditorTopBar {...base} saveStatus="saved" />);
+    expect(screen.queryByRole('button', { name: 'Save resume' })).toBeNull();
+  });
+
   it('sends a guest home and offers Sign in', () => {
     render(<EditorTopBar {...base} guest saveStatus="saved-locally" signInHref="/auth/sign-in?callbackURL=%2Fresume" />);
     expect(screen.getByRole('link', { name: 'Back to home' }).getAttribute('href')).toBe('/');

@@ -198,7 +198,17 @@ test('AUTH-04 sign-out blocks protected routes and the next user does not see th
 
 test('AUTH-07 the account sidebar marks the page, switches theme and signs out; the phone menu traps focus', async ({ page }) => {
   const email = emailFor('sidebar');
-  await createConfirmedUser(email);
+  const userId = await createConfirmedUser(email);
+  // With a profile, /account shows the dashboard; without one it redirects to /account/create, sometimes
+  // before the URL check below sees /account.
+  const profile = await serviceClient().from('profiles').insert({
+    user_id: userId,
+    first_name: 'Sam',
+    last_name: 'Sidebar',
+    role: 'Product Designer',
+    seniority: 'mid',
+  });
+  expect(profile.error).toBeNull();
   await signInThroughLocalMail(page, email, '/account/documents');
 
   const sidebar = page.locator('aside');
@@ -232,6 +242,8 @@ test('AUTH-07 the account sidebar marks the page, switches theme and signs out; 
   const menu = page.getByRole('dialog', { name: 'Account menu' });
   await expect(menu.getByRole('link', { name: 'Documents' })).toBeVisible();
   await expect(menu.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  // Opening moves focus into the menu, so the first Tab cannot leave from the trigger.
+  await expect.poll(() => menu.evaluate((dialog) => dialog.contains(document.activeElement))).toBe(true);
   for (let step = 0; step < 8; step += 1) {
     await page.keyboard.press('Tab');
     expect(await menu.evaluate((dialog) => dialog.contains(document.activeElement))).toBe(true);
