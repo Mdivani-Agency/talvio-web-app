@@ -9,6 +9,8 @@ export const TRUSTPILOT_REVIEW_URL = 'https://www.trustpilot.com/evaluate/talvio
 
 export const FEEDBACK_PROMPT = {
   downloading: 'Your PDF is downloading',
+  /** Shown instead of `downloading` when the prompt follows "Add to tracker". */
+  addedToTracker: 'Added to your tracker',
   title: 'How did it go? Review Talvio on Trustpilot',
   body: 'An honest review helps other job seekers decide. Say it as it was, good or bad. It takes a minute and opens trustpilot.com in a new tab.',
   trustpilot: 'Write a review on Trustpilot',

@@ -1,8 +1,8 @@
 /**
  * What shows after a new resume PDF (MDI-658). Two prompts can be due for the same generation: the "Add to tracker"
  * bar (MDI-658) and the Trustpilot review prompt (MDI-652). They never show together: the bar wins, and the review
- * prompt is not recorded as shown, so it waits for the next generation. This file is the one place for that rule and
- * for the bar's device-local memory.
+ * prompt is not recorded as shown. It is asked once "Add to tracker" has saved the card; otherwise it waits for the
+ * next generation. This file is the one place for that rule and for the bar's device-local memory.
  */
 
 export type PostGeneratePrompt = 'tracker' | 'feedback' | null;
