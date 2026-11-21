@@ -112,9 +112,11 @@ describe('DownloadResumeModal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Download PDF' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open in new tab' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(onDownload).toHaveBeenCalledTimes(1);
     expect(onOpen).toHaveBeenCalledTimes(1);
+    // No Done button: the dialog closes with X, Escape or a click outside.
+    expect(screen.queryByRole('button', { name: 'Done' })).toBeNull();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
   });
 });

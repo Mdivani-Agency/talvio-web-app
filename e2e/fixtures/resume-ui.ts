@@ -212,7 +212,7 @@ export async function downloadReadyPdf(page: Page, { fileExists = true }: { file
   await dialog.getByRole('button', { name: 'Download PDF', exact: true }).click();
   await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(before);
   await download;
-  await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   return recordedDownloads(page);
 }

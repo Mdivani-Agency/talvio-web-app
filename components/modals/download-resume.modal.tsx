@@ -55,18 +55,16 @@ export const DownloadResumeModal = ({
       <Modal title={PDF_READY_DIALOG.title} open={isOpen} onOpenChange={onClose}>
         <div className="flex flex-col gap-4 text-left">
           <p className="text-sm text-foreground">{PDF_READY_DIALOG.body(pdfFilename(ready.name))}</p>
-          {/* Phones show the dialog as a bottom sheet: full-width buttons, the main action on top. */}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="ghost" className="h-[4.4rem]" onClick={onClose}>
-              {PDF_READY_DIALOG.done}
-            </Button>
-            <Button type="button" variant="outline" className="h-[4.4rem]" onClick={ready.onOpen}>
-              <ExternalLink aria-hidden="true" className="size-4" />
-              {PDF_READY_DIALOG.open}
-            </Button>
-            <Button type="button" className="h-[4.4rem]" onClick={ready.onDownload}>
+          {/* Stacked full width, Download first: two labels with icons do not fit side by side in this dialog. It
+              closes with X, Escape or a click outside. */}
+          <div className="flex flex-col gap-2">
+            <Button type="button" className="h-[4.4rem] w-full" onClick={ready.onDownload}>
               <Download aria-hidden="true" className="size-4" />
               {PDF_READY_DIALOG.download}
+            </Button>
+            <Button type="button" variant="outline" className="h-[4.4rem] w-full" onClick={ready.onOpen}>
+              <ExternalLink aria-hidden="true" className="size-4" />
+              {PDF_READY_DIALOG.open}
             </Button>
           </div>
         </div>
