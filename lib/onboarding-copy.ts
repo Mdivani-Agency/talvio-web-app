@@ -76,9 +76,113 @@ export const ONBOARDING_INTRO = 'Add your details once. Every resume you create 
 export const START_FASTER = {
   title: 'Start faster',
   body: 'Import a resume PDF or paste its text to fill in the form. You review everything before saving.',
-  importLabel: 'Import from resume',
-  pasteLabel: 'Paste resume text',
+  importLabel: 'Import your resume',
+  /** After an import: the same dialog, replacing what the import filled in. */
+  againLabel: 'Import again',
 } as const;
+
+/** Start faster's line after an import, naming where the details came from. */
+export function startFasterImportedBody(source: string): string {
+  return `Imported from ${source}. Import again to replace these details.`;
+}
+
+/** Client limit for pasted resume text. PDF extraction has no such limit. */
+export const MAX_PASTED_RESUME_CHARS = 2000;
+
+const thousands = new Intl.NumberFormat('en-US');
+
+/** One "Import your resume" dialog with Upload a PDF and Paste text (MDI-674, canvas OBF-*). */
+export const IMPORT_DIALOG = {
+  title: 'Import your resume',
+  description: 'We read it and fill in your profile. You check everything before you save.',
+  tabsLabel: 'How to import',
+  uploadTab: 'Upload a PDF',
+  pasteTab: 'Paste text',
+  dropTitle: 'Drag your resume PDF here',
+  dropTitlePhone: 'Choose your resume PDF',
+  dropHint: 'A PDF with selectable text works best',
+  choose: 'Choose a PDF',
+  ready: 'PDF · ready to import',
+  remove: 'Remove',
+  pasteLabel: 'Resume text',
+  pastePlaceholder: 'Paste the text of your resume here',
+  replaceTitle: 'This replaces what you have entered.',
+  cancel: 'Cancel',
+  import: 'Import',
+  replaceAndImport: 'Replace and import',
+} as const;
+
+export function notPdfMessage(fileName: string): string {
+  return `${fileName} is not a PDF. Choose a PDF, or use Paste text.`;
+}
+
+/** The count under the pasted text, and how far over the limit it is. */
+export function pasteCountText(length: number): string {
+  const base = `${thousands.format(length)} / ${thousands.format(MAX_PASTED_RESUME_CHARS)} characters`;
+  const over = length - MAX_PASTED_RESUME_CHARS;
+  return over > 0
+    ? `${base} · ${thousands.format(over)} over. Cut it down to the main sections, or upload the PDF instead.`
+    : base;
+}
+
+function listSentence(names: readonly string[]): string {
+  if (names.length <= 1) {
+    return names[0] ?? '';
+  }
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/** What the replace warning says the import overwrites: the sections with details, when known. */
+export function replaceWarningBody(sections: readonly string[]): string {
+  return sections.length > 0
+    ? `You have filled in ${listSentence(sections)}. The import overwrites them.`
+    : 'The import overwrites the details you have typed.';
+}
+
+/** Import on the page lock (LD-import-*). */
+export const IMPORT_LOCK = {
+  context: 'Import resume',
+  title: 'Reading your resume',
+  steps: ['Reading the PDF', 'Finding your experience, education and skills', 'Filling in your profile'],
+  /** Pasted text has no PDF to read. */
+  pastedSteps: ['Reading your text', 'Finding your experience, education and skills', 'Filling in your profile'],
+  note: 'The rest of the page is locked until this finishes. If you close the tab, the import keeps going and your profile fills in when you come back.',
+  slow: 'Longer resumes take more time. You don’t need to upload it again.',
+  offline: 'Your import is paused, not lost. It carries on by itself when you are back online.',
+  stop: 'Stop import',
+  failure: {
+    title: 'We couldn’t read this resume',
+    kept: 'Nothing in your profile has changed.',
+    primary: 'Paste resume text',
+    secondary: 'Back to my profile',
+  },
+} as const;
+
+/** The panel above the form after an import, until Save profile (OBF-review, OBF-partial). */
+export const IMPORT_REVIEW = {
+  partialTitle: 'Part of your resume could not be read',
+  pastedSource: 'your pasted text',
+  checkNote: 'Check',
+} as const;
+
+export function importReviewTitle(source: string, partial: boolean): string {
+  return partial ? IMPORT_REVIEW.partialTitle : `We filled in your profile from ${source}`;
+}
+
+export function importReviewSubtitle(source: string, partial: boolean, count: number): string {
+  if (partial) {
+    return `We filled in what we could from ${source}. Nothing is saved until you press Save profile.`;
+  }
+  if (count === 0) {
+    return 'Check the details, then save. Nothing is saved until you press Save profile.';
+  }
+  const things = count === 1 ? '1 thing' : `${count} things`;
+  return `Check ${count === 1 ? 'this' : 'these'} ${things}, then save. Nothing is saved until you press Save profile.`;
+}
+
+export function goToSectionLabel(section: string): string {
+  return `Go to ${section}`;
+}
 
 export const SAVE_PROFILE_LABEL = 'Save profile';
 export const SAVING_PROFILE_LABEL = 'Saving...';
@@ -93,7 +197,13 @@ export function sectionFixNote(count: number): string {
 }
 
 /** Screen reader text for a section's mark in the side list. */
-export const SECTION_STATUS_TEXT = { done: 'complete', error: 'has errors', todo: 'not started' } as const;
+export const SECTION_STATUS_TEXT = {
+  done: 'complete',
+  error: 'has errors',
+  todo: 'not started',
+  /** After an import, a section the check panel lists (MDI-674). */
+  check: 'to check after the import',
+} as const;
 
 /** The error summary's heading: "Fix 2 fields to save your profile". */
 export function errorSummaryTitle(count: number): string {

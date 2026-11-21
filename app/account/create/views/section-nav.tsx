@@ -24,18 +24,23 @@ export function SectionNav({ sections, className }: { sections: SectionStatus[];
                 aria-hidden="true"
                 className={cn(
                   'flex size-5 shrink-0 items-center justify-center rounded-full text-[1.1rem] leading-none font-bold',
-                  section.state === 'done' && 'bg-secondary text-secondary-foreground',
+                  (section.state === 'done' || section.state === 'check') && 'bg-secondary text-secondary-foreground',
                   section.state === 'error' && 'bg-destructive text-white',
                   section.state === 'todo' && 'border border-muted-foreground/50',
                 )}
               >
-                {section.state === 'done' ? '✓' : section.state === 'error' ? '!' : null}
+                {section.state === 'done' ? '✓' : section.state === 'error' || section.state === 'check' ? '!' : null}
               </span>
               <span className="flex-1">{section.title}</span>
               {section.note ? (
                 <span
                   data-allow-small-text
-                  className={cn('text-xs', section.state === 'error' ? 'text-foreground' : 'text-muted-foreground')}
+                  className={cn(
+                    'text-xs',
+                    section.state === 'error' && 'text-foreground',
+                    section.state === 'check' && 'font-semibold text-secondary',
+                    section.state !== 'error' && section.state !== 'check' && 'text-muted-foreground',
+                  )}
                 >
                   {section.note}
                 </span>
