@@ -3,10 +3,10 @@ import {
   chooseColor,
   chooseFontSize,
   chooseTemplate,
+  downloadReadyPdf,
   openSignedIn,
   persona,
   rememberDownloads,
-  recordedDownloads,
   resetAndGuard,
   waitForPreview,
   renameResume,
@@ -189,8 +189,9 @@ test('RES-06 changes a generated label without a draft, render, or charge', asyn
   expect(await creditBalance(owner.userId)).toBe(0);
 
   await page.getByRole('button', { name: 'Download PDF' }).click();
-  await expect.poll(async () => (await recordedDownloads(page)).length).toBe(1);
-  expect((await recordedDownloads(page))[0]?.download).toBe('Ada Owner.pdf');
+  const saves = await downloadReadyPdf(page);
+  expect(saves).toHaveLength(1);
+  expect(saves[0]?.download).toBe('Ada Owner.pdf');
   expect(generateCalls).toEqual([]);
   expect(await listResumes(owner.userId)).toHaveLength(1);
   expect(await creditBalance(owner.userId)).toBe(0);

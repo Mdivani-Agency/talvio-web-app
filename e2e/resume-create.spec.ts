@@ -135,7 +135,7 @@ test('RES-01 guest download returns to the resume and can keep the draft', async
   await page.waitForFunction(() => Object.values(localStorage).some((value) => value?.includes('Guestkeep')));
   await waitForPreview(page);
   await page.getByRole('button', { name: 'Download PDF' }).click();
-  await page.getByRole('dialog', { name: /Generate your PDF/ }).getByRole('button', { name: 'Generate and download', exact: true }).click();
+  await page.getByRole('dialog', { name: /Generate your PDF/ }).getByRole('button', { name: 'Generate PDF', exact: true }).click();
   await page.waitForURL(/\/auth\/sign-in/);
   expect(new URL(page.url()).searchParams.get('callbackURL')).toBe('/resume');
   expect(await page.evaluate(() => Object.values(localStorage).some((value) => value?.includes('Guestkeep')))).toBe(true);
@@ -155,7 +155,7 @@ test('RES-01 guest download keeps a template return path', async ({ page }) => {
   await page.getByLabel('First name', { exact: true }).fill('Templated');
   await waitForPreview(page);
   await page.getByRole('button', { name: 'Download PDF' }).click();
-  await page.getByRole('dialog', { name: /Generate your PDF/ }).getByRole('button', { name: 'Generate and download', exact: true }).click();
+  await page.getByRole('dialog', { name: /Generate your PDF/ }).getByRole('button', { name: 'Generate PDF', exact: true }).click();
   await page.waitForURL(/\/auth\/sign-in/);
   expect(new URL(page.url()).searchParams.get('callbackURL')).toBe('/resume?template=senior-level-ember');
 });

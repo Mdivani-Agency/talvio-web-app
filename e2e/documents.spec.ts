@@ -55,11 +55,26 @@ test('DOC-01 documents show an empty library, a failed list, and a downloadable 
 
   const publicUrl = await uploadDocument(owner.userId, 'Library resume');
   await page.goto('/account/documents');
-  const download = page.getByRole('link', { name: 'Download Library resume' });
+  const download = page.getByRole('button', { name: 'Download Library resume' });
   await expect(download).toBeVisible();
-  await expect(download).toHaveAttribute('href', publicUrl);
+  // Download saves the file under its own name instead of opening it in a tab.
+  const saved = page.waitForEvent('download');
+  await download.click();
+  expect((await saved).suggestedFilename()).toBe('Library resume.pdf');
   const card = page.getByTestId('document-card').filter({ has: download });
-  await expect(card.getByRole('link', { name: 'Open Library resume' })).toHaveAttribute('href', publicUrl);
+  // Open shows the PDF in a new tab: opened during the click, so it is not blocked, then pointed at the fetched copy.
+  const popup = page.waitForEvent('popup');
+  await card.getByRole('button', { name: 'Open Library resume' }).click();
+  const tab = await popup;
+  // A browser with a PDF viewer shows the fetched copy at a blob: URL; Playwright's headless Chromium has no viewer
+  // and saves it instead. Either way the PDF reached the new tab, and the documents page stayed where it was.
+  const shown = await Promise.race([
+    tab.waitForURL(/^blob:/, { timeout: 30_000 }).then(() => 'viewer'),
+    tab.waitForEvent('download', { timeout: 30_000 }).then(() => 'download'),
+  ]);
+  expect(['viewer', 'download']).toContain(shown);
+  await expect(page).toHaveURL(/\/account\/documents$/);
+  await tab.close();
   await expect(card.getByText('Library resume.pdf')).toBeVisible();
   await expect(card.getByRole('img', { name: 'First page of Library resume' })).toBeVisible({ timeout: 30_000 });
   const file = await page.request.get(publicUrl);
@@ -79,17 +94,17 @@ test('DOC-02 a preview that cannot load says so, and Download still works', asyn
   await openSignedIn(page, owner, '/account/documents');
   const card = page.getByTestId('document-card').filter({ hasText: 'Blocked preview.pdf' });
   await expect(card.getByText('Preview not available')).toBeVisible({ timeout: 30_000 });
-  await expect(card.getByRole('link', { name: 'Download Blocked preview' })).toHaveAttribute('href', publicUrl);
+  await expect(card.getByRole('button', { name: 'Download Blocked preview' })).toBeVisible();
   expect(errors).toEqual([]);
 
   // On a phone the same file is a row: thumbnail, name and a 44px download icon, with no horizontal scroll.
   await page.setViewportSize({ width: 390, height: 844 });
-  const download = card.getByRole('link', { name: 'Download Blocked preview' });
+  const download = card.getByRole('button', { name: 'Download Blocked preview' });
   await expect(download).toBeVisible();
   const box = await download.boundingBox();
   expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
   expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
-  await expect(card.getByRole('link', { name: 'Open Blocked preview' })).toBeHidden();
+  await expect(card.getByRole('button', { name: 'Open Blocked preview' })).toBeHidden();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
@@ -106,7 +121,7 @@ test('DOC-03 Load more pages through every PDF, and a failed page keeps the load
   await expect(cards).toHaveCount(2);
   await loadMore.click();
   await expect(cards).toHaveCount(3);
-  await expect(page.getByRole('link', { name: 'Download Paged three' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Download Paged three' })).toBeVisible();
   await expect(loadMore).toHaveCount(0);
 
   // The next page fails: an error with Try again under the two loaded files, never an empty library.

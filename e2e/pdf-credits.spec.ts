@@ -8,6 +8,7 @@ import { expect, test } from './fixtures/test';
 import { fetchPdfText } from './fixtures/pdf-text';
 import { setScenario } from './fixtures/profile-ui';
 import {
+  downloadReadyPdf,
   generateFromModal,
   mediaStats,
   openFinalReview,
@@ -189,10 +190,9 @@ test('PDF-03 re-downloads the stored file without a new charge or upload', async
 
   await page.reload();
   await rememberDownloads(page);
-  const editorDownload = page.waitForEvent('download');
+  // A generated resume offers its stored PDF straight away: Download and Open, no Generate.
   await page.getByRole('button', { name: 'Download PDF' }).click();
-  await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(0);
-  await editorDownload;
+  expect((await downloadReadyPdf(page)).at(-1)?.download).toBe('Stored resume.pdf');
   expect(generates).toHaveLength(0);
 
   await page.goto('/account');
@@ -365,8 +365,9 @@ test('PDF-05 failed generation does not charge and a lost response recovers the 
   await page.goto(`/resume/${lostId}`);
   await rememberDownloads(page);
   await page.getByRole('button', { name: 'Download PDF' }).click();
-  await page.getByRole('dialog', { name: /Generate your PDF/ }).getByRole('button', { name: 'Generate and download', exact: true }).click();
+  await page.getByRole('dialog', { name: /Generate your PDF/ }).getByRole('button', { name: 'Generate PDF', exact: true }).click();
   await expect(page.getByText('Saved to your account')).toBeVisible({ timeout: 30_000 });
+  await downloadReadyPdf(page);
   const lost = (await listResumes(owner.userId)).find((row) => row.id === lostId);
   expect(lost?.pdfUrl).toBeTruthy();
   expect(await creditBalance(owner.userId)).toBe(60);
@@ -396,15 +397,13 @@ test('PDF-06 generating a draft keeps the original PDF and charges once', async 
   await rememberDownloads(page);
   const dialog = await openFinalReview(page);
   await dialog.getByLabel('File name', { exact: true }).fill('Edited family');
-  // WebKit reports the next page.goto as "Download is starting" until this PDF download finishes.
-  const download = page.waitForEvent('download');
-  await dialog.getByRole('button', { name: 'Generate and download', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Generate PDF', exact: true }).click();
   await expect.poll(async () => {
     const draft = (await listResumes(owner.userId)).find((row) => row.sourceResumeId === originalId);
     return draft?.pdfUrl ?? '';
   }, { timeout: 30_000 }).not.toBe('');
-  await expect.poll(async () => (await recordedDownloads(page)).at(-1)?.download).toBe('Edited family.pdf');
-  await download;
+  // WebKit reports the next page.goto as "Download is starting" until this PDF download finishes; the helper waits.
+  expect((await downloadReadyPdf(page)).at(-1)?.download).toBe('Edited family.pdf');
 
   const rows = await listResumes(owner.userId);
   const original = rows.find((row) => row.id === originalId);
@@ -473,7 +472,7 @@ test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero
   await page.goto(`/resume/${fourthId}`);
   const dialog = await openFinalReview(page);
   await expect(dialog.getByText(EXHAUSTED())).toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Generate and download', exact: true })).toBeDisabled();
+  await expect(dialog.getByRole('button', { name: 'Generate PDF', exact: true })).toBeDisabled();
   await expectNoPurchaseEntry(page, 'editor and generate dialog at zero');
   expect((await listResumes(owner.userId)).find((row) => row.id === fourthId)?.pdfUrl).toBeNull();
 });

@@ -4,6 +4,7 @@ import { Download } from 'lucide-react';
 
 import { Button, Card } from '@components/ui';
 import type { MediaItem } from '@lib/clients/media.client';
+import { downloadPdf, openPdfInTab } from '@/lib/pdf/pdf-actions';
 import {
   DOWNLOAD_LABEL,
   documentFileName,
@@ -21,13 +22,17 @@ import { DocumentPreview } from './document-preview';
 const PAPER_CLASS = 'overflow-hidden bg-white shadow-sm';
 
 /**
- * One generated PDF. From `md` it is a card (the first page opens the PDF, then the name and a Download button);
- * below `md` it is a row (a decorative thumbnail, the name, and a 44px download icon). The preview is drawn once.
+ * One generated PDF. From `md` it is a card (the first page opens the PDF in a new tab, then the name and a Download
+ * button); below `md` it is a row (a decorative thumbnail, the name, and a 44px download icon). The preview is drawn
+ * once. Open and Download are buttons, not links: the stored file is an attachment and lives on the media domain, so
+ * a link would download it on Open and could not keep its name on Download (see `lib/pdf/save-pdf.ts`).
  */
 function DocumentCard({ document, trackerCardId }: { document: MediaItem; trackerCardId?: string }) {
   const preview = usePdfPreview(document.publicUrl);
   const fileName = documentFileName(document.name, document.type);
   const downloadLabel = downloadDocumentLabel(document.name);
+  const file = { url: document.publicUrl, name: fileName };
+  const download = () => void downloadPdf(file);
 
   return (
     <li data-testid="document-card" className="min-w-0">
@@ -35,15 +40,14 @@ function DocumentCard({ document, trackerCardId }: { document: MediaItem; tracke
         <span aria-hidden="true" className={`aspect-[210/297] w-14 shrink-0 rounded-sm md:hidden ${PAPER_CLASS}`}>
           <DocumentPreview preview={preview} alt="" compact />
         </span>
-        <a
-          href={document.publicUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => void openPdfInTab(file)}
           aria-label={openDocumentLabel(document.name)}
-          className={`hidden aspect-[210/297] rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring md:block ${PAPER_CLASS}`}
+          className={`hidden aspect-[210/297] w-full cursor-pointer rounded-md p-0 outline-none focus-visible:ring-2 focus-visible:ring-ring md:block ${PAPER_CLASS}`}
         >
           <DocumentPreview preview={preview} alt={documentPreviewAlt(document.name)} />
-        </a>
+        </button>
         <div className="flex min-w-0 flex-1 flex-col gap-[0.2rem]">
           <span className="truncate text-sm font-semibold text-primary" title={fileName}>
             {fileName}
@@ -53,24 +57,23 @@ function DocumentCard({ document, trackerCardId }: { document: MediaItem; tracke
             {trackerCardId ? <InTrackerLink applicationId={trackerCardId} name={fileName} /> : null}
           </span>
         </div>
-        <a
-          href={document.publicUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={download}
           aria-label={downloadLabel}
           className="flex size-[4.4rem] shrink-0 items-center justify-center rounded-md text-foreground outline-none hover:bg-popover focus-visible:ring-2 focus-visible:ring-ring md:hidden dark:hover:bg-accent"
         >
           <Download aria-hidden="true" className="size-[1.8rem]" />
-        </a>
+        </button>
         <Button
-          asChild
+          type="button"
           variant="outline"
+          onClick={download}
+          aria-label={downloadLabel}
           className="hidden h-10 w-full gap-2 border-input bg-background text-sm md:inline-flex dark:bg-background"
         >
-          <a href={document.publicUrl} target="_blank" rel="noopener noreferrer" aria-label={downloadLabel}>
-            <Download aria-hidden="true" className="size-4" />
-            {DOWNLOAD_LABEL}
-          </a>
+          <Download aria-hidden="true" className="size-4" />
+          {DOWNLOAD_LABEL}
         </Button>
       </Card>
     </li>

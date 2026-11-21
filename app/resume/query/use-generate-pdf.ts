@@ -1,5 +1,7 @@
 import { isGeneratedResume } from '@/lib/adapters/resume.adapter';
 import { GENERATE_PDF_CREDITS } from '@/lib/credits';
+import { savePdf, type PdfFile } from '@/lib/pdf/save-pdf';
+import { PDF_ACTION_MESSAGES } from '@/lib/resume-editor-copy';
 import { authedFetch } from '@/lib/supabase/authed-fetch';
 import type { Resume } from '@lib/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,14 +10,9 @@ import { fetchResume } from './use-resume';
 
 export { GENERATE_PDF_CREDITS };
 
-export function triggerBrowserDownload(url: string, filename: string) {
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', filename.endsWith('.pdf') ? filename : `${filename}.pdf`);
-  link.setAttribute('target', '_blank');
-  link.rel = 'noopener noreferrer';
-  link.click();
-  link.remove();
+/** The resume's stored PDF, for Download and Open; undefined until it has one. */
+export function resumePdfFile(resume: Pick<Resume, 'media' | 'name'>): PdfFile | undefined {
+  return resume.media?.url ? { url: resume.media.url, name: resume.name } : undefined;
 }
 
 /** The resume with its PDF, and whether this call created a new PDF (`false` for a free re-download). */
@@ -77,7 +74,11 @@ export async function downloadPdfFile(resume: Resume): Promise<GeneratedPdf> {
   if (!result.resume.media?.url) {
     throw new Error('Resume PDF was not created');
   }
-  triggerBrowserDownload(result.resume.media.url, result.resume.name);
+  try {
+    await savePdf({ url: result.resume.media.url, name: result.resume.name });
+  } catch {
+    throw new Error(PDF_ACTION_MESSAGES.failed);
+  }
   return result;
 }
 
@@ -86,16 +87,21 @@ export async function downloadResumePdf(resume: Resume): Promise<Resume> {
 }
 
 type GenerateResumePdfOptions = {
-  /** Called after the download of a newly generated PDF has started; not after a free re-download. */
+  /** Called after a newly generated PDF exists (and is saved, with `save`); not after a free re-download. */
   onNewPdf?: (resume: Resume) => void;
+  /**
+   * Save the PDF once it exists (default). The editor passes false and offers Download and Open in its dialog instead,
+   * because a save started seconds after the click can no longer ask where to save.
+   */
+  save?: boolean;
 };
 
-export function useGenerateResumePdf(userId?: string, { onNewPdf }: GenerateResumePdfOptions = {}) {
+export function useGenerateResumePdf(userId?: string, { onNewPdf, save = true }: GenerateResumePdfOptions = {}) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (resume: Resume) => {
-      const { resume: saved, generated } = await downloadPdfFile(resume);
+      const { resume: saved, generated } = save ? await downloadPdfFile(resume) : await generatePdfFile(resume);
       if (generated) {
         onNewPdf?.(saved);
       }

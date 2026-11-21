@@ -188,10 +188,25 @@ export async function generateFromModal(page: Page, filename: string, label?: st
   if (label != null) {
     await dialog.getByLabel('Label (optional)', { exact: true }).fill(label);
   }
-  const download = page.waitForEvent('download');
-  await dialog.getByRole('button', { name: 'Generate and download', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Generate PDF', exact: true }).click();
   await expect(page.getByText('Saved to your account')).toBeVisible({ timeout: 30_000 });
+  return downloadReadyPdf(page);
+}
+
+/** The dialog that offers Download and Open once the PDF exists. */
+export function readyDialog(page: Page) {
+  return page.getByRole('dialog', { name: 'Your PDF is ready' });
+}
+
+/** Download from that dialog, close it, and return the saves the page made. */
+export async function downloadReadyPdf(page: Page) {
+  const dialog = readyDialog(page);
+  await expect(dialog).toBeVisible({ timeout: 30_000 });
+  const download = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Download PDF', exact: true }).click();
   await download;
+  await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect(dialog).toBeHidden();
   return recordedDownloads(page);
 }
 

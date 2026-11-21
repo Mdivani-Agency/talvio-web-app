@@ -16,6 +16,7 @@ import type { SaveStatus } from '@lib/resume/save-queue';
 import { colorAfterTemplateChange, listResumeTemplates } from '@lib/templates';
 import { CurrentTemplateProvider } from '@app/account/create/views/forms/template-context';
 import type { PreviewDto } from '@lib/types';
+import { downloadPdf, openPdfInTab, type PdfFile } from '@/lib/pdf/pdf-actions';
 import { cn } from '@lib/utils';
 
 import { DraftBanner } from '../components/draft-banner';
@@ -26,6 +27,9 @@ import { useFeedbackPrompt } from '../providers/feedback-prompt-provider';
 import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../hooks/use-service-improve';
 import { DesignPanel } from './design-panel';
 import { EditResumeView } from './edit-resume-view';
+
+/** What a Generate returns: the PDF to offer, `false` for a failure, or nothing (the dialog just closes). */
+export type PdfDownloadResult = PdfFile | boolean | void;
 
 export type ResumeFamilyControls = {
   viewingOriginal: boolean;
@@ -63,7 +67,15 @@ type ResumeEditorShellProps = {
   saveMessage?: string;
   onRetrySave?: () => void;
   onChange: (patch: Partial<PreviewDto>) => void;
-  onDownload: (filename: string, label?: string) => boolean | void | Promise<boolean | void>;
+  /**
+   * Generates the PDF (or confirms the stored one). Resolve to the PDF to show the dialog's Download and Open; `false`
+   * keeps the dialog open after a failure.
+   */
+  onDownload: (filename: string, label?: string) => PdfDownloadResult | Promise<PdfDownloadResult>;
+  /** The stored PDF of a generated resume: Download PDF opens the dialog's Download and Open straight away. */
+  pdf?: PdfFile | null;
+  /** Runs when the dialog that offered Download and Open closes, e.g. to move to the resume that got the PDF. */
+  onPdfDialogClose?: () => void;
   /** Save to the account without a PDF. Only a new resume passes it: a saved one saves as you edit. */
   onSave?: () => void;
   savePending?: boolean;
@@ -87,6 +99,8 @@ export function ResumeEditorShell({
   onRetrySave,
   onChange,
   onDownload,
+  pdf,
+  onPdfDialogClose,
   onSave,
   savePending = false,
   improve,
@@ -98,6 +112,8 @@ export function ResumeEditorShell({
   // The AI overlay sits in the panel, so a session started from the phone's Preview tab brings the panel back.
   const showPanel = () => setView((current) => (current === 'preview' ? 'content' : current));
   const [downloadOpen, setDownloadOpen] = useState(false);
+  // Set once the PDF exists: the dialog then offers Download and Open instead of the form.
+  const [readyPdf, setReadyPdf] = useState<PdfFile | null>(null);
   // The review prompt (MDI-652) waits for this dialog to close.
   const { setGenerateDialogOpen } = useFeedbackPrompt();
   useEffect(() => {
@@ -165,11 +181,35 @@ export function ResumeEditorShell({
     setView('content');
   };
 
+  const closeDownload = () => {
+    const offered = readyPdf !== null;
+    setDownloadOpen(false);
+    setReadyPdf(null);
+    if (offered) {
+      onPdfDialogClose?.();
+    }
+  };
+
+  const showReady = (result: PdfDownloadResult) => {
+    if (result && typeof result === 'object') {
+      setReadyPdf(result);
+      setDownloadOpen(true);
+      return true;
+    }
+    return false;
+  };
+
   const requestDownload = () => {
     if (isGenerated) {
-      void Promise.resolve(onDownload(document.name, document.label));
+      // A generated resume already has its PDF: offer it, or confirm it with the page first.
+      if (pdf) {
+        showReady(pdf);
+        return;
+      }
+      void Promise.resolve(onDownload(document.name, document.label)).then(showReady).catch(() => undefined);
       return;
     }
+    setReadyPdf(null);
     setDownloadName(document.name);
     setDownloadLabel(document.label ?? '');
     setDownloadOpen(true);
@@ -277,13 +317,21 @@ export function ResumeEditorShell({
         isFreeDownload={isGenerated}
         allowance={allowance}
         generateResume={() => {
-          void Promise.resolve(onDownload(downloadName, downloadLabel)).then((ok) => {
-            if (ok !== false) {
+          void Promise.resolve(onDownload(downloadName, downloadLabel)).then((result) => {
+            if (showReady(result)) {
+              return;
+            }
+            if (result !== false) {
               setDownloadOpen(false);
             }
           }).catch(() => undefined);
         }}
-        onClose={() => setDownloadOpen(false)}
+        ready={readyPdf ? {
+          name: readyPdf.name,
+          onDownload: () => void downloadPdf(readyPdf),
+          onOpen: () => void openPdfInTab(readyPdf),
+        } : undefined}
+        onClose={closeDownload}
         onImprove={improveEnabled ? () => {
           setDownloadOpen(false);
           requestImprove();

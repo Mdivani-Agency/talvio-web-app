@@ -41,14 +41,14 @@ describe('DownloadResumeModal', () => {
     const dialog = renderModal({ allowance: allowanceStatus(60, NOW) });
 
     expect(dialog.textContent).toContain('uses 1 of your monthly resume PDFs. You have 2 of 3 left this month.');
-    expect(screen.getByRole('button', { name: 'Generate and download' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Generate PDF' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('blocks generating at zero and names the renewal date', () => {
     const dialog = renderModal({ allowance: allowanceStatus(0, NOW) });
 
     expect(dialog.textContent).toContain('No new resume PDFs left this month. You get 3 more on 1 November.');
-    expect(screen.getByRole('button', { name: 'Generate and download' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Generate PDF' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('keeps re-downloading a generated PDF available at zero', () => {
@@ -61,7 +61,7 @@ describe('DownloadResumeModal', () => {
     const dialog = renderModal();
 
     expect(dialog.textContent).not.toContain('left this month');
-    expect(screen.getByRole('button', { name: 'Generate and download' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Generate PDF' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('mentions no credits', () => {
@@ -84,7 +84,7 @@ describe('DownloadResumeModal', () => {
   it('stays disabled while a PDF is being generated', () => {
     renderModal({ allowance: allowanceStatus(60, NOW), isGenerating: true });
 
-    expect(screen.getByRole('button', { name: 'Generate and download' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Generate PDF' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('labels the file name and the label, explains the label and offers Cancel', () => {
@@ -96,6 +96,25 @@ describe('DownloadResumeModal', () => {
     expect(screen.getByText('Only you see it, in your documents list.')).toBeTruthy();
     expect(screen.getByText('Re-downloads of a generated PDF are always free.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('offers Download and Open in new tab once the PDF is ready, each as its own click', () => {
+    const onDownload = vi.fn();
+    const onOpen = vi.fn();
+    const onClose = vi.fn();
+    const dialog = renderModal({ onClose, ready: { name: 'Ada Owner', onDownload, onOpen } });
+
+    expect(dialog.textContent).toContain('Your PDF is ready');
+    expect(dialog.textContent).toContain('Ada Owner.pdf is saved in your account.');
+    expect(screen.queryByLabelText('File name')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Generate PDF' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Download PDF' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open in new tab' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(onDownload).toHaveBeenCalledTimes(1);
+    expect(onOpen).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalled();
   });
 });
