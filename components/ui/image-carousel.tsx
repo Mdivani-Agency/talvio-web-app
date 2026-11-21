@@ -38,7 +38,8 @@ export function carouselSheetStyle(index: number, currentIndex: number): CSSProp
  * behind it on either side. Changing `currentIndex` slides the pages (none under reduced motion). Only the page in
  * front is exposed to assistive technology; the page count next to the controls announces the change.
  *
- * Fills its parent, which sets the page's size; the peek draws outside that box, so the parent needs room for it.
+ * Fills its parent, which sets the page's size; the page keeps the A4 ratio even when the parent does not. The peek
+ * draws outside that box, so the parent needs room for it.
  */
 export function ImageCarousel({
   images,
@@ -51,7 +52,11 @@ export function ImageCarousel({
   className?: string;
 }) {
   return (
-    <div data-testid="image-carousel" className={cn('hidden relative h-full w-full md:block', PEEK_CLASS, className)}>
+    <div
+      data-testid="image-carousel"
+      // A size container, so each page can fit the box's width and height (`cqw`, `cqh`).
+      className={cn('hidden relative h-full w-full [container-type:size] md:block', PEEK_CLASS, className)}
+    >
       {images.map((image, index) => {
         const isCurrent = index === currentIndex;
         return (
@@ -61,8 +66,10 @@ export function ImageCarousel({
             aria-hidden={isCurrent ? undefined : true}
             style={carouselSheetStyle(index, currentIndex)}
             className={cn(
-              // 98% of the box, centred, as the page was drawn before (`.a4-container`).
-              'absolute inset-[1%] origin-center overflow-hidden bg-background',
+              // The largest A4 page that fits in 98% of the box, centred. The box is not always A4: in a narrow column
+              // its width is capped while its height is not, so the page fits both (`cqw`, `cqh` of the carousel).
+              'absolute inset-0 m-auto origin-center overflow-hidden bg-background',
+              'h-[min(98cqh,calc(98cqw*297/210))] w-[min(98cqw,calc(98cqh*210/297))]',
               'transition-[transform,opacity] duration-[450ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none',
               isCurrent ? 'shadow-[0_4px_16px_rgba(13,13,13,0.18)]' : 'pointer-events-none shadow-[0_2px_8px_rgba(13,13,13,0.10)]',
             )}
