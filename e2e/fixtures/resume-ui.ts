@@ -198,12 +198,19 @@ export function readyDialog(page: Page) {
   return page.getByRole('dialog', { name: 'Your PDF is ready' });
 }
 
-/** Download from that dialog, close it, and return the saves the page made. */
-export async function downloadReadyPdf(page: Page) {
+/**
+ * Download from that dialog, close it, and return the saves the page made (call `rememberDownloads` first). Pass
+ * `fileExists: false` for a seeded PDF URL with no file behind it: the save then falls back to the URL itself, which
+ * records the save but downloads nothing.
+ */
+export async function downloadReadyPdf(page: Page, { fileExists = true }: { fileExists?: boolean } = {}) {
   const dialog = readyDialog(page);
   await expect(dialog).toBeVisible({ timeout: 30_000 });
-  const download = page.waitForEvent('download');
+  await rememberDownloads(page);
+  const before = (await recordedDownloads(page)).length;
+  const download = fileExists ? page.waitForEvent('download') : null;
   await dialog.getByRole('button', { name: 'Download PDF', exact: true }).click();
+  await expect.poll(async () => (await recordedDownloads(page)).length).toBeGreaterThan(before);
   await download;
   await dialog.getByRole('button', { name: 'Done', exact: true }).click();
   await expect(dialog).toBeHidden();

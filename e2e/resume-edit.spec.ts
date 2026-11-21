@@ -189,7 +189,8 @@ test('RES-06 changes a generated label without a draft, render, or charge', asyn
   expect(await creditBalance(owner.userId)).toBe(0);
 
   await page.getByRole('button', { name: 'Download PDF' }).click();
-  const saves = await downloadReadyPdf(page);
+  // The seeded pdfUrl has no file in the media simulator, so the save falls back to the URL itself.
+  const saves = await downloadReadyPdf(page, { fileExists: false });
   expect(saves).toHaveLength(1);
   expect(saves[0]?.download).toBe('Ada Owner.pdf');
   expect(generateCalls).toEqual([]);

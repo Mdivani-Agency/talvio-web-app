@@ -63,16 +63,20 @@ test('DOC-01 documents show an empty library, a failed list, and a downloadable 
   expect((await saved).suggestedFilename()).toBe('Library resume.pdf');
   const card = page.getByTestId('document-card').filter({ has: download });
   // Open shows the PDF in a new tab: opened during the click, so it is not blocked, then pointed at the fetched copy.
+  // A browser with a PDF viewer shows it at a blob: URL; Playwright's headless Chromium has no viewer and saves it
+  // instead. Listen on the new tab as it opens: the fetched copy can arrive before `popup` resolves.
+  const shown = new Promise<string>((resolve) => {
+    page.context().once('page', (tab) => {
+      tab.once('download', () => resolve('download'));
+      tab.on('framenavigated', (frame) => {
+        if (frame === tab.mainFrame() && frame.url().startsWith('blob:')) resolve('viewer');
+      });
+    });
+  });
   const popup = page.waitForEvent('popup');
   await card.getByRole('button', { name: 'Open Library resume' }).click();
   const tab = await popup;
-  // A browser with a PDF viewer shows the fetched copy at a blob: URL; Playwright's headless Chromium has no viewer
-  // and saves it instead. Either way the PDF reached the new tab, and the documents page stayed where it was.
-  const shown = await Promise.race([
-    tab.waitForURL(/^blob:/, { timeout: 30_000 }).then(() => 'viewer'),
-    tab.waitForEvent('download', { timeout: 30_000 }).then(() => 'download'),
-  ]);
-  expect(['viewer', 'download']).toContain(shown);
+  expect(['viewer', 'download']).toContain(await shown);
   await expect(page).toHaveURL(/\/account\/documents$/);
   await tab.close();
   await expect(card.getByText('Library resume.pdf')).toBeVisible();
