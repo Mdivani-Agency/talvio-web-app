@@ -75,6 +75,7 @@
     "PDF-05 failed generation does not charge and a lost response recovers the file",
     "PDF-06 generating a draft keeps the original PDF and charges once",
     "PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero",
+    "PDF-08 the editor hands Generate PDF to the page lock, shows a failure there and retries from it",
     "PUB-01 public pages have headings, navigation, and a not-found state",
     "PUB-01 a signed-in visit to the root opens the account",
     "PUB-02 desktop navigation reaches sections, templates, and sign-in",

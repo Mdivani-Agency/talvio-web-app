@@ -73,7 +73,15 @@ export const DownloadResumeModal = ({
   }
 
   return (
-    <Modal title={GENERATE_DIALOG.title} open={isOpen} onOpenChange={onClose}>
+    <Modal
+      title={GENERATE_DIALOG.title}
+      open={isOpen}
+      onOpenChange={() => {
+        if (!isGenerating) {
+          onClose();
+        }
+      }}
+    >
       <div className="flex flex-col gap-4 text-left">
         <p className="text-sm text-foreground">{message}</p>
         <div className="grid gap-1.5">
@@ -114,7 +122,8 @@ export const DownloadResumeModal = ({
         ) : null}
         {/* Phones show the dialog as a bottom sheet: full-width buttons, the main action on top. */}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" className="h-[4.4rem]" onClick={onClose}>
+          {/* Cancel cannot close the dialog into a half-finished generation (MDI-673). */}
+          <Button type="button" variant="outline" className="h-[4.4rem]" disabled={isGenerating} onClick={onClose}>
             {GENERATE_DIALOG.cancel}
           </Button>
           <Button

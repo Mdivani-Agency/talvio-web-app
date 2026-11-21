@@ -43,3 +43,25 @@ describe('TailorView intake', () => {
     expect(tailor.start).not.toHaveBeenCalled();
   });
 });
+
+describe('TailorView while tailoring (MDI-673)', () => {
+  const running = (step: 'loadingQuestions' | 'loadingProposal') =>
+    ({ step, questions: [], currentQuestionId: null, reset: vi.fn() }) as unknown as Tailor & {
+      reset: ReturnType<typeof vi.fn>;
+    };
+
+  it('locks the page while comparing, with the job post read and Stop tailoring', () => {
+    const tailor = running('loadingQuestions');
+    render(<TailorView tailor={tailor} sources={[]} onCreate={vi.fn()} />);
+    expect(screen.getByRole('dialog', { name: 'Tailoring your resume' }).getAttribute('aria-modal')).toBe('true');
+    expect(screen.getAllByRole('listitem').map((item) => item.getAttribute('data-state'))).toEqual(['done', 'active', 'todo']);
+    expect(screen.getByText(/You review every change before anything is saved/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Stop tailoring' }));
+    expect(tailor.reset).toHaveBeenCalledTimes(1);
+  });
+
+  it('moves to writing the changes once the answers are sent', () => {
+    render(<TailorView tailor={running('loadingProposal')} sources={[]} onCreate={vi.fn()} />);
+    expect(screen.getAllByRole('listitem').map((item) => item.getAttribute('data-state'))).toEqual(['done', 'done', 'active']);
+  });
+});

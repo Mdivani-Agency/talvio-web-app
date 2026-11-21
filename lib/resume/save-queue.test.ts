@@ -108,6 +108,43 @@ describe('createSaveRunner', () => {
     expect(runner.getState().status).toBe('saved');
   });
 
+  it('recovers a later save after a conflict when it retries first, as Generate PDF does (MDI-673)', async () => {
+    const save = vi.fn()
+      .mockRejectedValueOnce(new Error('This resume changed in another session'))
+      .mockResolvedValue({ serverId: 'resume-1', baseUpdatedAt: '2026-04-01T00:00:00.000Z' });
+    const runner = createSaveRunner({
+      merge: mergeResumePatch,
+      save,
+      isConflict: () => true,
+      onConflict: async () => '2026-03-01T00:00:00.000Z',
+    });
+    runner.seed({ serverId: 'resume-1', baseUpdatedAt: '2026-01-01T00:00:00.000Z' });
+    runner.enqueue({ label: 'Frontend' });
+    await expect(runner.whenIdle()).rejects.toThrow('changed');
+
+    // Without a retry the next save only queues and the wait fails again.
+    runner.enqueue({ name: 'Ann' });
+    await expect(runner.whenIdle()).rejects.toThrow('changed');
+
+    await runner.retry();
+    runner.enqueue({ name: 'Ann Owner' });
+    await expect(runner.whenIdle()).resolves.toBeUndefined();
+    expect(runner.getState().status).toBe('saved');
+    expect(save).toHaveBeenCalledWith(
+      { label: 'Frontend', name: 'Ann' },
+      { serverId: 'resume-1', baseUpdatedAt: '2026-03-01T00:00:00.000Z' },
+    );
+  });
+
+  it('does nothing on retry when the last save worked', async () => {
+    const save = vi.fn().mockResolvedValue({ serverId: 'resume-1', baseUpdatedAt: '2026-02-01T00:00:00.000Z' });
+    const runner = createSaveRunner({ merge: mergeResumePatch, save, isConflict: () => false });
+    runner.enqueue({ label: 'Frontend' });
+    await runner.whenIdle();
+    await runner.retry();
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
   it('saves a retry that starts while conflict refresh is still running', async () => {
     const firstRefresh = deferred<string>();
     const secondRefresh = deferred<string>();
