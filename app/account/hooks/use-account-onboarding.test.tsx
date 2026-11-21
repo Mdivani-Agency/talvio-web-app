@@ -45,72 +45,46 @@ describe('useAccountOnboarding', () => {
     restored.unmount();
   });
 
-  it('applies an import immediately when there is no current work', () => {
+  it('applies an import at once, with no confirm after it (MDI-674)', () => {
     const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
 
     act(() => {
-      result.current.offerImport(importedWork);
+      result.current.applyImport(importedWork);
     });
 
-    expect(result.current.pendingImport).toBeNull();
     expect(result.current.partialDto).toEqual(importedWork);
     expect(result.current.formRevision).toBe(1);
+    expect(result.current).not.toHaveProperty('pendingImport');
+    expect(result.current).not.toHaveProperty('offerImport');
     unmount();
   });
 
-  it('keeps prior input when an import is cancelled and only replaces after confirm', () => {
+  it('replaces typed details, because the dialog warned before the import started', () => {
     const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
 
     act(() => {
       result.current.setPartialDto(typedWork);
     });
     act(() => {
-      result.current.offerImport(importedWork);
+      result.current.applyImport(importedWork);
     });
 
-    expect(result.current.pendingImport).toEqual(importedWork);
-    expect(result.current.partialDto).toEqual(typedWork);
-    expect(result.current.formRevision).toBe(0);
-
-    act(() => {
-      result.current.cancelImport();
-    });
-    expect(result.current.pendingImport).toBeNull();
-    expect(result.current.partialDto).toEqual(typedWork);
-
-    act(() => {
-      result.current.offerImport(importedWork);
-    });
-    act(() => {
-      result.current.applyImport();
-    });
-    expect(result.current.pendingImport).toBeNull();
     expect(result.current.partialDto).toEqual(importedWork);
     expect(result.current.accountDto).toBeNull();
     expect(result.current.formRevision).toBe(1);
     unmount();
   });
 
-  it('stores the import source text only when the import is applied', () => {
+  it('keeps the applied import and its source text in the draft, as a normal form change', () => {
     vi.useFakeTimers();
     const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
 
     act(() => {
       result.current.setPartialDto(typedWork);
     });
-    act(() => {
-      result.current.offerImport(importedWork, 'Pasted resume text');
-    });
-    act(() => {
-      result.current.cancelImport();
-    });
     expect(result.current.scrapedResume).toBeNull();
-
     act(() => {
-      result.current.offerImport(importedWork, 'Pasted resume text');
-    });
-    act(() => {
-      result.current.applyImport();
+      result.current.applyImport(importedWork, 'Pasted resume text');
     });
     expect(result.current.scrapedResume).toBe('Pasted resume text');
 
@@ -123,28 +97,18 @@ describe('useAccountOnboarding', () => {
     unmount();
   });
 
-  it('stores the source text of an import applied without confirmation', () => {
+  it('keeps the earlier source text when an import has none', () => {
     const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
 
     act(() => {
-      result.current.offerImport(importedWork, 'Extracted PDF text');
+      result.current.applyImport(importedWork, 'Extracted PDF text');
+    });
+    act(() => {
+      result.current.applyImport(typedWork);
     });
 
-    expect(result.current.pendingImport).toBeNull();
     expect(result.current.scrapedResume).toBe('Extracted PDF text');
-    unmount();
-  });
-
-  it('does not overwrite edits made while parsing unless the import is applied', () => {
-    const { result, unmount } = renderHook(() => useAccountOnboarding(FLOW_USER_ID));
-
-    act(() => {
-      result.current.setPartialDto(typedWork);
-      result.current.offerImport(importedWork);
-    });
-
-    expect(result.current.pendingImport).toEqual(importedWork);
-    expect(result.current.partialDto).toEqual(typedWork);
+    expect(result.current.formRevision).toBe(2);
     unmount();
   });
 
@@ -177,10 +141,7 @@ describe('useAccountOnboarding', () => {
       result.current.submitProfile(fullAccountDto);
     });
     act(() => {
-      result.current.offerImport(importedWork);
-    });
-    act(() => {
-      result.current.applyImport();
+      result.current.applyImport(importedWork);
     });
 
     expect(result.current.accountDto).toBeNull();

@@ -12,6 +12,8 @@ import {
   fillIdentity,
   orderedColumn,
   profileCount,
+  importLock,
+  openImportDialog,
   setScenario,
   uploadResume,
 } from './fixtures/profile-ui';
@@ -259,20 +261,31 @@ test('PROF-02 edit remove and reorder survive a reload', async ({ page, personas
 test('PROF-03 imported resume stays editable through save', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await openCreate(page, empty);
+
+  // MDI-674: an empty form imports without a warning; typed details are warned about before the import starts.
+  let dialog = await openImportDialog(page);
+  await expect(dialog.getByTestId('import-replace-warning')).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Import', exact: true })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+
   await page.getByLabel('First name', { exact: true }).fill('Keep This');
-  await uploadResume(page, PDF);
-  await expect(page.getByRole('heading', { name: 'Replace current profile?' })).toBeVisible();
-  await page.getByRole('button', { name: 'Cancel' }).click();
+  dialog = await openImportDialog(page);
+  await expect(dialog.getByTestId('import-replace-warning')).toContainText('This replaces what you have entered.');
+  await dialog.getByTestId('file-input').setInputFiles(PDF);
+  await expect(dialog.getByText('resume-import.pdf')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Keep This');
-  await expect(page.getByRole('button', { name: 'Import from resume' })).toBeEnabled();
 
   await uploadResume(page, PDF);
-  // Scope to the replace dialog: the upload dialog's own Confirm can still be closing when this runs.
-  await page.getByRole('dialog', { name: 'Replace current profile?' }).getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
   await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Owner');
   await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Engineer');
   await expect(entryRow(entrySection(page, 'Experience'), 'Imported Labs')).toBeVisible();
+  // No confirm after the import; the check panel and Import again stay until Save profile.
+  await expect(page.getByRole('heading', { name: 'Replace current profile?' })).toHaveCount(0);
+  await expect(page.getByTestId('import-review')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Import again' })).toBeVisible();
   await expect.poll(() => page.evaluate((key) => {
     const draft = JSON.parse(window.localStorage.getItem(key) ?? 'null');
     return typeof draft?.content?.scrapedResume === 'string' && draft.content.scrapedResume.trim().length > 0;
@@ -300,22 +313,30 @@ test('PROF-04 provider failures recover without stranding the profile', async ({
   await page.getByLabel('Role', { exact: true }).fill('Engineer');
   await page.getByLabel('Email', { exact: true }).fill('ada.recover@talvio.test');
 
+  // MDI-674: a failed import shows the page lock's failure card; nothing in the profile changes.
+  const lock = importLock(page);
   await setScenario('malformed');
   await uploadResume(page, PDF);
-  await expect(page.getByText('Failed to parse resume').last()).toBeVisible();
+  await expect(lock.getByRole('heading', { name: 'We couldn’t read this resume' })).toBeVisible();
+  await expect(lock.getByRole('alert')).toHaveText('Failed to parse resume');
+  await expect(lock.getByText('Nothing in your profile has changed.')).toBeVisible();
+  await lock.getByRole('button', { name: 'Back to my profile' }).click();
+  await expect(lock).toBeHidden();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Keep This');
-  await expect(page.getByRole('button', { name: 'Import from resume' })).toBeVisible();
 
   await setScenario('parse_error');
   await uploadResume(page, PDF);
-  await expect(page.getByText('This could not be processed. Edit it and try again.').last()).toBeVisible();
+  await expect(lock.getByRole('alert')).toHaveText('This could not be processed. Edit it and try again.');
+  // The main way on is to paste the text instead.
+  await lock.getByRole('button', { name: 'Paste resume text' }).click();
+  const dialog = page.getByRole('dialog', { name: /Import your resume/ });
+  await expect(dialog.getByRole('tab', { name: 'Paste text' })).toHaveAttribute('aria-selected', 'true');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Keep This');
-  await expect(page.getByRole('button', { name: 'Import from resume' })).toBeEnabled();
 
   await setScenario('success');
   await uploadResume(page, PDF);
-  // Scope to the replace dialog: the upload dialog's own Confirm can still be closing when this runs.
-  await page.getByRole('dialog', { name: 'Replace current profile?' }).getByRole('button', { name: 'Confirm' }).click();
+  await expect(lock).toBeHidden({ timeout: 30_000 });
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
   await page.getByLabel('First name', { exact: true }).fill('Ada Recovered');
 
@@ -373,30 +394,31 @@ test('PROF-05 pasted resume text imports within the 2,000-character limit', asyn
   await page.getByLabel('First name', { exact: true }).fill('Keep This');
 
   const resumeText = 'Ada Owner. Engineer at Imported Labs, building resume tools. '.repeat(40).slice(0, 1800);
-  const paste = page.getByRole('dialog', { name: 'Paste resume text' });
   const openPaste = async (text: string) => {
-    await page.getByRole('button', { name: 'Paste resume text' }).click();
-    await paste.getByRole('textbox', { name: 'Resume text' }).fill(text);
+    const dialog = await openImportDialog(page);
+    await dialog.getByRole('tab', { name: 'Paste text' }).click();
+    await dialog.getByRole('textbox', { name: 'Resume text' }).fill(text);
+    return dialog;
   };
 
-  await openPaste('x'.repeat(2001));
-  await expect(paste.getByText('2,001 / 2,000 characters (1 over the limit)')).toBeVisible();
-  await expect(paste.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+  let paste = await openPaste('x'.repeat(2001));
+  await expect(paste.getByText('2,001 / 2,000 characters · 1 over. Cut it down to the main sections, or upload the PDF instead.')).toBeVisible();
+  await expect(paste.getByRole('button', { name: 'Replace and import' })).toBeDisabled();
   await paste.getByRole('button', { name: 'Cancel' }).click();
 
+  const lock = importLock(page);
   await setScenario('parse_error');
-  await openPaste(resumeText);
+  paste = await openPaste(resumeText);
   await expect(paste.getByText('1,800 / 2,000 characters')).toBeVisible();
-  await paste.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page.getByText('This could not be processed. Edit it and try again.').last()).toBeVisible();
+  await paste.getByRole('button', { name: 'Replace and import' }).click();
+  await expect(lock.getByRole('alert')).toHaveText('This could not be processed. Edit it and try again.');
+  await lock.getByRole('button', { name: 'Back to my profile' }).click();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Keep This');
-  await expect(page.getByRole('button', { name: 'Paste resume text' })).toBeEnabled();
 
   await setScenario('success');
-  await openPaste(resumeText);
-  await paste.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page.getByRole('heading', { name: 'Replace current profile?' })).toBeVisible();
-  await page.getByRole('dialog', { name: 'Replace current profile?' }).getByRole('button', { name: 'Confirm' }).click();
+  paste = await openPaste(resumeText);
+  await paste.getByRole('button', { name: 'Replace and import' }).click();
+  await expect(lock).toBeHidden({ timeout: 30_000 });
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
   await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Owner');
   await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Engineer');

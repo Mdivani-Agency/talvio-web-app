@@ -12,7 +12,6 @@ import {
   emptyAccountDraftFields,
   hydrateAccountDraft,
   readParsedAccountDraft,
-  shouldConfirmImport,
   writeDraft,
   type AccountDraftFields,
   type DebouncedWriter,
@@ -23,12 +22,6 @@ import {
 import type { AccountDto, DeepPartial } from '@lib/types';
 
 export type { OnboardingStep };
-
-type PendingImport = {
-  values: DeepPartial<AccountDto>;
-  /** Extracted PDF text or pasted text; stored as `scrapedResume` when the import is applied. */
-  source?: string;
-};
 
 export function useAccountOnboarding(userId: string) {
   const owner = useMemo(() => ({ kind: 'user' as const, userId }), [userId]);
@@ -51,7 +44,6 @@ export function useAccountOnboarding(userId: string) {
       ? hydrateAccountDraft(initialRead.parsed.content, initialRead.parsed.progress)
       : emptyAccountDraftFields()
   ));
-  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [formRevision, setFormRevision] = useState(0);
   const draftRef = useRef<VersionedDraft | null>(initialRead.parsed ? initialRead.draft : null);
   const lastStepRef = useRef<OnboardingStep>(fields.step);
@@ -69,14 +61,18 @@ export function useAccountOnboarding(userId: string) {
     });
   }, []);
 
-  const applyParsed = useCallback(({ values, source }: PendingImport) => {
+  /**
+   * Applies an import (MDI-674): the imported values replace the form, as a normal form change that the draft keeps.
+   * The import dialog warned before it started when details were already entered, so there is no confirm after it.
+   * `source` is the extracted PDF text or the pasted text, stored as `scrapedResume`.
+   */
+  const applyImport = useCallback((values: DeepPartial<AccountDto>, source?: string) => {
     liveValuesRef.current = values;
     updateFields({
       partialDto: values,
       accountDto: null,
       ...(source === undefined ? {} : { scrapedResume: source }),
     });
-    setPendingImport(null);
     setFormRevision((value) => value + 1);
   }, [updateFields]);
 
@@ -84,7 +80,6 @@ export function useAccountOnboarding(userId: string) {
     clearedRef.current = true;
     writerRef.current?.cancel();
     draftRef.current = null;
-    setPendingImport(null);
     setPersistStatus(clearDraft(storage, key));
   }, [key, storage]);
 
@@ -102,26 +97,6 @@ export function useAccountOnboarding(userId: string) {
   const completeSave = useCallback(() => {
     clearAccountDraft();
   }, [clearAccountDraft]);
-
-  const offerImport = useCallback((values: DeepPartial<AccountDto>, source?: string) => {
-    const current = liveValuesRef.current ?? fields.partialDto ?? fields.accountDto;
-    if (shouldConfirmImport(current)) {
-      setPendingImport({ values, source });
-      return;
-    }
-    applyParsed({ values, source });
-  }, [applyParsed, fields.accountDto, fields.partialDto]);
-
-  const applyImport = useCallback(() => {
-    if (!pendingImport) {
-      return;
-    }
-    applyParsed(pendingImport);
-  }, [applyParsed, pendingImport]);
-
-  const cancelImport = useCallback(() => {
-    setPendingImport(null);
-  }, []);
 
   useEffect(() => {
     const writer = createDebouncedWriter((draft: VersionedDraft | null) => {
@@ -192,14 +167,11 @@ export function useAccountOnboarding(userId: string) {
     partialDto: fields.partialDto,
     accountDto: fields.accountDto,
     scrapedResume: fields.scrapedResume,
-    pendingImport: pendingImport?.values ?? null,
     formRevision,
     setPartialDto,
     submitProfile,
     completeSave,
-    offerImport,
     applyImport,
-    cancelImport,
     clearAccountDraft,
   };
 }

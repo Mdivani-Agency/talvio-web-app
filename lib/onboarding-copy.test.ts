@@ -15,6 +15,16 @@ import {
   ONBOARDING_HEADING,
   ONBOARDING_INTRO,
   START_FASTER,
+  IMPORT_DIALOG,
+  IMPORT_LOCK,
+  MAX_PASTED_RESUME_CHARS,
+  goToSectionLabel,
+  importReviewSubtitle,
+  importReviewTitle,
+  notPdfMessage,
+  pasteCountText,
+  replaceWarningBody,
+  startFasterImportedBody,
   errorSummaryTitle,
   sectionFixNote,
   type FieldCopy,
@@ -72,9 +82,10 @@ describe('onboarding copy', () => {
     expect(START_FASTER).toEqual({
       title: 'Start faster',
       body: 'Import a resume PDF or paste its text to fill in the form. You review everything before saving.',
-      importLabel: 'Import from resume',
-      pasteLabel: 'Paste resume text',
+      importLabel: 'Import your resume',
+      againLabel: 'Import again',
     });
+    expect(startFasterImportedBody('cv.pdf')).toBe('Imported from cv.pdf. Import again to replace these details.');
     expect(DRAFT_NOTE).toBe('Unsaved changes are kept on this device as you type.');
   });
 
@@ -98,5 +109,57 @@ describe('onboarding copy', () => {
       'Add recommendation',
     ]);
     expect(entryRemoveBody('Signal Board')).toBe('Signal Board will be removed. You can add it again later.');
+  });
+
+  it('names the import dialog, its errors and the paste limit (MDI-674)', () => {
+    expect(IMPORT_DIALOG.title).toBe('Import your resume');
+    expect([IMPORT_DIALOG.uploadTab, IMPORT_DIALOG.pasteTab]).toEqual(['Upload a PDF', 'Paste text']);
+    expect(notPdfMessage('cv.docx')).toBe('cv.docx is not a PDF. Choose a PDF, or use Paste text.');
+    expect(MAX_PASTED_RESUME_CHARS).toBe(2000);
+    expect(pasteCountText(1800)).toBe('1,800 / 2,000 characters');
+    expect(pasteCountText(2340)).toBe(
+      '2,340 / 2,000 characters · 340 over. Cut it down to the main sections, or upload the PDF instead.',
+    );
+  });
+
+  it('warns before replacing typed details, naming the sections when known', () => {
+    expect(replaceWarningBody(['About you', 'Contact information'])).toBe(
+      'You have filled in About you and Contact information. The import overwrites them.',
+    );
+    expect(replaceWarningBody(['About you', 'Contact information', 'Experience'])).toBe(
+      'You have filled in About you, Contact information and Experience. The import overwrites them.',
+    );
+    expect(replaceWarningBody([])).toBe('The import overwrites the details you have typed.');
+    expect(IMPORT_DIALOG.replaceAndImport).toBe('Replace and import');
+  });
+
+  it('reads the resume on the page lock and offers Paste resume text when it fails', () => {
+    expect(IMPORT_LOCK.steps).toEqual([
+      'Reading the PDF',
+      'Finding your experience, education and skills',
+      'Filling in your profile',
+    ]);
+    expect(IMPORT_LOCK.stop).toBe('Stop import');
+    expect(IMPORT_LOCK.failure).toEqual({
+      title: 'We couldn’t read this resume',
+      kept: 'Nothing in your profile has changed.',
+      primary: 'Paste resume text',
+      secondary: 'Back to my profile',
+    });
+  });
+
+  it('titles the check panel by source and by a partial read', () => {
+    expect(importReviewTitle('cv.pdf', false)).toBe('We filled in your profile from cv.pdf');
+    expect(importReviewTitle('cv.pdf', true)).toBe('Part of your resume could not be read');
+    expect(importReviewSubtitle('cv.pdf', false, 2)).toBe(
+      'Check these 2 things, then save. Nothing is saved until you press Save profile.',
+    );
+    expect(importReviewSubtitle('cv.pdf', false, 1)).toBe(
+      'Check this 1 thing, then save. Nothing is saved until you press Save profile.',
+    );
+    expect(importReviewSubtitle('cv.pdf', true, 3)).toBe(
+      'We filled in what we could from cv.pdf. Nothing is saved until you press Save profile.',
+    );
+    expect(goToSectionLabel('Experience')).toBe('Go to Experience');
   });
 });

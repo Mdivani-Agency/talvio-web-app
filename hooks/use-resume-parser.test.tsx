@@ -139,4 +139,38 @@ describe('useResumeParser', () => {
     expect(authedFetch).toHaveBeenCalledTimes(2);
     expect(JSON.parse(authedFetch.mock.calls[0]![1].body).input.text).toBe('Nino Beridze, Senior Backend Engineer');
   });
+
+  it('reports reading, then the job, and Stop drops a PDF that is still being read (MDI-674)', async () => {
+    let finishRead: (value: unknown) => void = () => undefined;
+    extractPdfPages.mockReturnValueOnce(new Promise((resolve) => { finishRead = resolve; }));
+    const { result, events } = setup();
+    expect(result.current.stage).toBeNull();
+
+    let reading: Promise<unknown> = Promise.resolve();
+    act(() => {
+      reading = result.current.parseResumeText(new File(['%PDF'], 'resume.pdf', { type: 'application/pdf' })) as Promise<unknown>;
+    });
+    await waitFor(() => expect(result.current.stage).toBe('reading'));
+
+    act(() => result.current.stop());
+    expect(result.current.stage).toBeNull();
+    await act(async () => {
+      finishRead({ pages: [{ pageNumber: 1, text: 'Ada Owner, Engineer' }], version: '1' });
+      await reading;
+    });
+    expect(authedFetch).not.toHaveBeenCalled();
+    expect(events.onResumeParsed).not.toHaveBeenCalled();
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('is on the job stage while the service parses', async () => {
+    respondWith([202, { jobId: JOB_ID, status: 'queued', pollAfterMs: 500, replayed: false }], [200, succeeded]);
+    const { result, events } = setup();
+    await act(async () => {
+      await result.current.parsePastedText('Nino Beridze, Senior Backend Engineer');
+    });
+    await waitFor(() => expect(result.current.stage).toBe('parsing'));
+    await waitFor(() => expect(events.onResumeParsed).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    expect(result.current.stage).toBeNull();
+  });
 });

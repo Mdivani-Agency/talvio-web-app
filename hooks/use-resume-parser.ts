@@ -117,12 +117,24 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
     [parseWithService],
   );
 
+  /** Stops the import: a PDF still being read is dropped, and a running job is cancelled. */
+  const stop = useCallback(() => {
+    readSeq.current += 1;
+    setReading(false);
+    if (job.busy) {
+      job.cancel();
+    }
+  }, [job]);
+
   return {
     loading: reading || job.busy,
+    /** Which part of the import is running, for the page lock's steps: reading the PDF, or the service's job. */
+    stage: reading ? ('reading' as const) : job.busy ? ('parsing' as const) : null,
     extracting: parsing,
     /** True while the LLM service cannot be reached; the import continues when it can. */
     offline: (state.phase === 'submitting' || state.phase === 'running') && state.offline,
     cancel: job.cancel,
+    stop,
     parseResumeText,
     parsePastedText,
   };

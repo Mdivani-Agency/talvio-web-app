@@ -31,6 +31,10 @@ interface AccountFormProps {
   submitting?: boolean;
   /** The Start faster card: above the form on phones, at the top of the side column from lg. */
   startFaster?: ReactNode;
+  /** Above the form after an import: what to check (MDI-674). */
+  importReview?: ReactNode;
+  /** Sections the import review lists: the side list shows "Check" on them. */
+  checkSections?: readonly ProfileSectionId[];
 }
 
 export const AccountForm = ({
@@ -40,6 +44,8 @@ export const AccountForm = ({
   onValuesChange,
   submitting = false,
   startFaster,
+  importReview,
+  checkSections,
 }: AccountFormProps) => {
   const { accountDto, partialDto, setPartialDto } = useAccountContext();
   const values = valuesOverride || partialDto || accountDto || {};
@@ -79,7 +85,7 @@ export const AccountForm = ({
   const formValues = useStore(form.store, (state) => state.values as AccountDto);
   const fieldMeta = useStore(form.store, (state) => state.fieldMeta);
   const errors = useMemo(() => collectFieldErrors(fieldMeta), [fieldMeta]);
-  const sections = sectionStatuses(formValues, errors);
+  const sections = sectionStatuses(formValues, errors, checkSections);
   const [summaryShown, setSummaryShown] = useState(false);
   const summaryRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
@@ -116,6 +122,7 @@ export const AccountForm = ({
         </p>
       </aside>
       <div className="flex min-w-0 flex-col gap-6 lg:col-start-1 lg:row-start-1">
+        {importReview}
         {summaryShown && errors.length > 0 ? (
           <ErrorSummary ref={summaryRef} errors={errors} onSelect={focusField} />
         ) : null}

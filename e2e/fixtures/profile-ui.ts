@@ -138,10 +138,30 @@ export async function dragItem(page: Page, sourceText: string, targetText: strin
   }, { sourceText, targetText });
 }
 
+/** The "Import your resume" dialog (MDI-674). */
+export function importDialog(page: Page) {
+  return page.getByRole('dialog', { name: /Import your resume/ });
+}
+
+/** Opens the import dialog from Start faster: "Import your resume", or "Import again" after an import. */
+export async function openImportDialog(page: Page) {
+  await page.getByRole('button', { name: /^(Import your resume|Import again)$/ }).click();
+  const dialog = importDialog(page);
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+/** Chooses a PDF in the import dialog and starts the import (Import, or Replace and import over typed details). */
 export async function uploadResume(page: Page, file: string) {
-  await page.getByRole('button', { name: /Import from resume|Parsing resume/ }).click();
-  await page.getByTestId('file-input').setInputFiles(file);
-  await page.getByRole('button', { name: 'Confirm' }).click();
+  const dialog = await openImportDialog(page);
+  await dialog.getByTestId('file-input').setInputFiles(file);
+  await dialog.getByRole('button', { name: /^(Import|Replace and import)$/ }).click();
+  await expect(dialog).toBeHidden();
+}
+
+/** The page lock while an import runs, and its failure card. */
+export function importLock(page: Page) {
+  return page.getByTestId('page-lock');
 }
 
 export async function profileCount(userId: string) {

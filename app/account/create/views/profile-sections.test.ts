@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { AccountDto } from '@lib/types';
 
-import { collectFieldErrors, fieldLabelOf, sectionOf, sectionStatuses } from './profile-sections';
+import { collectFieldErrors, fieldLabelOf, sectionForImportReview, sectionOf, sectionStatuses } from './profile-sections';
 
 describe('sectionOf', () => {
   it('maps field names to the section card that holds them', () => {
@@ -81,5 +81,19 @@ describe('sectionStatuses', () => {
     });
     const contact = sectionStatuses(filled, errors).find((section) => section.id === 'contact');
     expect(contact).toEqual({ id: 'contact', title: 'Contact information', state: 'error', note: 'Fix 2' });
+  });
+
+  it('marks the sections an import asks to check, under any errors (MDI-674)', () => {
+    const states = sectionStatuses({} as AccountDto, [], ['experience']);
+    expect(states.find((section) => section.id === 'experience')).toMatchObject({ state: 'check', note: 'Check' });
+    expect(states.find((section) => section.id === 'about')?.state).toBe('todo');
+  });
+
+  it('points check items at their section, and has no place for recommendations', () => {
+    expect(sectionForImportReview('Profile')).toBe('about');
+    expect(sectionForImportReview('Experience')).toBe('experience');
+    expect(sectionForImportReview('Skills')).toBe('highlights');
+    expect(sectionForImportReview('Languages')).toBe('highlights');
+    expect(sectionForImportReview('Recommendations')).toBeNull();
   });
 });

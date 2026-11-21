@@ -5,6 +5,7 @@ import {
   EXPERIENCE_FIELDS,
   HIGHLIGHT_FIELDS,
   HEADLINE_ACHIEVEMENT_COPY,
+  IMPORT_REVIEW,
   PROFILE_FIELDS,
   PROFILE_SECTIONS,
   PROJECT_FIELDS,
@@ -111,7 +112,7 @@ export function collectFieldErrors(fieldMeta: FieldMetaLike): FormFieldError[] {
 export type SectionStatus = {
   id: ProfileSectionId;
   title: string;
-  state: 'done' | 'error' | 'todo';
+  state: 'done' | 'error' | 'todo' | 'check';
   note: string;
 };
 
@@ -134,15 +135,49 @@ function hasContent(id: ProfileSectionId, values: Partial<AccountDto>): boolean 
 }
 
 /** The side list: a fix mark where the last save found errors, a done mark where the section has content. */
-export function sectionStatuses(values: Partial<AccountDto>, errors: FormFieldError[]): SectionStatus[] {
+/**
+ * Each section's mark and note in the side list. Errors come first; after an import, the sections the check panel
+ * lists (`check`) show "Check" until the profile is saved (MDI-674).
+ */
+export function sectionStatuses(
+  values: Partial<AccountDto>,
+  errors: FormFieldError[],
+  check: readonly ProfileSectionId[] = [],
+): SectionStatus[] {
   return PROFILE_SECTION_IDS.map((id) => {
     const title = PROFILE_SECTIONS[id].title;
     const errorCount = errors.filter((error) => error.section === id).length;
     if (errorCount > 0) return { id, title, state: 'error', note: sectionFixNote(errorCount) };
+    if (check.includes(id)) return { id, title, state: 'check', note: IMPORT_REVIEW.checkNote };
 
     const done = hasContent(id, values);
     const count = id === 'experience' || id === 'education' || id === 'projects' ? (values[id]?.length ?? 0) : 0;
     const note = count > 0 ? String(count) : id === 'projects' ? SECTION_OPTIONAL_NOTE : '';
     return { id, title, state: done ? 'done' : 'todo', note };
   });
+}
+
+/**
+ * Where an import's check item belongs in the form (MDI-674). `ImportReview` names sections by label: "Profile"
+ * covers the person, contacts and location, so it points at About you; skills, tools, links and languages are in
+ * Highlights. Recommendations have no place in the form.
+ */
+export function sectionForImportReview(label: string): ProfileSectionId | null {
+  switch (label) {
+    case 'Profile':
+      return 'about';
+    case 'Experience':
+      return 'experience';
+    case 'Education':
+      return 'education';
+    case 'Projects':
+      return 'projects';
+    case 'Skills':
+    case 'Tools':
+    case 'Links':
+    case 'Languages':
+      return 'highlights';
+    default:
+      return null;
+  }
 }
