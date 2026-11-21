@@ -101,4 +101,13 @@ test('RES-18 keeps Fit width off the layout below lg', async ({ page, personas }
   await expect(page.getByRole('button', { name: 'Fit width', exact: true })).toBeHidden();
   // Below `lg` the panel keeps its earlier rule: up to 640px beside the preview from `md`.
   expect(await width(page, 'editor-panel')).toBeLessThanOrEqual(640 + TOLERANCE);
+
+  // The preview column is narrower than an A4 page at the stage's height here, so the page box is not A4. The page
+  // still keeps the A4 ratio and fits inside the box (MDI-669 review).
+  const image = page.getByTestId('preview-page').getByRole('img', { name: 'PDF page 1' });
+  const imageBox = (await image.boundingBox())!;
+  const pageBox = (await page.getByTestId('preview-page').boundingBox())!;
+  expect(Math.abs(imageBox.height / imageBox.width - 297 / 210)).toBeLessThan(0.01);
+  expect(imageBox.width).toBeLessThanOrEqual(pageBox.width);
+  expect(imageBox.height).toBeLessThanOrEqual(pageBox.height);
 });
