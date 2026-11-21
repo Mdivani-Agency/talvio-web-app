@@ -14,7 +14,8 @@ import { downloadPdf, type PdfFile } from '@/lib/pdf/pdf-actions';
 import { fetchResume, fetchResumeFamily } from '@app/resume/query/use-resume';
 import { isLabelOnlyPatch } from '@app/resume/query/use-save-resume-edit';
 import { ConfirmModal } from '@components/modals';
-import { ErrorView, Loading } from '@components/views';
+import { ErrorView } from '@components/views';
+import { EditorSkeleton } from '../views/editor-skeleton';
 import { isGeneratedResume, previewToResumeContent } from '@lib/adapters/resume.adapter';
 import {
   aiImproveStorageKey,
@@ -332,11 +333,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
 
   // Wait for the session too: a signed-in visitor must never see the guest view flash by.
   if (sessionPending || isLoadingResume) {
-    return (
-      <WithResumeHeader>
-        <Loading message="Loading resume..." />
-      </WithResumeHeader>
-    );
+    return <EditorSkeleton />;
   }
 
   // Saved resumes are read with the visitor's session, so a guest is asked to sign in and comes back here.
@@ -371,11 +368,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   }
 
   if (!editorDocument) {
-    return (
-      <WithResumeHeader>
-        <Loading message="Loading resume..." />
-      </WithResumeHeader>
-    );
+    return <EditorSkeleton />;
   }
 
   return (

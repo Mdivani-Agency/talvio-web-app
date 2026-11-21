@@ -1,6 +1,6 @@
 'use client';
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Loading } from '@components/views';
+import { EditorSkeleton } from '../views/editor-skeleton';
 import { DraftStatusBanner } from '@components/views/draft-status';
 import {
   adoptDraft,
@@ -309,7 +309,7 @@ export const ResumeProvider = ({
   const storage = useMemo(() => browserStorage(), []);
 
   if (isPending) {
-    return <Loading message="Restoring resume draft..." />;
+    return <EditorSkeleton />;
   }
 
   const owner: DraftOwner | null = session?.user

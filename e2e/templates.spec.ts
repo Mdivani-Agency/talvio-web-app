@@ -60,7 +60,8 @@ test.describe('templates', () => {
     for (const path of ['/resume', '/resume?template=not-a-template']) {
       await page.goto(path);
       await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
-      await expect(page.getByText('Preparing resume...')).toHaveCount(0);
+      // The page-load skeleton (MDI-671) is gone once the start screen shows.
+      await expect(page.getByTestId('page-skeleton')).toHaveCount(0);
       await page.getByRole('button', { name: /Fill it in yourself/ }).click();
       await waitForPreview(page);
       await page.getByRole('tab', { name: 'Design', exact: true }).click();

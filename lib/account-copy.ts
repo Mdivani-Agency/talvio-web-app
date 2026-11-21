@@ -170,3 +170,7 @@ export function documentPreviewAlt(name: string): string {
 
 /** Shown under the loaded documents when the next page fails; the loaded ones stay. */
 export const DOCUMENTS_MORE_ERROR = 'Could not load more resumes. Check your connection and try again.';
+
+/* Page-load skeletons (MDI-671): the status line read out while the page draws its shape. */
+export const ACCOUNT_LOADING_LABEL = 'Loading your account';
+export const PROFILE_FORM_LOADING_LABEL = 'Loading your profile';

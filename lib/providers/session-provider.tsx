@@ -24,10 +24,12 @@ export const SessionContext = createContext<{
 type SessionProviderProps = {
   fallbackURL?: string;
   returnToCurrentPath?: boolean;
+  /** Shown while the session is restored on a protected segment, such as the page's skeleton (MDI-671). */
+  pending?: React.ReactNode;
   children: React.ReactNode;
 };
 
-export const SessionProvider = ({ children, fallbackURL, returnToCurrentPath = false }: SessionProviderProps) => {
+export const SessionProvider = ({ children, fallbackURL, returnToCurrentPath = false, pending }: SessionProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isPending, setIsPending] = useState(true);
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
@@ -53,7 +55,7 @@ export const SessionProvider = ({ children, fallbackURL, returnToCurrentPath = f
   }, []);
 
   if (isPending && fallbackURL) {
-    return <Loading message={'Loading session...'} />;
+    return pending ?? <Loading message={'Loading session...'} />;
   }
 
   if (!isPending && !session && fallbackURL) {

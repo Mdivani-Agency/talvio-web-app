@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { redirect } from 'next/navigation';
 
 import { fetchProfile } from '@app/account/query/use-profile';
-import { Loading } from '@components/views';
+import { AccountFormSkeleton } from '../views/account-skeleton';
 import { shouldRetryGraphqlQuery } from '@/lib/graphql-client';
 
 import { accountLookupFromQuery, resolveAccountEntry } from '../hooks/resolve-account-entry';
@@ -30,7 +30,7 @@ export default function CreateAccountPage() {
   });
 
   if (view === 'loading') {
-    return <Loading message="Loading account data..." />;
+    return <AccountFormSkeleton />;
   }
 
   if (view === 'lookup-error') {

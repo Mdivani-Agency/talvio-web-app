@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ACCOUNT_LOADING_LABEL,
+  PROFILE_FORM_LOADING_LABEL,
   ACCOUNT_NAV_LINKS,
   APPLICATIONS_NAV_LINK,
   accountNavLinks,
@@ -45,6 +47,11 @@ import {
 } from './account-copy';
 
 describe('account copy', () => {
+  it('names what is loading in a short status line, not a sentence with an ellipsis (MDI-671)', () => {
+    expect(ACCOUNT_LOADING_LABEL).toBe('Loading your account');
+    expect(PROFILE_FORM_LOADING_LABEL).toBe('Loading your profile');
+  });
+
   it('uses the approved sentence-case labels', () => {
     expect(CREATE_RESUME_LABEL).toBe('Create resume');
     expect(SIGN_OUT_LABEL).toBe('Sign out');

@@ -1,11 +1,6 @@
-import { Loading } from '@components/views';
+import { EditorSkeleton } from './views/editor-skeleton';
 
-import { WithResumeHeader } from './views/resume-public-header';
-
+/** Route-level loading for `/resume`: the editor's shape in grey (MDI-671). */
 export default function ResumeLoading() {
-  return (
-    <WithResumeHeader>
-      <Loading message={'Loading...'} />
-    </WithResumeHeader>
-  );
+  return <EditorSkeleton />;
 }

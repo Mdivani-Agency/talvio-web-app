@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { Loading } from '@components/views';
+import { EditorSkeleton } from './views/editor-skeleton';
 import { fetchProfile } from '@app/account/query/use-profile';
 import { useUserSession } from '@lib/providers';
 import { useQuery } from '@tanstack/react-query';
@@ -96,11 +96,7 @@ function ResumeFlow() {
   }
 
   if (isAuthenticating || (isLoading && step === 'fetchingResume')) {
-    return (
-      <WithResumeHeader>
-        <Loading message="Preparing resume..." />
-      </WithResumeHeader>
-    );
+    return <EditorSkeleton />;
   }
 
   if (step === 'options') {
