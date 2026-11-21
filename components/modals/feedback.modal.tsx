@@ -37,6 +37,8 @@ export type FeedbackModalProps = {
   onTrustpilot: () => void;
   /** Sends the message. Resolves `true` when it was stored. */
   onSubmit: (comment: string) => Promise<boolean>;
+  /** The green line above the title: what just happened. Defaults to "Your PDF is downloading". */
+  eyebrow?: string;
 };
 
 const primaryButton = 'h-[4.8rem] w-full px-8 text-[1.5rem] font-semibold';
@@ -96,6 +98,7 @@ function FeedbackBody({
   onClose,
   onTrustpilot,
   onSubmit,
+  eyebrow = FEEDBACK_PROMPT.downloading,
 }: Omit<FeedbackModalProps, 'open'> & {
   Title: ComponentType<{ className?: string; children: ReactNode }>;
   Description: ComponentType<{ className?: string; children: ReactNode }>;
@@ -184,7 +187,7 @@ function FeedbackBody({
             <span className="flex size-[2.2rem] items-center justify-center rounded-full bg-green-600 text-white">
               <CheckIcon aria-hidden="true" className="size-[1.3rem]" strokeWidth={3} />
             </span>
-            {FEEDBACK_PROMPT.downloading}
+            {eyebrow}
           </p>
         }
       />
@@ -275,7 +278,7 @@ function FeedbackBody({
  * "Tell us what went wrong" (stored for the team) and "Not now". A dialog on desktop and a bottom sheet on phones;
  * both trap focus and close on Escape.
  */
-export function FeedbackModal({ open, onClose, onTrustpilot, onSubmit }: FeedbackModalProps) {
+export function FeedbackModal({ open, onClose, onTrustpilot, onSubmit, eyebrow }: FeedbackModalProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const onOpenChange = (next: boolean) => {
     if (!next) {
@@ -296,6 +299,7 @@ export function FeedbackModal({ open, onClose, onTrustpilot, onSubmit }: Feedbac
                 onClose={onClose}
                 onTrustpilot={onTrustpilot}
                 onSubmit={onSubmit}
+                eyebrow={eyebrow}
               />
             </div>
           ) : null}
@@ -317,6 +321,7 @@ export function FeedbackModal({ open, onClose, onTrustpilot, onSubmit }: Feedbac
             onClose={onClose}
             onTrustpilot={onTrustpilot}
             onSubmit={onSubmit}
+            eyebrow={eyebrow}
           />
         ) : null}
       </DialogContent>

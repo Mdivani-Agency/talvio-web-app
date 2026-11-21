@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   due: vi.fn(),
   record: vi.fn(),
   cards: vi.fn(),
+  create: vi.fn(),
+  toast: vi.fn(),
   pathname: '/resume/resume-1',
 }));
 
@@ -25,7 +27,11 @@ vi.mock('@app/account/applications/query/use-resume-cards', () => ({ fetchCardsF
 vi.mock('@app/account/applications/query/use-resume-options', () => ({
   useResumeOptions: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
 }));
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock('@app/account/applications/query/use-create-application', () => ({
+  useCreateApplication: () => ({ mutateAsync: mocks.create }),
+}));
+vi.mock('@app/account/applications/query/use-applications', () => ({ fetchAllApplications: async () => [] }));
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: mocks.toast } }));
 
 import { FeedbackPromptProvider, useFeedbackPrompt } from './feedback-prompt-provider';
 
@@ -78,6 +84,8 @@ describe('post-generate prompts in FeedbackPromptProvider', () => {
     mocks.due.mockReset().mockResolvedValue('due');
     mocks.record.mockReset().mockResolvedValue(true);
     mocks.cards.mockReset().mockResolvedValue({});
+    mocks.create.mockReset().mockResolvedValue({ id: 'card-1' });
+    mocks.toast.mockReset();
     mocks.pathname = '/resume/resume-1';
   });
   afterEach(() => cleanup());
@@ -132,6 +140,68 @@ describe('post-generate prompts in FeedbackPromptProvider', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Add an application' });
     expect(dialog.textContent).toContain('Applied');
     expect(screen.queryByRole('status', BAR)).toBeNull();
+  });
+
+  async function addFromBar() {
+    act(() => probe.current?.notifyNewPdf({ id: 'resume-1', sourceResumeId: null }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Add to tracker' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add an application' });
+    fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'Staff Engineer' } });
+    fireEvent.change(screen.getByLabelText('Company'), { target: { value: 'Northwind' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add application' }));
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1));
+    return dialog;
+  }
+
+  it('asks for the review once Add to tracker saved the card, and shows the toast when the prompt closes', async () => {
+    renderProvider();
+    await addFromBar();
+
+    const review = await screen.findByRole('dialog', REVIEW);
+    expect(mocks.record).toHaveBeenCalledTimes(1);
+    expect(review.textContent).toContain('Added to your tracker');
+    expect(review.textContent).not.toContain('Your PDF is downloading');
+    expect(mocks.toast).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', REVIEW)).toBeNull());
+    expect(mocks.toast).toHaveBeenCalledTimes(1);
+    expect(mocks.toast.mock.calls[0][0]).toBe('Application added');
+  });
+
+  it('shows only the toast after Add to tracker when the review is not due, refused or the check fails', async () => {
+    mocks.due.mockResolvedValue('no');
+    renderProvider();
+    await addFromBar();
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledTimes(1));
+    expect(mocks.record).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', REVIEW)).toBeNull();
+    cleanup();
+
+    mocks.due.mockResolvedValue('due');
+    mocks.record.mockResolvedValue(false);
+    mocks.create.mockClear();
+    renderProvider();
+    await addFromBar();
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('dialog', REVIEW)).toBeNull();
+    cleanup();
+
+    mocks.due.mockRejectedValue(new Error('offline'));
+    mocks.create.mockClear();
+    renderProvider();
+    await addFromBar();
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledTimes(3));
+    expect(screen.queryByRole('dialog', REVIEW)).toBeNull();
+  });
+
+  it('asks nothing when the bar is dismissed', async () => {
+    renderProvider();
+    act(() => probe.current?.notifyNewPdf({ id: 'resume-1', sourceResumeId: null }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Dismiss' }));
+    await settle();
+    expect(mocks.due).not.toHaveBeenCalled();
+    expect(mocks.record).not.toHaveBeenCalled();
   });
 
   it('keeps the bar on its resume page and clears it when the user goes elsewhere', async () => {
