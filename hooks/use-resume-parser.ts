@@ -126,6 +126,17 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
     }
   }, [job]);
 
+  /**
+   * Leaves a failed import for good: also forgets a submission that got no answer, which is otherwise kept so that
+   * importing the same text again rejoins it. Without this, that stored job could resume after a reload and replace
+   * the edits made since.
+   */
+  const dismiss = useCallback(() => {
+    readSeq.current += 1;
+    setReading(false);
+    clear();
+  }, [clear]);
+
   return {
     loading: reading || job.busy,
     /** Which part of the import is running, for the page lock's steps: reading the PDF, or the service's job. */
@@ -135,6 +146,7 @@ export const useResumeParser = (events: Events, { surface }: Options) => {
     offline: (state.phase === 'submitting' || state.phase === 'running') && state.offline,
     cancel: job.cancel,
     stop,
+    dismiss,
     parseResumeText,
     parsePastedText,
   };

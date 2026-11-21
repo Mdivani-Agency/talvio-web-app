@@ -115,6 +115,21 @@ describe('useResumeParser', () => {
     expect(new Set(keys)).toEqual(new Set([stored.clientRequestId]));
   }, 15_000);
 
+  it('forgets a submission that got no answer when the failure is dismissed, so a reload cannot resume it (PR #201 review)', async () => {
+    const timeout: [number, unknown] = [504, { error: { code: 'dependency_unavailable', message: 'Timed out.', retryable: true, correlationId: 'c' } }];
+    respondWith(timeout, timeout, timeout);
+    const { result, events } = setup();
+    await act(async () => {
+      await result.current.parsePastedText('Some resume');
+    });
+    await waitFor(() => expect(events.onError).toHaveBeenCalled(), { timeout: 10_000 });
+    expect(window.localStorage.getItem(importJobStorageKey('user-1', 'onboarding'))).not.toBeNull();
+
+    act(() => result.current.dismiss());
+    expect(window.localStorage.getItem(importJobStorageKey('user-1', 'onboarding'))).toBeNull();
+    expect(result.current.loading).toBe(false);
+  }, 15_000);
+
   it('is busy while a PDF is read, and a newer paste wins over it', async () => {
     let finishRead: (value: unknown) => void = () => undefined;
     extractPdfPages.mockReturnValueOnce(new Promise((resolve) => { finishRead = resolve; }));
