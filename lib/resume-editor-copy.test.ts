@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   RESUME_LOADING_LABEL,
   DRAFT_BANNER,
-  IMPORT_SCREEN,
-  START_SCREEN,
+  EDITOR_IMPORT,
   RESUME_SECTIONS,
   SECTION_SUMMARY,
   downloadErrorSummaryTitle,
@@ -71,12 +70,12 @@ describe('resume editor copy', () => {
     expect(downloadErrorSummaryTitle(3)).toBe('Fix 3 fields to download your PDF');
   });
 
-  it('uses the approved start and import copy, without AI claims', () => {
-    expect(START_SCREEN.title).toBe('Start a new resume');
-    expect(START_SCREEN.import.title).toBe('Import a resume');
-    expect(START_SCREEN.manual.title).toBe('Fill it in yourself');
-    expect(IMPORT_SCREEN.title).toBe('Import your resume');
-    const text = JSON.stringify({ START_SCREEN, IMPORT_SCREEN });
-    expect(text).not.toMatch(/\bAI\b|tailored questions/i);
+  it('words the shared import dialog for a resume, without AI claims (MDI-675)', () => {
+    expect(EDITOR_IMPORT.title).toBe('Import a resume');
+    expect(EDITOR_IMPORT.description).toBe('We read it and fill in this resume. Your profile stays as it is.');
+    expect(EDITOR_IMPORT.replaceWarning).toContain('Its template, colour and text size stay.');
+    expect(EDITOR_IMPORT.steps[2]).toBe('Filling in your resume');
+    expect(EDITOR_IMPORT.doneChecking).toBe('Done checking');
+    expect(JSON.stringify(EDITOR_IMPORT)).not.toMatch(/\bAI\b|tailored questions/i);
   });
 });

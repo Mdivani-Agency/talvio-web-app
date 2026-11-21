@@ -246,31 +246,19 @@ export const SECTION_SUMMARY = {
 export const downloadErrorSummaryTitle = (count: number) =>
   `Fix ${count} ${count === 1 ? 'field' : 'fields'} to download your PDF`;
 
-/** Start a new resume: how to fill it in. A guest has no profile, so the second card says so. */
-export const START_SCREEN = {
-  title: 'Start a new resume',
-  intro: 'Choose how to fill it in. You can change anything later in the editor.',
-  import: {
-    title: 'Import a resume',
-    body: 'Upload a PDF of your current resume. We fill in the editor for you to check.',
-    action: 'Upload a PDF',
-  },
-  manual: {
-    title: 'Fill it in yourself',
-    body: 'Start from your profile and edit it section by section.',
-    guestBody: 'Start from a blank resume and edit it section by section.',
-    action: 'Open the editor',
-  },
-} as const;
-
-/** Import your resume: one PDF, parsed into the editor. */
-export const IMPORT_SCREEN = {
-  back: 'Choose another way',
-  title: 'Import your resume',
-  intro: 'Upload a PDF. We read it and fill in the editor. Check every section before you download.',
-  drop: 'Drag your resume PDF here',
-  dropPhone: 'Choose your resume PDF',
-  pdfOnly: 'PDF files only',
-  choose: 'Choose a PDF',
-  invalid: 'Invalid file type. Please upload a PDF file.',
+/** Import in the editor (MDI-675): the shared import dialog, worded for a resume, and its page lock. */
+export const EDITOR_IMPORT = {
+  button: 'Import',
+  buttonLabel: 'Import a resume',
+  title: 'Import a resume',
+  description: 'We read it and fill in this resume. Your profile stays as it is.',
+  replaceTitle: 'This replaces what is in this resume.',
+  /** Always shown: an import always replaces this resume's sections. */
+  replaceWarning: 'The import overwrites the sections of this resume. Its template, colour and text size stay.',
+  steps: ['Reading the PDF', 'Finding your experience, education and skills', 'Filling in your resume'],
+  pastedSteps: ['Reading your text', 'Finding your experience, education and skills', 'Filling in your resume'],
+  note: 'The editor opens with your details when this finishes. If you close the tab, the import keeps going and picks up when you come back.',
+  failureKept: 'Nothing in this resume has changed.',
+  failureBack: 'Back to the editor',
+  doneChecking: 'Done checking',
 } as const;

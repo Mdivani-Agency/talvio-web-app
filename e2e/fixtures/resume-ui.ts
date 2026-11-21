@@ -76,9 +76,27 @@ export async function openSignedIn(page: Page, person: Persona, path: string) {
   }
 }
 
-export async function chooseManual(page: Page) {
-  await page.getByText('Fill it in yourself', { exact: true }).click();
+/** `/resume` opens the editor straight from the profile; there is no start screen (MDI-675). */
+export async function waitForEditor(page: Page) {
   await expect(page.getByLabel('First name', { exact: true })).toBeVisible();
+}
+
+/** The editor's "Import a resume" dialog (MDI-675), opened from the top bar. */
+export function editorImportDialog(page: Page) {
+  return page.getByRole('dialog', { name: /Import a resume/ });
+}
+
+/** Opens Import in the editor's top bar and chooses a PDF; `confirm` starts the import with Replace and import. */
+export async function importIntoEditor(page: Page, file: string, { confirm = true }: { confirm?: boolean } = {}) {
+  await page.getByRole('button', { name: 'Import a resume' }).click();
+  const dialog = editorImportDialog(page);
+  await expect(dialog).toBeVisible();
+  await dialog.getByTestId('file-input').setInputFiles(file);
+  if (confirm) {
+    await dialog.getByRole('button', { name: 'Replace and import' }).click();
+    await expect(dialog).toBeHidden();
+  }
+  return dialog;
 }
 
 export async function waitForPreview(page: Page) {

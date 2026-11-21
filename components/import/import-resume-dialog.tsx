@@ -24,6 +24,8 @@ export type ImportResumeDialogProps = {
   onImportText: (text: string) => void;
   /** When set, the import replaces details already entered: this line explains what, and Import says so. */
   replaceWarning?: string | null;
+  /** The warning's first sentence; the editor says "This replaces what is in this resume." */
+  replaceTitle?: string;
   /** The tab to open on, such as Paste text after a PDF could not be read. */
   initialTab?: ImportTab;
   title?: string;
@@ -45,6 +47,7 @@ export function ImportResumeDialog({
   onImportFile,
   onImportText,
   replaceWarning = null,
+  replaceTitle = IMPORT_DIALOG.replaceTitle,
   initialTab = 'upload',
   title = IMPORT_DIALOG.title,
   description = IMPORT_DIALOG.description,
@@ -213,7 +216,7 @@ export function ImportResumeDialog({
           <p data-testid="import-replace-warning" className="m-0 flex gap-2.5 rounded-[1rem] bg-card px-3.5 py-3 text-sm leading-normal">
             <TriangleAlert aria-hidden className="mt-0.5 size-[1.8rem] flex-none text-secondary" />
             <span>
-              <strong className="font-semibold">{IMPORT_DIALOG.replaceTitle}</strong> {replaceWarning}
+              <strong className="font-semibold">{replaceTitle}</strong> {replaceWarning}
             </span>
           </p>
         ) : null}

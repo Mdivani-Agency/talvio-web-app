@@ -92,7 +92,7 @@
     "BLOG-10 Talvio calls the blog API only with its token and valid list windows",
     "TPL-01 filters and every template open the matching resume preview",
     "TPL-01 a restored editor draft uses the newly selected template once",
-    "TPL-01 a restored import draft uses the newly selected template",
+    "TPL-01 a draft saved on the removed import screen opens in the editor with the newly selected template",
     "TPL-02 a missing or invalid template falls back without getting stuck",
     "TPL-03 an older level key still opens, and shows as its style in the Design tab",
     "DOC-01 documents show an empty library, a failed list, and a downloadable file",

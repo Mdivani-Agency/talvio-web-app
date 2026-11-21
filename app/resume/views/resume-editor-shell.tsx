@@ -28,6 +28,7 @@ import { ResumePreview } from '../components/resume-preview';
 import { useFeedbackPrompt } from '../providers/feedback-prompt-provider';
 import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../hooks/use-service-improve';
 import { DesignPanel } from './design-panel';
+import { useEditorImport } from './editor-import';
 import { EditResumeView } from './edit-resume-view';
 
 /**
@@ -146,6 +147,11 @@ export function ResumeEditorShell({
     onChange({ resume });
     setAiRevision((value) => value + 1);
   };
+  // An import replaces the content and remounts the form, like an accepted AI change; template, colour and size stay.
+  const applyImported = (content: Pick<PreviewDto, 'resume' | 'name'>) => {
+    onChange(content);
+    setAiRevision((value) => value + 1);
+  };
   // Sessions, questions and proposals come from the LLM service.
   const ai = useServiceImprove({
     resume: document.resume,
@@ -191,6 +197,15 @@ export function ResumeEditorShell({
   const templateItem = resolveAvailableTemplate(document.template);
   // Fill them in: the Content tab opens on the section that holds the field.
   const [openSection, setOpenSection] = useState<ResumeSectionId | undefined>(undefined);
+  // Import in the top bar (MDI-675): signed-in only, and not on a generated PDF, which is read-only.
+  const importEnabled = !guest && !readOnly;
+  const editorImport = useEditorImport({
+    onApply: (content) => applyImported(content),
+    onOpenSection: (id) => {
+      setOpenSection(id);
+      setView('content');
+    },
+  });
   const fillOptionalField = (field: OptionalTemplateField) => {
     if (field === 'skillGroups' && !document.resume.profile.groupSkills) {
       onChange({ resume: { ...document.resume, profile: { ...document.resume.profile, groupSkills: true } } });
@@ -279,6 +294,7 @@ export function ResumeEditorShell({
         savePending={savePending}
         onImprove={improveEnabled ? requestImprove : undefined}
         improveDisabled={ai.active}
+        onImport={importEnabled ? () => editorImport.open() : undefined}
       />
       {family ? <DraftBanner family={family} /> : null}
       <EditorTabs view={view} onView={setView} hasIssues={hasIssues} variant="phone" className="px-4 pt-3 pb-2 md:hidden" />
@@ -346,6 +362,7 @@ export function ResumeEditorShell({
           onDownload={requestDownload}
         />
       </div>
+      {importEnabled ? editorImport.ui : null}
       {pdfLock ? (
         <PageLock
           context={EDITOR_PDF_LOCK.context}

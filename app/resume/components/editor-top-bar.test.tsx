@@ -42,6 +42,19 @@ describe('EditorTopBar', () => {
     expect(screen.queryByRole('button', { name: 'Save resume' })).toBeNull();
   });
 
+  it('offers Import only when the editor passes it, labelled for phones too (MDI-675)', () => {
+    const onImport = vi.fn();
+    const { rerender } = render(<EditorTopBar {...base} onImport={onImport} />);
+    const button = screen.getByRole('button', { name: 'Import a resume' });
+    expect(button.textContent).toBe('Import');
+    fireEvent.click(button);
+    expect(onImport).toHaveBeenCalledTimes(1);
+
+    // Guests and read-only resumes get no onImport from the shell.
+    rerender(<EditorTopBar {...base} guest />);
+    expect(screen.queryByRole('button', { name: 'Import a resume' })).toBeNull();
+  });
+
   it('sends a guest home and offers Sign in', () => {
     render(<EditorTopBar {...base} guest saveStatus="saved-locally" signInHref="/auth/sign-in?callbackURL=%2Fresume" />);
     expect(screen.getByRole('link', { name: 'Back to home' }).getAttribute('href')).toBe('/');

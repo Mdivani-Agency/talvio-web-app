@@ -171,11 +171,19 @@ export default function AccountFormPage() {
             primary: {
               label: IMPORT_LOCK.failure.primary,
               onClick: () => {
+                // The retained submission is dropped either way: a new import starts its own job.
+                parser.dismiss();
                 setFailure(null);
                 openDialog('paste');
               },
             },
-            secondary: { label: IMPORT_LOCK.failure.secondary, onClick: () => setFailure(null) },
+            secondary: {
+              label: IMPORT_LOCK.failure.secondary,
+              onClick: () => {
+                parser.dismiss();
+                setFailure(null);
+              },
+            },
           } : undefined}
         />
       ) : null}

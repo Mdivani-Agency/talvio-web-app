@@ -3,7 +3,8 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures/test';
 import { fetchPdfText } from './fixtures/pdf-text';
 import {
-  chooseManual,
+  waitForEditor,
+  importIntoEditor,
   generateFromModal,
   openResumeSection,
   openSignedIn,
@@ -33,8 +34,9 @@ test('RES-01 a signed-in user without a profile is sent to onboarding, then crea
 
   await seedProfile(empty.userId);
   await page.goto('/resume');
-  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
-  await chooseManual(page);
+  // MDI-675: no start screen; the editor opens from the profile.
+  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toHaveCount(0);
+  await waitForEditor(page);
 
   await page.getByLabel('First name', { exact: true }).fill('Nia');
   await page.getByLabel('Last name', { exact: true }).fill('Manual');
@@ -77,7 +79,7 @@ test('RES-01 a signed-in user without a profile is sent to onboarding, then crea
 test('RES-01 prefills a resume from the profile and saves the edited draft', async ({ page, personas }) => {
   const complete = persona(personas, 'complete');
   await openSignedIn(page, complete, '/resume');
-  await chooseManual(page);
+  await waitForEditor(page);
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada');
   await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Owner');
   await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Staff Engineer');
@@ -103,7 +105,7 @@ test('RES-01 prefills a resume from the profile and saves the edited draft', asy
 test('RES-01 Save resume stores a new resume without a PDF or a credit', async ({ page, personas }) => {
   const complete = persona(personas, 'complete');
   await openSignedIn(page, complete, '/resume?template=timeline');
-  await chooseManual(page);
+  await waitForEditor(page);
   await page.getByLabel('Role', { exact: true }).fill('Saved Engineer');
   await page.waitForFunction(() => Object.values(localStorage).some((value) => value?.includes('Saved Engineer')));
   await expect(page.getByText('Saved on this device')).toBeVisible();
@@ -127,8 +129,7 @@ test('RES-01 Save resume stores a new resume without a PDF or a credit', async (
 test('RES-01 guest download returns to the resume and can keep the draft', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await page.goto('/resume');
-  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
-  await chooseManual(page);
+  await waitForEditor(page);
   await page.getByLabel('First name', { exact: true }).fill('Guestkeep');
   await page.getByLabel('Last name', { exact: true }).fill('Draft');
   await page.getByLabel('Role', { exact: true }).fill('Guest');
@@ -151,7 +152,7 @@ test('RES-01 guest download returns to the resume and can keep the draft', async
 
 test('RES-01 guest download keeps a template return path', async ({ page }) => {
   await page.goto('/resume?template=senior-level-ember');
-  await chooseManual(page);
+  await waitForEditor(page);
   await page.getByLabel('First name', { exact: true }).fill('Templated');
   await waitForPreview(page);
   await page.getByRole('button', { name: 'Download PDF' }).click();
@@ -163,12 +164,22 @@ test('RES-01 guest download keeps a template return path', async ({ page }) => {
 test('RES-02 imports a resume, edits the parsed values, and generates them', async ({ page, personas }) => {
   const empty = persona(personas, 'empty');
   await seedProfile(empty.userId);
-  await openSignedIn(page, empty, '/resume');
-  await page.getByText('Import a resume', { exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
-  await page.getByTestId('file-input').setInputFiles(PDF);
+  await openSignedIn(page, empty, '/resume?template=timeline');
+  await waitForEditor(page);
+  // MDI-675: Import is in the top bar; the dialog always warns that it replaces this resume.
+  const dialog = await importIntoEditor(page, PDF, { confirm: false });
+  await expect(dialog.getByTestId('import-replace-warning')).toContainText('This replaces what is in this resume.');
+  await dialog.getByRole('button', { name: 'Replace and import' }).click();
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada', { timeout: 30_000 });
   await expect(page.getByLabel('Role', { exact: true })).toHaveValue('Engineer');
+  // What to check stays docked until Done checking; the template is kept.
+  const check = page.getByTestId('editor-import-check');
+  await expect(check).toBeVisible();
+  await check.getByRole('button', { name: 'Done checking' }).click();
+  await expect(check).toBeHidden();
+  await page.getByRole('tab', { name: 'Design', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Timeline template, selected', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('tab', { name: 'Content', exact: true }).click();
 
   await page.getByLabel('First name', { exact: true }).fill('Nia');
   await page.getByLabel('Role', { exact: true }).fill('Edited Engineer');
@@ -208,38 +219,39 @@ test('RES-03 rejects unsupported, empty, corrupt, and unreadable resume files', 
   const empty = persona(personas, 'empty');
   await seedProfile(empty.userId);
   await openSignedIn(page, empty, '/resume');
-  await page.getByText('Import a resume', { exact: true }).click();
-  const input = page.getByTestId('file-input');
+  await waitForEditor(page);
+  const lock = page.getByTestId('page-lock');
 
-  await input.setInputFiles('e2e/assets/notes.txt');
-  await expect(page.getByText('Invalid file type. Please upload a PDF file.')).toBeVisible();
-  await expect(page.getByText('Parsing resume...')).toHaveCount(0);
+  // A file that is not a PDF is explained in the dialog, next to the drop zone.
+  let dialog = await importIntoEditor(page, 'e2e/assets/notes.txt', { confirm: false });
+  await expect(dialog.getByRole('alert')).toHaveText('notes.txt is not a PDF. Choose a PDF, or use Paste text.');
+  await expect(dialog.getByRole('button', { name: 'Replace and import' })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
   expect(await listResumes(empty.userId)).toHaveLength(0);
 
-  await input.setInputFiles('e2e/assets/empty.pdf');
-  await expect(page.getByText('Parsing resume...')).toBeHidden();
-  await expect(page.locator('[data-sonner-toast]').last()).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
-  expect(await listResumes(empty.userId)).toHaveLength(0);
-
-  await input.setInputFiles('e2e/assets/corrupt.pdf');
-  await expect(page.getByText('Parsing resume...')).toBeHidden();
-  await expect(page.locator('[data-sonner-toast]').last()).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
-  expect(await listResumes(empty.userId)).toHaveLength(0);
-
+  // Empty, corrupt and oversized PDFs fail on the page lock, and nothing in the resume changes.
+  for (const file of ['e2e/assets/empty.pdf', 'e2e/assets/corrupt.pdf']) {
+    await importIntoEditor(page, file);
+    await expect(lock.getByRole('heading', { name: 'We couldn’t read this resume' })).toBeVisible({ timeout: 30_000 });
+    await expect(lock.getByText('Nothing in this resume has changed.')).toBeVisible();
+    await lock.getByRole('button', { name: 'Back to the editor' }).click();
+    await expect(lock).toBeHidden();
+  }
   // The upload control accepts any application/pdf and publishes no byte cap.
-  await input.setInputFiles({
+  await page.getByRole('button', { name: 'Import a resume' }).click();
+  dialog = page.getByRole('dialog', { name: /Import a resume/ });
+  await dialog.getByTestId('file-input').setInputFiles({
     name: 'oversized.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.alloc(2 * 1024 * 1024, 1),
   });
-  await expect(page.getByText('Parsing resume...')).toBeHidden();
-  await expect(page.locator('[data-sonner-toast]').last()).not.toHaveText('Invalid file type. Please upload a PDF file.');
-  await expect(page.getByRole('heading', { name: 'Import your resume' })).toBeVisible();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Replace and import' }).click();
+  await expect(lock.getByRole('heading', { name: 'We couldn’t read this resume' })).toBeVisible({ timeout: 30_000 });
+  await lock.getByRole('button', { name: 'Back to the editor' }).click();
   expect(await listResumes(empty.userId)).toHaveLength(0);
 
-  await input.setInputFiles(PDF);
+  await importIntoEditor(page, PDF);
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Ada', { timeout: 30_000 });
   await openResumeSection(page, 'Experience', addExperienceButton);
   await expect(entryRow(entrySection(page, 'Experience'), 'Imported Labs')).toBeVisible();

@@ -151,15 +151,11 @@ test('AUTH-03 guests can open the editor and protected account routes require si
     expect(decodeURIComponent(new URL(page.url()).searchParams.get('callbackURL') ?? '')).toBe(path);
   }
 
+  // A guest opens the editor straight away; Import is for signed-in users only (MDI-675).
   await page.goto('/resume?template=mid-level-ember');
-  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toBeVisible();
-  await page.getByText('Import a resume', { exact: true }).click();
-  await expect(page).toHaveURL(/\/auth\/sign-in\?callbackURL=/);
-  expect(decodeURIComponent(new URL(page.url()).searchParams.get('callbackURL') ?? '')).toContain('/resume');
-
-  await page.goto('/resume?template=mid-level-ember');
-  await page.getByText('Fill it in yourself', { exact: true }).click();
   await expect(page.getByRole('button', { name: /^Rename resume:/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Start a new resume' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Import a resume' })).toHaveCount(0);
 });
 
 test('AUTH-04 sign-out blocks protected routes and the next user does not see the previous profile', async ({ page }) => {
