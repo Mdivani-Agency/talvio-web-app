@@ -100,7 +100,7 @@ function handlePresign(url, request, response, body, userId) {
     send(response, 400, { error: 'invalid json' });
     return;
   }
-  const { name, type, path } = json;
+  const { name, type, path, disposition } = json;
   const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
   if (!name || !allowed.includes(type)) {
     send(response, 400, { error: 'invalid presign body' });
@@ -124,7 +124,11 @@ function handlePresign(url, request, response, body, userId) {
     status: 'pending',
     createdAt: new Date().toISOString(),
   });
-  send(response, 200, { uploadUrl, publicUrl, key });
+  // Like the media service: a requested disposition comes back as headers the upload must send.
+  const headers = disposition
+    ? { 'Content-Type': type, 'Content-Disposition': `${disposition}; filename="${name}"` }
+    : undefined;
+  send(response, 200, { uploadUrl, publicUrl, key, ...(headers ? { headers } : {}) });
 }
 
 /** The media service accepts these page sizes (`limit`); 50 is its default. */

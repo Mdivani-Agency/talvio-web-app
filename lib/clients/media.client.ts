@@ -15,6 +15,8 @@ export type PresignedUpload = {
   uploadUrl: string;
   publicUrl: string;
   key: string;
+  /** Headers the upload must send exactly (part of the signature), when the media service returns them. */
+  headers?: Record<string, string>;
 };
 
 /** Records per request. The media service accepts 50, 100 or 200 (`limit`), and 50 is its default. */
