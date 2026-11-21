@@ -121,6 +121,37 @@ describe('useSaveProfileFlow', () => {
     unmount();
   });
 
+  it('stays locked from the click until the next page opens (MDI-670)', async () => {
+    let finish: (value: unknown) => void = () => undefined;
+    mutateAsync.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    const { result, unmount } = renderHook(() => useSaveProfileFlow());
+    expect(result.current.locked).toBe(false);
+    act(() => {
+      result.current.save(fullAccountDto);
+    });
+    expect(result.current.locked).toBe(true);
+    expect(result.current.isSaving).toBe(true);
+    act(() => {
+      result.current.save(fullAccountDto);
+    });
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+
+    await act(async () => finish({ ...fullAccountDto, id: 'user-1' }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/account'));
+    expect(result.current.locked).toBe(true);
+    unmount();
+  });
+
+  it('unlocks after a failed save so it can be sent again', async () => {
+    mutateAsync.mockRejectedValue(new Error('forced save failure'));
+    const { result, unmount } = renderHook(() => useSaveProfileFlow());
+    act(() => {
+      result.current.save(fullAccountDto);
+    });
+    await waitFor(() => expect(result.current.locked).toBe(false));
+    unmount();
+  });
+
   it('toasts a failed save and keeps the draft and the page', async () => {
     mutateAsync.mockRejectedValue(new Error('forced save failure'));
     const { result, unmount } = renderHook(() => useSaveProfileFlow());

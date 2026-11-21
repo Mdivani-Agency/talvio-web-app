@@ -6,6 +6,7 @@ import {
   fromAnswer,
   IMPROVE_AFTER_SAVE_HREF,
   limitBody,
+  LOADING_NOTE,
   limitResetTime,
   OFFER_POINTS,
   questionCounter,
@@ -27,6 +28,11 @@ describe('profile improvement copy', () => {
     expect(doneTitle(1)).toBe('1 edit saved to your profile');
     expect(doneTitle(2)).toBe('2 edits saved to your profile');
     expect(fromAnswer(3)).toBe('From your answer to question 3');
+  });
+
+  it('says the page unlocks when the questions are ready, not that it can be left (MDI-670)', () => {
+    expect(LOADING_NOTE).toBe('This can take a minute. The page unlocks when your questions are ready.');
+    expect(LOADING_NOTE).not.toMatch(/leave this page/i);
   });
 
   it('offers three points and lands on the offer after Save profile', () => {

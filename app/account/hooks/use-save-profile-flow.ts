@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
 import { submitWrapper } from '@app/actions/action.utils';
 import { fetchProfileImprovement } from '@app/account/query/use-profile-improvement';
@@ -38,17 +39,22 @@ import { useAccountContext } from '../providers/state-provider';
  * seed `['account', userId]`, clear the draft, open `/account` (or the profile improvement offer, or the new resume
  * in `?next=`, see `pathAfterSave`). A failed save toasts through
  * `submitWrapper` and leaves the caller's screen as it was, so a retry sends the same values.
+ *
+ * `locked` is true from the click until the next page opens, including the lookup of where to go, so the caller can
+ * show the page lock (MDI-670) for the whole wait. It turns false again only when the save fails.
  */
 export function useSaveProfileFlow() {
   const { userId, completeSave } = useAccountContext();
   const router = useRouter();
   const returnTo = onboardingReturnPath(useSearchParams());
   const mutation = useSaveProfile(userId);
+  const [locked, setLocked] = useState(false);
 
   const save = (dto: AccountDto) => {
-    if (mutation.isPending) {
+    if (mutation.isPending || locked) {
       return;
     }
+    setLocked(true);
     void submitWrapper({
       fn: async () => {
         const account = await mutation.mutateAsync(dto);
@@ -58,8 +64,12 @@ export function useSaveProfileFlow() {
         completeSave();
         void pathAfterSave(returnTo).then((path) => router.push(path));
       },
+    }).then((saved) => {
+      if (!saved) {
+        setLocked(false);
+      }
     });
   };
 
-  return { save, isSaving: mutation.isPending };
+  return { save, isSaving: mutation.isPending || locked, locked };
 }

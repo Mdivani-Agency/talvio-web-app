@@ -13,3 +13,4 @@ export * from "./navigation/responsive-navigation-menu";
 export * from "./navigation/navigation-menu";
 export * from "./legal-document";
 export * from "./page-container";
+export * from "./page-lock";

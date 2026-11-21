@@ -196,6 +196,16 @@ details > summary.list-none::marker {
   display: none;
 }
 
+/* The page lock's indeterminate bar (components/views/page-lock.tsx). */
+@keyframes page-lock-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
 .a4-container-w {
   width: 100%;
   max-width: 210mm;
