@@ -1,15 +1,15 @@
 'use client';
 
-import { Loader2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { AnswerReview, ProposalReview, ResumeQuestions } from '@components/ai-improve';
 import { Badge, Button, Card, CardContent, Checkbox, Input, Label, Textarea } from '@components/ui';
-import { PageContainer } from '@components/views';
+import { PageContainer, PageLock } from '@components/views';
 import { AI_CAP_TITLE } from '@lib/ai-cap';
 import { JOB_DESCRIPTION_MAX, tailoredResumeName } from '@lib/llm/tailor';
 import type { RequirementView } from '@lib/llm/tailor';
+import { TAILOR_LOCK } from '@/lib/page-lock-copy';
 
 import type { Tailor, TailorStart } from '../hooks/use-tailor';
 
@@ -34,12 +34,23 @@ const STATUS_LABEL: Record<RequirementView['status'], string> = {
   missing: 'Not in your resume',
 };
 
-function Pending({ message }: { message: string }) {
+/**
+ * Tailoring on the page lock (MDI-673). The job post is read when the job is sent, so comparing is the first step in
+ * progress and writing the changes the second. Stop tailoring cancels the job and ends the journey. The job survives a
+ * reload, so the lock comes back with it and does not warn before the tab closes; offline, the step shows as paused.
+ */
+function TailorLock({ step, onStop }: { step: 1 | 2; onStop: () => void }) {
   return (
-    <div role="status" className="flex flex-col items-center justify-center gap-3 py-16 text-sm text-muted-foreground">
-      <Loader2Icon className="size-6 animate-spin" />
-      {message}
-    </div>
+    <PageLock
+      context={TAILOR_LOCK.context}
+      title={TAILOR_LOCK.title}
+      steps={TAILOR_LOCK.steps}
+      currentStep={step}
+      note={TAILOR_LOCK.note}
+      slowNote={TAILOR_LOCK.slow}
+      offlineNote={TAILOR_LOCK.offline}
+      cancel={{ label: TAILOR_LOCK.stop, onClick: onStop }}
+    />
   );
 }
 
@@ -184,8 +195,8 @@ export function TailorView({ tailor, sources, onCreate }: TailorViewProps) {
   return (
     <PageContainer as="main" className="flex flex-col gap-6 pt-24 pb-12">
       {tailor.step === 'intake' ? <Intake sources={sources} onStart={tailor.start} /> : null}
-      {tailor.step === 'loadingQuestions' ? <Pending message="Comparing your resume with the job..." /> : null}
-      {tailor.step === 'loadingProposal' ? <Pending message="Tailoring your resume..." /> : null}
+      {tailor.step === 'loadingQuestions' ? <TailorLock step={1} onStop={tailor.reset} /> : null}
+      {tailor.step === 'loadingProposal' ? <TailorLock step={2} onStop={tailor.reset} /> : null}
 
       {tailor.step === 'questions' && tailor.questions[currentIndex] ? (
         <ResumeQuestions

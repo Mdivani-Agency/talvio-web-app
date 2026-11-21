@@ -289,6 +289,8 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   /** Generates (or confirms) the PDF; resolves to it for the dialog, or `false` after a failure. */
   const generateSaved = async (resume: Resume): Promise<PdfDownloadResult> => {
     let file: PdfFile | undefined;
+    // Field issues are shown in the form, so the page lock does not show a failure for them.
+    let invalid = false;
     const ok = await submitWrapper({
       fn: async () => {
         const alreadyGenerated = isGeneratedResume(resume);
@@ -297,6 +299,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           const fieldIssues = resumeSubmissionIssues(source.resume);
           if (fieldIssues.length > 0) {
             setIssues(fieldIssues);
+            invalid = true;
             throw new Error(formatResumeFieldIssues(fieldIssues));
           }
           setIssues([]);
@@ -324,7 +327,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         }
       },
     });
-    return ok ? (file ?? true) : false;
+    return ok ? (file ?? true) : invalid ? 'handled' : false;
   };
 
   // Wait for the session too: a signed-in visitor must never see the guest view flash by.
@@ -384,6 +387,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         readOnly={readOnly}
         isGenerated={isGeneratedResume(displayed)}
         downloadPending={generatePdf.isPending || autosave.status === 'saving' || autosave.status === 'generating'}
+        pdfBuilding={generatePdf.isPending}
         saveStatus={autosave.status}
         saveMessage={autosave.message}
         onRetrySave={() => {
@@ -482,6 +486,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
             return generateSaved(displayed);
           }
           let file: PdfFile | undefined;
+          let invalid = false;
           const ok = await submitWrapper({
             fn: async () => {
               const saved = await autosave.flush({
@@ -501,6 +506,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
                 const fieldIssues = resumeSubmissionIssues(editorDocument.resume);
                 if (fieldIssues.length > 0) {
                   setIssues(fieldIssues);
+                  invalid = true;
                   throw new Error(formatResumeFieldIssues(fieldIssues));
                 }
                 setIssues([]);
@@ -528,7 +534,7 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
               }
             },
           });
-          return ok ? (file ?? true) : false;
+          return ok ? (file ?? true) : invalid ? 'handled' : false;
         }}
         pdf={isGeneratedResume(displayed) ? resumePdfFile(displayed) : null}
         onPdfDialogClose={followPendingRoute}

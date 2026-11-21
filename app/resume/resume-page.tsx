@@ -117,6 +117,8 @@ export function ResumePreviewPage() {
     }
   };
 
+  // Set when Generate stopped for a reason the page already shows (field issues, sign-in), not a failure.
+  const downloadHandled = useRef(false);
   const { mutateAsync: createAndDownload, isPending: downloadPending } = useMutation({
     mutationFn: async (body: PreviewDto) => {
       if (downloadLock.current) {
@@ -125,6 +127,7 @@ export function ResumePreviewPage() {
 
       const run = (async () => {
         if (!session) {
+          downloadHandled.current = true;
           router.push(signInReturn());
           throw new Error('Please sign in');
         }
@@ -132,6 +135,7 @@ export function ResumePreviewPage() {
         const fieldIssues = resumeSubmissionIssues(body.resume);
         if (fieldIssues.length > 0) {
           setIssues(fieldIssues);
+          downloadHandled.current = true;
           throw new Error(formatResumeFieldIssues(fieldIssues));
         }
         setIssues([]);
@@ -244,6 +248,7 @@ export function ResumePreviewPage() {
       guest={!session}
       signInHref={signInReturn()}
       downloadPending={downloadPending || savePending}
+      pdfBuilding={generatePdf.isPending}
       onSave={session ? saveToAccount : undefined}
       savePending={savePending || downloadPending}
       saveStatus={saveStatus}
@@ -284,11 +289,12 @@ export function ResumePreviewPage() {
         const body = { ...resume, name, label };
         lastAction.current = 'download';
         changeResume(body);
+        downloadHandled.current = false;
         try {
           const generated = await createAndDownload(body);
           return resumePdfFile(generated) ?? true;
         } catch {
-          return false;
+          return downloadHandled.current ? 'handled' : false;
         }
       }}
     />

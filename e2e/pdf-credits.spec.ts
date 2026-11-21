@@ -477,3 +477,31 @@ test('PDF-07 three PDFs a month, a blocked fourth, and free re-downloads at zero
   expect((await listResumes(owner.userId)).find((row) => row.id === fourthId)?.pdfUrl).toBeNull();
 });
 
+
+test('PDF-08 the editor hands Generate PDF to the page lock, shows a failure there and retries from it', async ({ page, personas }) => {
+  const owner = persona(personas, 'creditsAmple');
+  await seedProfile(owner.userId);
+  const resumeId = await seedResume({ userId: owner.userId, name: 'Locked resume', content: SEEDED_RESUME_CONTENT });
+
+  await setScenario('presign_error');
+  await openSignedIn(page, owner, `/resume/${resumeId}`);
+  const dialog = await openFinalReview(page);
+  await dialog.getByRole('button', { name: 'Generate PDF', exact: true }).click();
+
+  // The dialog hands over to the lock; the editor behind it is inert until the lock ends.
+  await expect(dialog).toBeHidden();
+  const lock = page.getByTestId('page-lock');
+  await expect(lock.getByRole('heading', { name: 'Your PDF wasn’t made' })).toBeVisible({ timeout: 30_000 });
+  await expect(lock.getByText('Your changes are saved.')).toBeVisible();
+  expect(await page.locator('body > [inert]').count()).toBeGreaterThan(0);
+  expect(await creditBalance(owner.userId)).toBe(90);
+
+  await setScenario('success');
+  await rememberDownloads(page);
+  await lock.getByRole('button', { name: 'Try again' }).click();
+  await downloadReadyPdf(page);
+  await expect(lock).toBeHidden();
+  expect(await page.locator('body > [inert]').count()).toBe(0);
+  expect((await recordedDownloads(page)).some((item) => item.download === 'Locked resume.pdf')).toBe(true);
+  expect(await creditBalance(owner.userId)).toBe(60);
+});

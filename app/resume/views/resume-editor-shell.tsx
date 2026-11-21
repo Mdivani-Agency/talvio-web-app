@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAllowance } from '@app/account/hooks/use-allowance';
 import { AiImproveOverlay } from '@components/ai-improve';
 import { DownloadResumeModal } from '@components/modals';
+import { PageLock } from '@components/views';
 import { normalizeResumeLabel } from '@lib/adapters/resume.adapter';
 import { featureFlags } from '@lib/flags';
 import type { ResumeFieldIssue } from '@lib/models/resume-document';
@@ -17,6 +18,7 @@ import { colorAfterTemplateChange, listResumeTemplates } from '@lib/templates';
 import { CurrentTemplateProvider } from '@app/account/create/views/forms/template-context';
 import type { PreviewDto } from '@lib/types';
 import { downloadPdf, openPdfInTab, type PdfFile } from '@/lib/pdf/pdf-actions';
+import { EDITOR_PDF_LOCK } from '@/lib/page-lock-copy';
 import { cn } from '@lib/utils';
 
 import { DraftBanner } from '../components/draft-banner';
@@ -28,8 +30,15 @@ import { useServiceImprove, type ImproveAccepted, type ImproveSource } from '../
 import { DesignPanel } from './design-panel';
 import { EditResumeView } from './edit-resume-view';
 
-/** What a Generate returns: the PDF to offer, `false` for a failure, or nothing (the dialog just closes). */
-export type PdfDownloadResult = PdfFile | boolean | void;
+/**
+ * What a Generate returns: the PDF to offer, `false` for a failure (the page lock shows it), `'handled'` when the page
+ * already showed why it stopped (field issues, a guest sent to sign in) and the dialog should come back as it was, or
+ * nothing (the dialog just closes).
+ */
+export type PdfDownloadResult = PdfFile | boolean | 'handled' | void;
+
+/** The editor's Generate PDF on the page lock (MDI-673): running, or failed after or before the changes were saved. */
+type PdfLock = { failed: false; built: boolean } | { failed: true; built: boolean };
 
 export type ResumeFamilyControls = {
   viewingOriginal: boolean;
@@ -62,6 +71,8 @@ type ResumeEditorShellProps = {
   readOnly?: boolean;
   family?: ResumeFamilyControls | null;
   downloadPending?: boolean;
+  /** The PDF itself is being built (after the changes are saved): moves the page lock to its second step. */
+  pdfBuilding?: boolean;
   isGenerated?: boolean;
   saveStatus?: SaveStatus;
   saveMessage?: string;
@@ -93,6 +104,7 @@ export function ResumeEditorShell({
   readOnly = false,
   family,
   downloadPending = false,
+  pdfBuilding = false,
   isGenerated = false,
   saveStatus,
   saveMessage,
@@ -119,6 +131,12 @@ export function ResumeEditorShell({
   useEffect(() => {
     setGenerateDialogOpen(downloadOpen);
   }, [downloadOpen, setGenerateDialogOpen]);
+  // Generate PDF hands over from the dialog to the page lock until the PDF exists or the generation fails.
+  const [pdfLock, setPdfLock] = useState<PdfLock | null>(null);
+  if (pdfLock && !pdfLock.failed && pdfBuilding && !pdfLock.built) {
+    // Derived from props during render: once building starts, the changes are saved.
+    setPdfLock({ failed: false, built: true });
+  }
   const [downloadName, setDownloadName] = useState(document.name);
   const [downloadLabel, setDownloadLabel] = useState(document.label ?? '');
   const { allowance } = useAllowance();
@@ -181,7 +199,28 @@ export function ResumeEditorShell({
     setView('content');
   };
 
+  const generate = (name: string, label: string) => {
+    setPdfLock({ failed: false, built: false });
+    void Promise.resolve(onDownload(name, label)).then((result) => {
+      if (result === false) {
+        setPdfLock((current) => ({ failed: true, built: current?.built ?? false }));
+        return;
+      }
+      setPdfLock(null);
+      if (result === 'handled' || showReady(result)) {
+        return;
+      }
+      setDownloadOpen(false);
+    }).catch(() => {
+      setPdfLock((current) => ({ failed: true, built: current?.built ?? false }));
+    });
+  };
+
   const closeDownload = () => {
+    if (pdfLock) {
+      // The dialog cannot be dismissed into a half-finished generation.
+      return;
+    }
     const offered = readyPdf !== null;
     setDownloadOpen(false);
     setReadyPdf(null);
@@ -307,8 +346,33 @@ export function ResumeEditorShell({
           onDownload={requestDownload}
         />
       </div>
+      {pdfLock ? (
+        <PageLock
+          context={EDITOR_PDF_LOCK.context}
+          title={EDITOR_PDF_LOCK.title}
+          steps={EDITOR_PDF_LOCK.steps}
+          currentStep={pdfLock.built ? 1 : 0}
+          note={EDITOR_PDF_LOCK.note}
+          slowNote={EDITOR_PDF_LOCK.slow}
+          warnOnLeave
+          failure={pdfLock.failed ? {
+            title: EDITOR_PDF_LOCK.failure.title,
+            body: pdfLock.built ? EDITOR_PDF_LOCK.failure.body : EDITOR_PDF_LOCK.failure.unsavedBody,
+            kept: pdfLock.built ? EDITOR_PDF_LOCK.failure.kept : undefined,
+            primary: { label: EDITOR_PDF_LOCK.failure.retry, onClick: () => generate(downloadName, downloadLabel) },
+            secondary: {
+              label: EDITOR_PDF_LOCK.failure.back,
+              onClick: () => {
+                setPdfLock(null);
+                setDownloadOpen(false);
+              },
+            },
+          } : undefined}
+        />
+      ) : null}
       <DownloadResumeModal
-        isOpen={downloadOpen}
+        // Hidden while the page lock shows the generation; it comes back with Download and Open when the PDF exists.
+        isOpen={downloadOpen && !pdfLock}
         filename={downloadName}
         label={downloadLabel}
         setFilename={setDownloadName}
@@ -316,16 +380,7 @@ export function ResumeEditorShell({
         isGenerating={downloadPending}
         isFreeDownload={isGenerated}
         allowance={allowance}
-        generateResume={() => {
-          void Promise.resolve(onDownload(downloadName, downloadLabel)).then((result) => {
-            if (showReady(result)) {
-              return;
-            }
-            if (result !== false) {
-              setDownloadOpen(false);
-            }
-          }).catch(() => undefined);
-        }}
+        generateResume={() => generate(downloadName, downloadLabel)}
         ready={readyPdf ? {
           name: readyPdf.name,
           onDownload: () => void downloadPdf(readyPdf),

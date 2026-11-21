@@ -87,6 +87,16 @@ describe('DownloadResumeModal', () => {
     expect(screen.getByRole('button', { name: 'Generate PDF' }).hasAttribute('disabled')).toBe(true);
   });
 
+  it('cannot be closed mid-generation by Cancel or Escape (MDI-673)', () => {
+    const onClose = vi.fn();
+    renderModal({ isGenerating: true, onClose });
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    expect(cancel.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(cancel);
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('labels the file name and the label, explains the label and offers Cancel', () => {
     const onClose = vi.fn();
     renderModal({ label: '', setLabel: vi.fn(), onClose });

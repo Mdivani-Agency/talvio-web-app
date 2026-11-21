@@ -47,3 +47,33 @@ export const IMPROVE_LOCK = {
   slow: 'Longer profiles take more time. You don’t need to start again.',
   offline: 'Your questions are paused, not lost. They carry on by themselves when you are back online.',
 } as const;
+
+/** Generate PDF in the editor (LD-pdf, LD-pdf-failed): the dialog hands over to the lock. */
+export const EDITOR_PDF_LOCK = {
+  context: 'Download PDF',
+  title: 'Making your PDF',
+  steps: ['Saving your changes', 'Building the PDF', 'Starting your download'],
+  note: 'Keep this tab open until your download starts. The editor unlocks when it does.',
+  slow: 'Building the PDF is taking longer than usual. Keep this tab open.',
+  failure: {
+    title: 'Your PDF wasn’t made',
+    /** After the changes were saved: the PDF service failed. */
+    body: 'The PDF service did not answer. Try again in a moment.',
+    kept: 'Your changes are saved.',
+    /** Before the changes were saved, so nothing was built and the changes may not be in your account yet. */
+    unsavedBody: 'Your changes could not be saved, so the PDF was not started. Check your connection and try again.',
+    retry: 'Try again',
+    back: 'Back to the editor',
+  },
+} as const;
+
+/** Tailor to a job (LD-tailor). */
+export const TAILOR_LOCK = {
+  context: 'Tailor to a job',
+  title: 'Tailoring your resume',
+  steps: ['Reading the job post', 'Comparing it with your resume', 'Writing suggested changes'],
+  note: 'You review every change before anything is saved. Your profile and saved resumes stay as they are.',
+  slow: 'Longer job posts take more time. You don’t need to start again.',
+  offline: 'Tailoring is paused, not lost. It carries on by itself when you are back online.',
+  stop: 'Stop tailoring',
+} as const;
