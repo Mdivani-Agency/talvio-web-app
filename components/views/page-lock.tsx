@@ -222,123 +222,127 @@ function PageLockCard({
   return (
     <div
       data-testid="page-lock"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(246,246,254,0.78)] p-4 backdrop-blur-[3px] md:p-6 dark:bg-[rgba(13,13,13,0.72)]"
+      // The overlay scrolls, so a card taller than a short viewport (a phone in landscape, browser zoom, the slow note)
+      // keeps every action reachable; the card is centred only while it fits.
+      className="fixed inset-0 z-[100] overflow-y-auto bg-[rgba(246,246,254,0.78)] backdrop-blur-[3px] dark:bg-[rgba(13,13,13,0.72)]"
     >
       {failure ? null : (
-        <div aria-hidden className="absolute inset-x-0 top-0 h-[3px] overflow-hidden bg-popover">
+        <div aria-hidden className="fixed inset-x-0 top-0 z-10 h-[3px] overflow-hidden bg-popover">
           <span className="block h-full w-2/5 animate-[page-lock-bar_1.4s_ease-in-out_infinite] bg-secondary motion-reduce:animate-none" />
         </div>
       )}
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-busy={failure ? undefined : true}
-        className="flex w-full max-w-[48rem] flex-col gap-5 rounded-[1.6rem] border border-input bg-background p-6 shadow-[0_24px_64px_rgba(13,13,13,0.18)] md:p-8"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <p className="m-0 flex items-center gap-2 text-sm font-semibold text-secondary">
-            <Sparkles aria-hidden className="size-4" />
-            {context}
-          </p>
-          {!failure && steps ? (
-            <span aria-label={ELAPSED_LABEL} className="text-sm font-medium text-muted-foreground tabular-nums">
-              {elapsedText(seconds)}
-            </span>
-          ) : null}
-        </div>
-
-        {failure ? (
-          <>
-            <div className="flex flex-col gap-3">
-              <span className="flex size-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-                <CircleAlert aria-hidden className="size-[2.2rem]" />
+      <div className="flex min-h-full items-center justify-center p-4 md:p-6">
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-busy={failure ? undefined : true}
+          className="flex w-full max-w-[48rem] flex-col gap-5 rounded-[1.6rem] border border-input bg-background p-6 shadow-[0_24px_64px_rgba(13,13,13,0.18)] md:p-8"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="m-0 flex items-center gap-2 text-sm font-semibold text-secondary">
+              <Sparkles aria-hidden className="size-4" />
+              {context}
+            </p>
+            {!failure && steps ? (
+              <span aria-label={ELAPSED_LABEL} className="text-sm font-medium text-muted-foreground tabular-nums">
+                {elapsedText(seconds)}
               </span>
+            ) : null}
+          </div>
+
+          {failure ? (
+            <>
+              <div className="flex flex-col gap-3">
+                <span className="flex size-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                  <CircleAlert aria-hidden className="size-[2.2rem]" />
+                </span>
+                <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[2.2rem] leading-[1.35] font-semibold text-primary outline-none">
+                  {heading}
+                </h2>
+                <p role="alert" className="m-0 text-[1.5rem]">
+                  {failure.body}
+                </p>
+                {failure.kept ? <p className="m-0 text-sm text-muted-foreground">{failure.kept}</p> : null}
+              </div>
+              <div className="flex flex-col gap-2 md:flex-row">
+                <Button type="button" size="lg" className="h-[4.8rem] text-[1.5rem]" onClick={failure.primary.onClick}>
+                  {failure.primary.label}
+                </Button>
+                {failure.secondary ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    className="h-[4.8rem] text-[1.5rem]"
+                    onClick={failure.secondary.onClick}
+                  >
+                    {failure.secondary.label}
+                  </Button>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <>
               <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[2.2rem] leading-[1.35] font-semibold text-primary outline-none">
                 {heading}
               </h2>
-              <p role="alert" className="m-0 text-[1.5rem]">
-                {failure.body}
-              </p>
-              {failure.kept ? <p className="m-0 text-sm text-muted-foreground">{failure.kept}</p> : null}
-            </div>
-            <div className="flex flex-col gap-2 md:flex-row">
-              <Button type="button" size="lg" className="h-[4.8rem] text-[1.5rem]" onClick={failure.primary.onClick}>
-                {failure.primary.label}
-              </Button>
-              {failure.secondary ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="h-[4.8rem] text-[1.5rem]"
-                  onClick={failure.secondary.onClick}
-                >
-                  {failure.secondary.label}
-                </Button>
+              {steps ? (
+                <ol role="status" aria-live="polite" className="m-0 flex list-none flex-col gap-[1.4rem] p-0">
+                  {steps.map((label, index) => {
+                    const state: StepState =
+                      index < currentStep ? 'done' : index > currentStep ? 'todo' : offline ? 'paused' : 'active';
+                    return (
+                      <li
+                        key={label}
+                        data-state={state}
+                        className={cn(
+                          'flex items-center gap-3 text-[1.5rem]',
+                          state === 'todo' && 'text-muted-foreground',
+                          (state === 'active' || state === 'paused') && 'font-semibold',
+                        )}
+                      >
+                        <StepIcon state={state} />
+                        <span>
+                          {label}
+                          {STEP_STATUS[state] ? <span className="sr-only">{STEP_STATUS[state]}</span> : null}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : (
+                <p role="status" className="m-0 flex items-center gap-3 text-[1.5rem]">
+                  <Spinner />
+                  {line}
+                </p>
+              )}
+              {slow ? (
+                <p role="status" className="m-0 flex gap-2.5 rounded-[1rem] bg-card px-3.5 py-3 text-sm leading-normal">
+                  <Clock aria-hidden className="mt-px size-[1.8rem] flex-none text-secondary" />
+                  <span>
+                    <strong className="font-semibold">{STILL_WORKING_TITLE}</strong> {slowNote}
+                  </span>
+                </p>
               ) : null}
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[2.2rem] leading-[1.35] font-semibold text-primary outline-none">
-              {heading}
-            </h2>
-            {steps ? (
-              <ol role="status" aria-live="polite" className="m-0 flex list-none flex-col gap-[1.4rem] p-0">
-                {steps.map((label, index) => {
-                  const state: StepState =
-                    index < currentStep ? 'done' : index > currentStep ? 'todo' : offline ? 'paused' : 'active';
-                  return (
-                    <li
-                      key={label}
-                      data-state={state}
-                      className={cn(
-                        'flex items-center gap-3 text-[1.5rem]',
-                        state === 'todo' && 'text-muted-foreground',
-                        (state === 'active' || state === 'paused') && 'font-semibold',
-                      )}
-                    >
-                      <StepIcon state={state} />
-                      <span>
-                        {label}
-                        {STEP_STATUS[state] ? <span className="sr-only">{STEP_STATUS[state]}</span> : null}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            ) : (
-              <p role="status" className="m-0 flex items-center gap-3 text-[1.5rem]">
-                <Spinner />
-                {line}
-              </p>
-            )}
-            {slow ? (
-              <p role="status" className="m-0 flex gap-2.5 rounded-[1rem] bg-card px-3.5 py-3 text-sm leading-normal">
-                <Clock aria-hidden className="mt-px size-[1.8rem] flex-none text-secondary" />
-                <span>
-                  <strong className="font-semibold">{STILL_WORKING_TITLE}</strong> {slowNote}
-                </span>
-              </p>
-            ) : null}
-            <p className="m-0 text-sm text-muted-foreground">{offline ? offlineNote : note}</p>
-            {cancel ? (
-              <div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="h-[4.8rem] w-full text-[1.5rem] md:w-auto"
-                  onClick={cancel.onClick}
-                >
-                  {cancel.label}
-                </Button>
-              </div>
-            ) : null}
-          </>
-        )}
-      </section>
+              <p className="m-0 text-sm text-muted-foreground">{offline ? offlineNote : note}</p>
+              {cancel ? (
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    className="h-[4.8rem] w-full text-[1.5rem] md:w-auto"
+                    onClick={cancel.onClick}
+                  >
+                    {cancel.label}
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

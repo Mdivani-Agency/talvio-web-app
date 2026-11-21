@@ -163,6 +163,15 @@ describe('PageLock', () => {
     expect(secondary).toHaveBeenCalledTimes(1);
   });
 
+  it('scrolls when the card is taller than the screen, so Cancel stays reachable (PR #198 review)', () => {
+    render(<PageLock {...BASE} cancel={{ label: 'Cancel', onClick: vi.fn() }} />);
+    const overlay = screen.getByTestId('page-lock');
+    expect(overlay.className).toContain('overflow-y-auto');
+    // Centred by a wrapper at least as tall as the overlay, not by the overlay itself, so the top never clips.
+    expect(overlay.className).not.toContain('items-center');
+    expect(screen.getByRole('dialog').parentElement?.className).toContain('min-h-full');
+  });
+
   it('does nothing on Escape', () => {
     render(<PageLock {...BASE} />);
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
