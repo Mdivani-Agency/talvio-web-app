@@ -69,23 +69,6 @@ export async function generateAndPersistPdf(resume: Resume): Promise<Resume> {
   return (await generatePdfFile(resume)).resume;
 }
 
-export async function downloadPdfFile(resume: Resume): Promise<GeneratedPdf> {
-  const result = await generatePdfFile(resume);
-  if (!result.resume.media?.url) {
-    throw new Error('Resume PDF was not created');
-  }
-  try {
-    await savePdf({ url: result.resume.media.url, name: result.resume.name });
-  } catch {
-    throw new Error(PDF_ACTION_MESSAGES.failed);
-  }
-  return result;
-}
-
-export async function downloadResumePdf(resume: Resume): Promise<Resume> {
-  return (await downloadPdfFile(resume)).resume;
-}
-
 type GenerateResumePdfOptions = {
   /** Called after a newly generated PDF exists (and is saved, with `save`); not after a free re-download. */
   onNewPdf?: (resume: Resume) => void;
@@ -99,21 +82,37 @@ type GenerateResumePdfOptions = {
 export function useGenerateResumePdf(userId?: string, { onNewPdf, save = true }: GenerateResumePdfOptions = {}) {
   const queryClient = useQueryClient();
 
+  const refreshGenerated = async (resume: Resume) => {
+    await queryClient.invalidateQueries({ queryKey: ['resume', resume.id] });
+    await queryClient.invalidateQueries({ queryKey: ['resume-family'] });
+    await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
+    await queryClient.invalidateQueries({ queryKey: ['credits', userId] });
+    await queryClient.invalidateQueries({ queryKey: ['documents', userId] });
+  };
+
   return useMutation({
     mutationFn: async (resume: Resume) => {
-      const { resume: saved, generated } = save ? await downloadPdfFile(resume) : await generatePdfFile(resume);
+      const { resume: saved, generated } = await generatePdfFile(resume);
       if (generated) {
         onNewPdf?.(saved);
       }
+      if (save) {
+        const file = resumePdfFile(saved);
+        try {
+          if (!file) {
+            throw new Error('Resume PDF was not created');
+          }
+          await savePdf(file);
+        } catch {
+          // The PDF exists and was charged; only the save on this device failed. Show the generated state before
+          // reporting it, so the page does not offer Generate again.
+          await refreshGenerated(saved);
+          throw new Error(PDF_ACTION_MESSAGES.failed);
+        }
+      }
       return saved;
     },
-    onSuccess: async (resume) => {
-      await queryClient.invalidateQueries({ queryKey: ['resume', resume.id] });
-      await queryClient.invalidateQueries({ queryKey: ['resume-family'] });
-      await queryClient.invalidateQueries({ queryKey: ['resumes', userId] });
-      await queryClient.invalidateQueries({ queryKey: ['credits', userId] });
-      await queryClient.invalidateQueries({ queryKey: ['documents', userId] });
-    },
+    onSuccess: refreshGenerated,
     // A refused generation means the balance changed elsewhere; show the real count.
     onError: () => queryClient.invalidateQueries({ queryKey: ['credits', userId] }),
   });
