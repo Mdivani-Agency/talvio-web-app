@@ -128,7 +128,6 @@ export const PDF_READY_DIALOG = {
   body: (fileName: string) => `${fileName} is saved in your account. Download it, or open it in a new tab.`,
   download: 'Download PDF',
   open: 'Open in new tab',
-  done: 'Done',
 } as const;
 
 /** Toasts for Download and Open on any generated PDF (editor, account page, documents, applications). */
