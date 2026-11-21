@@ -442,7 +442,7 @@ async function trackerOwner(personas: Parameters<typeof persona>[0], name: strin
 const trackerBar = (page: Page) => page.getByRole('status', { name: 'Applying with this resume?' });
 const reviewPrompt = (page: Page) => page.getByRole('dialog', { name: 'How did it go? Review Talvio on Trustpilot' });
 
-test('APP-07 after a new PDF only the tracker bar shows, and Add to tracker makes a card with the resume linked', async ({
+test('APP-07 after a new PDF only the tracker bar shows; Add to tracker makes a card, then asks for the review', async ({
   page,
   personas,
 }) => {
@@ -455,7 +455,7 @@ test('APP-07 after a new PDF only the tracker bar shows, and Add to tracker make
   await expect(bar).toBeVisible();
   await expect(bar.getByText('Add it to your tracker so you know what you sent where.')).toBeVisible();
   await expect(reviewPrompt(page)).toHaveCount(0);
-  // The review prompt was not recorded as shown: it waits for the next PDF.
+  // The review prompt was not recorded as shown: it waits for the card.
   expect((await readFeedbackState(owner.userId)).state?.prompts_shown ?? 0).toBe(0);
 
   await bar.getByRole('button', { name: 'Add to tracker' }).click();
@@ -468,6 +468,14 @@ test('APP-07 after a new PDF only the tracker bar shows, and Add to tracker make
   await dialog.getByRole('button', { name: 'Add application' }).click();
   await expect(dialog).toHaveCount(0);
   await expect(trackerBar(page)).toHaveCount(0);
+
+  // The card is saved, so the review prompt the bar held back is asked now, under the same cap.
+  const review = reviewPrompt(page);
+  await expect(review).toBeVisible();
+  await expect(review.getByText('Added to your tracker')).toBeVisible();
+  expect((await readFeedbackState(owner.userId)).state?.prompts_shown).toBe(1);
+  await review.getByRole('button', { name: 'Not now' }).click();
+  await expect(review).toBeHidden();
 
   await page.getByRole('link', { name: 'View in tracker' }).click();
   await expect(page).toHaveURL(/\/account\/applications\?card=/);

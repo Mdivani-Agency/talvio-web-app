@@ -35,6 +35,16 @@ function renderModal(props: Partial<FeedbackModalProps> = {}) {
 describe('FeedbackModal', () => {
   afterEach(() => cleanup());
 
+  it('says what just happened: the download by default, or the line it is given', () => {
+    renderModal();
+    expect(screen.getByText('Your PDF is downloading')).toBeTruthy();
+    cleanup();
+
+    renderModal({ eyebrow: 'Added to your tracker' });
+    expect(screen.getByText('Added to your tracker')).toBeTruthy();
+    expect(screen.queryByText('Your PDF is downloading')).toBeNull();
+  });
+
   it('asks every user the same thing: Trustpilot, what went wrong, or not now', () => {
     renderModal();
 

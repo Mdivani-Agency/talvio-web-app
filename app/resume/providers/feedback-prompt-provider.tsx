@@ -19,6 +19,7 @@ import { AddApplicationDialog } from '@app/account/applications/views/add-applic
 import { TrackerPromptBar } from '@app/resume/views/tracker-prompt-bar';
 import { FeedbackModal } from '@components/modals';
 import { APPLICATION_ADDED_MESSAGE, VIEW_IN_TRACKER_LABEL, cardHref } from '@/lib/applications-copy';
+import { FEEDBACK_PROMPT } from '@/lib/feedback-copy';
 import {
   choosePostGeneratePrompt,
   dismissTrackerPrompt,
@@ -51,9 +52,10 @@ export function useFeedbackPrompt() {
 
 /**
  * What shows after a new resume PDF: the "Add to tracker" bar (MDI-658, behind `applicationTracker`) or the review
- * prompt (MDI-652, behind `feedbackPrompt`), never both. `choosePostGeneratePrompt` decides: the bar wins, and the
- * review prompt is then neither checked nor recorded, so it waits for the next generation. Lives in the `/resume`
- * layout so it survives the editor moving to a new resume id after a draft is generated.
+ * prompt (MDI-652, behind `feedbackPrompt`), never both at once. `choosePostGeneratePrompt` decides: the bar wins, and
+ * the review prompt is then neither checked nor recorded. It is asked again once "Add to tracker" has saved the card,
+ * under the same database cap; a bar that is dismissed or left alone asks nothing. Lives in the `/resume` layout so it
+ * survives the editor moving to a new resume id after a draft is generated.
  *
  * The bar is due when no card links the resume (or its generated original) and it was not dismissed for that resume
  * on this device.
@@ -79,7 +81,8 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
   const { session } = useUserSession();
   const userId = session?.user.id;
   const queryClient = useQueryClient();
-  const [openFor, setOpenFor] = useState<{ resumeId: string } | null>(null);
+  // `addedCardId` is set when the prompt follows "Add to tracker": its "View in tracker" toast waits for the prompt.
+  const [openFor, setOpenFor] = useState<{ resumeId: string; addedCardId?: string } | null>(null);
   const pathname = usePathname();
   // The bar belongs to the page it appeared on, and to the generated resume's own page (the editor moves there after a
   // draft or a new resume is generated). Leaving for anywhere else clears it, so it never offers a resume that is not
@@ -172,10 +175,54 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
     [generateDialogClosed, queryClient, userId],
   );
 
+  const showAdded = useCallback((cardId: string) => {
+    toast.success(APPLICATION_ADDED_MESSAGE, {
+      action: createElement(Link, { href: cardHref(cardId), className: 'font-semibold underline' }, VIEW_IN_TRACKER_LABEL),
+    });
+  }, []);
+
+  /**
+   * After "Add to tracker" saved a card: the review prompt the bar held back, when the database says it is due. The
+   * "Application added" toast shows right away when there is no prompt, and once the prompt closes when there is one.
+   */
+  const askAfterAdded = useCallback(
+    (cardId: string, resumeId: string) => {
+      if (!featureFlags().feedbackPrompt || !userId || busy.current) {
+        showAdded(cardId);
+        return;
+      }
+      busy.current = true;
+      void (async () => {
+        try {
+          const due = await queryClient.fetchQuery({
+            queryKey: feedbackPromptDueKey(userId),
+            queryFn: () => fetchFeedbackPromptDue(),
+            staleTime: 0,
+            retry: false,
+          });
+          if (due === 'due' && (await recordFeedbackPrompt())) {
+            setOpenFor({ resumeId, addedCardId: cardId });
+            return;
+          }
+        } catch {
+          // The prompt is optional: a failed check or record call shows only the toast.
+        } finally {
+          void queryClient.invalidateQueries({ queryKey: feedbackPromptDueKey(userId) });
+        }
+        busy.current = false;
+        showAdded(cardId);
+      })();
+    },
+    [queryClient, showAdded, userId],
+  );
+
   const close = useCallback(() => {
+    if (openFor?.addedCardId) {
+      showAdded(openFor.addedCardId);
+    }
     setOpenFor(null);
     busy.current = false;
-  }, []);
+  }, [openFor, showAdded]);
 
   const value = useMemo(() => ({ notifyNewPdf, setGenerateDialogOpen }), [notifyNewPdf, setGenerateDialogOpen]);
 
@@ -226,15 +273,19 @@ export function FeedbackPromptProvider({ children }: { children: ReactNode }) {
           onOpenChange={setAddOpen}
           onCreate={createCard}
           onAdded={(id) => {
+            const resumeId = trackerFor?.id;
             setTracker(null);
-            toast.success(APPLICATION_ADDED_MESSAGE, {
-              action: createElement(Link, { href: cardHref(id), className: 'font-semibold underline' }, VIEW_IN_TRACKER_LABEL),
-            });
+            if (resumeId) {
+              askAfterAdded(id, resumeId);
+            } else {
+              showAdded(id);
+            }
           }}
         />
       ) : null}
       <FeedbackModal
         open={openFor !== null}
+        eyebrow={openFor?.addedCardId ? FEEDBACK_PROMPT.addedToTracker : undefined}
         onClose={close}
         onTrustpilot={() => {
           // Never ask again. A failed call is not shown: the user is already on their way to Trustpilot.
