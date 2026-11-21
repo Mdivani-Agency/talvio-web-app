@@ -489,6 +489,9 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           let invalid = false;
           const ok = await submitWrapper({
             fn: async () => {
+              // A save that failed or hit a conflict holds its edits until it is retried (on a conflict, against the
+              // latest revision), so Try again on the page lock can recover. Nothing happens when the last save worked.
+              await autosave.retry();
               const saved = await autosave.flush({
                 metadata: editorDocument.resume,
                 template: editorDocument.template,
