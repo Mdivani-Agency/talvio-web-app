@@ -250,8 +250,29 @@ test('RES-09 renders long Unicode content across preview pages and style changes
   await expect.poll(pageCount).toBeGreaterThan(1);
   const total = await pageCount();
 
+  // MDI-669: the next page peeks out 44px to the right of the page in front, inside the stage, with no scrollbar.
+  const sheetBox = async (number: number) => {
+    const box = await page.locator(`img[alt="PDF page ${number}"]`).boundingBox();
+    expect(box, `PDF page ${number}`).not.toBeNull();
+    return box!;
+  };
+  const peekRight = async () => {
+    const [front, behind] = [await sheetBox(1), await sheetBox(2)];
+    return Math.round(behind.x + behind.width - (front.x + front.width));
+  };
+  await expect.poll(peekRight).toBeGreaterThanOrEqual(42);
+  expect(await peekRight()).toBeLessThanOrEqual(46);
+  const stage = page.getByRole('region', { name: /^Preview/ });
+  expect(await stage.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  const stageBox = await stage.boundingBox();
+  const behindBox = await sheetBox(2);
+  expect(behindBox.x + behindBox.width).toBeLessThanOrEqual(stageBox!.x + stageBox!.width);
+
   await page.getByRole('button', { name: 'Next page' }).click();
   await expect(page.getByText(`Page 2 of ${total}`)).toBeVisible();
+  // Page 1 is now behind on the left, and the front page is page 2.
+  await expect(page.getByTestId('preview-page').getByRole('img')).toHaveAttribute('alt', 'PDF page 2');
+  await expect.poll(async () => Math.round((await sheetBox(2)).x - (await sheetBox(1)).x)).toBeGreaterThanOrEqual(42);
   await page.getByRole('button', { name: 'Previous page' }).click();
   await expect(page.getByText(`Page 1 of ${total}`)).toBeVisible();
   await page.getByRole('button', { name: 'Previous page' }).click();

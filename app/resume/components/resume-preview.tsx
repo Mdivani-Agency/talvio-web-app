@@ -55,7 +55,8 @@ export function ResumePreview({
       aria-label={previewCaption(templateName)}
       data-fit-width={fitWidth || undefined}
       className={cn(
-        'relative flex min-h-0 flex-col items-center gap-4 bg-accent p-4 md:px-10 md:py-5',
+        // `overflow-x-clip`: the pages behind the current one peek into the side padding and never cause a scrollbar.
+        'relative flex min-h-0 flex-col items-center gap-4 overflow-x-clip bg-accent p-4 md:px-10 md:py-5',
         // `cqw` below measures the stage's content width, so a scrollbar does not shrink the page.
         fitWidth && 'lg:@container',
         className,
