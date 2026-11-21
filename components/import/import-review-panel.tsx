@@ -4,7 +4,12 @@ import { useId } from 'react';
 import type { ImportReview } from '@lib/llm/parse-document';
 import { goToSectionLabel, importReviewSubtitle, importReviewTitle } from '@/lib/onboarding-copy';
 
-export type ImportReviewTarget = { href: string; label: string };
+export type ImportReviewTarget = {
+  href: string;
+  label: string;
+  /** Opens the part of the page instead of following `href`, such as an editor section that is folded away. */
+  onSelect?: () => void;
+};
 
 /**
  * What to check after an import (MDI-674, canvas OBF-review and OBF-partial): a panel at the top of the page with
@@ -55,7 +60,14 @@ export function ImportReviewPanel({
                   <strong className="font-semibold">{item.section}:</strong> {item.message}
                 </span>
                 {target ? (
-                  <a href={target.href} className="flex-none font-semibold text-secondary underline-offset-4 hover:underline">
+                  <a
+                    href={target.href}
+                    onClick={target.onSelect ? (event) => {
+                      event.preventDefault();
+                      target.onSelect?.();
+                    } : undefined}
+                    className="flex-none font-semibold text-secondary underline-offset-4 hover:underline"
+                  >
                     {goToSectionLabel(target.label)}
                   </a>
                 ) : null}

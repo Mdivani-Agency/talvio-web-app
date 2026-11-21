@@ -9,13 +9,10 @@ import { ResumePreviewPage } from './resume-page';
 import { redirect, useSearchParams } from 'next/navigation';
 import type { AccountDto, PreviewDto, TemplateKey } from '@lib/types';
 import { ResumeProvider, useResumeContext } from './providers/state-provider';
-import OptionsView from './views/options-view';
-import ImportResumePage from './views/import-page';
 import { onboardingHref } from '@lib/auth/onboarding-return';
 import { normalizeResumeTemplate } from '@lib/drafts';
 import { resolveAvailableTemplate } from '@lib/resume/resolve-editor';
 import { colorAfterTemplateChange } from '@lib/templates';
-import { WithResumeHeader } from './views/resume-public-header';
 
 function previewSeed(account: AccountDto | null, template: TemplateKey): PreviewDto {
   // A new resume opens in its template's own accent colour, as the gallery image shows it.
@@ -97,22 +94,6 @@ function ResumeFlow() {
 
   if (isAuthenticating || (isLoading && step === 'fetchingResume')) {
     return <EditorSkeleton />;
-  }
-
-  if (step === 'options') {
-    return (
-      <WithResumeHeader>
-        <OptionsView />
-      </WithResumeHeader>
-    );
-  }
-
-  if (step === 'importResume') {
-    return (
-      <WithResumeHeader>
-        <ImportResumePage />
-      </WithResumeHeader>
-    );
   }
 
   return <ResumePreviewPage />;

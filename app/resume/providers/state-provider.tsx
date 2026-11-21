@@ -31,7 +31,7 @@ import {
 import { useUserSession } from '@lib/providers';
 import type { PreviewDto } from '@lib/types';
 
-export type ResumeFlowStep = 'fetchingResume' | 'options' | 'importResume' | 'resumePreview';
+export type ResumeFlowStep = 'fetchingResume' | 'resumePreview';
 
 type ResumeFlowState = {
   step: ResumeFlowStep;
@@ -49,10 +49,6 @@ type ContextState = {
   clearResumeDraft: () => void;
   ensureDraftId: () => string;
   seedIfFetching: (resume: PreviewDto) => void;
-  selectImport: () => void;
-  selectManual: () => void;
-  /** Back from Import your resume to Start a new resume. */
-  selectOptions: () => void;
   applyImportedResume: (resume: PreviewDto) => void;
   changeResume: (resume: PreviewDto) => void;
 };
@@ -60,9 +56,7 @@ type ContextState = {
 const ResumeContext = createContext<ContextState | null>(null);
 
 function progressStep(step: ResumeFlowStep): ResumeProgress['step'] {
-  if (step === 'importResume' || step === 'options') {
-    return step;
-  }
+  void step;
   return 'resumePreview';
 }
 
@@ -275,12 +269,10 @@ function ResumeMachine({
         ensureDraftId,
         seedIfFetching: (resume) => {
           setFlow((current) => (
-            current.step === 'fetchingResume' ? { step: 'options', resume } : current
+            // MDI-675: there is no start screen; a new resume opens in the editor from the profile.
+            current.step === 'fetchingResume' ? { step: 'resumePreview', resume } : current
           ));
         },
-        selectImport: () => updateFlow({ ...flow, step: 'importResume' }),
-        selectManual: () => updateFlow({ ...flow, step: 'resumePreview' }),
-        selectOptions: () => updateFlow({ ...flow, step: 'options' }),
         applyImportedResume: (resume) => updateFlow({ step: 'resumePreview', resume }),
         changeResume: (resume) => updateFlow({ ...flow, resume }),
       }}

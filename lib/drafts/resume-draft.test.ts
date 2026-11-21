@@ -81,7 +81,9 @@ describe('resume drafts', () => {
     expect(preview?.color).toBe('#1B1B1B');
     expect(resumeFlowStep('resumePreview')).toBe('resumePreview');
     expect(resumeFlowStep('existingResume')).toBe('resumePreview');
-    expect(resumeFlowStep('importResume')).toBe('importResume');
+    // MDI-675: drafts saved on the removed start and import screens open in the editor.
+    expect(resumeFlowStep('importResume')).toBe('resumePreview');
+    expect(resumeFlowStep('options')).toBe('resumePreview');
   });
 
   it('defaults a missing template so the draft can be restored', () => {

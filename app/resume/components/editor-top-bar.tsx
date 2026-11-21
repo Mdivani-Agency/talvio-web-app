@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, Cloud, Download, HardDrive, Pencil, Save, SparklesIcon } from 'lucide-react';
+import { ChevronLeft, Cloud, Download, FileUp, HardDrive, Pencil, Save, SparklesIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -10,6 +10,7 @@ import type { SaveStatus } from '@lib/resume/save-queue';
 import {
   DOWNLOAD_PDF_LABEL,
   EDITOR_BACK,
+  EDITOR_IMPORT,
   EDITOR_SIGN_IN,
   IMPROVE_WITH_AI_LABEL,
   RESUME_LABEL_FIELD,
@@ -38,6 +39,8 @@ type EditorTopBarProps = {
   savePending?: boolean;
   onImprove?: () => void;
   improveDisabled?: boolean;
+  /** Import a resume into this one (MDI-675). Signed-in only; leave out for guests and read-only resumes. */
+  onImport?: () => void;
 };
 
 /**
@@ -60,6 +63,7 @@ export function EditorTopBar({
   onSave,
   savePending = false,
   onImprove,
+  onImport,
   improveDisabled = false,
 }: EditorTopBarProps) {
   const [renaming, setRenaming] = useState(false);
@@ -151,6 +155,18 @@ export function EditorTopBar({
           </Button>
         ) : null}
       </div>
+      {onImport ? (
+        <Button
+          type="button"
+          variant="outline"
+          aria-label={EDITOR_IMPORT.buttonLabel}
+          onClick={onImport}
+          className="h-[4.4rem] min-w-[4.4rem] flex-none px-0 md:px-4"
+        >
+          <FileUp aria-hidden="true" className="size-4" />
+          <span className="hidden md:inline">{EDITOR_IMPORT.button}</span>
+        </Button>
+      ) : null}
       {onSave ? (
         <Button
           type="button"

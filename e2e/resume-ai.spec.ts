@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures/test';
 import { setScenario } from './fixtures/profile-ui';
 import {
-  chooseManual,
+  waitForEditor,
   generateFromModal,
   mediaStats,
   openFinalReview,
@@ -63,7 +63,7 @@ async function seededTagline(userId: string, id: string) {
 }
 
 async function startNewResume(page: Page, firstName: string) {
-  await chooseManual(page);
+  await waitForEditor(page);
   await page.getByLabel('First name', { exact: true }).fill(firstName);
   await page.getByLabel('Last name', { exact: true }).fill('Owner');
   await page.getByLabel('Role', { exact: true }).fill('Engineer');

@@ -126,12 +126,11 @@ export function shouldSeedResumeFromQuery(step: string) {
   return step === 'fetchingResume';
 }
 
-export function resumeFlowStep(step: ResumeProgress['step']): 'options' | 'importResume' | 'resumePreview' {
-  if (step === 'importResume') {
-    return 'importResume';
-  }
-  if (step === 'options') {
-    return 'options';
-  }
+/**
+ * The editor step a stored draft reopens on. Start a new resume and the full-page import were removed (MDI-675):
+ * drafts saved on them (`options`, `importResume`) open in the editor with their content, like every other draft.
+ */
+export function resumeFlowStep(step: ResumeProgress['step']): 'resumePreview' {
+  void step;
   return 'resumePreview';
 }
