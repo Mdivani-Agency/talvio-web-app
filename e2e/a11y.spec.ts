@@ -130,7 +130,7 @@ test.describe('mobile', () => {
     await page.getByRole('button', { name: 'Download PDF' }).click();
     const dialog = page.getByRole('dialog', { name: /Generate your PDF/ });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Generate and download', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Generate PDF', exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await page.keyboard.press('Escape');
 

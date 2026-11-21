@@ -4,7 +4,7 @@ import { TRUSTPILOT_REVIEW_URL } from '../lib/feedback-copy';
 
 import { readFeedbackState, resetFeedbackPrompt, serviceClient } from './fixtures/data';
 import { expect, test } from './fixtures/test';
-import { generateFromModal, openSignedIn, persona, resetAndGuard } from './fixtures/resume-ui';
+import { downloadReadyPdf, generateFromModal, openSignedIn, persona, resetAndGuard } from './fixtures/resume-ui';
 import { seedProfile, seedResume, SEEDED_RESUME_CONTENT } from './fixtures/resumes';
 
 // Local E2E builds set NEXT_PUBLIC_FLAG_FEEDBACK_PROMPT=true (scripts/e2e-env.mjs). Every persona starts as already
@@ -168,9 +168,9 @@ test('FB-04 Escape closes the prompt and a free re-download never asks', async (
       checked = true;
     }
   });
-  const download = page.waitForEvent('download');
+  // A re-download offers the stored PDF in the dialog; downloading it is not a new PDF, so no prompt follows.
   await page.getByRole('button', { name: 'Download PDF' }).click();
-  await download;
+  await downloadReadyPdf(page);
   await expect(prompt(page)).toBeHidden();
   expect(checked).toBe(false);
 });

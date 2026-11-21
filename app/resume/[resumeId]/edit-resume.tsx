@@ -9,7 +9,8 @@ import { useResumeEditorDocument } from '@app/resume/hooks/use-resume-editor-doc
 import { useResumeAutosave } from '@app/resume/hooks/use-resume-autosave';
 import { applyLlmProposal } from '@app/resume/query/use-apply-llm-proposal';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
-import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { resumePdfFile, useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
+import { downloadPdf, type PdfFile } from '@/lib/pdf/pdf-actions';
 import { fetchResume, fetchResumeFamily } from '@app/resume/query/use-resume';
 import { isLabelOnlyPatch } from '@app/resume/query/use-save-resume-edit';
 import { ConfirmModal } from '@components/modals';
@@ -39,7 +40,7 @@ import { useUserSession } from '@lib/providers';
 import type { PreviewDto, Resume } from '@lib/types';
 
 import { useFeedbackPrompt } from '../providers/feedback-prompt-provider';
-import { ResumeEditorShell } from '../views/resume-editor-shell';
+import { ResumeEditorShell, type PdfDownloadResult } from '../views/resume-editor-shell';
 import { ResumeUnavailable } from '../views/resume-unavailable';
 import { WithResumeHeader } from '../views/resume-public-header';
 
@@ -63,6 +64,15 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   const draftRef = useRef<VersionedDraft | null>(null);
   const writerRef = useRef<DebouncedWriter<VersionedDraft | null> | null>(null);
   const failedGenerationRef = useRef<Resume | null>(null);
+  // A draft that got its PDF opens at its own URL, once the dialog offering Download and Open has closed.
+  const pendingRouteRef = useRef<string | null>(null);
+  const followPendingRoute = () => {
+    const next = pendingRouteRef.current;
+    pendingRouteRef.current = null;
+    if (next) {
+      router.push(next);
+    }
+  };
   const { document, formRevision, initialize, apply, replaceDocument } = useResumeEditorDocument();
 
   const {
@@ -79,7 +89,11 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
   });
 
   const feedbackPrompt = useFeedbackPrompt();
-  const generatePdf = useGenerateResumePdf(userId, { onNewPdf: feedbackPrompt.notifyNewPdf });
+  const generatePdf = useGenerateResumePdf(userId, {
+    onNewPdf: feedbackPrompt.notifyNewPdf,
+    // The dialog offers Download and Open once the PDF exists.
+    save: false,
+  });
   const deleteResume = useDeleteResume(userId);
 
   const original = family?.original;
@@ -272,8 +286,10 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
     });
   };
 
-  const generateSaved = (resume: Resume) =>
-    submitWrapper({
+  /** Generates (or confirms) the PDF; resolves to it for the dialog, or `false` after a failure. */
+  const generateSaved = async (resume: Resume): Promise<PdfDownloadResult> => {
+    let file: PdfFile | undefined;
+    const ok = await submitWrapper({
       fn: async () => {
         const alreadyGenerated = isGeneratedResume(resume);
         if (!alreadyGenerated) {
@@ -294,8 +310,9 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
             await autosave.finishGenerating(true);
           }
           if (resume.sourceResumeId && result.media?.url && result.id !== resumeId) {
-            router.push(`/resume/${result.id}`);
+            pendingRouteRef.current = `/resume/${result.id}`;
           }
+          file = resumePdfFile(result);
           return { id: result.id };
         } catch (error) {
           if (!alreadyGenerated) {
@@ -307,6 +324,8 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
         }
       },
     });
+    return ok ? (file ?? true) : false;
+  };
 
   // Wait for the session too: a signed-in visitor must never see the guest view flash by.
   if (sessionPending || isLoadingResume) {
@@ -382,7 +401,12 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
             ) {
               return;
             }
-            await generateSaved(failed);
+            // A retry is not the Generate dialog: save the new PDF right away, then follow a draft to its URL.
+            const result = await generateSaved(failed);
+            if (result && typeof result === 'object') {
+              await downloadPdf(result);
+            }
+            followPendingRoute();
           })();
         }}
         family={hasFamily ? {
@@ -457,7 +481,8 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
           if (isGeneratedResume(displayed)) {
             return generateSaved(displayed);
           }
-          return submitWrapper({
+          let file: PdfFile | undefined;
+          const ok = await submitWrapper({
             fn: async () => {
               const saved = await autosave.flush({
                 metadata: editorDocument.resume,
@@ -489,8 +514,9 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
                   await autosave.finishGenerating(true);
                 }
                 if (saved.sourceResumeId && result.media?.url && result.id !== resumeId) {
-                  router.push(`/resume/${result.id}`);
+                  pendingRouteRef.current = `/resume/${result.id}`;
                 }
+                file = resumePdfFile(result);
                 return { id: result.id };
               } catch (error) {
                 if (!alreadyGenerated) {
@@ -502,7 +528,10 @@ export default function EditResumePage({ resumeId }: EditResumePageProps) {
               }
             },
           });
+          return ok ? (file ?? true) : false;
         }}
+        pdf={isGeneratedResume(displayed) ? resumePdfFile(displayed) : null}
+        onPdfDialogClose={followPendingRoute}
       />
       <ConfirmModal
         isOpen={forkOpen}

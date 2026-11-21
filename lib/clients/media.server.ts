@@ -29,6 +29,9 @@ export async function createServerPresignedUpload(
       name,
       type: RESUME_PDF_TYPE,
       path: RESUME_PDF_PATH,
+      // The stored file carries `Content-Disposition: attachment` with this name, so a direct link to it saves the
+      // PDF instead of opening it. A media service without the field ignores it and returns no `headers`.
+      disposition: 'attachment',
     }),
   });
 
@@ -39,7 +42,12 @@ export async function createServerPresignedUpload(
     throw error;
   }
 
-  const data = (await response.json()) as { uploadUrl?: string; publicUrl?: string; key?: string };
+  const data = (await response.json()) as {
+    uploadUrl?: string;
+    publicUrl?: string;
+    key?: string;
+    headers?: unknown;
+  };
   if (!data.uploadUrl || !data.publicUrl) {
     const error = new Error('Upload URL was not returned');
     (error as Error & { status: number }).status = 502;
@@ -50,7 +58,20 @@ export async function createServerPresignedUpload(
     uploadUrl: data.uploadUrl,
     publicUrl: data.publicUrl,
     key: data.key || mediaKeyFromPublicUrl(data.publicUrl, name),
+    ...(signedHeaders(data.headers) ? { headers: signedHeaders(data.headers) } : {}),
   };
+}
+
+/** The upload headers the presign signed, when it returned a well-formed set. */
+function signedHeaders(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  const entries = Object.entries(value);
+  if (entries.length === 0 || entries.some(([, header]) => typeof header !== 'string')) {
+    return undefined;
+  }
+  return Object.fromEntries(entries) as Record<string, string>;
 }
 
 export async function uploadResumePdfBytes(
@@ -62,7 +83,8 @@ export async function uploadResumePdfBytes(
   const response = await fetch(presign.uploadUrl, {
     method: 'PUT',
     body: Buffer.from(bytes),
-    headers: { 'Content-Type': RESUME_PDF_TYPE },
+    // Signed headers must be sent exactly as returned; without them the upload only sets the type.
+    headers: presign.headers ?? { 'Content-Type': RESUME_PDF_TYPE },
   });
   if (!response.ok) {
     const error = new Error('Failed to upload resume PDF');
