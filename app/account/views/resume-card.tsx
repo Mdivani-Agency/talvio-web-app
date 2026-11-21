@@ -7,6 +7,7 @@ import { Button } from '@components/ui';
 import { Resume } from '@lib/types';
 import { cn } from '@lib/utils';
 import { ConfirmModal } from '@components/modals';
+import { PageLock } from '@components/views';
 import { submitWrapper } from '@app/actions/action.utils';
 import { useDeleteResume } from '@app/resume/query/use-delete-resume';
 import { useGenerateResumePdf } from '@app/resume/query/use-generate-pdf';
@@ -35,6 +36,7 @@ import { useAllowance } from '@app/account/hooks/use-allowance';
 import { useResumeCards } from '@app/account/applications/query/use-resume-cards';
 import { InTrackerLink } from '@app/account/applications/views/in-tracker-link';
 import { featureFlags } from '@/lib/flags';
+import { DASHBOARD_PDF_LOCK } from '@/lib/page-lock-copy';
 
 const badgeClassName = 'rounded-md px-2 py-0.5 font-semibold';
 const iconButtonClassName = 'size-[3.6rem]';
@@ -71,7 +73,12 @@ export const ResumeCard = ({
 }) => {
   const [familyToDelete, setFamilyToDelete] = useState<ResumeFamily>();
   const deleteResume = useDeleteResume(userId);
-  const generatePdf = useGenerateResumePdf(userId);
+  // Generate PDF locks the page (MDI-670) with steps that follow the work. Download of a stored PDF does not: it only
+  // fetches the existing file, so it keeps its inline state.
+  const [lock, setLock] = useState<{ step: number } | null>(null);
+  const generatePdf = useGenerateResumePdf(userId, {
+    onPhase: (phase) => setLock((current) => (current ? { step: phase === 'downloading' ? 1 : 0 } : current)),
+  });
   const { allowance } = useAllowance();
   const blocked = allowance?.exhausted ?? false;
   const pendingId = generatePdf.isPending ? generatePdf.variables?.id : undefined;
@@ -181,12 +188,13 @@ export const ResumeCard = ({
                           loading={pendingId === display.id}
                           disabled={generatePdf.isPending || blocked}
                           onClick={() => {
+                            setLock({ step: 0 });
                             void submitWrapper({
                               fn: async () => {
                                 const result = await generatePdf.mutateAsync(display);
                                 return { id: result.id };
                               },
-                            });
+                            }).finally(() => setLock(null));
                           }}
                         >
                           {GENERATE_PDF_LABEL}
@@ -225,6 +233,17 @@ export const ResumeCard = ({
           </Button>
         ) : null}
       </section>
+      {lock ? (
+        <PageLock
+          context={DASHBOARD_PDF_LOCK.context}
+          title={DASHBOARD_PDF_LOCK.title}
+          steps={DASHBOARD_PDF_LOCK.steps}
+          currentStep={lock.step}
+          note={DASHBOARD_PDF_LOCK.note}
+          slowNote={DASHBOARD_PDF_LOCK.slow}
+          warnOnLeave
+        />
+      ) : null}
       <ConfirmModal
         isOpen={Boolean(familyToDelete)}
         title={DELETE_RESUME_TITLE}

@@ -116,6 +116,9 @@ describe('ImprovePage', () => {
     renderPage();
     const heading = await screen.findByRole('heading', { name: 'Reading your profile' });
     expect((heading.closest('section')!).getAttribute('aria-busy')).toBe('true');
+    // On the page lock (MDI-670): a modal card over an inert page, which says the page unlocks, not that it can be left.
+    expect(screen.getByRole('dialog', { name: 'Reading your profile' }).getAttribute('aria-modal')).toBe('true');
+    expect(screen.getByText('This can take a minute. The page unlocks when your questions are ready.')).toBeTruthy();
     const steps = screen.getAllByRole('listitem');
     expect(steps.map((step) => step.getAttribute('data-state'))).toEqual(['done', 'active']);
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

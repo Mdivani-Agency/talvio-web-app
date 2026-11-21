@@ -6,7 +6,7 @@ import { ClipboardPasteIcon, UploadIcon } from 'lucide-react';
 
 import { Button } from '@components/ui';
 import { ConfirmModal, PasteResumeModal, UploadModal } from '@components/modals';
-import { PageContainer } from '@components/views';
+import { PageContainer, PageLock } from '@components/views';
 import { useResumeParser } from '@hooks/use-resume-parser';
 import { toastImportReview } from '@components/import/import-review';
 import {
@@ -16,6 +16,7 @@ import {
   SAVING_PROFILE_LABEL,
   START_FASTER,
 } from '@/lib/onboarding-copy';
+import { SAVE_PROFILE_LOCK } from '@/lib/page-lock-copy';
 
 import { useSaveProfileFlow } from '../../hooks/use-save-profile-flow';
 import { useAccountContext } from '../../providers/state-provider';
@@ -25,7 +26,7 @@ export default function AccountFormPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const { offerImport, pendingImport, applyImport, cancelImport, submitProfile, formRevision } = useAccountContext();
-  const { save, isSaving } = useSaveProfileFlow();
+  const { save, isSaving, locked } = useSaveProfileFlow();
 
   const { parseResumeText, parsePastedText, loading, offline } = useResumeParser({
     onResumeParsed: (account, sourceText, review) => {
@@ -96,6 +97,16 @@ export default function AccountFormPage() {
         onClose={() => setIsPasteModalOpen(false)}
         onConfirm={handlePaste}
       />
+      {locked ? (
+        <PageLock
+          context={SAVE_PROFILE_LOCK.context}
+          title={SAVE_PROFILE_LOCK.title}
+          line={SAVE_PROFILE_LOCK.line}
+          note={SAVE_PROFILE_LOCK.note}
+          slowNote={SAVE_PROFILE_LOCK.slow}
+          warnOnLeave
+        />
+      ) : null}
       <ConfirmModal
         isOpen={pendingImport !== null}
         title="Replace current profile?"

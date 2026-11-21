@@ -77,9 +77,19 @@ type GenerateResumePdfOptions = {
    * because a save started seconds after the click can no longer ask where to save.
    */
   save?: boolean;
+  /**
+   * Called as the work moves on, for the page lock's steps (MDI-670): `building` when the PDF is being made (or the
+   * stored one fetched), `downloading` when the file is being saved.
+   */
+  onPhase?: (phase: GeneratePdfPhase) => void;
 };
 
-export function useGenerateResumePdf(userId?: string, { onNewPdf, save = true }: GenerateResumePdfOptions = {}) {
+export type GeneratePdfPhase = 'building' | 'downloading';
+
+export function useGenerateResumePdf(
+  userId?: string,
+  { onNewPdf, save = true, onPhase }: GenerateResumePdfOptions = {},
+) {
   const queryClient = useQueryClient();
 
   const refreshGenerated = async (resume: Resume) => {
@@ -92,11 +102,13 @@ export function useGenerateResumePdf(userId?: string, { onNewPdf, save = true }:
 
   return useMutation({
     mutationFn: async (resume: Resume) => {
+      onPhase?.('building');
       const { resume: saved, generated } = await generatePdfFile(resume);
       if (generated) {
         onNewPdf?.(saved);
       }
       if (save) {
+        onPhase?.('downloading');
         const file = resumePdfFile(saved);
         try {
           if (!file) {

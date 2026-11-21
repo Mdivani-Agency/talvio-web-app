@@ -37,7 +37,7 @@ export const LOADING_QUESTIONS_TITLE = 'Reading your profile';
 export const LOADING_PROPOSAL_TITLE = 'Writing suggestions from your answers';
 export const LOADING_QUESTIONS_STEPS = ['Reading your profile', 'Picking questions for you'] as const;
 export const LOADING_PROPOSAL_STEPS = ['Sending your answers', 'Writing suggested edits'] as const;
-export const LOADING_NOTE = 'This can take a minute. You can leave this page; we keep your place.';
+export const LOADING_NOTE = 'This can take a minute. The page unlocks when your questions are ready.';
 export const CANCEL_LABEL = 'Cancel';
 
 /* Question */
