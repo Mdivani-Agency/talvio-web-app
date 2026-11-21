@@ -6,6 +6,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { AccountProvider } from './providers/state-provider';
+import { AccountShellSkeleton } from './views/account-skeleton';
 import { Sidebar } from './views/sidebar';
 
 export const metadata = { robots: PRIVATE_ROBOTS };
@@ -25,7 +26,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
 
   return (
     <div className="font-(family-var(--font-montserrat))">
-      <SessionProvider fallbackURL={signInURL} returnToCurrentPath>
+      <SessionProvider fallbackURL={signInURL} returnToCurrentPath pending={<AccountShellSkeleton />}>
         <AccountProvider>
           <div className="flex min-h-screen min-w-0 flex-col md:flex-row">
             <Sidebar />

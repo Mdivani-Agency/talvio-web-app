@@ -196,6 +196,17 @@ details > summary.list-none::marker {
   display: none;
 }
 
+/* Page-load skeletons (components/views/page-skeleton.tsx). */
+@keyframes page-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
 /* The page lock's indeterminate bar (components/views/page-lock.tsx). */
 @keyframes page-lock-bar {
   0% {

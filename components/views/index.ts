@@ -14,3 +14,4 @@ export * from "./navigation/navigation-menu";
 export * from "./legal-document";
 export * from "./page-container";
 export * from "./page-lock";
+export * from "./page-skeleton";

@@ -2,7 +2,7 @@
 
 import { createContext, PropsWithChildren, useContext } from 'react';
 
-import { Loading } from '@components/views';
+import { AccountShellSkeleton } from '../views/account-skeleton';
 import { DraftStatusBanner } from '@components/views/draft-status';
 import { useUserSession } from '@lib/providers';
 
@@ -28,7 +28,7 @@ export const AccountProvider = ({ children }: PropsWithChildren) => {
   const { session, isPending } = useUserSession();
 
   if (isPending) {
-    return <Loading message="Restoring account draft..." />;
+    return <AccountShellSkeleton />;
   }
 
   if (!session?.user) {

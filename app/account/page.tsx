@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { fetchProfile } from '@app/account/query/use-profile';
-import { Loading } from '@components/views';
+import { AccountSkeleton } from './views/account-skeleton';
 import { useUserSession } from '@lib/providers/session-provider';
 import { shouldRetryGraphqlQuery } from '@/lib/graphql-client';
 
@@ -39,7 +39,7 @@ export default function AccountPage() {
   });
 
   if (view === 'loading') {
-    return <Loading message="Fetching account details..." />;
+    return <AccountSkeleton />;
   }
 
   if (view === 'lookup-error') {

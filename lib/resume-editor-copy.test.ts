@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  RESUME_LOADING_LABEL,
   DRAFT_BANNER,
   IMPORT_SCREEN,
   START_SCREEN,
@@ -18,6 +19,10 @@ import {
 } from './resume-editor-copy';
 
 describe('resume editor copy', () => {
+  it('says the resume is opening while the editor draws its shape (MDI-671)', () => {
+    expect(RESUME_LOADING_LABEL).toBe('Opening your resume');
+  });
+
   it('names the preview view toggles', () => {
     expect(FIT_WIDTH_LABEL).toBe('Fit width');
     expect(FULL_SIZE_LABEL).toBe('Full size');

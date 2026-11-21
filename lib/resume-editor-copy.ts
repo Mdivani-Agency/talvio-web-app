@@ -52,6 +52,8 @@ export const TAB_HAS_ERRORS = 'has errors';
 export const previewCaption = (templateName: string) => `Preview · ${templateName} template`;
 export const pageCountText = (count: number) => `A4 · ${count} ${count === 1 ? 'page' : 'pages'}`;
 export const pageOfText = (page: number, count: number) => `Page ${page} of ${count}`;
+/** Page-load skeleton (MDI-671): the status line read out while the editor draws its shape. */
+export const RESUME_LOADING_LABEL = 'Opening your resume';
 export const PREVIOUS_PAGE = 'Previous page';
 export const NEXT_PAGE = 'Next page';
 export const FULL_SIZE_LABEL = 'Full size';

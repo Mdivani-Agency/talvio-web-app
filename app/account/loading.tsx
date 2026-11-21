@@ -1,5 +1,6 @@
-import { Loading } from "@components/views";
+import { AccountSkeleton } from './views/account-skeleton';
 
+/** Route-level loading for `/account`: the page's shape in grey inside the account shell (MDI-671). */
 export default function AccountLoadingPage() {
-  return <Loading message={'Fetching your account details...'} />;
+  return <AccountSkeleton />;
 }
